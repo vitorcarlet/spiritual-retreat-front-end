@@ -1,0 +1,29 @@
+@startuml name "Cadastro de Retiro"
+actor Gestor
+participant "Gestão de Retiros" as Retreat
+participant "Formulário de Cadastro" as Form
+participant "Validador de Campos" as Validator
+participant "Backend de Retiros" as Backend
+participant "Lista de Retiros" as Lista
+
+== Abertura de tela ==
+Gestor -> Retreat : Acessa tela de gestão de retiros
+Retreat -> Form : Clica em "Novo Retiro"
+Retreat -> Form : Exibe formulário de cadastro
+
+== Preenchimento e envio ==
+Gestor -> Form : Preenche campos (nome, edição, tema, etc.)
+Gestor -> Form : Clica em "Salvar"
+Form -> Validator : Validar campos obrigatórios
+Validator --> Form : Campos válidos
+
+== Comunicação com o backend ==
+Form -> Backend : Enviar dados do novo retiro
+Backend -> Backend : Persistir dados no banco
+Backend --> Form : Retorna sucesso
+
+== Atualização da interface ==
+Form -> Lista : Atualizar visualização
+Lista --> Retreat : Exibe novo retiro cadastrado
+Retreat -> Gestor : Exibe confirmação e lista atualizada
+@enduml

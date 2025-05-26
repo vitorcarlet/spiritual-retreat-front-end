@@ -1,0 +1,30 @@
+@startuml name "Recebimento da Mensagem e Acesso ao Sistema"
+actor Participante
+participant "Plataforma de Mensagens" as MsgPlataforma
+participant "Link Personalizado" as Link
+participant "Tela de Cadastro" as Cadastro
+participant "Backend de Cadastro" as Backend
+participant "Tela Inicial do Participante" as TelaInicial
+
+== Recebimento ==
+MsgPlataforma -> Participante : Mensagem com link personalizado
+
+== Acesso ao sistema ==
+Participante -> Link : Clica no link
+Link -> Cadastro : Redireciona para tela de cadastro com PARTICIPANTEID
+
+== Cadastro ==
+Participante -> Cadastro : Preenche dados e confirma
+Cadastro -> Backend : Valida e armazena dados
+Backend --> Cadastro : Cadastro bem-sucedido
+
+== Redirecionamento ==
+Cadastro -> TelaInicial : Redireciona para sistema
+TelaInicial -> Participante : Exibe tela inicial
+note right of TelaInicial
+Contém:
+- Informações pessoais
+- Informações do Retiro que foi contemplado
+- Tela de pagamento
+end note
+@enduml

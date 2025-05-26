@@ -1,0 +1,26 @@
+@startuml name "Inativação de Retiro"
+actor Gestor
+participant "Gestão de Retiros" as Retreat
+participant "Lista de Retiros" as Lista
+participant "Modal de Confirmação" as Modal
+participant "Backend de Retiros" as Backend
+
+== Abertura da tela ==
+Gestor -> Retreat : Acessa tela de gestão de retiros
+Retreat -> Lista : Exibe lista de retiros
+
+== Seleção do retiro ==
+Gestor -> Lista : Clica em "Inativar" para um retiro
+Lista -> Modal : Abre modal de confirmação
+Gestor -> Modal : Confirma a inativação
+
+== Comunicação com o backend ==
+Modal -> Backend : Envia requisição para inativar retiro
+Backend -> Backend : Atualiza status do retiro para "Inativo"
+Backend --> Modal : Retorna sucesso
+
+== Atualização da interface ==
+Modal -> Lista : Atualiza visualização da lista
+Lista --> Retreat : Exibe status atualizado (ex: marcador "Inativo")
+Retreat -> Gestor : Exibe mensagem de confirmação
+@enduml

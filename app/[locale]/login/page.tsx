@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import {
   Avatar,
   Button,
@@ -15,16 +15,82 @@ import {
   Paper,
 } from "@mui/material";
 import { Icon } from "@iconify/react";
-import { useForm } from "react-hook-form";
+import { FieldValues, useForm } from "react-hook-form";
+import { ErrorMessage } from "@hookform/error-message";
+import { signIn, signOut, useSession } from "next-auth/react";
+//import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm();
-  const onSubmit = (data: unknown) => console.log(data);
+  const { data: session, status } = useSession();
+  //const router = useRouter();
+  //const { status } = useSession();
+  const [loading, setLoading] = useState(false);
 
+  const onSubmit = async (data: FieldValues) => {
+    setLoading(true);
+    try {
+      if (status === "loading") return null;
+      const res = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
+      if (res?.error) {
+        console.error(res.error);
+        setLoading(false);
+        return;
+      } else {
+        setLoading(false);
+        //router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error during sign-in:", error);
+      setError("loginError", {
+        type: "manual",
+        message: "An error occurred during login",
+      });
+      setLoading(false);
+    }
+  };
+
+  if (session) {
+    return (
+      <Container component="main" maxWidth="xs">
+        <CssBaseline />
+        <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
+              <Icon icon="material-symbols:lock-outline" />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+              Você já está logado
+            </Typography>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 2, mb: 2 }}
+              onClick={() => signOut()}
+            >
+              Sair
+            </Button>
+          </Box>
+        </Paper>
+      </Container>
+    );
+  }
   return (
     <Container component="main" maxWidth="xs">
       <CssBaseline />
@@ -77,6 +143,16 @@ export default function LoginPage() {
               fullWidth
               variant="contained"
               sx={{ mt: 2, mb: 2 }}
+              loading={loading}
+              loadingPosition="start"
+              startIcon={
+                loading ? (
+                  <Icon icon="material-symbols:hourglass-top" />
+                ) : (
+                  <Icon icon="material-symbols:lock-outline" />
+                )
+              }
+              disabled={loading}
             >
               Entrar
             </Button>
@@ -93,6 +169,11 @@ export default function LoginPage() {
               </Grid>
               {errors.exampleRequired && <span>This field is required</span>}
             </Grid>
+            <ErrorMessage
+              errors={errors}
+              name="singleErrorInput"
+              render={({ message }) => <p>{message}</p>}
+            />
           </Box>
         </Box>
       </Paper>

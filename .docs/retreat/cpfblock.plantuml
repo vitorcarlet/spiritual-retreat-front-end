@@ -1,0 +1,31 @@
+@startuml name "Bloqueio de CPF"
+actor Gestor
+participant "Gestão de Retiros" as Retreat
+participant "Gestão de Inscrições" as ModuloInscricoes
+participant "Modal de Bloqueio" as Modal
+participant "Validador de CPF" as Validator
+participant "Backend de Inscrições" as Backend
+participant "Feedback ao Usuário" as Feedback
+
+== Abertura ==
+Gestor -> Retreat : Acessa tela de gestão de retiros
+Gestor -> Retreat : Seleciona retiro específico
+Gestor -> ModuloInscricoes : Seleciona para módulo de inscrições
+Gestor -> ModuloInscricoes : Clica em "Bloquear CPF"
+
+== Confirmação ==
+ModuloInscricoes -> Modal : Exibe modal para informar CPF e motivo
+Gestor -> Modal : Informa CPF e motivo
+
+== Validação ==
+Modal -> Validator : Verifica formato e existência do CPF
+Validator --> Modal : CPF válido
+
+== Bloqueio ==
+Modal -> Backend : Envia CPF com status "Bloqueado"
+Backend -> Backend : Atualiza registro de bloqueios
+Backend --> Feedback : Retorna confirmação de bloqueio
+
+== Feedback ==
+Feedback -> Gestor : Exibe mensagem "CPF bloqueado com sucesso"
+@enduml

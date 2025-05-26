@@ -6,18 +6,18 @@ export const stylesMode = {
 };
 
 export const mediaQueries = {
-  upXs: '@media (min-width:0px)',
-  upSm: '@media (min-width:600px)',
-  upMd: '@media (min-width:900px)',
-  upLg: '@media (min-width:1200px)',
-  upXl: '@media (min-width:1536px)',
+  upXs: "@media (min-width:0px)",
+  upSm: "@media (min-width:600px)",
+  upMd: "@media (min-width:900px)",
+  upLg: "@media (min-width:1200px)",
+  upXl: "@media (min-width:1536px)",
 };
 
 /**
  * Set font family
  */
 export function setFont(fontName: string) {
-  return `"${fontName}",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"`;
+  return `"${fontName}",-apple-system,BlinkMacSystemFont,"Segoe UI",Poppinns,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"`;
 }
 
 /**
@@ -37,7 +37,15 @@ export function pxToRem(value: number): string {
 /**
  * Responsive font sizes
  */
-export function responsiveFontSizes({ sm, md, lg }: { sm: number; md: number; lg: number }) {
+export function responsiveFontSizes({
+  sm,
+  md,
+  lg,
+}: {
+  sm: number;
+  md: number;
+  lg: number;
+}) {
   return {
     [mediaQueries.upSm]: { fontSize: pxToRem(sm) },
     [mediaQueries.upMd]: { fontSize: pxToRem(md) },
@@ -78,10 +86,10 @@ export function createPaletteChannel(hexPalette: Record<string, string>) {
  */
 export function varAlpha(color: string, opacity = 1) {
   const unsupported =
-    color.startsWith('#') ||
-    color.startsWith('rgb') ||
-    color.startsWith('rgba') ||
-    (!color.includes('var') && color.includes('Channel'));
+    color.startsWith("#") ||
+    color.startsWith("rgb") ||
+    color.startsWith("rgba") ||
+    (!color.includes("var") && color.includes("Channel"));
 
   if (unsupported) {
     throw new Error(

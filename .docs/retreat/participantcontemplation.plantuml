@@ -1,0 +1,38 @@
+@startuml name "Contemplação de Participantes"
+actor Gestor
+participant "Gestão de Retiros" as ModuloRetiros
+participant "Detalhes do Retiro" as Detalhes
+participant "Tela de Contemplação" as Contemplacao
+participant "Validador de CPF/Situação" as Validador
+participant "Backend de Inscrições" as Backend
+participant "Dashboard" as Dash
+
+== Navegação até a tela de contemplação ==
+Gestor -> ModuloRetiros : Acessa módulo de gestão de retiros
+ModuloRetiros -> ModuloRetiros : Exibe lista de retiros
+Gestor -> ModuloRetiros : Clica em "Ver mais" de um retiro
+ModuloRetiros -> Detalhes : Abre tela de detalhes do retiro
+Gestor -> Detalhes : Seleciona aba "Contemplações"
+Detalhes -> Contemplacao : Exibe tela de contemplação
+
+== Aplicação de filtros ==
+Gestor -> Contemplacao : Aplica filtros (nome, status, cidade, etc.)
+
+== Seleção e validação ==
+Gestor -> Contemplacao : Seleciona inscritos para contemplação
+Contemplacao -> Validador : Verifica CPF bloqueado ou já contemplado
+Validador --> Contemplacao : Resposta da validação
+
+alt Inscrito elegível
+    Contemplacao -> Backend : Marcar como “Contemplado”
+    Backend -> Backend : Atualiza status da inscrição
+    Backend --> Contemplacao : Confirmação de sucesso
+
+    Contemplacao -> Dash : Atualizar contador de vagas
+    Dash --> Contemplacao : Percentual atualizado
+
+    Contemplacao -> Gestor : Exibe status (cor/ícone atualizado)
+else CPF bloqueado ou já contemplado
+    Contemplacao -> Gestor : Exibe alerta de impedimento
+end
+@enduml

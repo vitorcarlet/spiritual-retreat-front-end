@@ -1,0 +1,25 @@
+@startuml name "Login de Usuário"
+actor Usuario
+participant "Interface de Login" as LoginUI
+participant "Sistema de Sessões" as Sessao
+participant "Componente de Navegação" as Nav
+participant "Backend de Autenticação" as AuthAPI
+
+Usuario -> LoginUI : Informar e-mail e senha
+LoginUI -> AuthAPI : Enviar credenciais
+AuthAPI -> AuthAPI : Validar usuário e senha
+AuthAPI --> LoginUI : Retorna token e papel (Administrador, Gestor ou Consultor)
+
+LoginUI -> Sessao : Iniciar sessão com token
+Sessao -> Nav : Solicitar menus do papel
+Nav -> AuthAPI : Obter permissões com base no papel
+AuthAPI --> Nav : Retorna permissões
+Nav --> Usuario : Exibir interface conforme o papel
+
+... tempo passa ...
+
+Sessao -> Usuario : Monitorar inatividade
+Sessao -> Sessao : Detecta tempo limite
+Sessao -> LoginUI : Encerrar sessão
+LoginUI --> Usuario : Redirecionar para login com mensagem "Sessão Expirada"
+@enduml

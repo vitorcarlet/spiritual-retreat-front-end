@@ -1,0 +1,29 @@
+@startuml name "Processo de Pagamento Automatizado"
+actor Participante
+participant "Tela de Pagamento" as Pagamento
+participant "Escolha de Método" as Metodo
+participant "API de Pagamento" as PagamentoAPI
+participant "Backend" as Backend
+participant "Atualização de Status" as Status
+
+== Acesso à tela ==
+Participante -> Pagamento : Acessa tela de pagamento
+
+== Escolha de método ==
+Participante -> Metodo : Escolhe método (PIX, Boleto, etc.)
+Metodo -> Pagamento : Notifica método selecionado
+Pagamento -> Status : Atualiza status para "Pagamento Pendente"
+
+== Processamento automatizado ==
+Pagamento -> PagamentoAPI : Gera instrução de pagamento
+PagamentoAPI -> Participante : Exibe QR Code / link de pagamento
+
+== Validação assíncrona ==
+PagamentoAPI -> Backend : Notifica pagamento confirmado (webhook)
+Backend -> Status : Atualiza status para "Pago"
+Status -> Status : Ativa "Participante Confirmado"
+
+== Feedback ao usuário ==
+Status --> Pagamento : Retorno de sucesso
+Pagamento -> Participante : Exibe confirmação de pagamento
+@enduml

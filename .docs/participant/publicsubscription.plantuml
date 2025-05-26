@@ -1,0 +1,23 @@
+@startuml name "Inscrição Pública"
+actor Visitante
+participant "Formulário Público" as Form
+participant "Validador CPF/Data" as Validator
+participant "Backend de Inscrições" as Backend
+
+== Acesso ao formulário ==
+Visitante -> Form : Acessa link de inscrição
+
+== Preenchimento e validação ==
+Visitante -> Form : Preenche dados (Nome, CPF, etc.)
+Form -> Validator : Validar CPF e data de nascimento
+Validator --> Form : CPF e data válidos?
+
+alt Período de inscrição encerrado
+    Form -> Visitante : Exibe mensagem "Inscrições Encerradas"
+else Período válido
+    Form -> Backend : Envia dados da inscrição
+    Backend -> Backend : Processa e armazena inscrição
+    Backend --> Form : Retorna confirmação de sucesso
+    Form -> Visitante : Exibe mensagem de inscrição concluída
+end
+@enduml

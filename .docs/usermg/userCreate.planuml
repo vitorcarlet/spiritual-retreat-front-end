@@ -1,0 +1,20 @@
+@startuml name "Criação de Novo Usuário"
+actor Admin
+participant "Gestão de Usuários" as Gestao
+participant "Formulário de Novo Usuário" as Form
+participant "Validador de Campos" as Validator
+participant "Backend de Usuários" as Backend
+
+Admin -> Gestao : Clica em "+ Novo Usuário"
+Gestao -> Form : Exibe formulário de cadastro
+Admin -> Form : Preenche nome, e-mail, senha, papel
+Form -> Validator : Verifica campos obrigatórios
+Validator --> Form : Campos válidos
+
+Form -> Backend : Envia dados do novo usuário
+Backend -> Backend : Cria registro no banco
+Backend --> Form : Retorna sucesso
+
+Form -> Gestao : Exibe mensagem de confirmação
+Gestao -> Admin : Atualiza lista de usuários
+@enduml
