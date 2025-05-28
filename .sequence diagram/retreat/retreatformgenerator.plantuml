@@ -1,0 +1,34 @@
+@startuml name "Gerador de Formulário Personalizado"
+actor Gestor
+participant "Módulo de Retiros" as Retiros
+participant "Detalhes do Retiro" as Detalhes
+participant "Aba de Formulários" as FormAba
+participant "Editor de Formulários" as Editor
+participant "Backend de Formulários" as Backend
+participant "Interface de Feedback" as Feedback
+
+== Acesso ao formulário ==
+Gestor -> Retiros : Clica em "Ver mais" no retiro
+Retiros -> Detalhes : Exibe detalhes do retiro
+Gestor -> Detalhes : Acessa aba "Formulários"
+Detalhes -> FormAba : Exibe opções
+note right of Detalhes
+ - Formulário da Equipe de Serviço
+ - Formulário de Participantes
+end note
+
+Gestor -> FormAba : Seleciona tipo de formulário
+FormAba -> Editor : Abre gerador de formulário correspondente
+
+== Edição do formulário ==
+Gestor -> Editor : Edita título e descrição
+Gestor -> Editor : Adiciona / edita / exclui campos
+Gestor -> Editor : Reordena campos
+
+== Persistência ==
+Editor -> Backend : Salva estrutura do formulário
+Backend -> Backend : Persiste dados no banco
+Backend --> Editor : Confirmação de sucesso
+
+Editor -> Feedback : Exibe mensagem "Formulário atualizado"
+@enduml
