@@ -1,0 +1,24 @@
+@startuml name "Cadastro de Famílias"
+actor Gestor
+participant "Módulo de Famílias" as Modulo
+participant "Formulário de Família" as Form
+participant "Validador de Campos" as Validator
+participant "Backend de Famílias" as Backend
+participant "Feedback" as Feedback
+
+Gestor -> Modulo : Clica em "Nova Família"
+Modulo -> Form : Exibe formulário de cadastro
+Gestor -> Form : Preenche nome, quantidade máxima e seleciona retiro
+
+Form -> Validator : Verifica campos obrigatórios
+Validator --> Form : Campos válidos?
+
+alt Campos inválidos
+    Validator -> Feedback : Exibe erro (ex: Nome ou Retiro ausente)
+else Campos válidos
+    Form -> Backend : Envia dados da nova família
+    Backend -> Backend : Armazena no banco
+    Backend --> Form : Confirma sucesso
+    Form -> Feedback : Exibe confirmação e atualiza lista
+end
+@enduml

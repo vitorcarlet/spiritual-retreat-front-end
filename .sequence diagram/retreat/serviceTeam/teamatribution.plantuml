@@ -1,0 +1,23 @@
+@startuml name "Atribuição de Funções na Equipe de Serviço"
+actor Gestor
+participant "Tela de Equipes" as Equipes
+participant "Editor de Funções" as Editor
+participant "Validador de Regra" as Validator
+participant "Backend de Equipes" as Backend
+participant "Feedback" as Feedback
+
+Gestor -> Equipes : Acessa equipe existente
+Equipes -> Editor : Seleciona usuário e define função (Coordenador, Vice, Membro)
+
+Editor -> Validator : Verifica regras (ex: apenas 1 coordenador por equipe)
+Validator --> Editor : OK ou erro
+
+alt Regra violada
+    Validator -> Feedback : Exibe alerta
+else
+    Editor -> Backend : Atualiza função do membro
+    Backend -> Backend : Salva função
+    Backend --> Editor : Confirmação
+    Editor -> Feedback : Exibe confirmação
+end
+@enduml

@@ -1,0 +1,21 @@
+@startuml name "Distribuição de Membros nas Equipes"
+actor Gestor
+participant "Tela de Equipes" as Equipes
+participant "Validador de Limite" as Validador
+participant "Backend de Equipes" as Backend
+participant "Feedback Visual" as Feedback
+
+Gestor -> Equipes : Move usuário de uma equipe para outra (drag & drop ou seleção)
+
+Equipes -> Validador : Verifica se equipe de destino atingiu o limite máximo
+Validador --> Equipes : Retorna status
+
+alt Limite atingido
+    Validador -> Feedback : Exibe aviso "Equipe cheia"
+else
+    Equipes -> Backend : Atualiza alocação do membro
+    Backend -> Backend : Persiste nova equipe
+    Backend --> Equipes : Retorna sucesso
+    Equipes -> Feedback : Atualiza contagem de membros/vagas
+end
+@enduml

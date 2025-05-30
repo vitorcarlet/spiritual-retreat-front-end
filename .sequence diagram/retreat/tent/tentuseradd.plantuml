@@ -1,0 +1,21 @@
+@startuml name "Atribuição de Participante à Barraca"
+actor Gestor
+participant "Tela de Contemplação / Acomodações" as Acomodacoes
+participant "Validador de Lotação" as Validador
+participant "Backend de Barracas" as Backend
+participant "Feedback Visual" as Feedback
+
+Gestor -> Acomodacoes : Seleciona participante e barraca destino
+Acomodacoes -> Validador : Verifica lotação da barraca selecionada
+Validador -> Backend : Consulta número atual de ocupantes
+Backend --> Validador : Retorna quantidade atual
+
+alt Barraca lotada
+    Validador -> Feedback : Exibe aviso "Barraca cheia"
+else
+    Acomodacoes -> Backend : Atualiza vínculo participante ↔ barraca
+    Backend -> Backend : Persiste vínculo
+    Backend --> Acomodacoes : Confirma atribuição
+    Acomodacoes -> Feedback : Atualiza visualização da barraca
+end
+@enduml

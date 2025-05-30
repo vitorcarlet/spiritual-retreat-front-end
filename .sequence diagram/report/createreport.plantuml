@@ -1,0 +1,30 @@
+@startuml name "Geração de Relatório"
+actor Gestor
+participant "Módulo de Relatórios" as Relatorios
+participant "Formulário de Filtros" as Filtros
+participant "Backend de Relatórios" as Backend
+participant "Gerador de PDF/CSV" as Exportador
+participant "Feedback" as UI
+
+== Seleção e filtros ==
+Gestor -> Relatorios : Escolhe tipo de relatório
+Relatorios -> Filtros : Exibe campos de filtro (data, status, etc.)
+Gestor -> Filtros : Define filtros e confirma
+
+== Consulta de dados ==
+Filtros -> Backend : Solicita dados com filtros
+Backend -> Backend : Query no banco
+Backend --> Relatorios : Retorna dataset
+
+== Visualização ==
+Relatorios -> UI : Renderiza tabela na tela
+
+alt Gestor clica em "Exportar"
+    Relatorios -> Exportador : Gera PDF/CSV
+    Exportador -> Exportador : Formata arquivo
+    Exportador --> Relatorios : Retorna link/arquivo
+    Relatorios -> Gestor : Disponibiliza download
+else Apenas visualiza
+    UI -> Gestor : Exibe resultados em tabela
+end
+@enduml
