@@ -1,0 +1,16 @@
+@startuml Fluxo Geral
+start
+
+:Usuário não logado acessa\nformulário público de inscrição;
+:Gestor cria retiro e configura\nparâmetros básicos;
+:Gestor importa inscrições ou\ncadastra individualmente;
+:Gestor realiza a contemplação\ndos inscritos;
+:Envia mensagens solicitando\nconfirmação;
+:Usuário confirma ou desiste;\nSistema marca como 'Pagamento Pendente';
+:Realização do pagamento automático\nou manual com upload do comprovante;
+:Composição de famílias\n(manual ou sorteio);
+:Organização das barracas\ne equipes de serviço;
+:Visualização de relatórios\ne indicadores no dashboard;
+
+stop
+@enduml

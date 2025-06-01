@@ -1,0 +1,27 @@
+@startuml name "Login de Contemplado"
+actor Usuario
+participant "Interface de Login" as Cadastro
+participant "Sistema de Sessões" as Sessao
+participant "Componente de Navegação" as Nav
+participant "Backend de Autenticação" as AuthAPI
+
+Usuario -> Cadastro : Acessar registro de contemplado disponibilizado por URL
+Usuario -> Cadastro: Informar código de contemplado disponibilizado pelo Gestor
+Usuario -> Cadastro : Informar e-mail e senha
+Cadastro -> AuthAPI : Enviar credenciais
+AuthAPI -> AuthAPI : Validar usuário e senha
+AuthAPI --> Cadastro : Retorna token 
+
+Cadastro -> Sessao : Iniciar sessão com token
+Sessao -> Nav : Solicitar menus do papel
+Nav -> AuthAPI : Obter permissões com base no papel
+AuthAPI --> Nav : Retorna permissões
+Nav --> Usuario : Exibir interface conforme o papel
+
+... tempo passa ...
+
+Sessao -> Usuario : Monitorar inatividade
+Sessao -> Sessao : Detecta tempo limite
+Sessao -> Cadastro : Encerrar sessão
+Cadastro --> Usuario : Redirecionar para login com mensagem "Sessão Expirada"
+@enduml

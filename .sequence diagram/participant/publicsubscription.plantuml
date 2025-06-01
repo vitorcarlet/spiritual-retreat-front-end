@@ -10,6 +10,9 @@ Visitante -> Form : Acessa link de inscrição
 == Preenchimento e validação ==
 Visitante -> Form : Preenche dados (Nome, CPF, etc.)
 Form -> Validator : Validar CPF e data de nascimento
+note right of Validator
+Verifica se CPF é válido e não está bloqueado
+end note
 Validator --> Form : CPF e data válidos?
 
 alt Período de inscrição encerrado
