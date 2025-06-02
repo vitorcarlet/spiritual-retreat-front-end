@@ -8,11 +8,12 @@ participant "Feedback Visual" as Feedback
 Gestor -> Composicao : Arrasta membro para uma família
 
 Composicao -> Validador : Verifica:
+note right of Validador
  - Limite de membros
  - Conflito de cônjuges/parentes
  - Proporção de gênero
  - Padrinhos/madrinhas
-
+end note
 alt Alguma regra violada
     Validador -> Feedback : Exibe alerta visual
 else Válido

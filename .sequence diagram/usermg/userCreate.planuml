@@ -1,4 +1,4 @@
-@startuml name "Criação de Novo Usuário"
+@startuml title "Criação de Novo Usuário"
 actor Admin
 participant "Gestão de Usuários" as Gestao
 participant "Formulário de Novo Usuário" as Form

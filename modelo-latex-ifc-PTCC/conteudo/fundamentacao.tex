@@ -1,0 +1,72 @@
+\chapter{FUNDAMENTAÇÃO TEÓRICA}
+
+O presente capítulo tem como objetivo apresentar os fundamentos teóricos que embasam as decisões planejadas para o desenvolvimento da interface do sistema SAMGestor, voltado à gestão de retiros espirituais. A fundamentação concentra-se especialmente nos aspectos relacionados ao front-end da aplicação, isto é, à camada responsável por exibir, organizar e permitir a interação do usuário com os dados fornecidos pela lógica do sistema.
+
+Este projeto será desenvolvido em paralelo com outro trabalho voltado à construção do back-end da mesma aplicação, conduzido por outro discente. Enquanto o back-end implementará as regras de negócio, persistência de dados e comunicação via API, este trabalho tem por foco traduzir essas funcionalidades em uma experiência visual prática, acessível e intuitiva para o usuário final. Assim, a fundamentação aqui apresentada visa justificar, com base na literatura e em boas práticas da área, o uso das tecnologias, padrões de design, ferramentas e abordagens que serão empregadas no desenvolvimento da interface web moderna do sistema, contribuindo para a coerência e eficiência da solução como um todo.
+
+\section{Desenvolvimento Web Front-end}
+
+O desenvolvimento front-end representa a camada de apresentação de uma aplicação web, sendo responsável por garantir que os dados processados no back-end sejam exibidos de maneira acessível, interativa e intuitiva ao usuário final. Essa camada lida diretamente com elementos visuais, como formulários, botões, tabelas e gráficos, além de assegurar que a navegação ocorra de forma fluida e compatível com diferentes dispositivos e tamanhos de tela.
+
+De acordo com Castro e Santos~\cite{castro2019}, o front-end tem como papel principal possibilitar a comunicação entre o sistema e o usuário, utilizando recursos visuais e interativos para facilitar a usabilidade e a eficiência na execução de tarefas.
+
+\section{Frameworks e Ferramentas Planejadas para o Projeto}
+
+A escolha por ferramentas modernas será um dos pilares do desenvolvimento do SAMGestor, pois essas tecnologias oferecem melhorias em desempenho, modularização, reutilização de componentes e integração com boas práticas de engenharia de software. No entanto, a simples utilização de ferramentas atualizadas não garante, por si só, a qualidade do sistema. Será essencial compreender os conceitos por trás de cada tecnologia, bem como aplicá-las com critério, respeitando princípios de organização, testabilidade e manutenibilidade.
+
+Mesmo em contextos modernos, pode-se observar o surgimento do que Feathers~\cite{feathers2004} define como código legado prematuro, caracterizado por ausência de testes e dificuldade de manutenção, mesmo em sistemas recém-criados. Para evitar esse cenário, o projeto adotará uma abordagem fundamentada em boas práticas desde o início do desenvolvimento.
+
+\subsection{Next.js e o Paradigma de Aplicações Modernas}
+
+Será utilizado o Next.js, um framework baseado em React que permite a criação de aplicações web modernas com recursos como Server-Side Rendering (SSR), Static Site Generation (SSG) e rotas de API. Segundo a documentação oficial da Vercel~\cite{vercel2025}, o Next.js proporciona uma estrutura organizada e eficiente, contribuindo para aplicações com renderização híbrida, desempenho elevado e escalabilidade.
+
+\subsection{TypeScript como Ferramenta de Tipagem Estática}
+
+Pretende-se adotar o TypeScript para adicionar tipagem estática ao JavaScript, possibilitando a detecção de inconsistências ainda em tempo de desenvolvimento. Para Helmer~\cite{helmer2021}, essa abordagem proporciona maior previsibilidade e facilita a manutenção de aplicações de médio e grande porte.
+
+\subsection{MUI – Material UI para Componentização Visual}
+
+Será utilizada a biblioteca Material UI, baseada nas diretrizes do Material Design, a qual oferece uma ampla gama de componentes visuais. De acordo com o Google~\cite{google2021}, o uso do Material Design promove clareza, feedback e hierarquia visual. Sua flexibilidade de customização também permitirá a adequação à identidade visual do sistema.
+
+\subsection{Testes Automatizados com Jest e Testing Library}
+
+Estão previstos testes automatizados com Jest e Testing Library com o intuito de validar tanto a funcionalidade técnica quanto a experiência do usuário. Molina et al.~\cite{molina2020} destacam que essa combinação permite testes técnicos e comportamentais, aumentando a estabilidade da aplicação e reduzindo o risco de regressões durante as atualizações.
+
+\section{Princípios de UX/UI no Desenvolvimento de Sistemas Web}
+
+Será fundamental aplicar princípios combinados de UI (User Interface) e UX (User Experience) para garantir a eficiência da interface. Segundo Nielsen~\cite{nielsen1995}, o foco no usuário é essencial para criar sistemas intuitivos. Ferreira et al.~\cite{ferreira2018} complementam ao indicar que processos iterativos, como prototipação e validação contínua, contribuem significativamente para o sucesso da aplicação.
+
+Entre os benefícios esperados com a aplicação desses princípios, destacam-se:
+\begin{itemize}
+\item Redução de erros operacionais;
+\item Aumento da produtividade;
+\item Melhoria da satisfação e engajamento;
+\item Facilidade de aprendizado;
+\item Maior acessibilidade.
+\end{itemize}
+
+\section{Sistemas de Gestão e Aplicações de Uso Interno}
+
+A proposta do sistema SAMGestor é atender de forma personalizada à realidade das organizações que realizam retiros espirituais. Segundo Ferreira et al.~\cite{ferreira2018}, soluções desenvolvidas sob medida tendem a se alinhar melhor aos fluxos de trabalho internos e contribuem para a redução de erros operacionais, diferentemente de plataformas genéricas.
+
+\section{Visualização de Dados e Dashboards}
+
+Está prevista a construção de dashboards que possibilitem o monitoramento em tempo real de indicadores e estatísticas do evento. Few~\cite{few2013} afirma que dashboards eficazes devem ser claros, objetivos e intuitivos, qualidades que serão priorizadas na implementação dos gráficos e visualizações do SAMGestor.
+
+\section{Integrações Externas e Automação de Tarefas}
+
+Pretende-se incorporar integrações com APIs externas para facilitar processos como criação de grupos e envio de notificações automáticas. Jardim e Silva~\cite{jardim2021} apontam que a automação é um fator estratégico para promover escalabilidade e eficiência em sistemas organizacionais.
+
+\subsection{Server-Sent Events (SSE) para Notificações em Tempo Real}
+
+Para implementar notificações em tempo real de forma eficiente, serão utilizados os Server-Sent Events (SSE). Segundo a Mozilla Developer Network~\cite{mdn2025}, essa tecnologia é ideal para comunicações unidirecionais com baixo consumo de recursos e compatibilidade com os principais navegadores modernos.
+
+\section{Considerações Finais}
+
+Este capítulo apresentou os fundamentos teóricos que nortearão o desenvolvimento da interface do sistema SAMGestor. Foram discutidas as tecnologias planejadas, princípios de UX/UI, estratégias de testes e visualização de dados, além de recursos para automação e comunicação em tempo real. Esses elementos fornecerão a base necessária para a construção de uma aplicação eficiente, moderna e adaptada ao contexto da gestão de retiros espirituais.
+
+
+
+% 
+%--------- FIM DESENVOLVIMENTO------------
+%

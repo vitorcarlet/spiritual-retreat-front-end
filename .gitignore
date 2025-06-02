@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#latex
+/modelo-latex-ifc-PTCC/**/*.bst
+/modelo-latex-ifc-PTCC/**/*.aux
+/modelo-latex-ifc-PTCC/**/*.log
+/modelo-latex-ifc-PTCC/**/*.out
+/modelo-latex-ifc-PTCC/**/*.toc
+/modelo-latex-ifc-PTCC/**/*.bbl
+/modelo-latex-ifc-PTCC/**/*.blg
+/modelo-latex-ifc-PTCC/**/*.fdb_latexmk
+/modelo-latex-ifc-PTCC/**/*.fls
+/modelo-latex-ifc-PTCC/**/*.synctex.gz
+/modelo-latex-ifc-PTCC/**/*.lof
+/modelo-latex-ifc-PTCC/**/*.brf
+/modelo-latex-ifc-PTCC/**/*.acn
+/modelo-latex-ifc-PTCC/**/*.glsdefs

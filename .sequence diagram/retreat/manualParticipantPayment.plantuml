@@ -1,0 +1,38 @@
+@startuml name "Pagamento Manual via WhatsApp"
+actor Gestor
+participant "Gestão de Retiros" as Retiros
+participant "Detalhes do Retiro" as Detalhes
+participant "Aba Contemplados" as Contemplados
+participant "Menu de Contexto" as Contexto
+participant "Modal Pagamento" as Modal
+participant "Validador de Arquivo" as Validator
+participant "Backend de Pagamentos" as Backend
+participant "Feedback UI" as Feedback
+
+== Navegação até o inscrito ==
+Gestor -> Retiros : Clica em "Ver mais" do retiro
+Retiros -> Detalhes : Abre detalhes do retiro
+Gestor -> Detalhes : Seleciona aba "Contemplados"
+Detalhes -> Contemplados : Exibe lista de contemplados
+
+== Ação de contexto ==
+Gestor -> Contemplados : Clique direito no contemplado
+Contemplados -> Contexto : Exibe menu "Ver mais"
+Gestor -> Contexto : Seleciona "Editar Pagamento"
+
+== Edição do pagamento ==
+Contexto -> Modal : Abre modal de pagamento
+Gestor -> Modal : Muda status de "Pendente" → "Pago"
+Gestor -> Modal : Realiza upload do comprovante (imagem/pdf)
+
+== Validação e persistência ==
+Modal -> Validator : Verifica tipo/tamanho do arquivo
+Validator --> Modal : Validação OK
+Modal -> Backend : Envia status = Pago + arquivo
+Backend -> Backend : Grava comprovante e atualiza inscrição
+Backend --> Modal : Confirma sucesso
+
+== Atualização da interface ==
+Modal -> Feedback : Exibe mensagem "Pagamento confirmado"
+Feedback -> Contemplados : Atualiza status na lista
+@enduml

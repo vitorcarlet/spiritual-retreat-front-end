@@ -16,9 +16,11 @@ loop Para cada família
 end
 
 Backend -> Feedback : Atualiza com resultados:
+note right of Feedback
  - Grupo criado com sucesso
  - Membros adicionados
  - Falhas ou ausências
+ end note
 
 Feedback -> Gestor : Exibe relatório de status por família
 @enduml

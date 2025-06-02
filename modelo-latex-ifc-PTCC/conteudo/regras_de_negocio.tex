@@ -1,0 +1,127 @@
+
+
+
+\section*{Regras de Negócio}
+
+As regras de negócio definem o comportamento e as restrições da aplicação em cada funcionalidade, garantindo o alinhamento com os objetivos do sistema. A Tabela~\ref{tab:regras_negocio} apresenta todas as regras de negócio estruturadas.
+
+\begin{longtable}{|c|>{\raggedright\arraybackslash}p{6cm}|>{\raggedright\arraybackslash}p{8cm}|}
+\caption{Regras de Negócio do Sistema} \label{tab:regras_negocio} \\
+\hline
+\textbf{Código} & \textbf{Nome da Regra} & \textbf{Descrição} \\
+\hline
+\endfirsthead
+\caption{Regras de Negócio do Sistema} \label{tab:regras_negocio} \\
+\hline
+\textbf{Código} & \textbf{Nome da Regra} & \textbf{Descrição} \\
+\hline
+\endfirsthead
+
+\multicolumn{3}{c}%
+{{\bfseries \tablename\ \thetable{} -- Continuação da página anterior}} \\
+\hline
+\textbf{Código} & \textbf{Nome da Regra} & \textbf{Descrição} \\
+\hline
+\endhead
+
+\hline \multicolumn{3}{r}{{Continua na próxima página}} \\
+\endfoot
+
+\hline
+\endlastfoot
+RN01 & Controle de Pagamento Automático & Controle de Pagamento de forma automática com interface adaptada à forma de pagamento para pagamento pelo próprio participante. \\
+\hline
+RN02 & Controle de Pagamento Manual & A interface deve disponibilizar dentro do módulo de contemplação, uma ação para publicar o comprovante de pagamento e confirmar o pagamento do participante. \\
+\hline
+RN03 & Exibição Condicional por Perfil & A interface deve adaptar os menus, botões e conteúdos com base no perfil do usuário logado (Administrador, Gestor ou Consultor), garantindo que cada tipo de usuário visualize apenas o que tem permissão para acessar. \\
+\hline
+RN04 & Sessão Temporizada & A aplicação deve monitorar a inatividade do usuário e, após um tempo definido, encerrar a sessão automaticamente, redirecionando para a tela de login com uma notificação explicativa. \\
+\hline
+RN05 & Interface Administrador Completa & Usuários do tipo Administrador devem visualizar e interagir com todas as funcionalidades da interface, incluindo a gestão de papéis, usuários e todos os módulos operacionais do sistema. \\
+\hline
+RN06 & Interface do Gestor com Operações-Chave & Usuários Gestores devem ter acesso à interface de criação e gestão de retiros, inscrição de participantes, contemplação, mensagens e relatórios. A interface deve esconder ou bloquear módulos exclusivos do Administrador. \\
+\hline
+RN07 & Interface do Consultor (Somente Consulta) & Usuários Consultores devem ter acesso limitado a telas de visualização. A interface deve estar em estado somente leitura (sem campos editáveis ou botões de ação) e com aparência visual que indique não-editabilidade. \\
+\hline
+RN08 & Restrição de Ações por Permissão & Ações como criar, editar ou excluir entidades só devem ser exibidas ou habilitadas para usuários com perfil compatível. \\
+\hline
+RN09 & Bloqueio de Submissão com Campos Vazios & O sistema não deve permitir salvar informações se qualquer um dos campos obrigatórios estiver vazio. \\
+\hline
+RN10 & Responsividade e Clareza Visual & Todos os campos obrigatórios devem estar claramente indicados, e mensagens de erro devem ser específicas e fáceis de entender. \\
+\hline
+RN11 & Formatação do CPF e Verificação de Duplicidade & O front-end deve validar o formato do CPF e exibir alerta caso o usuário insira um valor inadequado, mesmo que a duplicidade seja verificada no back-end. \\
+\hline
+RN12 & Restrição de Inscrição Fora do Período & Quando o período de inscrição estiver encerrado, o front-end deve impedir novas inscrições, exibindo “Inscrições encerradas” ou solicitando senha. \\
+\hline
+RN13 & Feedback Detalhado na Importação Manual & O sistema deve exibir relatórios de sucesso e erros de validação para inscrições feitas via .csv ou cadastro manual. \\
+\hline
+RN14 & Representação Visual dos Status de Inscrição & Cada status de inscrição deve ser mostrado com elementos visuais distintos, como cores ou ícones. \\
+\hline
+RN15 & Bloqueio Efetivo de CPFs Bloqueados & CPFs marcados como “Bloqueado” devem ser impedidos de realizar novas inscrições. \\
+\hline
+RN16 & Filtros Dinâmicos para Grandes Volumes & A interface deve permitir aplicação de filtros dinâmicos para facilitar a navegação entre muitos registros. \\
+\hline
+RN17 & Visualização Acessível de Informações-Chave & Status, Participação, Pagamento e Região devem estar em destaque na interface. \\
+\hline
+RN18 & Prevenção de Contemplação Indevida & O sistema deve impedir contemplação de CPFs marcados como “FEITO” ou “Bloqueado”. \\
+\hline
+RN19 & Controle Manual de Comunicação & O envio de mensagens aos contemplados deve ocorrer apenas por clique do gestor. \\
+\hline
+RN20 & Atualização Visual do Status de Participação & Confirmação ou desistência devem atualizar imediatamente o status do inscrito. \\
+\hline
+RN21 & Confirmação Manual Autorizada ao Gestor & O gestor pode alterar o status de confirmação para refletir comunicações externas. \\
+\hline
+RN22 & Registro da Escolha de Método & O método de pagamento escolhido deve ser registrado e refletido no status da inscrição. \\
+\hline
+RN23 & Permanência em Estado Pendente até Confirmação & O status deve continuar como “Pendente” até validação manual ou backend. \\
+\hline
+RN24 & Indicadores Visuais Claros por Status & Cores, ícones ou rótulos devem representar claramente o status de pagamento. \\
+\hline
+RN25 & Transição Automática & O sistema deve atualizar visualmente os dados em tempo real quando alterados. \\
+\hline
+RN26 & Obrigatoriedade de Campos no Cadastro & Não permitir criação de família sem Nome ou vínculo com Retiro ativo. \\
+\hline
+RN27 & Feedback Imediato em Arranjos de Família & Alertas em tempo real sobre gênero, limite de membros e parentesco. \\
+\hline
+RN28 & Conflito de Parentes ou Cônjuges & Bloquear alocação de parentes diretos na mesma família. \\
+\hline
+RN29 & Equilíbrio de Gênero & Exibir alerta visual quando houver desequilíbrio de gênero em famílias. \\
+\hline
+RN30 & Verificação de Padrinhos e Madrinhas & Validar presença de ao menos dois padrinhos e duas madrinhas. \\
+\hline
+RN31 & Sorteio com Verificação Pós-Execução & Após sorteio, revisar agrupamentos indevidos de cônjuges ou parentes. \\
+\hline
+RN32 & Visualização e Utilização de Equipes Padrão & Listar e permitir o uso de equipes previamente cadastradas. \\
+\hline
+RN33 & Flexibilidade para Criação de Novas Equipes & Permitir nomes personalizados para novas equipes. \\
+\hline
+RN34 & Gerenciamento de Funções por Participante & Permitir atribuição ou alteração de funções (Coordenador, Vice, Membro). \\
+\hline
+RN35 & Controle de Lotação & Bloquear adição de participantes ao atingir o limite da equipe. \\
+\hline
+RN36 & Troca Facilitada com Validação de Limite & Verificar se há vagas antes de realocar participantes. \\
+\hline
+RN37 & Cadastro em Lote com Intervalo Numérico & Gerar barracas automaticamente com numeração no intervalo definido. \\
+\hline
+RN38 & Obrigatoriedade de Categoria por Barraca & Toda barraca deve ser classificada como Masculina ou Feminina. \\
+\hline
+RN39 & Bloqueio de Edição por Capacidade Atingida & Impedir ações de edição ou alocação quando a barraca estiver cheia. \\
+\hline
+RN40 & Alocação Restrita por Capacidade & Validar disponibilidade antes de alocar em barraca. \\
+\hline
+RN41 & Integração Visual com Telas de Contemplação & Permitir alocação em barracas nas telas de organização e contemplação. \\
+\hline
+RN42 & Relatórios Gerados com Filtros & Permitir filtros customizáveis antes de gerar relatórios. \\
+\hline
+RN43 & Exportação como Recurso Padrão & Oferecer exportação de relatórios em PDF ou planilha. \\
+\hline
+RN44 & Visualização Responsiva e Legível & Relatórios devem ser responsivos, legíveis e paginados. \\
+\hline
+RN45 & Atualização em Tempo Real ou Periódica & Dashboard deve ser atualizado em tempo real ou em intervalos definidos. \\
+\hline
+RN46 & Envio Controlado e Não Automático & Mensagens só devem ser enviadas mediante ação explícita do gestor. \\
+\hline
+RN 47 & Etapa de Revisão Obrigatoria & O onteúdo final da mensagem deve ser exibido para revisão antes de permitir o envio, dando oportunidade para ajustes manuais. \\
+\hline
+RN48 & Flexibilidade de Personalização dos Templates & O sistema deve permitir a criação e edição de modelos de mensagem pelo gestor, adaptando-os a diferentes situações comunicacionais. \\
+\end{longtable}

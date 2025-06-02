@@ -1,0 +1,93 @@
+\chapter{INTRODUÇÃO}
+
+Os retiros espirituais católicos são eventos que proporcionam momentos de aprofundamento da fé, reflexão pessoal e vivência comunitária intensa. Promovidos por grupos de serviço ligados à Igreja, esses encontros costumam reunir, em média, até 200 participantes por edição, exigindo uma estrutura organizacional robusta para garantir a fluidez das atividades propostas.
+
+A organização de um retiro envolve múltiplas tarefas administrativas, como o cadastro e acompanhamento dos participantes, a definição de famílias e barracas, o gerenciamento de equipes de serviço e o controle de pagamentos. Além disso, torna-se essencial manter uma comunicação eficiente com os envolvidos, por meio de mensagens personalizadas, formação de grupos em aplicativos como o WhatsApp e envio de instruções logísticas. Essas atividades, tradicionalmente realizadas por voluntários, demandam tempo significativo e estão sujeitas a erros humanos, sobrecarregando a equipe organizadora e desviando o foco das ações pastorais.
+
+Nesse contexto, está sendo proposta a informatização dos processos organizacionais. Segundo Sommerville, sistemas bem projetados não apenas automatizam tarefas, mas também contribuem para a melhoria da produtividade e da qualidade do serviço prestado~\cite{sommerville2011}. No entanto, um sistema eficiente precisa ser acessível aos seus usuários. A ausência de uma interface clara e intuitiva pode gerar resistência ao uso, dificultar a execução das tarefas e comprometer a confiabilidade dos dados~\cite{preece2013design}.
+
+A plataforma SAMGestor está sendo proposta com o objetivo de atender às necessidades específicas da gestão de retiros espirituais, prevendo a utilização de um back-end capaz de processar e armazenar dados com segurança. Contudo, o diferencial e a efetividade da ferramenta dependerão diretamente da qualidade da camada de front-end — responsável por apresentar as funcionalidades do sistema de forma visualmente organizada, acessível e funcional, respeitando os diferentes perfis de usuários (administradores, gestores e consultores).
+
+Este trabalho tem como objetivo principal desenvolver a interface front-end do sistema SAMGestor, com foco em usabilidade, responsividade e organização visual. A proposta inclui recursos como formulários com validação automática, dashboards com indicadores visuais, filtros dinâmicos, alocação de participantes por \textit{drag-and-drop}, além da adaptação da interface a múltiplos dispositivos e perfis de acesso. Pretende-se oferecer uma experiência fluida e eficiente que auxilie os organizadores em suas atribuições, reduzindo retrabalhos e erros operacionais.
+
+Para alcançar tal objetivo, estão sendo adotados princípios de UI (User Interface) e UX (User Experience) Design, os quais, segundo Norman, são fundamentais para garantir que o sistema seja não apenas funcional, mas também agradável de usar~\cite{norman2013design}. Além disso, a metodologia adotada será de natureza aplicada, com abordagem qualitativa e caráter exploratório-descritivo, envolvendo levantamento de requisitos com os organizadores dos retiros, prototipação com Figma e desenvolvimento da aplicação utilizando React, Next.js, TypeScript e Material UI.
+
+Ao longo deste trabalho, serão apresentados os fundamentos teóricos que embasam a construção da interface, a metodologia proposta para o processo de desenvolvimento, a descrição dos requisitos funcionais e os resultados esperados. O sistema busca não apenas informatizar os processos administrativos, mas também valorizar a missão evangelizadora da Igreja ao propor uma ferramenta tecnológica que apoie, de maneira ética e eficaz, a realização dos retiros espirituais.
+
+
+\section{Problema de Pesquisa}
+
+A gestão de retiros espirituais envolve uma série de atividades organizacionais complexas, como o cadastro de participantes, a alocação em famílias e barracas, o controle de pagamentos, a formação de equipes e a comunicação com os envolvidos antes, durante e após o evento. Embora o sistema back-end da plataforma já esteja estruturado para processar e armazenar essas informações com eficiência, o grande desafio reside na construção da camada de front-end, responsável por tornar essas funcionalidades acessíveis e compreensíveis para os usuários finais — administradores, gestores e consultores.
+
+Sem uma interface amigável, o uso do sistema pode se tornar confuso e ineficiente, comprometendo a produtividade e aumentando a chance de erros humanos. Tarefas como validação de dados pessoais, atualização de inscrições e envio de comunicados requerem um nível de clareza e objetividade na apresentação das informações, o que demanda uma interface funcional, responsiva e visualmente bem organizada.
+
+Nesse contexto, a construção do front-end precisa considerar não apenas os requisitos técnicos e funcionais do sistema, mas também princípios de UI Design (\textit{User Interface Design}). Isso implica na definição e aplicação de um padrão visual coerente — escolha criteriosa de fontes, paleta de cores, ícones e componentes visuais — que proporciona consistência e facilita o reconhecimento das funcionalidades por parte dos usuários. A aplicação de boas práticas de UI garante não apenas uma apresentação estética, mas também contribui para a legibilidade e navegabilidade do sistema.
+
+Além disso, a construção da interface deve considerar os fundamentos de UX Design (\textit{User Experience Design}), os quais envolvem o entendimento das necessidades, comportamentos e expectativas dos usuários em relação à utilização do sistema. Isso torna essencial a realização de ações que envolvam o usuário no processo de validação da interface, como testes de usabilidade, entrevistas ou coletas de feedback durante etapas de prototipação. Essas ações permitem verificar se os fluxos propostos são intuitivos, se as informações estão claras e se o sistema atende efetivamente às demandas práticas dos usuários.
+
+As principais questões a serem enfrentadas no desenvolvimento do front-end da plataforma incluem:
+
+\begin{itemize}
+  \item \textbf{Exibição clara e prática de informações:} organizar e apresentar dados dos retiros, inscrições, famílias, equipes e pagamentos de forma concisa e acessível, evitando sobrecarga cognitiva.
+  
+  \item \textbf{Facilidade de navegação:} garantir que os usuários acessem rapidamente as funcionalidades principais, com menus intuitivos e fluxo lógico de navegação.
+  
+  \item \textbf{Validações e feedback visual:} implementar validações como CPF, idade e dados obrigatórios com retorno visual imediato, orientando o usuário durante o preenchimento de formulários.
+  
+  \item \textbf{Gestão de dados dinâmicos:} permitir alterações como status de inscrição, alocação em barracas e distribuição de participantes de forma interativa, com mínima necessidade de ações manuais.
+  
+  \item \textbf{Acessibilidade e responsividade:} assegurar que o sistema funcione adequadamente em diferentes dispositivos, principalmente em smartphones, visto que parte dos usuários acessa a plataforma em campo.
+  
+  \item \textbf{Segurança e controle de acesso:} estruturar a navegação com base em níveis de acesso (Admin, Gestor, Consultor), de forma que cada usuário visualize e interaja apenas com os dados autorizados.
+  
+  \item \textbf{Sistema de notificações:} implementar notificações para integrações com APIs externas ou ações que demandem acompanhamento manual.
+  
+  \item \textbf{Consideração de princípios de UI e UX:} garantir que a interface seja visualmente coesa, agradável e validada com usuários reais para assegurar uma experiência de uso fluida e eficaz.
+\end{itemize}
+
+Em resumo, o desafio não está apenas em apresentar os dados processados pelo sistema, mas em transformá-los em uma experiência digital acessível, eficiente e validada, que potencialize a atuação dos gestores e contribua para o sucesso organizacional dos retiros espirituais.
+
+\section{Objetivos}
+
+\subsection{Objetivo Geral}
+
+Desenvolver o front-and de um sistema web para gerenciamento de retiros espirituais com foco na eficiência do processo de inscrição, contemplação e organização de equipes de serviço e participação.
+	
+\subsection{Objetivos Específicos}
+
+\begin{enumerate}
+    \item Projetar e implementar interfaces responsivas e intuitivas para usuários com diferentes papéis (Administrador, Gestor e Consultor), respeitando os níveis de permissão definidos.
+    
+    \item Desenvolver telas de gestão dos Retiros, com formulários para cadastro de edições, controle de vagas por gênero, taxa de participação e período do evento.
+    
+    \item Implementar telas para contemplação de inscritos, com funcionalidades de seleção individual ou em lote, visualização de dados relevantes e acompanhamento de porcentagem de vagas preenchidas.
+    
+    \item Desenvolver a interface para sorteio e montagem de famílias, com recursos como arrastar e soltar (\textit{drag-and-drop}), exibição de composição por gênero e validação de critérios (como separação de cônjuges).
+    
+    \item Criar telas para gerenciamento das equipes de serviço, incluindo visualização dos espaços, limites de membros e definição de funções (Coordenador, Vice, Membro).
+    
+    \item Integrar componentes de visualização de dados, como dashboards, gráficos e relatórios em tempo real sobre participantes, pagamentos e organização das barracas.
+    
+    \item Garantir a acessibilidade e experiência do usuário (UX) nas principais telas do sistema, com foco na clareza das informações e facilidade de uso.
+    
+    \item Adotar boas práticas de desenvolvimento front-end com uso de frameworks modernos (como React), modularização de componentes e integração com API REST.
+    
+    \item Implementar sistema de notificações claras e objetivas para o gestor logado, informando sobre o status da criação dos grupos de WhatsApp, status do pagamento dos participantes, status da criação das famílias e outras informações importantes.
+\end{enumerate}
+
+\section{Justificativa}
+
+A realização de retiros espirituais, embora profundamente transformadora para seus participantes, impõe aos seus organizadores voluntários uma série de desafios operacionais complexos. O gerenciamento manual de atividades críticas – como o processo de inscrição e seleção de centenas de candidatos, a delicada formação de grupos coesos como ``famílias'' e equipes de serviço (respeitando critérios relacionais e de capacidade), o controle financeiro detalhado de pagamentos, a alocação logística em barracas e o envio massivo e segmentado de comunicações – é tradicionalmente conduzido por meio de planilhas e trocas de mensagens diretas.
+
+Esta metodologia, apesar do empenho dos voluntários, inerentemente resulta em um fluxo de trabalho fragmentado e altamente suscetível a erros de lançamento e omissão de dados, inconsistências na conciliação de informações (especialmente financeiras e de vagas), dificuldades na aplicação de regras de negócio específicas (como bloqueios de CPF ou restrições de parentesco em grupos), retrabalho exaustivo e uma sobrecarga considerável sobre as equipes. Tais gargalos não apenas consomem um tempo precioso, mas também podem comprometer a qualidade da organização, a comunicação com os participantes e a própria experiência do retiro.
+
+Nesse contexto, justifica-se o desenvolvimento de um sistema informatizado com o objetivo de automatizar e otimizar tais processos, proporcionando maior confiabilidade, agilidade e organização para os responsáveis pela gestão do retiro. Segundo Preece, Rogers e Sharp, a interação eficaz entre usuários e sistemas depende da criação de interfaces que atendam às necessidades reais do contexto de uso, promovendo facilidade de aprendizado e eficiência~\cite{preece2013}.
+
+O presente trabalho concentra-se na construção da camada de front-end do sistema, tendo em vista a importância da interface como principal ponto de contato entre o usuário e a aplicação. Uma interface bem planejada, responsiva e acessível é essencial para garantir a usabilidade do sistema, permitindo que usuários com diferentes perfis (como administradores, gestores e consultores) possam operar suas respectivas funcionalidades com eficiência e clareza. Conforme Baxter, Courage e Caine, o design centrado no usuário permite criar soluções que minimizam frustrações e aumentam a adoção de ferramentas digitais, especialmente em ambientes colaborativos~\cite{baxter2015}.
+
+Além disso, a escolha por desenvolver um sistema web permite que o acesso à aplicação seja facilitado, independentemente do dispositivo, o que é especialmente relevante em um contexto onde os voluntários nem sempre dispõem de equipamentos padronizados. Dessa forma, este projeto busca não apenas atender às necessidades técnicas da gestão de retiros, mas também contribuir para a valorização do trabalho voluntário, oferecendo uma ferramenta que simplifica e potencializa suas ações.
+
+As siglas utilizadas devem ser inseridas no arquivo acronimos.tex. E o uso dá de algumas formas, como \gls{ifc}. Ou \acrlong{ifc}. Ou \glspl{ifc}.
+% 
+%--------- FIM INTRODUÇÃO------------
+%
