@@ -1,4 +1,7 @@
 {
   "welcome": "Welcome",
-  "tire": "Tire"
+  "tire": "Tire",
+  "common": {
+    "tire": "Tire"
+  }
 }

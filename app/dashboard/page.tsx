@@ -1,7 +1,6 @@
 "use client";
 import {
   Container,
-  CssBaseline,
   Paper,
   Box,
   Avatar,
@@ -16,7 +15,6 @@ export default function Page() {
   const t = useTranslations("common");
   return (
     <Container component="main" maxWidth="xs">
-      <CssBaseline />
       <button>{t("tire")}</button>
       <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
         <Box

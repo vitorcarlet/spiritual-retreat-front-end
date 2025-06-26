@@ -9,12 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@auth/unstorage-adapter": "^2.10.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@formatjs/intl-localematcher": "^0.6.1",
     "@hookform/error-message": "^2.0.1",
     "@mui/material": "^6.4.8",
+    "@upstash/redis": "^1.35.0",
     "accept-language": "^3.0.20",
+    "auth": "^1.2.3",
     "axios": "^1.8.4",
     "cookie": "^1.0.2",
     "i18next": "^25.0.0",
@@ -29,7 +32,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.55.0",
-    "react-i18next": "^15.4.1"
+    "react-i18next": "^15.4.1",
+    "unstorage": "^1.16.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

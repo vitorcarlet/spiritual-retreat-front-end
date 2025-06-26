@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 import { Poppins } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getLocale } from "next-intl/server";
+import { CssBaseline } from "@mui/material";
+import { auth } from "../auth";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -20,18 +22,19 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: { lang: "en" | "pt" };
 }) {
-  const { lang } = await params;
-  const messages = await getMessages({ locale: lang });
+  const locale = await getLocale();
+  const session = await auth();
   return (
-    <html lang={lang}>
+    <html lang={locale}>
       <body className={poppins.className}>
-        <NextIntlClientProvider locale={lang} messages={messages}>
-          <SessionProvider>{children}</SessionProvider>
+        <NextIntlClientProvider>
+          <SessionProvider session={session}>
+            <CssBaseline />
+            {children}
+          </SessionProvider>
         </NextIntlClientProvider>
       </body>
     </html>
