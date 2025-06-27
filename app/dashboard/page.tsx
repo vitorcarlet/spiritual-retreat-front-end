@@ -1,4 +1,4 @@
-"use client";
+"use server";
 import {
   Container,
   Paper,
@@ -9,38 +9,58 @@ import {
 } from "@mui/material";
 import { signOut } from "next-auth/react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { useTranslations } from "next-intl";
+import { auth } from "auth";
+import getServerSession from "next-auth";
+import { createTranslator } from "next-intl";
+import ptMessages from "messages/pt-br.json";
+import { getCurrentUser } from "@/lib/session";
 
-export default function Page() {
-  const t = useTranslations("common");
-  return (
-    <Container component="main" maxWidth="xs">
-      <button>{t("tire")}</button>
-      <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
-            <Icon icon="material-symbols:lock-outline" />
-          </Avatar>
-          <Typography component="h1" variant="h5">
-            Você já está logado
-          </Typography>
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 2, mb: 2 }}
-            onClick={() => signOut()}
+export default async function Page() {
+  const t = createTranslator({ locale: "pt", messages: ptMessages });
+
+  //const { data: session } = useSession();
+  const user = await getCurrentUser();
+  if (user) {
+    return (
+      <Container component="main" maxWidth="xs">
+        <button>{t("HomePage.title")}</button>
+        <Paper elevation={3} sx={{ padding: 4, borderRadius: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
           >
-            Sair
-          </Button>
-        </Box>
-      </Paper>
-    </Container>
-  ); // Add to Cart
+            <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
+              <Icon icon="material-symbols:lock-outline" />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+              Você já está logado {user?.name || "Usuário"}
+            </Typography>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 2, mb: 2 }}
+              onClick={() => signOut()}
+            >
+              Sair
+            </Button>
+          </Box>
+        </Paper>
+      </Container>
+    ); // Add to Cart
+  } else {
+    res.status(401).send("Unauthorized");
+  }
+  res.end();
 }
+
+// export async function getServerSideProps(context: any) {
+//   return {
+//     props: {
+//       session: await getServerSession(context.req, context.res, authOptions),
+//     },
+//   };
+// }

@@ -9,7 +9,7 @@ export const credentialsProvider = Credentials({
   async authorize(credentials: Partial<Record<"email" | "password", unknown>>) {
     if (
       credentials?.email === "admin@email.com" &&
-      credentials?.password === "123456"
+      credentials?.password === "123"
     ) {
       return {
         id: "1",

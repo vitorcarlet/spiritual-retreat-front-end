@@ -3,5 +3,8 @@
   "tire": "Tire",
   "common": {
     "tire": "Tire"
+  },
+  "HomePage": {
+    "title": "SAMGestor"
   }
 }
