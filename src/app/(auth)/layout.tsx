@@ -1,0 +1,25 @@
+import { SessionProvider } from "next-auth/react";
+import { auth } from "@/auth";
+
+export const metadata = {
+  title: "Protected Routes",
+};
+
+export default async function ProtectedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
+  return (
+    // <SessionProvider session={session}>
+    //   <Navbar />
+    <SessionProvider session={session}>
+      <div className="flex items-center justify-center mx-4 my-6 lg:mt-20">
+        {children}
+      </div>
+    </SessionProvider>
+
+    // </SessionProvider>
+  );
+}
