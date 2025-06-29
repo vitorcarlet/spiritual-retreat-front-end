@@ -55,3 +55,6 @@ next-env.d.ts
 /modelo-latex-ifc-PTCC/**/*.brf
 /modelo-latex-ifc-PTCC/**/*.acn
 /modelo-latex-ifc-PTCC/**/*.glsdefs
+
+.sequence-diagram
+.vscode
