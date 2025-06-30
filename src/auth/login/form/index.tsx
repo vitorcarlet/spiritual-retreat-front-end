@@ -1,0 +1,161 @@
+"use client";
+import React, { useState } from "react";
+import {
+  Avatar,
+  Button,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Link,
+  Grid,
+  Box,
+  Typography,
+  Paper,
+} from "@mui/material";
+import { Icon } from "@iconify/react";
+import { FieldValues, useForm } from "react-hook-form";
+// import { ErrorMessage } from "@hookform/error-message";
+import { redirect, useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+// -- ADICIONADO: Imports do Zod e seu Resolver
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// -- ADICIONADO: Definição do schema de validação Zod
+const loginSchema = z.object({
+  email: z.string().email("Informe um email válido"),
+  password: z.string().min(5, "A senha deve ter no mínimo 5 caracteres"),
+});
+type LoginSchema = z.infer<typeof loginSchema>; // Tipo derivado do schema
+
+export default function LoginForm() {
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<LoginSchema>({
+    resolver: zodResolver(loginSchema),
+  });
+  const router = useRouter();
+  //const { status } = useSession();
+  const session = useSession();
+  const [loading, setLoading] = useState(false);
+  const onSubmit = async (data: FieldValues) => {
+    setLoading(true);
+    if (status === "loading") return null;
+
+    const res = await signIn("credentials", {
+      redirect: false,
+      email: data.email,
+      password: data.password,
+    });
+
+    console.log("SignIn Response:", res);
+
+    setLoading(false);
+
+    if (res?.ok) {
+      console.log("Login successful:", res);
+      router.push("/dashboard"); // Redirect to dashboard
+    } else {
+      console.error("Login failed:", res?.error);
+      setError("email", {
+        type: "manual",
+        message: res?.error || "An error occurred during login",
+      });
+    }
+  };
+
+  if (session.status == "authenticated") return redirect("/dashboard");
+
+  return (
+    <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
+          <Icon icon="material-symbols:lock-outline" />
+        </Avatar>
+        <Typography component="h1" variant="h5">
+          Entrar
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
+          <Typography>{session?.status}</Typography>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Endereço de Email"
+            autoComplete="email"
+            autoFocus
+            {...register("email", { required: true })}
+            //onChange={(e) => setEmail(e.target.value)}
+          />
+          {errors.email && (
+            <Typography color="error">{errors.email.message}</Typography>
+          )}
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            label="Senha"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            {...register("password", { required: true })}
+          />
+          {errors.password && (
+            <Typography color="error">{errors.password.message}</Typography>
+          )}
+          <FormControlLabel
+            control={<Checkbox value="remember" color="primary" />}
+            label="Lembrar-me"
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 2, mb: 2, padding: 1.5 }}
+            loading={loading}
+            loadingPosition="start"
+            startIcon={
+              loading ? (
+                <Icon icon="material-symbols:hourglass-top" />
+              ) : (
+                <Icon icon="material-symbols:lock-outline" />
+              )
+            }
+            disabled={loading}
+          >
+            Entrar
+          </Button>
+          <Grid container>
+            <Grid size={{ xs: 12 }}>
+              <Link href="/forgotpassword" variant="body2">
+                Esqueceu a senha?
+              </Link>
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Link href="/register" variant="body2">
+                {"Não tem conta? Cadastre-se"}
+              </Link>
+            </Grid>
+            {errors.root && (
+              <Typography color="error" sx={{ mt: 2 }}>
+                {errors.root?.message ||
+                  "Ocorreu um erro ao tentar fazer login. Verifique suas credenciais e tente novamente."}
+              </Typography>
+            )}
+          </Grid>
+        </Box>
+      </Box>
+    </Paper>
+  );
+}

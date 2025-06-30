@@ -14,8 +14,10 @@
     "@emotion/styled": "^11.14.1",
     "@formatjs/intl-localematcher": "^0.6.1",
     "@hookform/error-message": "^2.0.1",
+    "@hookform/resolvers": "^5.1.1",
     "@mui/icons-material": "^7.1.2",
     "@mui/material": "^7.1.2",
+    "@mui/material-nextjs": "^7.1.1",
     "@upstash/redis": "^1.35.0",
     "@vercel/kv": "^3.0.0",
     "accept-language": "^3.0.20",
@@ -36,7 +38,8 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.55.0",
     "react-i18next": "^15.4.1",
-    "unstorage": "^1.16.0"
+    "unstorage": "^1.16.0",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

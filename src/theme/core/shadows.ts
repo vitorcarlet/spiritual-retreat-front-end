@@ -1,9 +1,7 @@
 "use client";
 
-import { alpha } from "@mui/material/styles";
-import { Shadows } from "@mui/material/styles/shadows";
+import { alpha, Shadows, Theme } from "@mui/material/styles";
 
-import { Theme } from "@mui/material/styles/createTheme";
 import palette from "./palette";
 
 export type CustomShadowOptions = {

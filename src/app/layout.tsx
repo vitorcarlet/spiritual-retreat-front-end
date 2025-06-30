@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import { Providers } from "./providers";
-import { getLocale } from "next-intl/server";
+// import { getLocale } from "next-intl/server";
+import {
+  CssBaseline,
+  InitColorSchemeScript,
+  ThemeProvider,
+} from "@mui/material";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
+import theme from "../theme/theme";
+import { NextIntlClientProvider } from "next-intl";
+import AuthProvider from "./sessionprovider";
+import ModeSwitch from "../components/navbar/mui/ModeSwitch";
+import ThemeWrapper from "./themeProvider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -16,17 +26,28 @@ export async function metadata(): Promise<Metadata> {
   };
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const locale = await getLocale();
-
+  //const locale = getLocale();
+  const realLocale = "pt-br"; // Fallback para 'pt-br' se locale não for fornecido
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={realLocale} suppressHydrationWarning>
       <body className={poppins.className}>
-        <Providers locale={locale}>{children}</Providers>
+        <InitColorSchemeScript attribute="class" />
+        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <NextIntlClientProvider locale={realLocale}>
+              <ModeSwitch />
+              {/* <AuthProvider></AuthProvider> */}
+              {children}
+              {/* <ToastContainer /> */}
+            </NextIntlClientProvider>
+          </ThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

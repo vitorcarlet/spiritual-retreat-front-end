@@ -24,43 +24,43 @@ declare module "@mui/material/LinearProgress" {
   }
 }
 
-interface GradientsPaletteOptions {
-  primary: string;
-  info: string;
-  success: string;
-  warning: string;
-  error: string;
-}
+// interface GradientsPaletteOptions {
+//   primary: string;
+//   info: string;
+//   success: string;
+//   warning: string;
+//   error: string;
+// }
 
-interface ChartPaletteOptions {
-  violet: string[];
-  blue: string[];
-  green: string[];
-  yellow: string[];
-  red: string[];
-}
+// interface ChartPaletteOptions {
+//   violet: string[];
+//   blue: string[];
+//   green: string[];
+//   yellow: string[];
+//   red: string[];
+// }
 
-declare module "@mui/material/styles/createPalette" {
-  interface TypeBackground {
-    neutral: string;
-  }
-  interface SimplePaletteColorOptions {
-    lighter: string;
-    darker: string;
-  }
-  interface PaletteColor {
-    lighter: string;
-    darker: string;
-  }
-  interface Palette {
-    gradients: GradientsPaletteOptions;
-    chart: ChartPaletteOptions;
-  }
-  interface PaletteOptions {
-    gradients: GradientsPaletteOptions;
-    chart: ChartPaletteOptions;
-  }
-}
+// declare module "@mui/material/styles/createPalette" {
+//   interface TypeBackground {
+//     neutral: string;
+//   }
+//   interface SimplePaletteColorOptions {
+//     lighter: string;
+//     darker: string;
+//   }
+//   interface PaletteColor {
+//     lighter: string;
+//     darker: string;
+//   }
+//   interface Palette {
+//     gradients: GradientsPaletteOptions;
+//     chart: ChartPaletteOptions;
+//   }
+//   interface PaletteOptions {
+//     gradients: GradientsPaletteOptions;
+//     chart: ChartPaletteOptions;
+//   }
+// }
 
 declare module "@mui/material" {
   interface Color {
@@ -199,7 +199,7 @@ const CHART_COLORS = {
   red: ["#FF6C40", "#FF8F6D", "#FFBD98", "#FFF2D4"],
 };
 
-const COMMON = {
+export const COMMON = {
   common: { black: "#000", white: "#fff" },
   primary: { ...PRIMARY, contrastText: "#fff" },
   secondary: { ...SECONDARY, contrastText: "#fff" },
@@ -242,7 +242,7 @@ const palette = {
     background: { paper: GREY[900], default: GREY[1000], neutral: GREY[700] },
     action: { active: GREY[500], ...COMMON.action },
   },
-} as const;
+};
 
 export const ColorSchemaValues = {
   primary: PRIMARY,

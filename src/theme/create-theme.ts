@@ -1,28 +1,34 @@
-import type { Theme } from "@mui/material/styles";
-import { extendTheme } from "@mui/material/styles";
+import { alpha, createTheme } from "@mui/material";
 import {
+  customShadows,
   typography,
-  components,
-  colorSchemes,
 
   // Assume you have defined these for light and dark modes
 } from "./core";
+import palette from "./core/palette";
+import breakpoints from "./breakpoints";
 
-export function createTheme(mode: "light" | "dark"): Theme {
-  const initialTheme = {
-    colorSchemes,
-    palette: { mode, ...colorSchemes[mode]?.palette },
-    //shadows: mode === "light" ? shadows.light : shadows.dark,
-    //customShadows: mode === "light" ? customShadows.light : customShadows.dark,
-    shape: { borderRadius: 8 },
-    components,
-    typography,
-    cssVarPrefix: "",
-    shouldSkipGeneratingVar,
-  };
+export const initialTheme = {
+  palette: palette.light,
+  //shadows: mode === "light" ? shadows.light : shadows.dark,
+  //customShadows: mode === "light" ? customShadows.light : customShadows.dark,
+  shape: { borderRadius: 8 },
+  // components,
+  typography,
+  breakpoints,
+  cssVarPrefix: "",
+  customShadows: {
+    ...customShadows.light,
+    primary: `0 8px 16px 0 ${alpha(palette.light.primary.main, 0.24)}`,
+  },
+  shouldSkipGeneratingVar,
+};
 
-  return extendTheme(initialTheme);
-}
+//export const theme = createTheme(initialTheme);
+
+// export function Theme(): Theme {
+//   return createTheme({...palette});
+// }
 
 function shouldSkipGeneratingVar(
   keys: string[]

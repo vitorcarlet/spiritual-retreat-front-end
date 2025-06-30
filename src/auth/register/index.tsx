@@ -1,8 +1,8 @@
 "use client";
 import { Box, Grid } from "@mui/material";
-import LoginForm from "@/src/auth/login/form";
+import RegisterForm from "./form";
 
-export default function LoginPageContent() {
+export default function RegisterPageContent() {
   //const theme = useTheme();
 
   return (
@@ -18,7 +18,7 @@ export default function LoginPageContent() {
       }}
     >
       <Grid
-        size={{ xs: 12, md: 6 }}
+        size={{ xs: 12, md: 4 }}
         sx={{
           backgroundImage: "url(/logo16:9.png)",
           backgroundRepeat: "no-repeat",
@@ -31,14 +31,15 @@ export default function LoginPageContent() {
         }}
       />
       <Grid
-        size={{ xs: 12, md: 6 }}
+        size={{ xs: 12, md: 8 }}
         component={Box}
         display="flex"
         justifyContent="center"
-        alignItems="center"
+        //alignItems="center"
+        marginTop={4}
         padding={4}
       >
-        <LoginForm />
+        <RegisterForm />
       </Grid>
     </Grid>
   );
