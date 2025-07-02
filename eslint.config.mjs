@@ -1,4 +1,3 @@
-import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import globals from "globals";
@@ -18,6 +17,7 @@ export default defineConfig([
     rules: {
       "react/jsx-uses-react": "error",
       "react/jsx-uses-vars": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 ]);

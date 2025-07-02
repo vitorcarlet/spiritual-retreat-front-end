@@ -1,13 +1,25 @@
 import { LoginResponse } from "@/generated-types/Api";
 import type { User } from "next-auth";
 
-export interface LoginResponse {
+type DefaultResponse = {
+  message?: string;
+  error?: string;
+  alert?: string;
+  success?: boolean;
+};
+
+export interface LoginResponse extends DefaultResponse {
   token_refresh: string;
   token_access: string;
+  user: UserObject;
 }
 
 export interface UserObject {
   id: string;
+  permissions: string[];
+  role: string;
+  email: string;
+  name: string;
 }
 export interface DecodedJWT {
   token_type: "refresh" | "access";

@@ -10,6 +10,8 @@ import vercelKVDriver from "unstorage/drivers/vercel-kv";
 import { UnstorageAdapter } from "@auth/unstorage-adapter";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import { sendRequest } from "./src/lib/sendRequest";
+import { LoginResponse } from "./src/auth/types";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -47,26 +49,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
       },
       authorize: async (credentials) => {
-        const user = {
-          id: "1",
-          name: "Admin",
-          email: credentials?.email as string,
-        };
+        try {
+          const data = await sendRequest<LoginResponse>({
+            url: "/login",
+            isSilent: true,
+            method: "post",
+            payload: {
+              email: credentials.email,
+              password: credentials.password,
+            },
+          });
 
-        // logic to salt and hash password
-        // const pwHash = saltAndHashPassword(credentials.password)
-
-        // // logic to verify if the user exists
-        // user = await getUserFromDb(credentials.email, pwHash)
-
-        if (!user) {
-          // No user found, so this is their first attempt to login
-          // Optionally, this is also the place you could do a user registration
+          return data.user; // Retorna o usuário autenticado
+        } catch (error) {
+          console.error("Error logging in:", error);
           throw new Error("Invalid credentials.");
         }
-
-        // return user object with their profile data
-        return user;
       },
     }),
   ],
@@ -81,41 +79,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return true;
     },
-    async session({ token, session }) {
-      if (session.user) {
-        if (token.sub) {
-          session.user.id = token.sub;
-        }
+    // 2. Executa sempre que alguém chama /api/auth/session
+    async session({ session, token }) {
+      session.user.id = token.id as string;
+      session.user.role = token.role as string;
 
-        if (token.email) {
-          session.user.email = token.email;
-        }
-
-        if (token.role) {
-          session.user.role = token.role;
-        }
-
-        session.user.name = token.name;
-        session.user.image = token.picture;
-      }
+      // expõe só o que precisa ser lido no browser
+      session.accessToken = token.accessToken as string;
 
       return session;
     },
-
-    // async jwt({ token }) {
-    //   if (!token.sub) return token;
-
-    //   const dbUser = await getUserById(token.sub);
-
-    //   if (!dbUser) return token;
-
-    //   token.name = dbUser.name;
-    //   token.email = dbUser.email;
-    //   token.picture = dbUser.image;
-    //   token.role = dbUser.role;
-
-    //   return token;
-    // },
+    async jwt({ token, user, account }) {
+      // Primeira vez (sign-in com Credentials) → temos user preenchido
+      if (user) {
+        token.id = user.id; // persistir id
+        token.role = user.role; // ou permissions…
+        token.accessToken = user.token_access; // recebido da API
+        // token.refreshToken = user.token_refresh;   // **não exponha** ao client
+      }
+      return token;
+    },
   },
   experimental: { enableWebAuthn: true },
 });
