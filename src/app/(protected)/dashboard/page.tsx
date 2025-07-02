@@ -7,15 +7,41 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import { signOut } from "next-auth/react";
+
 import { Icon } from "@iconify/react/dist/iconify.js";
 // import { auth } from "auth";
 // import getServerSession from "next-auth";
 import { createTranslator } from "next-intl";
 import ptMessages from "messages/pt-br.json";
+import { signOut } from "next-auth/react";
+import { logout } from "@/src/actions/logout";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Page() {
+  const [user, setUser] = useState<any>(null);
+  const [error, setError] = useState("");
   const t = createTranslator({ locale: "pt", messages: ptMessages });
+  const router = useRouter();
+  const handleLogout = async () => {
+    try {
+      const result = await logout();
+
+      if (result.success && result.redirectTo) {
+        router.push(result.redirectTo);
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
+  };
+
+  useEffect(() => {
+    api
+      .get("/user")
+      .then((res) => setUser(res.data))
+      .catch(() => setError("Erro ao buscar usuário"));
+  }, []);
 
   return (
     <Container component="main" maxWidth="xs">
@@ -39,7 +65,7 @@ export default function Page() {
             fullWidth
             variant="contained"
             sx={{ mt: 2, mb: 2 }}
-            onClick={() => signOut()}
+            onClick={() => handleLogout()}
           >
             Sair
           </Button>

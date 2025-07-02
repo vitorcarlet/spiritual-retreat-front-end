@@ -20,7 +20,7 @@ export default function LoginPageContent() {
       <Grid
         size={{ xs: 12, md: 6 }}
         sx={{
-          backgroundImage: "url(/logo16:9.png)",
+          backgroundImage: "url(/background16:9.png)",
           backgroundRepeat: "no-repeat",
           backgroundColor: (theme) =>
             theme.palette.mode === "light"

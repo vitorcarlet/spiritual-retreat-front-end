@@ -25,7 +25,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 // -- ADICIONADO: Definição do schema de validação Zod
 const loginSchema = z.object({
   email: z.string().email("Informe um email válido"),
-  password: z.string().min(5, "A senha deve ter no mínimo 5 caracteres"),
+  password: z.string().min(3, "A senha deve ter no mínimo 3 caracteres"),
 });
 type LoginSchema = z.infer<typeof loginSchema>; // Tipo derivado do schema
 
@@ -44,7 +44,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const onSubmit = async (data: FieldValues) => {
     setLoading(true);
-    if (status === "loading") return null;
+    if (session.status === "loading") return null;
 
     const res = await signIn("credentials", {
       redirect: false,
@@ -68,7 +68,15 @@ export default function LoginForm() {
     }
   };
 
-  if (session.status == "authenticated") return redirect("/dashboard");
+  if (session.status === "authenticated") {
+    return (
+      <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Typography>Redirecionando...</Typography>
+        </Box>
+      </Paper>
+    );
+  }
 
   return (
     <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>

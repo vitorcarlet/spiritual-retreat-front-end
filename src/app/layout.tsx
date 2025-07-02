@@ -12,6 +12,24 @@ import { NextIntlClientProvider } from "next-intl";
 import AuthProvider from "./sessionprovider";
 import ModeSwitch from "../components/navbar/mui/ModeSwitch";
 import ThemeWrapper from "./themeProvider";
+import { SessionProvider } from "next-auth/react";
+import { auth } from "@/auth";
+
+async function enableMocking() {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+
+  const { worker } = await import("@/src/mocks/browser");
+
+  // `worker.start()` returns a Promise that resolves
+  // once the Service Worker is up and ready to intercept requests.
+  return worker.start();
+}
+
+// enableMocking().then(() => {
+
+// })
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -26,28 +44,31 @@ export async function metadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   //const locale = getLocale();
+  const session = await auth();
   const realLocale = "pt-br"; // Fallback para 'pt-br' se locale não for fornecido
   return (
     <html lang={realLocale} suppressHydrationWarning>
       <body className={poppins.className}>
-        <InitColorSchemeScript attribute="class" />
-        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <NextIntlClientProvider locale={realLocale}>
-              <ModeSwitch />
-              {/* <AuthProvider></AuthProvider> */}
-              {children}
-              {/* <ToastContainer /> */}
-            </NextIntlClientProvider>
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        <SessionProvider session={session}>
+          <InitColorSchemeScript attribute="class" />
+          <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <NextIntlClientProvider locale={realLocale}>
+                <ModeSwitch />
+                {/* <AuthProvider></AuthProvider> */}
+                {children}
+                {/* <ToastContainer /> */}
+              </NextIntlClientProvider>
+            </ThemeProvider>
+          </AppRouterCacheProvider>
+        </SessionProvider>
       </body>
     </html>
   );

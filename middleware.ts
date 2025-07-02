@@ -1,39 +1,58 @@
-export { auth as middleware } from "auth";
+import { auth } from "./auth";
+import {
+  apiAuthPrefix,
+  authRoutes,
+  DEFAULT_LOGIN_REDIRECT,
+  publicRoutes,
+} from "./routes";
 
-// export async function middleware(request: NextRequest) {
-//   const token = await getToken({
-//     req: request,
-//     secret: process.env.NEXTAUTH_SECRET,
-//   });
+export default auth((req) => {
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
 
-//   const { pathname } = request.nextUrl;
+  const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
+  const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
+  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-//   const isPublicRoute = /^\/(login|register|forgotpassword)(\/|$)/.test(
-//     pathname
-//   );
+  // Permitir todas as rotas de API de autenticação
+  if (isApiAuthRoute) {
+    return null;
+  }
 
-//   // Se não tiver token e a rota não for pública, redireciona para /login
-//   if (!token && !isPublicRoute) {
-//     return NextResponse.redirect(new URL("/login", request.url));
-//   }
+  // Se estiver em uma rota de auth e já estiver logado, redirecionar para dashboard
+  if (isAuthRoute) {
+    if (isLoggedIn) {
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
+    return null; // Permitir acesso às rotas de auth se não estiver logado
+  }
 
-//   // Se tiver token e estiver tentando acessar a home "/", redireciona para /dashboard
-//   if (token && pathname === "/") {
-//     return NextResponse.redirect(new URL("/dashboard", request.url));
-//   }
+  // Se não estiver logado e não for uma rota pública, redirecionar para login
+  if (!isLoggedIn && !isPublicRoute) {
+    let callbackUrl = nextUrl.pathname;
+    if (nextUrl.search) {
+      callbackUrl += nextUrl.search;
+    }
 
-//   return NextResponse.next();
-// }
+    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
+
+    return Response.redirect(
+      new URL(`/login?callbackUrl=${encodedCallbackUrl}`, nextUrl)
+    );
+  }
+
+  return null;
+});
 
 export const config = {
   matcher: [
     /*
-     * Executa o middleware em todas as rotas, exceto:
-     * - arquivos estáticos (_next)
-     * - API routes
-     * - favicon
-     * - rotas públicas como login/register
+     * Corresponde a todas as rotas, exceto:
+     * - api (rotas de API)
+     * - _next/static (arquivos estáticos)
+     * - _next/image (otimização de imagem)
+     * - favicon.ico (favicon)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|login|register|forgotpassword).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };
