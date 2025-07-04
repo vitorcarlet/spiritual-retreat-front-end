@@ -15,12 +15,13 @@ import {
 import { Icon } from "@iconify/react";
 import { FieldValues, useForm } from "react-hook-form";
 // import { ErrorMessage } from "@hookform/error-message";
-import { redirect, useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 // import { useSession } from "next-auth/react";
 // -- ADICIONADO: Imports do Zod e seu Resolver
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { AuthError } from "next-auth";
 
 // -- ADICIONADO: Definição do schema de validação Zod
 const loginSchema = z.object({
@@ -38,7 +39,6 @@ export default function LoginForm() {
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
   });
-  const router = useRouter();
   //const { status } = useSession();
   const session = useSession();
   const [loading, setLoading] = useState(false);
@@ -46,25 +46,30 @@ export default function LoginForm() {
     setLoading(true);
     if (session.status === "loading") return null;
 
-    const res = await signIn("credentials", {
-      redirect: false,
-      email: data.email,
-      password: data.password,
-    });
-
-    console.log("SignIn Response:", res);
-
-    setLoading(false);
-
-    if (res?.ok) {
-      console.log("Login successful:", res);
-      router.push("/dashboard"); // Redirect to dashboard
-    } else {
-      console.error("Login failed:", res?.error);
-      setError("email", {
-        type: "manual",
-        message: res?.error || "An error occurred during login",
+    try {
+      await signIn("credentials", {
+        redirectTo: DEFAULT_LOGIN_REDIRECT,
+        email: data.email,
+        password: data.password,
       });
+
+      setLoading(false);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        console.error("Login failed:", error);
+        setError("email", {
+          type: "manual",
+          message: error?.message || "An error occurred during login",
+        });
+        switch (error.type) {
+          case "CredentialsSignin":
+            return { error: "Invalid credentials!" };
+          default:
+            return { error: "Something went wrong!" };
+        }
+      }
+
+      throw error;
     }
   };
 

@@ -6,7 +6,7 @@ type Request = {
 };
 
 export const handlers = [
-  http.get("/user", () => {
+  http.get("http://localhost:3000/api/user", () => {
     return HttpResponse.json({
       id: "1",
       name: "Admin Doe",
@@ -14,7 +14,7 @@ export const handlers = [
     });
   }),
 
-  http.post("/login", async ({ request }) => {
+  http.post("http://localhost:3000/api/login", async ({ request }) => {
     const { email, password } = (await request.json()) as Request;
 
     // Check if email and password are provided

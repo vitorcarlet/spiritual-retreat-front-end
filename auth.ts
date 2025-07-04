@@ -2,17 +2,12 @@ import NextAuth from "next-auth";
 import "next-auth/jwt";
 
 // import Atlassian from "next-auth/providers/atlassian"
-import GitHub from "next-auth/providers/github";
 
 import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
 import vercelKVDriver from "unstorage/drivers/vercel-kv";
 import { UnstorageAdapter } from "@auth/unstorage-adapter";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
-import { sendRequest } from "./src/lib/sendRequestClient";
-import { LoginResponse } from "./src/auth/types";
-import { sendRequestServer } from "./src/lib/sendRequestServer";
+import authConfig from "@/auth.config";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -33,44 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: "/login", // Error code passed in query string as ?error=
   },
   adapter: UnstorageAdapter(storage),
-  providers: [
-    GitHub,
-    Google,
-    Credentials({
-      credentials: {
-        email: {
-          type: "email",
-          label: "Email",
-          placeholder: "johndoe@gmail.com",
-        },
-        password: {
-          type: "password",
-          label: "Password",
-          placeholder: "*****",
-        },
-      },
-      authorize: async (credentials) => {
-        try {
-          const data = await sendRequestServer<LoginResponse>({
-            url: "/login",
-            isSilent: true,
-            method: "post",
-            payload: {
-              email: credentials.email,
-              password: credentials.password,
-            },
-          });
-          if (data.user) {
-            return data.user;
-          }
-          return null;
-        } catch (error) {
-          console.error("Error logging in:", error);
-          return null;
-        }
-      },
-    }),
-  ],
+
   //basePath: "/auth",
   callbacks: {
     async signIn({ user, account }) {
@@ -80,7 +38,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       //const existingUser = await getUserById(user.id);
       //todo email verification and twofactor
 
-      return true;
+      if (user) {
+        console.log("User signed in:", user);
+        return true;
+      }
+      return false;
     },
     // 2. Executa sempre que alguém chama /api/auth/session
     async session({ session, token }) {
@@ -92,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return session;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       // Primeira vez (sign-in com Credentials) → temos user preenchido
       if (user) {
         token.id = user.id; // persistir id
@@ -104,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   experimental: { enableWebAuthn: true },
+  ...authConfig,
 });
 
 declare module "next-auth" {

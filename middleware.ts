@@ -1,4 +1,4 @@
-import { auth } from "./auth";
+import NextAuth from "next-auth";
 import {
   apiAuthPrefix,
   authRoutes,
@@ -6,9 +6,15 @@ import {
   publicRoutes,
 } from "./routes";
 
+import authConfig from "@/auth.config";
+import { NextResponse } from "next/server";
+
+const { auth } = NextAuth(authConfig);
+
 export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
+  console.log("Middleware isLoggedIn:", isLoggedIn);
 
   const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
@@ -28,7 +34,7 @@ export default auth((req) => {
   }
 
   // Se não estiver logado e não for uma rota pública, redirecionar para login
-  if (!isLoggedIn && !isPublicRoute) {
+  if (!isLoggedIn && !isPublicRoute && !isAuthRoute) {
     let callbackUrl = nextUrl.pathname;
     if (nextUrl.search) {
       callbackUrl += nextUrl.search;
@@ -41,7 +47,7 @@ export default auth((req) => {
     );
   }
 
-  return null;
+  return NextResponse.next();
 });
 
 export const config = {
