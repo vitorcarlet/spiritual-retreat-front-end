@@ -27,6 +27,7 @@
     "auth": "^1.2.3",
     "axios": "^1.8.4",
     "cookie": "^1.0.2",
+    "dayjs": "^1.11.13",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
@@ -48,7 +49,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.55.0",
     "react-i18next": "^15.4.1",
-    "swr": "^2.3.3",
+    "swr": "^2.3.4",
     "unstorage": "^1.16.0",
     "zod": "^3.25.67"
   },

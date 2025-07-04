@@ -10,8 +10,9 @@ import vercelKVDriver from "unstorage/drivers/vercel-kv";
 import { UnstorageAdapter } from "@auth/unstorage-adapter";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { sendRequest } from "./src/lib/sendRequest";
+import { sendRequest } from "./src/lib/sendRequestClient";
 import { LoginResponse } from "./src/auth/types";
+import { sendRequestServer } from "./src/lib/sendRequestServer";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -50,7 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       authorize: async (credentials) => {
         try {
-          const data = await sendRequest<LoginResponse>({
+          const data = await sendRequestServer<LoginResponse>({
             url: "/login",
             isSilent: true,
             method: "post",
@@ -59,11 +60,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               password: credentials.password,
             },
           });
-
-          return data.user; // Retorna o usuário autenticado
+          if (data.user) {
+            return data.user;
+          }
+          return null;
         } catch (error) {
           console.error("Error logging in:", error);
-          throw new Error("Invalid credentials.");
+          return null;
         }
       },
     }),
@@ -94,7 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id; // persistir id
         token.role = user.role; // ou permissions…
-        token.accessToken = user.token_access; // recebido da API
+        token.accessToken = user.token; // recebido da API
         // token.refreshToken = user.token_refresh;   // **não exponha** ao client
       }
       return token;

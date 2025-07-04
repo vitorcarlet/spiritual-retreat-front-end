@@ -1,3 +1,4 @@
+"use client";
 import { AxiosRequestConfig, AxiosResponse, Method } from "axios";
 import { enqueueSnackbar } from "notistack";
 import useSWR, { SWRConfiguration } from "swr";
@@ -18,11 +19,11 @@ export type SendRequestFunctionProps = {
   isSilent?: boolean;
 };
 
-type SendRequestFunction = <T>(
-  options: SendRequestFunctionProps
-) => Promise<AxiosResponse<T, any>>;
+// type SendRequestFunction = <T>(
+//   options: SendRequestFunctionProps
+// ) => Promise<AxiosResponse<T, any>>;
 
-export const sendRequest = async <T>({
+export const sendRequestClient = async <T>({
   url,
   method = "get",
   isSilent,
