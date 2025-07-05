@@ -9,27 +9,14 @@ import {
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import theme from "../theme/theme";
 import { NextIntlClientProvider } from "next-intl";
-import AuthProvider from "./sessionprovider";
 import ModeSwitch from "../components/navbar/mui/ModeSwitch";
-import ThemeWrapper from "./themeProvider";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
+import { initMocks } from "@/src/mocks";
 
-async function enableMocking() {
-  if (process.env.NODE_ENV !== "development") {
-    return;
-  }
-
-  const { worker } = await import("@/src/mocks/browser");
-
-  // `worker.start()` returns a Promise that resolves
-  // once the Service Worker is up and ready to intercept requests.
-  return worker.start();
+if (process.env.NODE_ENV === "development") {
+  initMocks();
 }
-
-// enableMocking().then(() => {
-
-// })
 
 const poppins = Poppins({
   variable: "--font-poppins",

@@ -33,7 +33,7 @@ export default {providers: [
         });
         console.log(data, "data");
         if (data.user) {
-          return data.user;
+          return { ...data.user, token_access: data.token_access, token_refresh: data.token_refresh };
         }
         return null;
       },

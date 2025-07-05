@@ -6,15 +6,15 @@ type Request = {
 };
 
 export const handlers = [
-  http.get("http://localhost:3000/api/user", () => {
+  http.get("http://localhost:3001/api/user", () => {
     return HttpResponse.json({
       id: "1",
-      name: "Admin Doe",
-      email: "admin@email.com",
+      name: "Vitor Calret",
+      email: "vitorcarlet@email.com",
     });
   }),
 
-  http.post("http://localhost:3000/api/login", async ({ request }) => {
+  http.post("http://localhost:3001/api/login", async ({ request }) => {
     const { email, password } = (await request.json()) as Request;
 
     // Check if email and password are provided
@@ -27,11 +27,27 @@ export const handlers = [
 
     if (email === "admin@email.com" && password === "123") {
       return HttpResponse.json(
-        { token: "mock-token-123", email: "admin2@email.com" },
+        {
+          message: "info do usuario",
+          success: true,
+          token_access: "mock-token-123",
+          token_refresh: "mock-token-123-refresh",
+          user: {
+            name: "Vitor Carlet",
+            email: "admin2@email.com",
+            id: 1,
+            permissions: [],
+            role: "admin",
+          },
+        },
         { status: 200 }
       );
     }
 
     return HttpResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  }),
+  http.all("http://localhost:3001/*", ({ request }) => {
+    console.log("⚠️ Unhandled request:", request.method, request.url);
+    return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });
   }),
 ];

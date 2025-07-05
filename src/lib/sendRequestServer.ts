@@ -1,7 +1,7 @@
 import { AxiosRequestConfig, Method } from "axios";
 
 import { AxiosError } from "axios";
-import api from "./axiosInstance";
+import api from "./axiosServerInstance";
 import Helpers from "../helpers";
 
 interface Payload {

@@ -3,7 +3,7 @@ import { AxiosRequestConfig, AxiosResponse, Method } from "axios";
 import { enqueueSnackbar } from "notistack";
 import useSWR, { SWRConfiguration } from "swr";
 import { AxiosError } from "axios";
-import api from "./axiosInstance";
+import api from "./axiosClientInstance";
 import Helpers from "../helpers";
 import { DefaultResponse } from "../auth/types";
 

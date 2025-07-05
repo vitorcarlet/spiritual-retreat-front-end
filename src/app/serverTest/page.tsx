@@ -6,6 +6,7 @@ import {
   Avatar,
   Typography,
   Button,
+  TextField,
 } from "@mui/material";
 
 import { Icon } from "@iconify/react/dist/iconify.js";
@@ -13,17 +14,19 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 // import getServerSession from "next-auth";
 import { createTranslator } from "next-intl";
 import ptMessages from "messages/pt-br.json";
-import { signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { logout } from "@/src/actions/logout";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import api from "@/src/lib/axiosInstance";
+import api from "@/src/lib/axiosClientInstance";
+import useSWR from "swr";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState("");
   const t = createTranslator({ locale: "pt", messages: ptMessages });
   const router = useRouter();
+  const session = useSession();
   const handleLogout = async () => {
     try {
       const result = await logout();
@@ -37,12 +40,26 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    api
-      .get("/user")
-      .then((res) => setUser(res.data))
-      .catch(() => setError("Erro ao buscar usuário"));
-  }, []);
+  const { isLoading } = useSWR(
+    "/user",
+    async () => {
+      const response = await api.get("/user");
+      return response.data;
+    },
+    {
+      onError: (err) => {
+        setError("Erro ao buscar usuário");
+        console.error("Erro ao buscar usuário:", err);
+      },
+      onSuccess: (data) => {
+        setUser(data);
+      },
+    }
+  );
+
+  if (isLoading) {
+    return <div>Carregando...</div>;
+  }
 
   return (
     <Container component="main" maxWidth="xs">
@@ -59,7 +76,10 @@ export default function DashboardPage() {
             <Icon icon="material-symbols:lock-outline" />
           </Avatar>
           <Typography component="h1" variant="h5">
-            Você já está logado
+            Você já está logado {user?.name}, {session?.status}
+          </Typography>
+          <Typography component="p" variant="body2" color="textSecondary">
+            {error ? error : `Email: ${user?.email}`}
           </Typography>
           <Button
             type="submit"
