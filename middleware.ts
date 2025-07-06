@@ -8,10 +8,11 @@ import {
 
 import authConfig from "@/auth.config";
 import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth((req) => {
+export default auth(async (req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   console.log("Middleware isLoggedIn:", isLoggedIn);
@@ -20,9 +21,23 @@ export default auth((req) => {
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const baseUrl = req.nextUrl.origin;
+
+  // Check if the user is authenticated
+  if (token && Date.now() >= token.data.validity.refresh_until * 1000) {
+    // Redirect to the login page
+    const response = NextResponse.redirect(`${baseUrl}/api/auth/signin`);
+    // Clear the session cookies
+    response.cookies.set("next-auth.session-token", "", { maxAge: 0 });
+    response.cookies.set("next-auth.csrf-token", "", { maxAge: 0 });
+
+    return response;
+  }
+
   // Permitir todas as rotas de API de autenticação
   if (isApiAuthRoute) {
-    return null;
+    return NextResponse.next();
   }
 
   // Se estiver em uma rota de auth e já estiver logado, redirecionar para dashboard
@@ -30,7 +45,7 @@ export default auth((req) => {
     if (isLoggedIn) {
       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
-    return null; // Permitir acesso às rotas de auth se não estiver logado
+    return NextResponse.next(); // Permitir acesso às rotas de auth se não estiver logado
   }
 
   // Se não estiver logado e não for uma rota pública, redirecionar para login
