@@ -7,16 +7,16 @@ import NextLink from "next/link";
 import ProTip from "@/src/components/navbar/mui/ProTip";
 import Copyright from "@/src/components/navbar/mui/Copyright";
 
-export default async function About() {
-  const response = await fetch("http://localhost:3001/api/user", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+export default function About() {
+  // const response = await fetch("http://localhost:3001/api/user", {
+  //   method: "GET",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //   },
+  // });
 
-  const data = await response.json();
-  console.log(data);
+  // const data = await response.json();
+  // console.log(data);
   return (
     <Container maxWidth="lg">
       <Box

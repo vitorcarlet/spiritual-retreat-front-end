@@ -1,5 +1,3 @@
-"use client";
-
 // import { auth } from "auth";
 // import getServerSession from "next-auth";
 import DashboardPage from "../../serverTest/page";

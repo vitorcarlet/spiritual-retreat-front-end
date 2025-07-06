@@ -1,3 +1,4 @@
+"use client";
 async function initMocks() {
   if (typeof window === "undefined") {
     const { server } = await import("./server");

@@ -21,10 +21,9 @@ import { useSession } from "next-auth/react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { login } from "@/src/actions/login";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { FormError } from "../../FormError";
 import { FormSuccess } from "../../FormSuccess";
-import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 
 // -- ADICIONADO: Definição do schema de validação Zod
 const loginSchema = z.object({

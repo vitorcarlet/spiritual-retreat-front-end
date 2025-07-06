@@ -13,9 +13,13 @@ import ModeSwitch from "../src/components/navbar/mui/ModeSwitch";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { initMocks } from "@/src/mocks";
+import { MSWProvider } from "@/src/providers/MSWProvider";
+//import { initMocks } from "@/src/mocks";
 
 if (process.env.NODE_ENV === "development") {
-  initMocks();
+  if (typeof window !== "undefined") {
+    initMocks();
+  }
 }
 
 const poppins = Poppins({
@@ -48,10 +52,11 @@ export default async function RootLayout({
             <ThemeProvider theme={theme}>
               <CssBaseline />
               <NextIntlClientProvider locale={realLocale}>
-                <ModeSwitch />
-                {/* <AuthProvider></AuthProvider> */}
-                {children}
-                {/* <ToastContainer /> */}
+                <MSWProvider>
+                  <ModeSwitch />
+                  {children}
+                  {/* <ToastContainer /> */}
+                </MSWProvider>
               </NextIntlClientProvider>
             </ThemeProvider>
           </AppRouterCacheProvider>

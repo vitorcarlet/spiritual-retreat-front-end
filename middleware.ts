@@ -5,7 +5,6 @@ import {
   DEFAULT_LOGIN_REDIRECT,
   publicRoutes,
 } from "./routes";
-
 import authConfig from "@/auth.config";
 import { NextResponse } from "next/server";
 
@@ -131,6 +130,6 @@ export const config = {
      * - favicon.ico (favicon)
      */
     //todo: verificar outras rotas public que possam estar passando pelo middleware
-    "/((?!api|images|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|images|mockServiceWorker|_next/static|_next/image|favicon.ico).*)",
   ],
 };
