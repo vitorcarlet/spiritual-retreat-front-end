@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { startTransition, useState } from "react";
 import {
   Avatar,
   Button,
@@ -13,15 +13,18 @@ import {
   Paper,
 } from "@mui/material";
 import { Icon } from "@iconify/react";
-import { FieldValues, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 // import { ErrorMessage } from "@hookform/error-message";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 // import { useSession } from "next-auth/react";
 // -- ADICIONADO: Imports do Zod e seu Resolver
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { login } from "@/src/actions/login";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormError } from "../../FormError";
+import { FormSuccess } from "../../FormSuccess";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
-import { AuthError } from "next-auth";
 
 // -- ADICIONADO: Definição do schema de validação Zod
 const loginSchema = z.object({
@@ -34,43 +37,42 @@ export default function LoginForm() {
   const {
     register,
     handleSubmit,
-    setError,
+    reset,
     formState: { errors },
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
   });
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
+
   //const { status } = useSession();
   const session = useSession();
+  const [error, setError] = useState<string | undefined>("");
+  const [success, setSuccess] = useState<string | undefined>("");
   const [loading, setLoading] = useState(false);
-  const onSubmit = async (data: FieldValues) => {
+  const onSubmit = async (data: { email: string; password: string }) => {
     setLoading(true);
     if (session.status === "loading") return null;
 
-    try {
-      await signIn("credentials", {
-        redirectTo: DEFAULT_LOGIN_REDIRECT,
-        email: data.email,
-        password: data.password,
-      });
-
-      setLoading(false);
-    } catch (error) {
-      if (error instanceof AuthError) {
-        console.error("Login failed:", error);
-        setError("email", {
-          type: "manual",
-          message: error?.message || "An error occurred during login",
-        });
-        switch (error.type) {
-          case "CredentialsSignin":
-            return { error: "Invalid credentials!" };
-          default:
-            return { error: "Something went wrong!" };
-        }
-      }
-
-      throw error;
-    }
+    startTransition(() => {
+      console.log(callbackUrl, "Callback URL from login form");
+      login(data, callbackUrl)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .then((data: any) => {
+          console.log(data, "Data from login");
+          if (data?.error) {
+            reset();
+            setError(data.error);
+            setLoading(false);
+          }
+          if (data?.success) {
+            setSuccess(data.success);
+            setError("");
+          }
+          setLoading(false);
+        })
+        .catch(() => setError("Something went wrong"));
+    });
   };
 
   if (session.status === "authenticated") {
@@ -166,6 +168,8 @@ export default function LoginForm() {
                   "Ocorreu um erro ao tentar fazer login. Verifique suas credenciais e tente novamente."}
               </Typography>
             )}
+            <FormError message={error} />
+            <FormSuccess message={success} />
           </Grid>
         </Box>
       </Box>

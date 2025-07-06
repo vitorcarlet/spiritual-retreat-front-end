@@ -6,7 +6,6 @@ import {
   Avatar,
   Typography,
   Button,
-  TextField,
 } from "@mui/material";
 
 import { Icon } from "@iconify/react/dist/iconify.js";
@@ -14,27 +13,28 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 // import getServerSession from "next-auth";
 import { createTranslator } from "next-intl";
 import ptMessages from "messages/pt-br.json";
-import { useSession } from "next-auth/react";
-import { logout } from "@/src/actions/logout";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "@/src/lib/axiosClientInstance";
 import useSWR from "swr";
+// import { logout } from "@/src/actions/logout";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState("");
-  const t = createTranslator({ locale: "pt", messages: ptMessages });
   const router = useRouter();
+  const t = createTranslator({ locale: "pt", messages: ptMessages });
   const session = useSession();
   const handleLogout = async () => {
     try {
-      const result = await logout();
-
-      if (result.success && result.redirectTo) {
-        router.push(result.redirectTo);
-        router.refresh();
-      }
+      signOut().then(() => {
+        router.push("/login");
+      });
+      // if (result.success && result.redirectTo) {
+      //   router.push(result.redirectTo);
+      //   router.refresh();
+      // }
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }

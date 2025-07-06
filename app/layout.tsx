@@ -7,9 +7,9 @@ import {
   ThemeProvider,
 } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
-import theme from "../theme/theme";
+import theme from "../src/theme/theme";
 import { NextIntlClientProvider } from "next-intl";
-import ModeSwitch from "../components/navbar/mui/ModeSwitch";
+import ModeSwitch from "../src/components/navbar/mui/ModeSwitch";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { initMocks } from "@/src/mocks";

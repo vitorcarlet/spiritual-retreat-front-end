@@ -4,8 +4,9 @@ import * as z from "zod";
 
 import { signIn } from "@/auth";
 
-import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { LoginSchema } from "../schemas";
+import { AuthError } from "next-auth";
+import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 
 export const login = async (
   values: z.infer<typeof LoginSchema>,
@@ -18,21 +19,27 @@ export const login = async (
   }
 
   const { email, password } = validatedFields.data;
-
+  console.log(callbackUrl, "Callback URL from login action");
   try {
-    await signIn("credentials", {
+     await signIn("credentials", {
       email,
       password,
       redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
     });
-  } catch (error) {
-    switch (error.type) {
-      case "CredentialsSignin":
-        return { error: "Invalid credentials!" };
-      default:
-        return { error: "Something went wrong!" };
-    }
 
-    throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.log("Login error:", error);
+    
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { error: "Invalid credentials!" };
+        default:
+          return { error: "Something went wrong!" };
+      }
+    }
+    
+    throw error;;
   }
 };

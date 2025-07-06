@@ -28,16 +28,13 @@ export const sendRequestServer = async <T>({
   if (!payload) payload = {};
 
   payload._method = method;
-
   try {
     const { data } = await api.post<T>(url, Helpers.objToFormData(payload));
     return data;
-  } catch (error: any) {
-    error.success = false;
-    throw error;
+  } catch (error) {
+    console.log("Error during request:", error);
   }
 };
-
 type HookOptions = {
   headers?: Record<string, string>;
   params?: Record<string, any>;

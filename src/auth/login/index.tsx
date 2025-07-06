@@ -1,6 +1,7 @@
 "use client";
 import { Box, Grid } from "@mui/material";
 import LoginForm from "@/src/auth/login/form";
+import Image from "next/image";
 
 export default function LoginPageContent() {
   //const theme = useTheme();
@@ -20,16 +21,23 @@ export default function LoginPageContent() {
       <Grid
         size={{ xs: 12, md: 6 }}
         sx={{
-          backgroundImage: "url(/background16:9.png)",
-          backgroundRepeat: "no-repeat",
           backgroundColor: (theme) =>
             theme.palette.mode === "light"
               ? theme.palette.grey[50]
               : theme.palette.grey[900],
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          position: "relative", // ← IMPORTANTE: Necessário para fill
         }}
-      />
+      >
+        <Image
+          src={"/images/background16-9.png"} // ← Renomeie o arquivo (sem dois pontos)
+          alt="Background"
+          fill // ← Nova API
+          style={{ objectFit: "cover" }} // ← Use style
+          priority // ← Para imagens importantes
+          onLoad={() => console.log("✅ Imagem carregou com sucesso")}
+          onError={(e) => console.error("❌ Erro ao carregar imagem:", e)}
+        />
+      </Grid>
       <Grid
         size={{ xs: 12, md: 6 }}
         component={Box}

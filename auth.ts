@@ -1,4 +1,10 @@
-import NextAuth, { BackendAccessJWT, DecodedJWT } from "next-auth";
+import NextAuth, {
+  AuthValidity,
+  BackendAccessJWT,
+  BackendJWT,
+  DecodedJWT,
+  User,
+} from "next-auth";
 import "next-auth/jwt";
 
 // import Atlassian from "next-auth/providers/atlassian"
@@ -7,10 +13,14 @@ import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
 import vercelKVDriver from "unstorage/drivers/vercel-kv";
 import { UnstorageAdapter } from "@auth/unstorage-adapter";
-import authConfig from "@/auth.config";
 import { refresh } from "./src/mocks/actions";
 import { jwtDecode } from "jwt-decode";
 import { JWT } from "next-auth/jwt";
+import { sendRequestServer } from "./src/lib/sendRequestServer";
+import { LoginResponse } from "./src/auth/types";
+import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -57,15 +67,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
     //   return session;
     // },
-    async redirect({ url, baseUrl }) {
-      return url.startsWith(baseUrl)
-        ? Promise.resolve(url)
-        : Promise.resolve(baseUrl);
-    },
+    // async redirect({ url, baseUrl }) {
+    //   return url.startsWith(baseUrl)
+    //     ? Promise.resolve(url)
+    //     : Promise.resolve(baseUrl);
+    // },
 
     async jwt({ token, user, account }) {
       // Initial signin contains a 'User' object from authorize method
-      if (user && account) {
+      if (user || account) {
         console.debug("Initial signin");
         return { ...token, data: user };
       }
@@ -97,7 +107,60 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   experimental: { enableWebAuthn: true },
-  ...authConfig,
+  providers: [
+    GitHub,
+    Google,
+    Credentials({
+      name: "Login",
+      credentials: {
+        email: {
+          label: "Email",
+          type: "email",
+          placeholder: "john@mail.com",
+        },
+        password: { label: "Password", type: "password" },
+      },
+      authorize: async (
+        credentials: Partial<Record<"email" | "password", unknown>>
+      ) => {
+        try {
+          const data = await sendRequestServer<LoginResponse>({
+            url: "/login",
+            isSilent: true,
+            method: "post",
+            payload: {
+              email: credentials.email,
+              password: credentials.password,
+            },
+          });
+          if (data === undefined) return null;
+          if (data.access_token === undefined) return null;
+          const tokens: BackendJWT = {
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+          };
+
+          const access: DecodedJWT = jwtDecode(tokens.access_token!);
+          const refresh: DecodedJWT = jwtDecode(tokens.refresh_token);
+          const validity: AuthValidity = {
+            valid_until: access.exp,
+            refresh_until: refresh.exp,
+          };
+
+          return {
+            id: refresh.jti, // User object is forced to have a string id so use refresh token id
+            tokens: tokens,
+            user: data.user,
+            validity: validity,
+          } as User;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+          console.error("Error during authorization:");
+          return null;
+        }
+      },
+    }),
+  ],
 });
 
 // declare module "next-auth" {
@@ -116,7 +179,7 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
   try {
     // Get a new access token from backend using the refresh token
     const res = await refresh(nextAuthJWT.data.tokens.refresh);
-    const accessToken: BackendAccessJWT = res.data;
+    const accessToken: BackendAccessJWT = res?.data;
 
     if (!res || accessToken.access_token === undefined) throw accessToken;
     const { exp }: DecodedJWT = jwtDecode(accessToken.access_token);

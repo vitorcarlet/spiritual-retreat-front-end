@@ -8,60 +8,116 @@ import {
 
 import authConfig from "@/auth.config";
 import { NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth(async (req) => {
+export default auth((req) => {
+  console.log("🚀 MIDDLEWARE EXECUTED FOR:", req.nextUrl.pathname);
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
-  console.log("Middleware isLoggedIn:", isLoggedIn);
+
+  // 🔍 LOGS DETALHADOS PARA DEBUG
+  console.log("=== MIDDLEWARE DEBUG ===");
+  console.log("URL:", nextUrl.href);
+  console.log("Pathname:", nextUrl.pathname);
+  console.log("isLoggedIn:", isLoggedIn);
+  console.log("req.auth:", req.auth);
 
   const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  console.log("Routes check:", {
+    isApiAuthRoute,
+    isPublicRoute,
+    isAuthRoute,
+    apiAuthPrefix,
+    publicRoutes,
+    authRoutes,
+  });
+
+  if (isAuthRoute) {
+    console.log("🔐 Processing auth route");
+    if (isLoggedIn) {
+      console.log("🔄 Redirecting logged user from auth route to dashboard");
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
+    console.log("✅ Allowing access to auth route for non-logged user");
+    return null;
+  }
+
+  // Verificar token
+  console.log("Token exists:", !!req.auth);
+  console.log(
+    "Token data:",
+    req.auth
+      ? {
+          email: req.auth.user,
+          exp: req.auth.expires,
+          hasData: !!req.auth,
+          dataKeys: req.auth ? Object.keys(req.auth) : null,
+        }
+      : null
+  );
+
   const baseUrl = req.nextUrl.origin;
 
-  // Check if the user is authenticated
-  if (token && Date.now() >= token.data.validity.refresh_until * 1000) {
-    // Redirect to the login page
-    const response = NextResponse.redirect(`${baseUrl}/api/auth/signin`);
-    // Clear the session cookies
-    response.cookies.set("next-auth.session-token", "", { maxAge: 0 });
-    response.cookies.set("next-auth.csrf-token", "", { maxAge: 0 });
+  // Check if the user is authenticated but token expired
+  if (req.auth && req.auth?.validity?.refresh_until) {
+    const refreshExpired = Date.now() >= req.auth.validity.refresh_until * 1000;
+    console.log("Refresh token check:", {
+      refreshExpired,
+      currentTime: Date.now(),
+      refreshUntil: req.auth.validity.refresh_until * 1000,
+    });
 
-    return response;
+    if (refreshExpired) {
+      console.log("🔄 Redirecting due to expired refresh token");
+      const response = NextResponse.redirect(`${baseUrl}/login`);
+      response.cookies.set("next-auth.session-token", "", { maxAge: 0 });
+      response.cookies.set("next-auth.csrf-token", "", { maxAge: 0 });
+      return response;
+    }
   }
 
   // Permitir todas as rotas de API de autenticação
   if (isApiAuthRoute) {
+    console.log("✅ Allowing API auth route");
     return NextResponse.next();
   }
 
-  // Se estiver em uma rota de auth e já estiver logado, redirecionar para dashboard
-  if (isAuthRoute) {
+  // LÓGICA DA ROTA RAIZ "/" - ADICIONADA ANTES DAS OUTRAS VERIFICAÇÕES
+  if (nextUrl.pathname === "/") {
+    console.log("🏠 Processing root route /");
+    console.log("isLoggedIn for root:", isLoggedIn);
+
     if (isLoggedIn) {
-      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+      console.log("🔄 Redirecting logged user to dashboard");
+      return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    } else {
+      console.log("🔄 Redirecting non-logged user to login");
+      return NextResponse.redirect(new URL("/login", nextUrl));
     }
-    return NextResponse.next(); // Permitir acesso às rotas de auth se não estiver logado
   }
+
+  // Se estiver em uma rota de auth e já estiver logado, redirecionar para dashboard
 
   // Se não estiver logado e não for uma rota pública, redirecionar para login
   if (!isLoggedIn && !isPublicRoute && !isAuthRoute) {
+    console.log("🔒 Redirecting to login - protected route access denied");
     let callbackUrl = nextUrl.pathname;
     if (nextUrl.search) {
       callbackUrl += nextUrl.search;
     }
 
     const encodedCallbackUrl = encodeURIComponent(callbackUrl);
-
-    return Response.redirect(
+    return NextResponse.redirect(
       new URL(`/login?callbackUrl=${encodedCallbackUrl}`, nextUrl)
     );
   }
 
+  console.log("✅ Allowing request to continue");
+  console.log("=== END DEBUG ===\n");
   return NextResponse.next();
 });
 
@@ -74,6 +130,7 @@ export const config = {
      * - _next/image (otimização de imagem)
      * - favicon.ico (favicon)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    //todo: verificar outras rotas public que possam estar passando pelo middleware
+    "/((?!api|images|_next/static|_next/image|favicon.ico).*)",
   ],
 };

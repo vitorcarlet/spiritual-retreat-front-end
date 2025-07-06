@@ -5,9 +5,7 @@ import { revalidatePath } from "next/cache";
 
 export const logout = async () => {
   try {
-    await signOut({
-      redirect: false,
-    });
+    await signOut({});
 
     // Use revalidatePath ao invés de redirect
     revalidatePath("/", "layout");

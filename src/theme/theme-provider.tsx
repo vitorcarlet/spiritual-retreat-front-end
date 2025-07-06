@@ -1,7 +1,10 @@
 import type {} from "@mui/material/themeCssVarsAugmentation";
 
 import CssBaseline from "@mui/material/CssBaseline";
-import { Experimental_CssVarsProvider as CssVarsProvider } from "@mui/material/styles";
+import {
+  createTheme,
+  Experimental_CssVarsProvider as CssVarsProvider,
+} from "@mui/material/styles";
 
 import { useDarkMode } from "./DarkModeContext";
 import { useMediaQuery } from "@mui/material";
