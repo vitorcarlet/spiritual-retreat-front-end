@@ -60,7 +60,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return <div>Carregando...</div>;
   }
-
+  console.log(session, "Session data in DashboardPage");
   return (
     <Container component="main" maxWidth="xs">
       <button>{t("HomePage.title")}</button>

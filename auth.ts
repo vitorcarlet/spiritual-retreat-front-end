@@ -21,6 +21,7 @@ import { LoginResponse } from "./src/auth/types";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import { authRoutes, publicRoutes as pubRoutes } from "./routes";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -35,7 +36,9 @@ const storage = createStorage({
 export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: !!process.env.AUTH_DEBUG,
   theme: { logo: "https://authjs.dev/img/logo-sm.png" },
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 4 * 60, // 4 minutes
+    updateAge: 30 * 60, // 30 minutes
+  },
   pages: {
     signIn: "/login",
     error: "/login", // Error code passed in query string as ?error=
@@ -89,9 +92,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // The current access token has expired, but the refresh token is still valid
       if (Date.now() < token.data.validity.refresh_until * 1000) {
         console.debug("Access token is being refreshed");
-        return await refreshAccessToken(token);
+        const refreshedToken = await refreshAccessToken(token);
+        if (refreshedToken.error) {
+          console.debug("❌ Refresh failed - forcing logout");
+          return { ...token, error: "RefreshAccessTokenError" };
+        }
+        
+        return refreshedToken;
       }
-
       // The current access token and refresh token have both expired
       // This should not really happen unless you get really unlucky with
       // the timing of the token expiration because the middleware should
@@ -100,11 +108,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return { ...token, error: "RefreshTokenExpired" } as JWT;
     },
     async session({ session, token }) {
+        if (token.error) {
+      console.debug("❌ Token error detected:", token.error);
+      return {
+        ...session,
+        error: token.error,
+        validity: null,
+        expires: "1970-01-01T00:00:00.000Z", // Data no passado força expiração
+      };
+    }
       session.user = token.data.user;
       session.validity = token.data.validity;
       session.error = token.error;
       return session;
     },
+    authorized: ({ auth, request }) => {
+      if (auth?.error) {
+        console.debug("❌ Unauthorized due to token error:", auth.error);
+        return false;
+      }
+      const { pathname } = request.nextUrl;
+      const publicRoutes = [...authRoutes, ...pubRoutes]; 
+      if (!publicRoutes.includes(pathname)) return !!auth;
+      return true;
+    }
   },
   experimental: { enableWebAuthn: true },
   providers: [
@@ -181,15 +208,23 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
     const res = await refresh(nextAuthJWT.data.tokens.refresh);
     const accessToken: BackendAccessJWT = res?.data;
 
-    if (!res || accessToken.access_token === undefined) throw accessToken;
+    if (!res || accessToken.access_token === undefined) return { ...nextAuthJWT, error: "RefreshAccessTokenError" };
     const { exp }: DecodedJWT = jwtDecode(accessToken.access_token);
 
     // Update the token and validity in the next-auth object
-    nextAuthJWT.data.validity.valid_until = exp;
-    nextAuthJWT.data.tokens.access = accessToken.access_token;
+    // nextAuthJWT.data.validity.valid_until = exp;
+    // nextAuthJWT.data.tokens.access = accessToken.access_token;
     // Ensure the returned jwt has a new object reference ID
     // (jwt will not be updated otherwise)
-    return { ...nextAuthJWT };
+    return { ...nextAuthJWT,
+      data: {
+        ...nextAuthJWT.data,
+        valid_until: exp,
+        tokens: {
+          ...nextAuthJWT.data.tokens,
+          access: accessToken.access_token
+        }
+    } };
   } catch (error) {
     console.debug(error);
     return {

@@ -74,16 +74,16 @@ export default function LoginForm() {
     });
   };
 
-  if (session.status === "authenticated") {
-    return (
-      <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
-          <Typography>Redirecionando...</Typography>
-        </Box>
-      </Paper>
-    );
-  }
-
+  // if (session.status === "authenticated") {
+  //   return (
+  //     <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
+  //       <Box sx={{ display: "flex", justifyContent: "center" }}>
+  //         <Typography>Redirecionando...</Typography>
+  //       </Box>
+  //     </Paper>
+  //   );
+  // }
+  console.log(session, "Session from login form");
   return (
     <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
       <Box

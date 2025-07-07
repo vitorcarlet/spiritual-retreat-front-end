@@ -178,7 +178,7 @@ declare module "next-auth/jwt" {
    * Returned by the `jwt` callback and `getToken`, when using JWT sessions
    */
   export interface JWT {
-    data: User;
-    error: "RefreshTokenExpired" | "RefreshAccessTokenError";
+    data: User | null;
+    error: "RefreshTokenExpired" | "RefreshAccessTokenError" | "NoTokenData";
   }
 }

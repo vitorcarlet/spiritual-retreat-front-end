@@ -38,6 +38,12 @@ const Helpers = {
 
     return formData;
   },
+  isLoggedIn(auth: boolean, refreshUntil?: number): boolean {
+    if (!auth) return false;
+    if (!refreshUntil) return false;
+    console.log(Date.now(), refreshUntil * 1000);
+    return Date.now() < refreshUntil * 1000;
+  },
 };
 
 export default Helpers;

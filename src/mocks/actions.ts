@@ -62,7 +62,13 @@ export async function refresh(
   // Verify that the token is valid and not expired
   try {
     if (!token) {
-      throw new Error("Token is required");
+      return Promise.reject({
+        response: {
+          status: 401,
+          statusText: "Unauthorized",
+          data: { error: "Refresh token expired" },
+        },
+      });
     }
     const decoded = jwt.verify(token, SECRET_SIGNING_SALT) as UserObject;
 
@@ -83,7 +89,7 @@ export async function refresh(
       request: {},
     } as AxiosResponse<BackendAccessJWT>;
   } catch (err) {
-    console.error(`Refresh token expired: ${err}`);
+    console.error(`Refresh token expired:`, err);
     return Promise.reject({
       response: {
         status: 401,
