@@ -17,6 +17,7 @@ export default auth((req) => {
 
   //const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
+  console.log("IsAuthRoute:", nextUrl.pathname);
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
   // if (req.auth?.error || !req.auth) {
@@ -134,6 +135,6 @@ export const config = {
      * - favicon.ico (favicon)
      */
     //todo: verificar outras rotas public que possam estar passando pelo middleware
-    "/((?!api|images|mockServiceWorker|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|images|installHook.js.map|mockServiceWorker|_next/static|_next/image|favicon.ico).*)",
   ],
 };

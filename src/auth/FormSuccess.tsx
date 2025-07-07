@@ -17,7 +17,7 @@ export const FormSuccess = ({ message }: FormSuccessProps) => {
         alignItems: "center",
         gap: 2,
         fontSize: "0.875rem",
-        color: "rgb(16, 185, 129)",
+        color: "primary.success",
       }}
     >
       <CheckCircleOutlineIcon sx={{ fontSize: "1rem" }} />
