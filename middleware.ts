@@ -2,7 +2,6 @@ import NextAuth from "next-auth";
 import { authRoutes, DEFAULT_LOGIN_REDIRECT, publicRoutes } from "./routes";
 import authConfig from "@/auth.config";
 import { NextResponse } from "next/server";
-import Helpers from "./src/helpers";
 
 const { auth } = NextAuth(authConfig);
 
@@ -18,7 +17,9 @@ export default auth((req) => {
   //const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
   console.log("IsAuthRoute:", nextUrl.pathname);
-  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
+  const isAuthRoute = authRoutes.some((route) =>
+    nextUrl.pathname.startsWith(route)
+  );
 
   // if (req.auth?.error || !req.auth) {
   //   console.log("❌ Token error detected, clearing session:", req.auth?.error);

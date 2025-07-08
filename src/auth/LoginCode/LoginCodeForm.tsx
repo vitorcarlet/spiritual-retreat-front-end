@@ -1,12 +1,9 @@
 "use client";
-import React, { startTransition, useState } from "react";
+import React, { useState } from "react";
 import {
   Avatar,
   Button,
   TextField,
-  FormControlLabel,
-  Checkbox,
-  Link,
   Grid,
   Box,
   Typography,
@@ -20,17 +17,19 @@ import { useSession } from "next-auth/react";
 // -- ADICIONADO: Imports do Zod e seu Resolver
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { login } from "@/src/actions/login";
 import { useSearchParams } from "next/navigation";
-import { FormError } from "../../FormError";
-import { FormSuccess } from "../../FormSuccess";
+import { FormError } from "../FormError";
+import { FormSuccess } from "../FormSuccess";
+import { OtpInput } from "@/src/components/OtpInput";
 
 // -- ADICIONADO: Definição do schema de validação Zod
-const loginSchema = z.object({
-  email: z.string().email("Informe um email válido"),
-  password: z.string().min(3, "A senha deve ter no mínimo 3 caracteres"),
+const loginCodeSchema = z.object({
+  code: z
+    .string()
+    .min(6, "O código deve ter no mínimo 6 caracteres")
+    .max(6, "O código deve ter no máximo 6 caracteres"),
 });
-type LoginSchema = z.infer<typeof loginSchema>; // Tipo derivado do schema
+type LoginCodeSchema = z.infer<typeof loginCodeSchema>; // Tipo derivado do schema
 
 export default function LoginCodeForm() {
   const {
@@ -38,18 +37,19 @@ export default function LoginCodeForm() {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<LoginSchema>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<LoginCodeSchema>({
+    resolver: zodResolver(loginCodeSchema),
   });
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
 
   //const { status } = useSession();
   const session = useSession();
+  const [otp, setOtp] = useState<string>(""); // Estado para o código OTP
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
   const [loading, setLoading] = useState(false);
-  const onSubmit = async (data: { email: string; password: string }) => {
+  const onSubmit = async (data: { code: string }) => {
     setLoading(true);
     if (session.status === "loading") return null;
 
@@ -85,7 +85,7 @@ export default function LoginCodeForm() {
   // }
   console.log(session, "Session from login form");
   return (
-    <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
+    <Paper elevation={1} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
       <Box
         sx={{
           display: "flex",
@@ -105,19 +105,13 @@ export default function LoginCodeForm() {
         </Typography>
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
           <Typography>{session?.status}</Typography>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Endereço de Email"
-            autoComplete="email"
-            autoFocus
-            {...register("email", { required: true })}
-            //onChange={(e) => setEmail(e.target.value)}
+          <OtpInput
+            length={6}
+            onChange={(e) => setOtp(e)}
+            error={!!errors.code}
           />
-          {errors.email && (
-            <Typography color="error">{errors.email.message}</Typography>
+          {errors.code && (
+            <Typography color="error">{errors.code.message}</Typography>
           )}
 
           <Button

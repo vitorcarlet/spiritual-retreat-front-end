@@ -22,6 +22,7 @@ export default function ModeSwitch() {
         justifyContent: "flex-end",
         mt: 1,
         p: 1,
+        zIndex: 1000,
       }}
     >
       <FormControl>

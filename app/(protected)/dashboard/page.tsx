@@ -1,8 +1,7 @@
 // import { auth } from "auth";
 // import getServerSession from "next-auth";
 "use client";
-import { Box, Grid, useMediaQuery, useTheme } from "@mui/material";
-import DashboardPage from "../../serverTest/page";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import TopBar from "@/src/components/navigation/TopBar";
 import MenuNav from "@/src/components/navigation/Menu";
 import { useState } from "react";

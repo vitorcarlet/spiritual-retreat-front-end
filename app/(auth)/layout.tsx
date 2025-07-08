@@ -18,9 +18,7 @@ export default async function ProtectedLayout({
       <EmotionCacheProvider>
         <ThemeWrapper theme={theme}>
           {/* <SessionProvider session={session}> */}
-          <div className="flex items-center justify-center mx-4 my-6 lg:mt-20">
-            {children}
-          </div>
+          <div>{children}</div>
           {/* </SessionProvider> */}
         </ThemeWrapper>
       </EmotionCacheProvider>

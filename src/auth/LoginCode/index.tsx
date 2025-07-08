@@ -1,57 +1,33 @@
-"use client";
-import { Box, Grid } from "@mui/material";
-import LoginForm from "@/src/auth/login/form";
-import Image from "next/image";
+import { Grid } from "@mui/material";
 import LoginCodeForm from "./LoginCodeForm";
-
+import Image from "next/image";
 export default function LoginCodeContent() {
   //const theme = useTheme();
 
   return (
-    <Grid
-      container
-      spacing={0}
-      component="main"
-      sx={{
-        height: "100vh",
-        borderColor: "background.default",
-        borderWidth: 4,
-        borderStyle: "solid",
-      }}
-    >
-      <Box
+    <Grid container spacing={0} component="main" width={"100%"} height="100vh">
+      <Grid
+        size={{ xs: 12 }}
         sx={{
-          backgroundColor: (theme) =>
-            theme.palette.mode === "light"
-              ? theme.palette.grey[50]
-              : theme.palette.grey[900],
+          backgroundColor: "background.default", // ← Use a cor padrão do tema
           position: "relative", // ← IMPORTANTE: Necessário para fill
         }}
-        display={"flex"}
-        justifyContent={"center"}
-        alignItems={"center"}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        padding={4}
       >
         <Image
           src={"/images/background16-9.png"} // ← Renomeie o arquivo (sem dois pontos)
           alt="Background"
           fill // ← Nova API
-          style={{ objectFit: "cover" }} // ← Use style
+          style={{ objectFit: "cover", zIndex: 1 }} // ← Use style
           priority // ← Para imagens importantes
-          onLoad={() => console.log("✅ Imagem carregou com sucesso")}
-          onError={(e) => console.error("❌ Erro ao carregar imagem:", e)}
         />
-
-        <Grid
-          size={{ xs: 12, md: 6 }}
-          component={Box}
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          padding={4}
-        >
+        <Grid size={{ xs: 12, md: 6 }} zIndex={2}>
           <LoginCodeForm />
         </Grid>
-      </Box>
+      </Grid>
     </Grid>
   );
 }
