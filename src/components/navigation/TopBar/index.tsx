@@ -1,6 +1,7 @@
 import React from "react";
 import { Toolbar, IconButton, Box, Badge, Paper } from "@mui/material";
 import { Iconify } from "@/src/components/Iconify";
+import UserMenu from "./UserIcon";
 
 interface TopBarProps {
   onMenuToggle?: () => void;
@@ -55,13 +56,7 @@ const TopBar: React.FC<TopBarProps> = (
           </IconButton>
 
           {/* User menu button */}
-          <IconButton
-            //onClick={onUserMenuOpen}
-            aria-label="Open user menu"
-            size="medium"
-          >
-            <Iconify icon="lucide:user" size={2.5} />
-          </IconButton>
+          <UserMenu />
         </Box>
       </Toolbar>
     </Paper>

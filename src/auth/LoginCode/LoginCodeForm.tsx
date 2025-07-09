@@ -20,7 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import { FormError } from "../FormError";
 import { FormSuccess } from "../FormSuccess";
-import { OtpInput } from "@/src/components/OtpInput";
+import { OtpInput } from "@/src/components/otp/OtpInput";
 
 // -- ADICIONADO: Definição do schema de validação Zod
 const loginCodeSchema = z.object({

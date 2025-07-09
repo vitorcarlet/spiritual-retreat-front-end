@@ -15,6 +15,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { OtpInput } from "@/src/components/otp/OtpInput";
+import OtpWrapper from "@/src/components/otp/OtpWrapper";
 
 // Define the Zod schema for validation
 const registerSchema = z
@@ -51,6 +53,7 @@ export default function RegisterForm() {
 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState<string>(""); // State for OTP code
 
   const onSubmit = async (data: RegisterSchema) => {
     setLoading(true);
@@ -88,27 +91,13 @@ export default function RegisterForm() {
           Registrar
         </Typography>
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="code"
-            label="Código de Registro"
-            autoComplete="username"
-            autoFocus
-            {...register("code")}
-            error={!!errors.code}
-            helperText={errors.code?.message}
-            slotProps={{
-              htmlInput: {
-                length: 9, // Limita o número de caracteres a 9
-              },
-            }}
-            onInput={(e) => {
-              const input = e.target as HTMLInputElement;
-              input.value = input.value.slice(0, 9); // Garante que não ultrapasse 9 caracteres
-            }}
-          />
+          <OtpWrapper>
+            <OtpInput
+              length={6}
+              onChange={(e) => setOtp(e)}
+              error={!!errors.code}
+            />
+          </OtpWrapper>
           <TextField
             margin="normal"
             required

@@ -6,14 +6,20 @@ import { revalidatePath } from "next/cache";
 export const logout = async () => {
   try {
     await signOut({});
+  } catch (error: any) {
+    // NEXT_REDIRECT é esperado - não é um erro real
+    if (error?.message?.includes("NEXT_REDIRECT")) {
+      console.log("✅ Logout successful, redirecting...");
 
-    // Use revalidatePath ao invés de redirect
-    revalidatePath("/", "layout");
+      // Limpar cache antes do redirect
+      revalidatePath("/", "layout");
 
-    // Retorne uma URL para redirecionamento no client
-    return { success: true, redirectTo: "/login" };
-  } catch (error) {
-    console.error("Erro ao fazer logout:", error);
+      // Permitir que o redirect aconteça
+      throw error;
+    }
+
+    // Apenas erros reais
+    console.error("❌ Erro real ao fazer logout:", error);
     return { success: false, error: "Erro ao fazer logout" };
   }
 };

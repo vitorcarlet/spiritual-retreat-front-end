@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SplashScreen } from "../components/loading-screen";
 
 export function MSWProvider({ children }: { children: React.ReactNode }) {
   const [mswReady, setMswReady] = useState(false);
@@ -24,7 +25,7 @@ export function MSWProvider({ children }: { children: React.ReactNode }) {
 
   // Em desenvolvimento, esperar MSW carregar
   if (process.env.NODE_ENV === "development" && !mswReady) {
-    return <div>Loading...</div>; // ou seu componente de loading
+    return <SplashScreen />; // ou seu componente de loading
   }
 
   return <>{children}</>;
