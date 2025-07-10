@@ -21,37 +21,6 @@ export default auth((req) => {
     nextUrl.pathname.startsWith(route)
   );
 
-  // if (req.auth?.error || !req.auth) {
-  //   console.log("❌ Token error detected, clearing session:", req.auth?.error);
-
-  //   // Limpar cookies e redirecionar para login
-  //   const response = NextResponse.redirect(new URL("/login", nextUrl));
-  //   response.cookies.set("next-auth.session-token", "", {
-  //     maxAge: 0,
-  //     path: "/",
-  //     httpOnly: true,
-  //     sameSite: "lax",
-  //   });
-  //   response.cookies.set("next-auth.csrf-token", "", {
-  //     maxAge: 0,
-  //     path: "/",
-  //     httpOnly: true,
-  //     sameSite: "lax",
-  //   });
-  //   response.cookies.set("next-auth.callback-url", "", {
-  //     maxAge: 0,
-  //     path: "/",
-  //     httpOnly: true,
-  //     sameSite: "lax",
-  //   });
-
-  //   return response;
-  // }
-
-  // const isLoggedIn = Helpers.isLoggedIn(
-  //   !!req.auth,
-  //   req.auth?.validity?.refresh_until
-  // );
   const isLoggedIn = !!req.auth;
   console.log("isLoggedIn:", isLoggedIn);
   if (nextUrl.pathname === "/") {

@@ -16,7 +16,6 @@ const Logo = (mode: string | undefined) => {
   //const background = theme.palette.text.primary;
   const primary = mode === "dark" ? "#FF6A00" : "#FFA04D";
   const textColor = mode === "dark" ? "#FFF" : "#000";
-  console.log(mode, "caralho");
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -47,7 +46,6 @@ const Logo = (mode: string | undefined) => {
 export const LogoRectangle = forwardRef<HTMLDivElement, Props>(
   ({ disabledLink = false, width = 100, height = 100, sx }, ref) => {
     const { mode } = useColorScheme();
-    console.log(mode, "caralho");
     const logo = (
       <Box
         ref={ref}
