@@ -1,4 +1,3 @@
-import React from "react";
 import { Toolbar, IconButton, Box, Badge, Paper } from "@mui/material";
 import { Iconify } from "@/src/components/Iconify";
 import UserMenu from "./UserIcon";
@@ -9,13 +8,11 @@ interface TopBarProps {
   onNotificationsOpen?: () => void;
 }
 
-const TopBar: React.FC<TopBarProps> = (
-  {
-    //onMenuToggle,
-    //   onUserMenuOpen,
-    //   onNotificationsOpen,
-  }
-) => {
+const TopBar = ({
+  onMenuToggle,
+  onUserMenuOpen,
+  onNotificationsOpen,
+}: TopBarProps) => {
   return (
     <Paper
       elevation={0}

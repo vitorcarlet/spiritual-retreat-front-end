@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { signOut } from "next-auth/react"; // ← Client-side signOut
 import {
   Avatar,
   IconButton,
@@ -10,7 +11,6 @@ import {
   Divider,
 } from "@mui/material";
 import { Logout, Settings } from "@mui/icons-material";
-import { logout } from "@/src/actions/logout";
 
 export default function UserMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -22,6 +22,17 @@ export default function UserMenu() {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut({
+        callbackUrl: "/login", // Redirecionar para login
+        redirect: true,
+      });
+    } catch (error) {
+      console.error("Erro no logout:", error);
+    }
   };
 
   return (
@@ -79,7 +90,7 @@ export default function UserMenu() {
           </ListItemIcon>
           Settings
         </MenuItem>
-        <MenuItem onClick={() => logout()}>
+        <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <Logout fontSize="small" />
           </ListItemIcon>

@@ -12,8 +12,6 @@ export default auth((req) => {
   // console.log("=== MIDDLEWARE DEBUG ===");
   // console.log("URL:", nextUrl.href);
   // console.log("Pathname:", nextUrl.pathname);
-  console.log("req.auth:", req.auth);
-
   //const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
   const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
   console.log("IsAuthRoute:", nextUrl.pathname);
@@ -21,8 +19,9 @@ export default auth((req) => {
     nextUrl.pathname.startsWith(route)
   );
 
+  // const isLoggedIn = !req.auth?.error;
   const isLoggedIn = !!req.auth;
-  console.log("isLoggedIn:", isLoggedIn);
+  console.log("isLoggedIn:", isLoggedIn, req.auth);
   if (nextUrl.pathname === "/") {
     if (isLoggedIn) {
       console.log("🔄 Redirecting logged user from root to dashboard");
@@ -53,20 +52,6 @@ export default auth((req) => {
       new URL(`/login?callbackUrl=${encodedCallbackUrl}`, nextUrl)
     );
   }
-
-  // Verificar token
-  console.log("Token exists:", !!req.auth);
-  console.log(
-    "Token data:",
-    req.auth
-      ? {
-          email: req.auth.user,
-          exp: req.auth.expires,
-          hasData: !!req.auth,
-          dataKeys: req.auth ? Object.keys(req.auth) : null,
-        }
-      : null
-  );
 
   //const baseUrl = req.nextUrl.origin;
 

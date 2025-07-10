@@ -21,7 +21,6 @@ import { LoginResponse } from "./src/auth/types";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { authRoutes, publicRoutes as pubRoutes } from "./routes";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -36,12 +35,12 @@ const storage = createStorage({
 export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: !!process.env.AUTH_DEBUG,
   theme: { logo: "https://authjs.dev/img/logo-sm.png" },
-  session: { strategy: "jwt", maxAge: 4 * 60, // 4 minutes
+  session: { strategy: "jwt", maxAge: 15 * 60, // 4 minutes
     updateAge: 30 * 60, // 30 minutes
   },
   pages: {
     signIn: "/login",
-    error: "/login", // Error code passed in query string as ?error=
+    error: "/", // Error code passed in query string as ?error=
   },
   adapter: UnstorageAdapter(storage),
 
@@ -60,25 +59,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return false;
     },
-    // 2. Executa sempre que alguém chama /api/auth/session
-    // async session({ session, token }) {
-    //   session.user.id = token.id as string;
-    //   session.user.role = token.role as string;
 
-    //   // expõe só o que precisa ser lido no browser
-    //   session.accessToken = token.accessToken as string;
-
-    //   return session;
-    // },
-    // async redirect({ url, baseUrl }) {
-    //   return url.startsWith(baseUrl)
-    //     ? Promise.resolve(url)
-    //     : Promise.resolve(baseUrl);
-    // },
-
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       // Initial signin contains a 'User' object from authorize method
-      if (user || account) {
+      //console.log(user,token,'JWT USER')
+      if (user) {
         console.debug("Initial signin");
         return { ...token, data: user };
       }
@@ -112,26 +97,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       console.debug("❌ Token error detected:", token.error);
       return {
         ...session,
+        user: undefined,
         error: token.error,
         validity: null,
-        expires: "1970-01-01T00:00:00.000Z", // Data no passado força expiração
+        expires: "1970-01-01T00:00:00.000Z", // Date in the past forces logout
       };
     }
       session.user = token.data.user;
       session.validity = token.data.validity;
       session.error = token.error;
+      console.log(session, 'SESSION CALLBACK')
       return session;
     },
-    authorized: ({ auth, request }) => {
-      if (auth?.error) {
-        console.debug("❌ Unauthorized due to token error:", auth.error);
-        return false;
-      }
-      const { pathname } = request.nextUrl;
-      const publicRoutes = [...authRoutes, ...pubRoutes]; 
-      if (!publicRoutes.includes(pathname)) return !!auth;
-      return true;
-    }
+    // authorized: ({ auth, request }) => {
+    //   if (auth?.error) {
+    //     console.debug("❌ Unauthorized due to token error:", auth.error);
+    //     return false;
+    //   }
+    //   const { pathname } = request.nextUrl;
+    //   const publicRoutes = [...authRoutes, ...pubRoutes]; 
+    //   if (!publicRoutes.includes(pathname)) return !auth?.error && !!auth?.user;
+    //   return true;
+    // }
   },
   experimental: { enableWebAuthn: true },
   providers: [
@@ -205,7 +192,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
   try {
     // Get a new access token from backend using the refresh token
-    const res = await refresh(nextAuthJWT.data.tokens.refresh);
+    console.log(nextAuthJWT,'NEXTAUTHJWTWWW')
+    const res = await refresh(nextAuthJWT.data.tokens.refresh_token);
     const accessToken: BackendAccessJWT = res?.data;
 
     if (!res || accessToken.access_token === undefined) return { ...nextAuthJWT, error: "RefreshAccessTokenError" };
@@ -219,10 +207,13 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
     return { ...nextAuthJWT,
       data: {
         ...nextAuthJWT.data,
-        valid_until: exp,
+        validity: {
+          ...nextAuthJWT.data.validity,
+          valid_until: exp
+        },
         tokens: {
           ...nextAuthJWT.data.tokens,
-          access: accessToken.access_token
+          access_token: accessToken.access_token
         }
     } };
   } catch (error) {

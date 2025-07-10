@@ -111,7 +111,8 @@ export const create_access_token = (user: UserObject): string => {
     SECRET_SIGNING_SALT,
     {
       algorithm: "HS256", // HS256 é mais comum que HS384
-      expiresIn: "15m", // 15 minutos é mais realista
+      //Refresh token expired: Error: Bad "options.expiresIn" option the payload already has an "exp" property.
+      //expiresIn: "15m", // 15 minutos é mais realista
     }
   );
 };
