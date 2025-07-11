@@ -45,7 +45,15 @@ export const OtpInput = ({ length, onChange, error }: OtpInputProps) => {
     }
   };
   return (
-    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+    <Box
+      sx={{
+        width: "fit-content",
+        height: "fit-content",
+        display: "flex",
+        gap: 1,
+        justifyContent: "center",
+      }}
+    >
       {otp.map((value, index) => (
         <TextField
           key={index}
@@ -64,7 +72,7 @@ export const OtpInput = ({ length, onChange, error }: OtpInputProps) => {
           }}
           sx={{
             width: 56,
-            height: 56,
+            // height: 56,
             "& .MuiOutlinedInput-root": {
               "& fieldset": {
                 borderColor: error ? "error.main" : "primary.main",

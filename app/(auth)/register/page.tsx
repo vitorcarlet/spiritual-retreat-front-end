@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { Metadata } from "next";
 import RegisterPageContent from "@/src/auth/register";
 export const metadata: Metadata = {
@@ -7,9 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default async function RegisterPage() {
-  return (
-    <Suspense>
-      <RegisterPageContent />
-    </Suspense>
-  );
+  return <RegisterPageContent />;
 }

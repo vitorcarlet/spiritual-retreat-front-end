@@ -53,6 +53,7 @@ export default function RegisterForm() {
 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [otp, setOtp] = useState<string>(""); // State for OTP code
 
   const onSubmit = async (data: RegisterSchema) => {
@@ -91,11 +92,17 @@ export default function RegisterForm() {
           Registrar
         </Typography>
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
-          <OtpWrapper>
+          <OtpWrapper
+            label="Código de Verificação"
+            //error={!!error}
+            helperText={"Digite o código de 6 dígitos para verificar sua conta"}
+            required
+            // focused={true} // Controle manual do foco (opcional)
+          >
             <OtpInput
               length={6}
-              onChange={(e) => setOtp(e)}
-              error={!!errors.code}
+              onChange={setOtp}
+              //error={!!error}
             />
           </OtpWrapper>
           <TextField
