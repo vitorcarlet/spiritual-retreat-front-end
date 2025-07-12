@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 // import { getLocale } from "next-intl/server";
-import {
-  CssBaseline,
-  InitColorSchemeScript,
-  ThemeProvider,
-} from "@mui/material";
+import { CssBaseline, InitColorSchemeScript } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
-import theme from "../src/theme/theme";
 import { NextIntlClientProvider } from "next-intl";
 import ModeSwitch from "../src/components/navbar/mui/ModeSwitch";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { initMocks } from "@/src/mocks";
 import { MSWProvider } from "@/src/providers/MSWProvider";
+import ThemeProvider from "@/src/providers/ThemeProvider";
+import EmotionCacheProvider from "@/src/components/navbar/mui/EmotionCacheProvider";
 //import { initMocks } from "@/src/mocks";
 
 if (process.env.NODE_ENV === "development") {
@@ -47,19 +44,21 @@ export default async function RootLayout({
     <html lang={realLocale} suppressHydrationWarning>
       <body className={poppins.className}>
         <SessionProvider session={session}>
-          <InitColorSchemeScript attribute="class" />
-          <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-            <ThemeProvider theme={theme}>
-              <CssBaseline />
-              <NextIntlClientProvider locale={realLocale}>
-                <MSWProvider>
-                  <ModeSwitch />
-                  {children}
-                  {/* <ToastContainer /> */}
-                </MSWProvider>
-              </NextIntlClientProvider>
-            </ThemeProvider>
-          </AppRouterCacheProvider>
+          <EmotionCacheProvider>
+            <InitColorSchemeScript attribute="class" />
+            <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+              <ThemeProvider>
+                <CssBaseline />
+                <NextIntlClientProvider locale={realLocale}>
+                  <MSWProvider>
+                    <ModeSwitch />
+                    {children}
+                    {/* <ToastContainer /> */}
+                  </MSWProvider>
+                </NextIntlClientProvider>
+              </ThemeProvider>
+            </AppRouterCacheProvider>
+          </EmotionCacheProvider>
         </SessionProvider>
       </body>
     </html>

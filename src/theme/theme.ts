@@ -1,5 +1,9 @@
 "use client";
-import { createTheme, shouldSkipGeneratingVar } from "@mui/material";
+import {
+  createTheme,
+  extendTheme,
+  shouldSkipGeneratingVar,
+} from "@mui/material";
 import breakpoints from "./breakpoints";
 import { customShadows, typography } from "./core";
 import { COMMON, GREY } from "./core/palette";
@@ -25,7 +29,7 @@ const initialTheme = {
     },
   },
   cssVariables: {
-    colorSchemeSelector: "class",
+    colorSchemeSelector: "class" as const,
   },
   //   palette: {
   //     ...COMMON,
@@ -39,7 +43,7 @@ const initialTheme = {
   // components,
   typography,
   breakpoints,
-  cssVarPrefix: "",
+  //cssVarPrefix: "",
   customShadows: {
     ...customShadows.light,
     // primary: `0 8px 16px 0 ${alpha(palette.light.primary.main, 0.24)}`,
@@ -48,6 +52,7 @@ const initialTheme = {
 };
 
 const theme = createTheme(initialTheme);
+//const theme = createTheme(initialTheme);
 theme.components = ComponentsOverrides(theme);
 
 export default theme;

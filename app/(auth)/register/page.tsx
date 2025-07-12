@@ -5,6 +5,6 @@ export const metadata: Metadata = {
   description: "Cadastre-se para criar uma conta",
 };
 
-export default async function RegisterPage() {
+export default function RegisterPage() {
   return <RegisterPageContent />;
 }

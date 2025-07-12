@@ -32,7 +32,7 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
 }) => {
   const theme = useTheme();
   const { mode } = useColorScheme();
-  console.log(mode, theme.palette.mode);
+  console.log(mode, theme.palette.mode, theme.vars?.palette);
   const [internalFocused, setInternalFocused] = useState(false);
 
   // Use controlled focused if provided, otherwise use internal state
@@ -53,17 +53,17 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
 
   // Determinar cor da borda
   const getBorderColor = () => {
-    if (error) return theme.palette.error.main;
-    if (isFocused) return theme.palette.primary.main;
-    if (disabled) return theme.palette.action.disabled;
-    return theme.palette.grey[400];
+    if (error) return theme.vars?.palette.error.main;
+    if (isFocused) return theme.vars?.palette.primary.main;
+    if (disabled) return theme.vars?.palette.action.disabled;
+    return theme.vars?.palette.grey[400];
   };
 
   // Determinar cor do label
   const getLabelColor = () => {
-    if (error) return theme.palette.error.main;
-    if (isFocused) return theme.palette.primary.main;
-    if (disabled) return theme.palette.text.disabled;
+    if (error) return theme.vars?.palette.error.main;
+    if (isFocused) return theme.vars?.palette.primary.main;
+    if (disabled) return theme.vars?.palette.text.disabled;
     return theme.palette.text.secondary;
   };
 
@@ -84,8 +84,8 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
           borderColor: getBorderColor(),
           borderRadius: 1,
           backgroundColor: disabled
-            ? theme.palette.action.disabledBackground
-            : theme.palette.background.default,
+            ? theme.vars?.palette.action.disabledBackground
+            : theme.vars?.palette.background.default,
           cursor: disabled ? "not-allowed" : "text",
           transition: theme.transitions.create(
             ["border-color", "background-color", "box-shadow"],
@@ -97,12 +97,18 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
           // Box shadow quando focado
           ...(isFocused &&
             !error && {
-              boxShadow: `0 0 0 1px ${alpha("primary.main", 0.25)}`,
+              boxShadow: `0 0 0 1px ${alpha(
+                theme.vars?.palette.primary.main,
+                0.25
+              )}`,
             }),
 
           // Box shadow de erro
           ...(error && {
-            boxShadow: `0 0 0 1px ${alpha("error.main", 0.25)}`,
+            boxShadow: `0 0 0 1px ${alpha(
+              theme.vars?.palette.error.main,
+              0.25
+            )}`,
           }),
 
           "&:hover": {
