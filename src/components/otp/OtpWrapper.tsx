@@ -1,16 +1,11 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Typography,
-  useTheme,
-  alpha,
-  useColorScheme,
-} from "@mui/material";
+import { Box, Typography, useTheme, Theme } from "@mui/material";
+import { FieldError } from "react-hook-form";
 
 interface OtpWrapperProps {
   children: React.ReactNode;
   label?: string;
-  error?: boolean;
+  error?: FieldError;
   helperText?: string;
   disabled?: boolean;
   required?: boolean;
@@ -19,10 +14,11 @@ interface OtpWrapperProps {
   onBlur?: () => void;
 }
 
+// @TODO: DEIXAR MAIS PARECIDO COM O MUI
 const OtpWrapper: React.FC<OtpWrapperProps> = ({
   children,
   label = "Código de Verificação",
-  error = false,
+  error,
   helperText,
   disabled = false,
   required = false,
@@ -31,8 +27,8 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
   onBlur,
 }) => {
   const theme = useTheme();
-  const { mode } = useColorScheme();
-  console.log(mode, theme.palette.mode, theme.vars?.palette);
+  //const { mode } = useColorScheme();
+  console.log(error, "Error in OtpWrapper");
   const [internalFocused, setInternalFocused] = useState(false);
 
   // Use controlled focused if provided, otherwise use internal state
@@ -52,7 +48,7 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
   };
 
   // Determinar cor da borda
-  const getBorderColor = () => {
+  const getBorderColor = (theme: Theme) => {
     if (error) return theme.vars?.palette.error.main;
     if (isFocused) return theme.vars?.palette.primary.main;
     if (disabled) return theme.vars?.palette.action.disabled;
@@ -81,11 +77,11 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
           minHeight: 56,
           padding: "0 14px",
           border: `${isFocused ? 2 : 1}px solid`,
-          borderColor: getBorderColor(),
+          borderColor: (theme) => getBorderColor(theme),
           borderRadius: 1,
           backgroundColor: disabled
             ? theme.vars?.palette.action.disabledBackground
-            : theme.vars?.palette.background.default,
+            : theme.vars?.palette.background.paper,
           cursor: disabled ? "not-allowed" : "text",
           transition: theme.transitions.create(
             ["border-color", "background-color", "box-shadow"],
@@ -97,26 +93,20 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
           // Box shadow quando focado
           ...(isFocused &&
             !error && {
-              boxShadow: `0 0 0 1px ${alpha(
-                theme.vars?.palette.primary.main,
-                0.25
-              )}`,
+              boxShadow: `0 0 0 1px color-mix(in srgb, var(--mui-palette-error-main) 25%, transparent)`,
             }),
 
           // Box shadow de erro
           ...(error && {
-            boxShadow: `0 0 0 1px ${alpha(
-              theme.vars?.palette.error.main,
-              0.25
-            )}`,
+            boxShadow: `0 0 0 1px color-mix(in srgb, var(--mui-palette-primary-main) 25%, transparent)`,
           }),
 
           "&:hover": {
             borderColor: disabled
-              ? theme.palette.action.disabled
+              ? theme.vars?.palette.text.primary
               : error
-              ? theme.palette.error.main
-              : theme.palette.text.primary,
+              ? theme.vars?.palette.error.main
+              : theme.vars?.palette.text.primary,
           },
         }}
       >
@@ -127,7 +117,7 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
             position: "absolute",
             top: -8,
             left: 12,
-            backgroundColor: theme.palette.background.default,
+            backgroundColor: theme.vars?.palette.background.paper,
             padding: "0 4px",
             fontSize: 12,
             fontWeight: 400,
@@ -180,7 +170,7 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
             lineHeight: 1.33,
           }}
         >
-          {helperText}
+          {error?.message || helperText}
         </Typography>
       )}
     </Box>

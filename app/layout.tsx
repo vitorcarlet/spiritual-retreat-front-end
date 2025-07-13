@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 // import { getLocale } from "next-intl/server";
-import { CssBaseline, InitColorSchemeScript } from "@mui/material";
+import { InitColorSchemeScript } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { NextIntlClientProvider } from "next-intl";
 import ModeSwitch from "../src/components/navbar/mui/ModeSwitch";
@@ -48,7 +48,6 @@ export default async function RootLayout({
             <InitColorSchemeScript attribute="class" />
             <AppRouterCacheProvider options={{ enableCssLayer: true }}>
               <ThemeProvider>
-                <CssBaseline />
                 <NextIntlClientProvider locale={realLocale}>
                   <MSWProvider>
                     <ModeSwitch />

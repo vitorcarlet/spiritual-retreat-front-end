@@ -1,9 +1,5 @@
 "use client";
-import {
-  createTheme,
-  extendTheme,
-  shouldSkipGeneratingVar,
-} from "@mui/material";
+import { createTheme, shouldSkipGeneratingVar } from "@mui/material";
 import breakpoints from "./breakpoints";
 import { customShadows, typography } from "./core";
 import { COMMON, GREY } from "./core/palette";

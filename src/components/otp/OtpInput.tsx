@@ -1,11 +1,12 @@
 "use client";
 import { Box, TextField } from "@mui/material";
 import { useState, useRef, useEffect } from "react";
+import { FieldError } from "react-hook-form";
 
 interface OtpInputProps {
   length: number;
   onChange: (otp: string) => void;
-  error?: boolean;
+  error?: FieldError;
 }
 
 export const OtpInput = ({ length, onChange, error }: OtpInputProps) => {
@@ -62,12 +63,14 @@ export const OtpInput = ({ length, onChange, error }: OtpInputProps) => {
           onChange={(e) => handleChange(e.target.value, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}
-          inputProps={{
-            maxLength: 1,
-            style: {
-              textAlign: "center",
-              fontSize: 24,
-              fontWeight: "bold",
+          slotProps={{
+            htmlInput: {
+              maxLength: 1,
+              style: {
+                textAlign: "center",
+                fontSize: 24,
+                fontWeight: "bold",
+              },
             },
           }}
           sx={{
@@ -86,7 +89,7 @@ export const OtpInput = ({ length, onChange, error }: OtpInputProps) => {
               },
             },
           }}
-          error={error}
+          error={error?.message ? true : false}
         />
       ))}
     </Box>

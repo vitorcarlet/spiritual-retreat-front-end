@@ -10,7 +10,7 @@ import {
   Paper,
 } from "@mui/material";
 import { Icon } from "@iconify/react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,7 @@ const registerSchema = z
   .object({
     code: z
       .string()
-      .length(9, "O código deve ter exatamente 9 caracteres alfanuméricos")
+      .length(6, "O código deve ter exatamente 9 caracteres alfanuméricos")
       .regex(
         /^[a-zA-Z0-9]+$/,
         "O código deve conter apenas caracteres alfanuméricos"
@@ -46,12 +46,13 @@ export default function RegisterForm() {
     register,
     handleSubmit,
     setError,
+    control,
     formState: { errors },
   } = useForm<RegisterSchema>({
     resolver: zodResolver(registerSchema),
   });
 
-  const router = useRouter();
+  //const router = useRouter();
   const [loading, setLoading] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [otp, setOtp] = useState<string>(""); // State for OTP code
@@ -64,7 +65,7 @@ export default function RegisterForm() {
       console.log("Registration data:", data);
 
       // Redirect to dashboard or login page after successful registration
-      router.push("/dashboard");
+      //router.push("/dashboard");
     } catch (error) {
       console.error("Registration failed:", error);
       setError("email", {
@@ -93,16 +94,23 @@ export default function RegisterForm() {
         </Typography>
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
           <OtpWrapper
+            error={errors.code}
             label="Código de Verificação"
             //error={!!error}
             helperText={"Digite o código de 6 dígitos para verificar sua conta"}
             required
             // focused={true} // Controle manual do foco (opcional)
           >
-            <OtpInput
-              length={6}
-              onChange={setOtp}
-              //error={!!error}
+            <Controller
+              name="code"
+              control={control}
+              render={({ field, fieldState }) => (
+                <OtpInput
+                  length={6}
+                  onChange={field.onChange}
+                  error={fieldState.error}
+                />
+              )}
             />
           </OtpWrapper>
           <TextField

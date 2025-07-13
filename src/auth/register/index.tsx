@@ -21,10 +21,7 @@ export default function RegisterPageContent() {
       <Grid
         size={{ xs: 12, md: 4 }}
         sx={{
-          backgroundColor: (theme) =>
-            theme.palette.mode === "light"
-              ? theme.palette.grey[50]
-              : theme.palette.grey[900],
+          backgroundColor: (theme) => theme.palette.grey[900],
           position: "relative", // ← IMPORTANTE: Necessário para fill
           display: { xs: "none", md: "block" }, // ← Opcional: esconder no mobile
         }}
