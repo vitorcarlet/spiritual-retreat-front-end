@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { startTransition, useState } from "react";
 import {
   Avatar,
   Button,
@@ -11,42 +11,25 @@ import {
 } from "@mui/material";
 import { Icon } from "@iconify/react";
 import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { OtpInput } from "@/src/components/otp/OtpInput";
 import OtpWrapper from "@/src/components/otp/OtpWrapper";
+import { FormSuccess } from "../../FormSuccess";
+import { FormError } from "../../FormError";
+import { registerForm } from "@/src/actions/register";
+import { RegisterSchema, registerSchema } from "@/src/schemas";
 
 // Define the Zod schema for validation
-const registerSchema = z
-  .object({
-    code: z
-      .string()
-      .length(6, "O código deve ter exatamente 9 caracteres alfanuméricos")
-      .regex(
-        /^[a-zA-Z0-9]+$/,
-        "O código deve conter apenas caracteres alfanuméricos"
-      ),
-    email: z.string().email("Informe um email válido"),
-    password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
-    confirmPassword: z
-      .string()
-      .min(6, "A confirmação de senha deve ter no mínimo 6 caracteres"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "As senhas não coincidem",
-    path: ["confirmPassword"], // Path to highlight the error
-  });
-
-type RegisterSchema = z.infer<typeof registerSchema>;
 
 export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    setError,
+    //setError,
     control,
+    reset,
     formState: { errors },
   } = useForm<RegisterSchema>({
     resolver: zodResolver(registerSchema),
@@ -56,25 +39,36 @@ export default function RegisterForm() {
   const [loading, setLoading] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [otp, setOtp] = useState<string>(""); // State for OTP code
+  const [success, setSuccess] = useState<string | undefined>("");
+  const [errorMessage, setErrorMessage] = useState<string | undefined>("");
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
 
   const onSubmit = async (data: RegisterSchema) => {
     setLoading(true);
 
-    try {
-      // Simulate API call for registration
-      console.log("Registration data:", data);
-
-      // Redirect to dashboard or login page after successful registration
-      //router.push("/dashboard");
-    } catch (error) {
-      console.error("Registration failed:", error);
-      setError("email", {
-        type: "manual",
-        message: "Ocorreu um erro ao tentar registrar. Tente novamente.",
-      });
-    } finally {
-      setLoading(false);
-    }
+    startTransition(() => {
+      console.log(callbackUrl, "Callback URL from login form");
+      registerForm(data, callbackUrl)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .then((data: any) => {
+          console.log(data, "Data from login");
+          if (data?.error) {
+            reset();
+            setErrorMessage(data.error);
+            setLoading(false);
+          }
+          if (data?.success) {
+            setSuccess(data.success);
+            setErrorMessage("");
+          }
+          setLoading(false);
+        })
+        .catch(() => setErrorMessage("Something went wrong"))
+        .finally(() => {
+          setLoading(false);
+        });
+    });
   };
 
   return (
@@ -171,6 +165,15 @@ export default function RegisterForm() {
               </Typography>
             </Grid>
           </Grid>
+          <Grid>
+            <Typography variant="body2">
+              Ao se registrar, você concorda com nossos{" "}
+              <Link href="/terms">Termos de Serviço</Link> e{" "}
+              <Link href="/privacy">Política de Privacidade</Link>.
+            </Typography>
+          </Grid>
+          <FormError message={errorMessage} />
+          <FormSuccess message={success} />
         </Box>
       </Box>
     </Paper>

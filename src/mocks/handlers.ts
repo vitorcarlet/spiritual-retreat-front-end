@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { BackendJWT, UserObject } from "next-auth";
 import { create_access_token, create_refresh_token } from "./actions";
+import { RegisterSchema } from "../schemas";
 
 type Request = {
   email?: string;
@@ -70,6 +71,30 @@ export const handlers = [
 
     return HttpResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }),
+  http.post("http://localhost:3001/api/register", async ({ request }) => {
+    const { email, password, code } = (await request.json()) as RegisterSchema;
+
+    // Simular criação de usuário
+    if (email && password && code === "654321") {
+      return HttpResponse.json(
+        {
+          message: "User registered successfully",
+          success: true,
+        },
+        { status: 201 }
+      );
+    }
+
+    if (email && password && code !== "654321") {
+      return HttpResponse.json({ error: "Invalid code" }, { status: 400 });
+    }
+
+    return HttpResponse.json(
+      { error: "Invalid registration data" },
+      { status: 400 }
+    );
+  }),
+
   http.all("http://localhost:3001/*", ({ request }) => {
     console.log("⚠️ Unhandled request:", request.method, request.url);
     return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });

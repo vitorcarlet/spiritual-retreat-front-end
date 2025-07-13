@@ -28,7 +28,7 @@ const OtpWrapper: React.FC<OtpWrapperProps> = ({
 }) => {
   const theme = useTheme();
   //const { mode } = useColorScheme();
-  console.log(error, "Error in OtpWrapper");
+  //console.log(error, "Error in OtpWrapper");
   const [internalFocused, setInternalFocused] = useState(false);
 
   // Use controlled focused if provided, otherwise use internal state

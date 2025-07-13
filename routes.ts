@@ -30,3 +30,51 @@ export const apiAuthPrefix = "/api/auth";
  * @type {string}
  */
 export const DEFAULT_LOGIN_REDIRECT = "/dashboard";
+
+export const ROUTES = {
+  // ========== AUTENTICAÇÃO ==========
+  AUTH: {
+    LOGIN: "/login",
+    REGISTER: "/register",
+    LOGOUT: "/logout",
+    FORGOT_PASSWORD: "/forgot-password",
+    RESET_PASSWORD: "/reset-password",
+    VERIFY_EMAIL: "/verify-email",
+    TWO_FACTOR: "/two-factor",
+  },
+
+  // ========== PÁGINAS PRINCIPAIS ==========
+  PUBLIC: {
+    HOME: "/",
+    ABOUT: "/about",
+    CONTACT: "/contact",
+    PRIVACY: "/privacy",
+    TERMS: "/terms",
+  },
+
+  // ========== ÁREA PROTEGIDA ==========
+  DASHBOARD: {
+    ROOT: "/dashboard",
+    PROFILE: "/dashboard/profile",
+    SETTINGS: "/dashboard/settings",
+    USERS: "/dashboard/users",
+    RETREATS: "/dashboard/retreats",
+    BOOKINGS: "/dashboard/bookings",
+  },
+
+  // ========== RETIROS ==========
+  RETREATS: {
+    LIST: "/retreats",
+    DETAILS: (id: string) => `/retreats/${id}`,
+    BOOK: (id: string) => `/retreats/${id}/book`,
+    SCHEDULE: "/retreats/schedule",
+  },
+
+  // ========== PERFIL DO USUÁRIO ==========
+  USER: {
+    PROFILE: "/profile",
+    EDIT: "/profile/edit",
+    BOOKINGS: "/profile/bookings",
+    HISTORY: "/profile/history",
+  },
+};

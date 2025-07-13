@@ -1,43 +1,37 @@
 "use server";
 
-import * as z from "zod";
-import bcrypt from "bcryptjs";
+import { ROUTES } from "@/routes";
+import { RegisterSchema } from "@/src/schemas";
+import { api, handleApiResponse } from "../lib/sendRequestServerVanilla";
+import { redirect } from "next/navigation";
 
-import { db } from "@/lib/db";
-import { RegisterSchema } from "@/schemas";
-import { getUserByEmail } from "@/data/user";
-import { sendVerificationEmail } from "@/lib/mail";
-import { generateVerificationToken } from "@/lib/tokens";
+export const registerForm = async (values: RegisterSchema) => {
+  try {
+    const { email, password, code } = values;
 
-export const register = async (values: z.infer<typeof RegisterSchema>) => {
-  const validatedFields = RegisterSchema.safeParse(values);
-
-  if (!validatedFields.success) {
-    return { error: "Invalid fields!" };
-  }
-
-  const { email, password, name } = validatedFields.data;
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const existingUser = await getUserByEmail(email);
-
-  if (existingUser) {
-    return { error: "Email already in use!" };
-  }
-
-  await db.user.create({
-    data: {
-      name,
+    // ✅ Usar API client configurado
+    const response = await api.post(ROUTES.AUTH.REGISTER, {
       email,
-      password: hashedPassword,
-    },
-  });
+      password,
+      code,
+    });
 
-  const verificationToken = await generateVerificationToken(email);
-  await sendVerificationEmail(
-    verificationToken.email,
-    verificationToken.token,
-  );
+    // ✅ Lidar com resposta de forma consistente
+    const result = await handleApiResponse(response);
 
-  return { success: "Confirmation email sent!" };
+    if (!result.success) {
+      return { error: result.error };
+    }
+
+    // ✅ Redirecionar usando rotas centralizadas
+    redirect(ROUTES.DASHBOARD.ROOT);
+  } catch (error) {
+    console.error("Registration error:", error);
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Something went wrong during registration.",
+    };
+  }
 };
