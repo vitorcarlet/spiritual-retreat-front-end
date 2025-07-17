@@ -6,23 +6,25 @@ export const metadata = {
   title: "Protected Routes",
 };
 
-export default async function ProtectedLayout({
+export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  <Box >
+  return (
+  <Box>
     <SideMenu />
     <Box>
-
-        <TopBar />
-      
-      <Box  sx={{
-            flexGrow: 1,
-            p: 2,
-            transition: "margin 0.3s ease",
-          }}>{children}</Box>
+      <TopBar />
+      <Box
+        sx={{
+          flexGrow: 1,
+          p: 2,
+          transition: "margin 0.3s ease",
+        }}
+      >
+        {children}
+      </Box>
     </Box>
-  </Box>
-  return ;
+  </Box>)
 }

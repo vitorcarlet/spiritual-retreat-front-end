@@ -1,3 +1,4 @@
+'use client'
 import React from "react";
 import {
   Drawer,
@@ -6,9 +7,9 @@ import {
   ListItemButton,
   ListItemText,
 } from "@mui/material";
-import { ResponsiveDrawer, ResponsiveText } from "./ResponsiveDrawer";
+import { ResponsiveText } from "./ResponsiveDrawer";
 
-const MenuNav: React.FC = () => {
+const SideMenu: React.FC = () => {
   return (
     <Drawer
       variant="permanent"
@@ -52,4 +53,4 @@ const MenuNav: React.FC = () => {
   );
 };
 
-export default MenuNav;
+export default SideMenu;
