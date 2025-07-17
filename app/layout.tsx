@@ -9,8 +9,8 @@ import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { initMocks } from "@/src/mocks";
 import { MSWProvider } from "@/src/providers/MSWProvider";
-import ThemeProvider from "@/src/providers/ThemeProvider";
 import EmotionCacheProvider from "@/src/components/navbar/mui/EmotionCacheProvider";
+import ThemeMuiProvider from "@/src/providers/ThemeMuiProvider";
 //import { initMocks } from "@/src/mocks";
 
 if (process.env.NODE_ENV === "development") {
@@ -47,7 +47,7 @@ export default async function RootLayout({
           <EmotionCacheProvider>
             <InitColorSchemeScript attribute="class" />
             <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-              <ThemeProvider>
+              <ThemeMuiProvider>
                 <NextIntlClientProvider locale={realLocale}>
                   <MSWProvider>
                     <ModeSwitch />
@@ -55,7 +55,7 @@ export default async function RootLayout({
                     {/* <ToastContainer /> */}
                   </MSWProvider>
                 </NextIntlClientProvider>
-              </ThemeProvider>
+              </ThemeMuiProvider>
             </AppRouterCacheProvider>
           </EmotionCacheProvider>
         </SessionProvider>
