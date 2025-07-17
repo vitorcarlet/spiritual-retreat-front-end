@@ -1,5 +1,29 @@
 import { auth } from "@/auth";
 
+const userMockPermission = {
+  roles: {
+    admin: true,
+    manager: false,
+    consultant: false,
+  },
+  permissions: {
+    creat: {
+      users: true,
+    },
+    read: {
+      settings: true,
+      users: true,
+    },
+    update: {
+      users: true,
+      settings:true
+    },
+    delete:{
+      users: true,
+      settings: false,
+    }
+}}
+
 const roleMap = {
   admin: {
     "1.1": true,

@@ -1,4 +1,4 @@
-import SideMenu from "@/src/components/navigation/Menu";
+import SideMenu from "@/src/components/navigation/SideMenu";
 import TopBar from "@/src/components/navigation/TopBar";
 import { Box } from "@mui/material";
 

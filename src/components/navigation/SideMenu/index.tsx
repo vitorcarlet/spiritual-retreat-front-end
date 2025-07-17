@@ -1,15 +1,20 @@
-'use client'
+"use client";
 import React from "react";
 import {
+  Box,
   Drawer,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
+  Typography,
 } from "@mui/material";
 import { ResponsiveText } from "./ResponsiveDrawer";
+import { useSession } from "next-auth/react";
 
 const SideMenu: React.FC = () => {
+  const session = useSession();
+  console.log("SessionMenu:", session.data?.user.permissions);
   return (
     <Drawer
       variant="permanent"
@@ -22,23 +27,29 @@ const SideMenu: React.FC = () => {
         },
       }}
     >
+      <Box
+        sx={{
+          height: "4rem",
+          display: "flex",
+          alignItems: "center",
+          padding: 2,
+        }}
+      >
+        <Typography marginLeft={2}>SAM GESTOR</Typography>
+      </Box>
       <List>
         <ListItem>
           <ListItemButton>
-            <ListItemButton>
-              <ListItemText primary="Contact">
-                <ResponsiveText>User</ResponsiveText>
-              </ListItemText>
-            </ListItemButton>
+            <ListItemText primary="Contact">
+              <ResponsiveText>User</ResponsiveText>
+            </ListItemText>
           </ListItemButton>
         </ListItem>
         <ListItem>
           <ListItemButton>
-            <ListItemButton>
-              <ListItemText primary="Contact">
-                <ResponsiveText>Contact</ResponsiveText>
-              </ListItemText>
-            </ListItemButton>
+            <ListItemText primary="Contact">
+              <ResponsiveText>Contact</ResponsiveText>
+            </ListItemText>
           </ListItemButton>
         </ListItem>
         <ListItem>
