@@ -1,17 +1,11 @@
-// import { auth } from "auth";
-// import getServerSession from "next-auth";
-"use client";
+import { Box } from "@mui/material";
 
-export default function Page({ children }: { children: React.ReactNode }) {
+export default function Page() {
   return (
-    <div>Dashboard Page</div>
+    <Box sx={{ width: "100%", height: "100%", padding: 2 }}>
+      <h1>Dashboard Page</h1>
+      <p>Welcome to the dashboard!</p>
+      {/* Additional content can be added here */}
+    </Box>
   );
 }
-
-// export async function getServerSideProps(context: any) {
-//   return {
-//     props: {
-//       session: await getServerSession(context.req, context.res, authOptions),
-//     },
-//   };
-// }

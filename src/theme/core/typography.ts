@@ -1,6 +1,14 @@
+import { Poppins } from "next/font/google";
 import { pxToRem, responsiveFontSizes } from "../styles/utils";
 
-const FONT_PRIMARY = "Poppins, Public Sans, sans-serif"; // Google Font
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"], // You can pick any weights you use
+  style: ["normal", "italic"], // Optional
+  display: "swap", // Recommended to avoid FOIT
+});
+
+const FONT_PRIMARY = `${poppins.style.fontFamily}, sans-serif`; // Google Font
 // const FONT_SECONDARY = 'CircularStd, sans-serif'; // Local Font
 
 export const typography = {

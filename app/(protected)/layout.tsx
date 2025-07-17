@@ -12,19 +12,34 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-  <Box>
-    <SideMenu />
-    <Box>
-      <TopBar />
+    <Box display={"flex"} sx={{ height: "100vh" }}>
+      <SideMenu />
       <Box
         sx={{
           flexGrow: 1,
-          p: 2,
-          transition: "margin 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "background.paper",
         }}
       >
-        {children}
+        <TopBar />
+        <Box
+          sx={{
+            flexGrow: 1,
+            mt: 2,
+            ml: 3,
+            mr: 3,
+            mb: 2,
+            overflowY: "auto",
+            p: 0,
+            borderRadius: 4,
+            backgroundColor: "background.default",
+            transition: "margin 0.3s ease",
+          }}
+        >
+          {children}
+        </Box>
       </Box>
     </Box>
-  </Box>)
+  );
 }

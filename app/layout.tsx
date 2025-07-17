@@ -20,9 +20,10 @@ if (process.env.NODE_ENV === "development") {
 }
 
 const poppins = Poppins({
-  variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"], // You can pick any weights you use
+  style: ["normal", "italic"], // Optional
+  display: "swap", // Recommended to avoid FOIT
 });
 
 export async function metadata(): Promise<Metadata> {

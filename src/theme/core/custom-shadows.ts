@@ -6,6 +6,7 @@ import palette from "./palette";
 
 export type CustomShadowOptions = {
   z1: string;
+  z2: string;
   z8: string;
   z12: string;
   z16: string;
@@ -27,6 +28,7 @@ export type CustomShadowOptions = {
 export const OptionsShadows = (theme: Theme): CustomShadowOptions => {
   return {
     z1: theme.customShadows.z1,
+    z2: theme.customShadows.z2,
     z8: theme.customShadows.z8,
     z12: theme.customShadows.z12,
     z16: theme.customShadows.z16,
@@ -95,6 +97,7 @@ const createCustomShadow = (color: string) => {
   const transparent = alpha(color, 0.16);
   return {
     z1: `0 1px 2px 0 ${transparent}`,
+    z2: `0 2px 4px -1px ${transparent}`,
     z8: `0 8px 16px 0 ${transparent}`,
     z12: `0 12px 24px -4px ${transparent}`,
     z16: `0 16px 32px -4px ${transparent}`,

@@ -17,11 +17,12 @@ const TopBar = ({
     <Paper
       elevation={0}
       sx={{
-        borderBottom: 1,
+        borderBottom: 0,
         borderColor: "divider",
         position: "sticky",
         top: 0,
         zIndex: "appBar",
+        borderRadius: "0",
       }}
     >
       <Toolbar sx={{ justifyContent: "space-between", px: 2 }}>

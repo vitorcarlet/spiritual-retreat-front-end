@@ -6,14 +6,24 @@ import {
   List,
   ListItem,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   Typography,
 } from "@mui/material";
 import { ResponsiveText } from "./ResponsiveDrawer";
 import { useSession } from "next-auth/react";
+import { Iconify } from "../../Iconify";
 
-const SideMenu: React.FC = () => {
+const SideMenu = () => {
   const session = useSession();
+  const getMenuItems = () => {
+    if (session.status === "loading") {
+      return [];
+    }
+    if (session.status === "authenticated") {
+      return session.data?.user.permissions || [];
+    }
+  };
   console.log("SessionMenu:", session.data?.user.permissions);
   return (
     <Drawer
@@ -24,6 +34,8 @@ const SideMenu: React.FC = () => {
         "& .MuiDrawer-paper": {
           width: { xs: 60, md: 240 },
           boxSizing: "border-box",
+          borderRight: "0",
+          backgroundColor: "background.default",
         },
       }}
     >
@@ -35,24 +47,29 @@ const SideMenu: React.FC = () => {
           padding: 2,
         }}
       >
-        <Typography marginLeft={2}>SAM GESTOR</Typography>
+        <Typography color="primary.main" marginLeft={3} fontWeight={700}>
+          SAM GESTOR
+        </Typography>
       </Box>
-      <List>
-        <ListItem>
+      <List sx={{ marginLeft: 0 }}>
+        <ListItem sx={{ paddingLeft: 3 }}>
           <ListItemButton>
+            <ListItemIcon>
+              <Iconify icon="lucide:home" />
+            </ListItemIcon>
             <ListItemText primary="Contact">
               <ResponsiveText>User</ResponsiveText>
             </ListItemText>
           </ListItemButton>
         </ListItem>
-        <ListItem>
+        <ListItem sx={{ paddingLeft: 3 }}>
           <ListItemButton>
             <ListItemText primary="Contact">
               <ResponsiveText>Contact</ResponsiveText>
             </ListItemText>
           </ListItemButton>
         </ListItem>
-        <ListItem>
+        <ListItem sx={{ paddingLeft: 3 }}>
           <ListItemButton>
             <ListItemText primary="Contact">
               <ResponsiveText>Home</ResponsiveText>
@@ -63,5 +80,4 @@ const SideMenu: React.FC = () => {
     </Drawer>
   );
 };
-
 export default SideMenu;
