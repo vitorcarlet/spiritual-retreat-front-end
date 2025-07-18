@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw";
 import { BackendJWT, UserObject } from "next-auth";
 import { create_access_token, create_refresh_token } from "./actions";
 import { RegisterSchema } from "../schemas";
+import { createUserMock } from "./handlerData/login";
 
 type Request = {
   email?: string;
@@ -31,7 +32,6 @@ export const handlers = [
   http.post("http://localhost:3001/api/login", async ({ request }) => {
     const { email, password } = (await request.json()) as Request;
 
-    // Check if email and password are provided
     if (!email || !password) {
       return HttpResponse.json(
         { error: "Missing email or password" },
@@ -39,37 +39,39 @@ export const handlers = [
       );
     }
 
-    if (email === "admin@email.com" && password === "123") {
-      const user: UserObject = {
-        id: 1,
-        email: "admin@email.com",
-        name: "Vitor Admin",
-        first_name: "Vitor",
-        last_name: "Admin",
-        roles: ["admin"],
-        permissions: {
-          read: ["profile", "settings"],
-          write: ["profile"],
-        },
-      };
-      const mock_data: BackendJWT = {
-        access_token: create_access_token(user),
-        refresh_token: create_refresh_token(user),
-      };
+    // ✅ Diferentes usuários com diferentes roles
+    let user: UserObject;
 
+    if (email === "admin@email.com" && password === "123") {
+      user = createUserMock("admin");
+    } else if (email === "manager@email.com" && password === "123") {
+      user = createUserMock("manager");
+    } else if (email === "consultant@email.com" && password === "123") {
+      user = createUserMock("consultant");
+    } else if (email === "user@email.com" && password === "123") {
+      user = createUserMock("user");
+    } else {
       return HttpResponse.json(
-        {
-          message: "info do usuario",
-          success: true,
-          access_token: mock_data.access_token,
-          refresh_token: mock_data.refresh_token,
-          user,
-        },
-        { status: 200 }
+        { error: "Invalid credentials" },
+        { status: 401 }
       );
     }
 
-    return HttpResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    const mock_data: BackendJWT = {
+      access_token: create_access_token(user),
+      refresh_token: create_refresh_token(user),
+    };
+
+    return HttpResponse.json(
+      {
+        message: "Login successful",
+        success: true,
+        access_token: mock_data.access_token,
+        refresh_token: mock_data.refresh_token,
+        user,
+      },
+      { status: 200 }
+    );
   }),
   http.post("http://localhost:3001/api/register", async ({ request }) => {
     const { email, password, code } = (await request.json()) as RegisterSchema;

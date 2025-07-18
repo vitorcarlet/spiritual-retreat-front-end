@@ -16,14 +16,7 @@ import { Iconify } from "../../Iconify";
 
 const SideMenu = () => {
   const session = useSession();
-  const getMenuItems = () => {
-    if (session.status === "loading") {
-      return [];
-    }
-    if (session.status === "authenticated") {
-      return session.data?.user.permissions || [];
-    }
-  };
+
   console.log("SessionMenu:", session.data?.user.permissions);
   return (
     <Drawer

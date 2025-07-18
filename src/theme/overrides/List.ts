@@ -66,7 +66,7 @@ export default function List(theme: Theme) {
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          borderRadius: theme.spacing(1),
+          borderRadius: theme.spacing(0.5),
           margin: theme.spacing(0, 0.5),
           minHeight: 44,
           color: theme.palette.text.secondary,
@@ -82,7 +82,7 @@ export default function List(theme: Theme) {
             boxShadow: theme.customShadows?.z1,
           },
           "&:focus": {
-            backgroundColor: theme.palette.action.focus,
+            backgroundColor: theme.palette.action.selected,
             color: theme.palette.text.primary,
           },
         },
@@ -90,10 +90,10 @@ export default function List(theme: Theme) {
           backgroundColor: theme.palette.background.active,
           color: theme.palette.primary.contrastText,
           "&:hover": {
-            backgroundColor: theme.palette.primary.dark,
+            backgroundColor: theme.palette.background.active,
           },
           "&:focus": {
-            backgroundColor: theme.palette.primary.dark,
+            backgroundColor: theme.palette.action.selected,
           },
         },
         dense: {
@@ -104,7 +104,7 @@ export default function List(theme: Theme) {
     MuiListItemIcon: {
       styleOverrides: {
         root: {
-          color: "text.menu",
+          color: theme.palette.text.secondary,
           marginRight: theme.spacing(2),
           minWidth: 0,
         },

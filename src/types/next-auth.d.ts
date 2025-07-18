@@ -34,8 +34,44 @@ declare module "next-auth" {
     name: string;
     first_name: string;
     last_name: string;
-    roles: string[];
-    permissions: { [key: string]: string[] } | Record<string, never>;
+    roles: UserRoles;
+    permissions: UserPermissions;
+  }
+
+  interface UserRoles {
+    admin: boolean;
+    manager: boolean;
+    consultant: boolean;
+    user: boolean;
+  }
+
+  interface UserPermissions {
+    create: {
+      users: boolean;
+      settings: boolean;
+      retreats: boolean;
+      bookings: boolean;
+    };
+    read: {
+      users: boolean;
+      settings: boolean;
+      retreats: boolean;
+      bookings: boolean;
+      profile: boolean;
+    };
+    update: {
+      users: boolean;
+      settings: boolean;
+      retreats: boolean;
+      bookings: boolean;
+      profile: boolean;
+    };
+    delete: {
+      users: boolean;
+      settings: boolean;
+      retreats: boolean;
+      bookings: boolean;
+    };
   }
 
   export interface DecodedJWT {

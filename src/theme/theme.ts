@@ -13,11 +13,12 @@ const initialTheme = {
         ...COMMON,
         text: {
           primary: GREY[900],
-          secondary: GREY[700],
+          //secondary: GREY[700],
+          secondary: "#A6ABC8",
           disabled: GREY[500],
           menu: "#A6ABC8",
         },
-        background: { paper: GREY[0], default: "#EBEBEB", active: "#707FDD" },
+        background: { paper: GREY[0], default: "#EBEBEB", active: "#DFE1EA" },
         action: { active: GREY[600], ...COMMON.action },
       },
     },
@@ -33,7 +34,7 @@ const initialTheme = {
         background: {
           paper: GREY[900],
           default: GREY[1000],
-          active: "#707FDD",
+          active: "#DFE1EA",
         },
         action: { active: GREY[500], ...COMMON.action },
       },
