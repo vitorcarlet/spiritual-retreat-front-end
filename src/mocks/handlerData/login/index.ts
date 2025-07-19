@@ -1,6 +1,5 @@
 import { UserObject } from "next-auth";
 
-// ✅ Mock data com nova estrutura
 export const createUserMock = (
   roleType: "admin" | "manager" | "consultant" | "user"
 ): UserObject => {
@@ -12,41 +11,49 @@ export const createUserMock = (
     last_name: "Admin",
   };
 
-  // Definir roles baseado no tipo
   const roles = {
     admin: roleType === "admin",
     manager: roleType === "manager",
     consultant: roleType === "consultant",
-    user: true, // Todos têm role user
+    user: true,
   };
 
-  // Definir permissions baseado no role
   const permissions = {
-    create: {
-      users: roleType === "admin",
-      settings: roleType === "admin" || roleType === "manager",
-      retreats: roleType === "admin" || roleType === "manager",
-      bookings: true, // Todos podem criar bookings
+    users: {
+      create: roleType === "admin" ? true : false,
+      read: roleType === "admin" || roleType === "manager" ? true : false,
+      update: roleType === "admin" || roleType === "manager" ? true : false,
+      delete: roleType === "admin" ? true : false,
     },
-    read: {
-      users: roleType === "admin" || roleType === "manager",
-      settings: roleType === "admin" || roleType === "manager",
-      retreats: true, // Todos podem ler retreats
-      bookings: true, // Todos podem ler suas bookings
-      profile: true, // Todos podem ler seu profile
+    settings: {
+      create: roleType === "admin" ? true : false,
+      read: true,
+      update: roleType === "admin" || roleType === "manager" ? true : false,
+      delete: roleType === "admin" ? true : false,
     },
-    update: {
-      users: roleType === "admin",
-      settings: roleType === "admin" || roleType === "manager",
-      retreats: roleType === "admin" || roleType === "manager",
-      bookings: roleType === "admin" || roleType === "manager",
-      profile: true, // Todos podem atualizar seu profile
+    retreats: {
+      create: roleType === "admin" || roleType === "manager" ? true : false,
+      read: true, // Todos podem ler retreats
+      update: roleType === "admin" || roleType === "manager" ? true : false,
+      delete: roleType === "admin" ? true : false,
     },
-    delete: {
-      users: roleType === "admin",
-      settings: false, // Ninguém pode deletar settings
-      retreats: roleType === "admin",
-      bookings: roleType === "admin" || roleType === "manager",
+    bookings: {
+      create: true,
+      read: true,
+      update: roleType === "admin" || roleType === "manager" ? true : false,
+      delete: roleType === "admin" ? true : false,
+    },
+    profile: {
+      create: true,
+      update: true,
+      read: true,
+      delete: true,
+    },
+    dashboard: {
+      create: roleType === "admin" || roleType === "manager" ? true : false,
+      read: true, // Todos podem ler dashboard
+      update: roleType === "admin" || roleType === "manager" ? true : false,
+      delete: roleType === "admin" ? true : false,
     },
   };
 

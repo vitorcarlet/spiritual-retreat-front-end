@@ -1,4 +1,4 @@
-import type { UserObject, BackendJWT, BackendAccessJWT } from "next-auth";
+import type { UserObject, BackendAccessJWT } from "next-auth";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken"; // Use import ao invés de require
 import { AxiosResponse } from "axios";
@@ -9,47 +9,47 @@ const SECRET_SIGNING_SALT = "super-secret-salt";
 /**
  * Log in a user by sending a POST request to the backend using the supplied credentials.
  */
-export async function login(
-  email: string,
-  password: string
-): Promise<Response> {
-  console.debug("Logging in");
+// export async function login(
+//   email: string,
+//   password: string
+// ): Promise<Response> {
+//   console.debug("Logging in");
 
-  if (!email) {
-    throw new Error("Email is required");
-  }
-  if (!password) {
-    throw new Error("Password is required");
-  }
+//   if (!email) {
+//     throw new Error("Email is required");
+//   }
+//   if (!password) {
+//     throw new Error("Password is required");
+//   }
 
-  // Simular dados do usuário após validação
-  const userData: UserObject = {
-    id: "1",
-    email: email,
-    name: "Test User",
-    roles: ["user"],
-    first_name: "Test",
-    last_name: "User",
-    permissions: {
-      read: ["profile", "settings"],
-      write: ["profile"],
-    },
-  };
+//   // Simular dados do usuário após validação
+//   const userData: UserObject = {
+//     id: "1",
+//     email: email,
+//     name: "Test User",
+//     roles: ["user"],
+//     first_name: "Test",
+//     last_name: "User",
+//     permissions: {
+//       read: ["profile", "settings"],
+//       write: ["profile"],
+//     },
+//   };
 
-  // Dummy data to simulate a successful login
-  const mock_data: BackendJWT = {
-    access_token: create_access_token(userData),
-    refresh_token: create_refresh_token(userData),
-  };
+//   // Dummy data to simulate a successful login
+//   const mock_data: BackendJWT = {
+//     access_token: create_access_token(userData),
+//     refresh_token: create_refresh_token(userData),
+//   };
 
-  return new Response(JSON.stringify(mock_data), {
-    status: 200,
-    statusText: "OK",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-}
+//   return new Response(JSON.stringify(mock_data), {
+//     status: 200,
+//     statusText: "OK",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//   });
+// }
 
 /**
  * Refresh the access token by sending the refresh token.

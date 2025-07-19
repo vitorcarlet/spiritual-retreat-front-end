@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_API_MOCKING: process.env.NEXT_PUBLIC_API_MOCKING || "disabled",
   },
+  compiler: {
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "log"] }
+        : false,
+  },
 };
 
 const withNextIntl = createNextIntlPlugin();

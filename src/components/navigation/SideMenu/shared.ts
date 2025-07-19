@@ -20,6 +20,18 @@ export type MenuItem = {
 
 export const menuConfig: MenuItem[] = [
   {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: "material-symbols:dashboard",
+    path: "/dashboard",
+    access: {
+      permissions: {
+        dashboard: ["read"],
+      },
+      roles: ["admin", "manager", "consultant"],
+    },
+  },
+  {
     id: "user-management",
     label: "Gestão de Usuários",
     icon: "material-symbols:people",

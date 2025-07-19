@@ -50,41 +50,12 @@ declare module "next-auth" {
     | "retreats"
     | "settings"
     | "bookings"
-    | "profile";
+    | "profile"
+    | "dashboard";
+
   export type ActionType = "create" | "read" | "update" | "delete";
 
-  interface UserPermissions {
-    users: {
-      create: boolean;
-      read: boolean;
-      update: boolean;
-      delete: boolean;
-    };
-    retreats: {
-      create: boolean;
-      read: boolean;
-      update: boolean;
-      delete: boolean;
-    };
-    settings: {
-      create: boolean;
-      read: boolean;
-      update: boolean;
-      delete: boolean;
-    };
-    bookings: {
-      create: boolean;
-      read: boolean;
-      update: boolean;
-      delete: boolean;
-    };
-    profile: {
-      create: boolean;
-      read: boolean;
-      update: boolean;
-      delete: boolean;
-    };
-  }
+  type UserPermissions = Record<ResourceType, Record<ActionType, boolean>>;
 
   export interface DecodedJWT {
     exp: number;
