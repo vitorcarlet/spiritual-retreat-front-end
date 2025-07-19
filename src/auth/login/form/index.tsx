@@ -85,7 +85,15 @@ export default function LoginForm() {
   // }
   console.log(session, "Session from login form");
   return (
-    <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
+    <Paper
+      elevation={0}
+      sx={{
+        width: "100%",
+        padding: 4,
+        borderRadius: 2,
+        boxShadow: (theme) => `0px 4px 12px ${theme.palette.primary.main}80`,
+      }}
+    >
       <Box
         sx={{
           display: "flex",

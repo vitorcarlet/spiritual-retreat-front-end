@@ -10,14 +10,24 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import { ResponsiveText } from "./ResponsiveDrawer";
-import { useSession } from "next-auth/react";
 import { Iconify } from "../../Iconify";
+import { useMenuAccess } from "@/src/hooks/useMenuAccess";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const SideMenu = () => {
-  const session = useSession();
+  const { getAccessibleMenus, debugUserAccess } = useMenuAccess();
+  const router = useRouter();
 
-  console.log("SessionMenu:", session.data?.user.permissions);
+  // ✅ Obter apenas os menus que o usuário tem acesso
+  const accessibleMenus = getAccessibleMenus();
+
+  // Debug (remover em produção)
+  React.useEffect(() => {
+    debugUserAccess();
+  }, []);
+
+  console.log("SessionMenu:", accessibleMenus);
   return (
     <Drawer
       variant="permanent"
@@ -44,31 +54,31 @@ const SideMenu = () => {
           SAM GESTOR
         </Typography>
       </Box>
-      <List sx={{ marginLeft: 0 }}>
-        <ListItem sx={{ paddingLeft: 3 }}>
-          <ListItemButton>
-            <ListItemIcon>
-              <Iconify icon="lucide:home" />
-            </ListItemIcon>
-            <ListItemText primary="Contact">
-              <ResponsiveText>User</ResponsiveText>
-            </ListItemText>
-          </ListItemButton>
-        </ListItem>
-        <ListItem sx={{ paddingLeft: 3 }}>
-          <ListItemButton>
-            <ListItemText primary="Contact">
-              <ResponsiveText>Contact</ResponsiveText>
-            </ListItemText>
-          </ListItemButton>
-        </ListItem>
-        <ListItem sx={{ paddingLeft: 3 }}>
-          <ListItemButton>
-            <ListItemText primary="Contact">
-              <ResponsiveText>Home</ResponsiveText>
-            </ListItemText>
-          </ListItemButton>
-        </ListItem>
+      <List>
+        {accessibleMenus.map((menu) => (
+          <ListItem key={menu.id} disablePadding>
+            <ListItemButton
+              component={Link}
+              href={menu.path}
+              onClick={() => router.push(menu.path)}
+            >
+              <ListItemIcon>
+                <Iconify icon={menu.icon} />
+              </ListItemIcon>
+              <ListItemText primary={menu.label} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+
+        {/* Mostrar se não tem acesso a nada */}
+        {accessibleMenus.length === 0 && (
+          <ListItem>
+            <ListItemText
+              primary="Nenhum menu disponível"
+              secondary="Entre em contato com o administrador"
+            />
+          </ListItem>
+        )}
       </List>
     </Drawer>
   );

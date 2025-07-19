@@ -45,32 +45,44 @@ declare module "next-auth" {
     user: boolean;
   }
 
+  export type ResourceType =
+    | "users"
+    | "retreats"
+    | "settings"
+    | "bookings"
+    | "profile";
+  export type ActionType = "create" | "read" | "update" | "delete";
+
   interface UserPermissions {
-    create: {
-      users: boolean;
-      settings: boolean;
-      retreats: boolean;
-      bookings: boolean;
+    users: {
+      create: boolean;
+      read: boolean;
+      update: boolean;
+      delete: boolean;
     };
-    read: {
-      users: boolean;
-      settings: boolean;
-      retreats: boolean;
-      bookings: boolean;
-      profile: boolean;
+    retreats: {
+      create: boolean;
+      read: boolean;
+      update: boolean;
+      delete: boolean;
     };
-    update: {
-      users: boolean;
-      settings: boolean;
-      retreats: boolean;
-      bookings: boolean;
-      profile: boolean;
+    settings: {
+      create: boolean;
+      read: boolean;
+      update: boolean;
+      delete: boolean;
     };
-    delete: {
-      users: boolean;
-      settings: boolean;
-      retreats: boolean;
-      bookings: boolean;
+    bookings: {
+      create: boolean;
+      read: boolean;
+      update: boolean;
+      delete: boolean;
+    };
+    profile: {
+      create: boolean;
+      read: boolean;
+      update: boolean;
+      delete: boolean;
     };
   }
 
@@ -87,9 +99,7 @@ declare module "next-auth" {
     acr: string;
     "allowed-origins": string[];
     roles: string[];
-    permissions: {
-      [key: string]: string[];
-    };
+    permissions: Record<ResourceType, Record<ActionType, boolean>>;
     scope: string;
     email_verified: boolean;
     name: string;

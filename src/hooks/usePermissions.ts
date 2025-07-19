@@ -1,23 +1,23 @@
 import { useSession } from "next-auth/react";
-import { UserPermissions, UserRoles } from "next-auth";
+import { ResourceType, UserRoles } from "next-auth";
 
 export function usePermissions() {
   const { data: session } = useSession();
 
-  const canCreate = (resource: keyof UserPermissions["create"]) => {
-    return session?.user?.permissions?.create?.[resource] ?? false;
+  const canCreate = (resource: ResourceType) => {
+    return session?.user?.permissions?.[resource].create ?? false;
   };
 
-  const canRead = (resource: keyof UserPermissions["read"]) => {
-    return session?.user?.permissions?.read?.[resource] ?? false;
+  const canRead = (resource: ResourceType) => {
+    return session?.user?.permissions?.[resource].read ?? false;
   };
 
-  const canUpdate = (resource: keyof UserPermissions["update"]) => {
-    return session?.user?.permissions?.update?.[resource] ?? false;
+  const canUpdate = (resource: ResourceType) => {
+    return session?.user?.permissions?.[resource].update ?? false;
   };
 
-  const canDelete = (resource: keyof UserPermissions["delete"]) => {
-    return session?.user?.permissions?.delete?.[resource] ?? false;
+  const canDelete = (resource: ResourceType) => {
+    return session?.user?.permissions?.[resource].delete ?? false;
   };
 
   const hasRole = (role: keyof UserRoles) => {

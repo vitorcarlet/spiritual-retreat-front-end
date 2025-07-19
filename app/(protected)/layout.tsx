@@ -1,5 +1,6 @@
 import SideMenu from "@/src/components/navigation/SideMenu";
 import TopBar from "@/src/components/navigation/TopBar";
+import ProtectedRoute from "@/src/components/ProtectedRoute";
 import { Box } from "@mui/material";
 
 export const metadata = {
@@ -37,7 +38,7 @@ export default function ProtectedLayout({
             transition: "margin 0.3s ease",
           }}
         >
-          {children}
+          <ProtectedRoute>{children}</ProtectedRoute>
         </Box>
       </Box>
     </Box>
