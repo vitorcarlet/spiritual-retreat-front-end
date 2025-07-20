@@ -51,8 +51,6 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const onSubmit = async (data: { email: string; password: string }) => {
     setLoading(true);
-    if (session.status === "loading") return null;
-
     startTransition(() => {
       console.log(callbackUrl, "Callback URL from login form");
       login(data, callbackUrl)
@@ -74,16 +72,6 @@ export default function LoginForm() {
     });
   };
 
-  // if (session.status === "authenticated") {
-  //   return (
-  //     <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
-  //       <Box sx={{ display: "flex", justifyContent: "center" }}>
-  //         <Typography>Redirecionando...</Typography>
-  //       </Box>
-  //     </Paper>
-  //   );
-  // }
-  console.log(session, "Session from login form");
   return (
     <Paper
       elevation={0}

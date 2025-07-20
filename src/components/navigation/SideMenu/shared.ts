@@ -35,7 +35,7 @@ export const menuConfig: MenuItem[] = [
     id: "user-management",
     label: "Gestão de Usuários",
     icon: "material-symbols:people",
-    path: "/dashboard/users",
+    path: "/users",
     access: {
       // ✅ Prioridade para permissions específicas
       permissions: {
@@ -49,7 +49,7 @@ export const menuConfig: MenuItem[] = [
     id: "retreat-management",
     label: "Gestão de Retiros",
     icon: "material-symbols:temple-buddhist",
-    path: "/dashboard/retreats",
+    path: "/retreats",
     access: {
       permissions: {
         retreats: ["read"],
@@ -61,7 +61,7 @@ export const menuConfig: MenuItem[] = [
     id: "profile-management",
     label: "Gestão de Perfil",
     icon: "material-symbols:person",
-    path: "/dashboard/profile",
+    path: "/profile",
     access: {
       // ✅ Todos têm acesso ao próprio perfil
       permissions: {
@@ -74,7 +74,7 @@ export const menuConfig: MenuItem[] = [
     id: "settings",
     label: "Configurações",
     icon: "material-symbols:settings",
-    path: "/dashboard/settings",
+    path: "/settings",
     access: {
       permissions: {
         settings: ["read", "update"],

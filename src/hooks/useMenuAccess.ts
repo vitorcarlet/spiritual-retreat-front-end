@@ -1,17 +1,24 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+
 import { UserObject, UserRoles } from "next-auth";
 import {
   menuConfig,
   MenuItem,
   MenuPermission,
 } from "../components/navigation/SideMenu/shared";
+import { useEffect, useMemo } from "react";
 
 export function useMenuAccess() {
-  const session = useSession();
-  const user = session?.data?.user as UserObject | null;
-  console.log("🔍 User Session:", user);
+  const { data: session, status } = useSession();
+
+  console.log("🔍 Session Data:", session);
+  const user = useMemo(() => {
+    return session?.user as UserObject | null;
+  }, [session]);
+  const isLoading = status === "loading";
+  console.log("🔍 Session Status:", { status, hasUser: !!user });
   const hasAccess = (access: MenuPermission): boolean => {
     if (!user) return false;
 
@@ -62,12 +69,16 @@ export function useMenuAccess() {
   };
 
   const debugUserAccess = () => {
-    console.log("🔍 User Access Debug:", {
-      roles: user?.roles,
-      permissions: user?.permissions,
-      accessibleMenus: getAccessibleMenus().map((m) => m.label),
-    });
+    // console.log("🔍 User Access Debug:", {
+    //   roles: user?.roles,
+    //   permissions: user?.permissions,
+    //   accessibleMenus: getAccessibleMenus().map((m) => m.label),
+    // });
   };
+
+  useEffect(() => {
+    debugUserAccess();
+  }, [user]);
 
   return {
     hasAccess,
@@ -75,6 +86,7 @@ export function useMenuAccess() {
     canAccessMenu,
     debugUserAccess,
     user,
-    isLoading: !user,
+    isLoading,
+    status,
   };
 }

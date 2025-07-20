@@ -12,11 +12,13 @@ const initialTheme = {
       palette: {
         ...COMMON,
         text: {
+          //primary: { primary: GREY[900], contrastText: "#fff" },
           primary: GREY[900],
           //secondary: GREY[700],
           secondary: "#A6ABC8",
           disabled: GREY[500],
           menu: "#A6ABC8",
+          contrastText: "#A6ABC8",
         },
         background: { paper: GREY[0], default: "#EBEBEB", active: "#DFE1EA" },
         action: { active: GREY[600], ...COMMON.action },
@@ -27,9 +29,10 @@ const initialTheme = {
         ...COMMON,
         text: {
           primary: "#C9D1D9",
-          secondary: GREY[500],
+          secondary: GREY[0],
           disabled: GREY[600],
           menu: "#A6ABC8",
+          contrastText: GREY[900],
         },
         background: {
           paper: GREY[900],

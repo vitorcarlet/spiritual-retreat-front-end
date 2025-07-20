@@ -32,7 +32,7 @@ export default function List(theme: Theme) {
             }
           ),
           "&:hover": {
-            backgroundColor: theme.palette.action.hover,
+            backgroundColor: "var(--mui-palette-action-hover)",
           },
           "&:last-child": {
             marginBottom: 0,
@@ -40,12 +40,12 @@ export default function List(theme: Theme) {
         },
         button: {
           "&:hover": {
-            backgroundColor: theme.palette.action.hover,
-            boxShadow: theme.customShadows?.z1,
+            backgroundColor: "var(--mui-palette-action-hover)",
+            boxShadow: "var(--mui-customShadows-z1)",
           },
           "&:focus": {
-            backgroundColor: theme.palette.action.focus,
-            boxShadow: theme.customShadows?.z2,
+            backgroundColor: "var(--mui-palette-action-focus)",
+            boxShadow: "var(--mui-customShadows-z2)",
           },
         },
         dense: {
@@ -53,12 +53,12 @@ export default function List(theme: Theme) {
           paddingBottom: theme.spacing(0.5),
         },
         divider: {
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          borderBottom: `1px solid var(--mui-palette-divider)`,
         },
         selected: {
-          backgroundColor: theme.palette.action.selected,
+          backgroundColor: "var(--mui-palette-action-selected)",
           "&:hover": {
-            backgroundColor: theme.palette.action.selected,
+            backgroundColor: "var(--mui-palette-action-selected)",
           },
         },
       },
@@ -69,7 +69,7 @@ export default function List(theme: Theme) {
           borderRadius: theme.spacing(0.5),
           margin: theme.spacing(0, 0.5),
           minHeight: 44,
-          color: theme.palette.text.secondary,
+          color: "var(--mui-palette-text-secondary)",
           transition: theme.transitions.create(
             ["background-color", "color", "box-shadow"],
             {
@@ -77,23 +77,23 @@ export default function List(theme: Theme) {
             }
           ),
           "&:hover": {
-            backgroundColor: theme.palette.action.hover,
-            color: theme.palette.text.primary,
-            boxShadow: theme.customShadows?.z1,
+            backgroundColor: "var(--mui-palette-action-hover)",
+            color: "var(--mui-palette-text-primary)",
+            boxShadow: "var(--mui-customShadows-z1)",
           },
           "&:focus": {
-            backgroundColor: theme.palette.action.selected,
-            color: theme.palette.text.primary,
+            backgroundColor: "var(--mui-palette-action-selected)",
+            color: "var(--mui-palette-text-contrastText)",
           },
         },
         selected: {
-          backgroundColor: theme.palette.background.active,
-          color: theme.palette.primary.contrastText,
+          backgroundColor: "var(--mui-palette-background-active)",
+          color: "var(--mui-palette-text-contrastText)",
           "&:hover": {
-            backgroundColor: theme.palette.background.active,
+            backgroundColor: "var(--mui-palette-background-active)",
           },
           "&:focus": {
-            backgroundColor: theme.palette.action.selected,
+            backgroundColor: "var(--mui-palette-action-selected)",
           },
         },
         dense: {
@@ -104,7 +104,7 @@ export default function List(theme: Theme) {
     MuiListItemIcon: {
       styleOverrides: {
         root: {
-          color: theme.palette.text.secondary,
+          color: "var(--mui-palette-text-secondary)",
           marginRight: theme.spacing(2),
           minWidth: 0,
         },
@@ -112,7 +112,7 @@ export default function List(theme: Theme) {
     },
     MuiListItemText: {
       styleOverrides: {
-        color: "text.menu",
+        color: "var(--mui-palette-text-menu)",
         root: {
           margin: 0,
         },
@@ -123,7 +123,7 @@ export default function List(theme: Theme) {
         },
         secondary: {
           fontSize: 12,
-          color: theme.palette.text.secondary,
+          color: "var(--mui-palette-text-secondary)",
           lineHeight: 1.4,
         },
         dense: {

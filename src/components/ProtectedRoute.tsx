@@ -11,33 +11,56 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  const { canAccessMenu, isLoading } = useMenuAccess();
+  const { canAccessMenu, isLoading, status, user } = useMenuAccess();
   const pathname = usePathname();
   const router = useRouter();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (isLoading) return;
+    console.log("🔄 ProtectedRoute Effect:", {
+      status,
+      isLoading,
+      hasUser: !!user,
+      pathname,
+    });
 
-    const checkAccess = () => {
-      const access = menuConfig.some((menu) => {
-        if (pathname.startsWith(menu.path)) {
-          return canAccessMenu(menu.id);
+    // ✅ Aguardar a sessão carregar
+    if (isLoading) {
+      setHasAccess(null);
+      return;
+    }
+
+    // ✅ Se não está autenticado, redirecionar para login
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
+
+    // ✅ Se está autenticado, verificar acesso
+    if (status === "authenticated" && user) {
+      const checkAccess = () => {
+        const access = menuConfig.some((menu) => {
+          if (pathname.startsWith(menu.path)) {
+            return canAccessMenu(menu.id);
+          }
+          return false;
+        });
+
+        console.log("🔐 Access Check:", { pathname, access });
+        setHasAccess(access);
+
+        if (!access) {
+          console.log("❌ Access denied for path:", pathname);
+          router.push("/unauthorized");
         }
-        return false;
-      });
+      };
 
-      setHasAccess(access);
+      checkAccess();
+    }
+  }, [pathname, canAccessMenu, router, isLoading, status, user]);
 
-      if (!access) {
-        router.push("/unauthorized");
-      }
-    };
-
-    checkAccess();
-  }, [pathname, canAccessMenu, router, isLoading]);
-
-  if (isLoading || hasAccess === null) {
+  // ✅ Mostrar loading enquanto carrega sessão
+  if (isLoading || status === "loading") {
     return (
       <Box
         display="flex"
@@ -50,6 +73,21 @@ export default function ProtectedRoute({
     );
   }
 
+  // ✅ Aguardar verificação de acesso
+  if (hasAccess === null) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="200px"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // ✅ Se não tem acesso, não renderizar (vai redirecionar)
   if (!hasAccess) {
     return null;
   }
