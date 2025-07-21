@@ -9,13 +9,17 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  Divider,
+  IconButton,
 } from "@mui/material";
 import { Iconify } from "../../Iconify";
 import { useMenuAccess } from "@/src/hooks/useMenuAccess";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useDrawer } from "@/src/contexts/DrawerContext";
 
 const SideMenu = () => {
+  const { isDrawerOpen, drawerWidth, toggleDrawer } = useDrawer();
   const { getAccessibleMenus, debugUserAccess } = useMenuAccess();
   const router = useRouter();
 
@@ -30,31 +34,46 @@ const SideMenu = () => {
   console.log("SessionMenu:", accessibleMenus);
   return (
     <Drawer
-      variant="permanent"
+      variant="persistent" // ✅ Usar persistent ao invés de permanent
+      anchor="left"
+      open={isDrawerOpen}
       sx={{
-        width: { xs: 60, md: 240 },
+        width: isDrawerOpen ? drawerWidth : 0,
         flexShrink: 0,
+        transition: "width 0.3s ease",
         "& .MuiDrawer-paper": {
-          width: { xs: 60, md: 240 },
+          width: drawerWidth,
           boxSizing: "border-box",
-          borderRight: "0",
-          backgroundColor: "background.default",
+          transition: "transform 0.3s ease",
         },
       }}
     >
+      {/* Header do Drawer */}
       <Box
         sx={{
-          height: "4rem",
           display: "flex",
           alignItems: "center",
-          padding: 2,
+          justifyContent: "space-between",
+          p: 2,
+          minHeight: 64, // Mesma altura do TopBar
         }}
       >
-        <Typography color="primary.main" marginLeft={3} fontWeight={700}>
-          SAM GESTOR
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Iconify icon="lucide:mountain" size={1.8} color="primary.main" />
+          <Typography variant="h6" component="div">
+            SAM Gestor
+          </Typography>
+        </Box>
+
+        <IconButton onClick={toggleDrawer} size="small">
+          <Iconify icon="lucide:chevron-left" />
+        </IconButton>
       </Box>
-      <List>
+
+      <Divider />
+
+      {/* Menu Items */}
+      <List sx={{ flexGrow: 1, p: 1 }}>
         {accessibleMenus.map((menu) => (
           <ListItem key={menu.id} disablePadding>
             <ListItemButton

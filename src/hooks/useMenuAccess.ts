@@ -13,12 +13,12 @@ import { useEffect, useMemo } from "react";
 export function useMenuAccess() {
   const { data: session, status } = useSession();
 
-  console.log("🔍 Session Data:", session);
+  //console.log("🔍 Session Data:", session);
   const user = useMemo(() => {
     return session?.user as UserObject | null;
   }, [session]);
   const isLoading = status === "loading";
-  console.log("🔍 Session Status:", { status, hasUser: !!user });
+  //console.log("🔍 Session Status:", { status, hasUser: !!user });
   const hasAccess = (access: MenuPermission): boolean => {
     if (!user) return false;
 

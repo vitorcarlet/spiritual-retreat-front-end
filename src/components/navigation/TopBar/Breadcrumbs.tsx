@@ -12,6 +12,7 @@ import {
 import { Iconify } from "@/src/components/Iconify";
 import NextLink from "next/link";
 import { menuConfig } from "../SideMenu/shared";
+import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 
 interface BreadcrumbItem {
   label: string;
@@ -41,7 +42,7 @@ const getRouteConfig = (): Record<
   // Adicionar rotas específicas com variações de path
   const additionalRoutes = {
     "/": { label: "Home", icon: "lucide:home" },
-    "/users": { label: "Usuários", icon: "material-symbols:people" },
+    "/users": { label: "Usuários", icon: "solar:user-bold-duotone" },
     "/retreats": { label: "Retiros", icon: "material-symbols:temple-buddhist" },
     "/profile": { label: "Perfil", icon: "material-symbols:person" },
     "/settings": { label: "Configurações", icon: "material-symbols:settings" },
@@ -67,7 +68,7 @@ const Breadcrumbs: React.FC = () => {
 
   // Obter configuração de rotas
   const routeConfig = getRouteConfig();
-
+  const { breadCrumbsTitle: title } = useBreadCrumbs();
   // Gerar breadcrumbs baseado no pathname atual
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
     const pathSegments = pathname.split("/").filter(Boolean);
@@ -101,7 +102,7 @@ const Breadcrumbs: React.FC = () => {
         breadcrumbs.push({
           label: segment.charAt(0).toUpperCase() + segment.slice(1),
           path: currentPath,
-          icon: "lucide:folder",
+          icon: "ph:cross-thin",
           isCurrentPage: isLast,
         });
       }
@@ -126,7 +127,7 @@ const Breadcrumbs: React.FC = () => {
       />
       <Box>
         <Typography variant="h4">
-          {breadcrumbs[breadcrumbs.length - 1].label}
+          {title ?? breadcrumbs[breadcrumbs.length - 1].label}
         </Typography>
         <MuiBreadcrumbs
           separator={
@@ -196,7 +197,7 @@ const Breadcrumbs: React.FC = () => {
                       },
                     }}
                   >
-                    {item.label}
+                    {title ?? item.label}
                   </Link>
                 )}
               </Box>

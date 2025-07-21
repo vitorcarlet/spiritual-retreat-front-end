@@ -16,6 +16,7 @@ export type MenuItem = {
   path: string;
   access: MenuPermission;
   children?: MenuItem[];
+  customCheck?: (user: UserObject) => boolean;
 };
 
 export const menuConfig: MenuItem[] = [
@@ -34,7 +35,7 @@ export const menuConfig: MenuItem[] = [
   {
     id: "user-management",
     label: "Gestão de Usuários",
-    icon: "material-symbols:people",
+    icon: "solar:user-bold-duotone",
     path: "/users",
     access: {
       // ✅ Prioridade para permissions específicas
@@ -45,6 +46,25 @@ export const menuConfig: MenuItem[] = [
       roles: ["admin", "manager"],
     },
   },
+  // {
+  //   id: "user-management-edit",
+  //   label: "Edição de Usuários",
+  //   icon: "solar:user-bold-duotone",
+  //   path: "/users/[id]",
+  //   access: {
+  //     // ✅ Prioridade para permissions específicas
+  //     permissions: {
+  //       users: ["read"],
+  //     },
+  //     // ✅ Fallback para roles (caso não tenha permission específica)
+  //     roles: ["admin", "manager", "consultant"],
+  //   },
+  //   customCheck: (user: UserObject) => {
+  //     const currentPath = window.location.pathname;
+  //     const pathRegex = /^\/users\/\d+$/; // Matches /users/{numeric-id}
+  //     return pathRegex.test(currentPath);
+  //   },
+  // },
   {
     id: "retreat-management",
     label: "Gestão de Retiros",

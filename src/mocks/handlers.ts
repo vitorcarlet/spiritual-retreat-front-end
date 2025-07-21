@@ -18,6 +18,46 @@ export const handlers = [
     });
   }),
 
+  http.get("http://localhost:3001/api/users", () => {
+    return HttpResponse.json(
+      [
+        {
+          id: "1",
+          name: "Vitor Admin",
+          email: "admin@email.com",
+        },
+        {
+          id: "2",
+          name: "Maria Manager",
+          email: "manager@email.com",
+        },
+        {
+          id: "3",
+          name: "Pedro Consultant",
+          email: "consultant@email.com",
+        },
+        {
+          id: "4",
+          name: "Ana User",
+          email: "user@email.com",
+        },
+      ],
+      { status: 200 }
+    );
+  }),
+
+  http.get("http://localhost:3001/api/user/:id", ({ params }) => {
+    const userId = params.id;
+    if (userId === "1") {
+      return HttpResponse.json({
+        id: "1",
+        name: "Vitor Admin",
+        email: "admin@email.com",
+      });
+    }
+    return HttpResponse.json({ error: "User not found" }, { status: 404 });
+  }),
+
   http.get("http://localhost:3001/api/logout", () => {
     return HttpResponse.json(
       { message: "Logged out successfully" },

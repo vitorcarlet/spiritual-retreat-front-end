@@ -54,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       //todo email verification and twofactor
 
       if (user) {
-        console.log("User signed in:", user);
+        //console.log("User signed in:", user);
         return true;
       }
       return false;
@@ -106,7 +106,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user = token.data.user;
       session.validity = token.data.validity;
       session.error = token.error;
-      console.log(session, 'SESSION CALLBACK')
+      //console.log(session, 'SESSION CALLBACK')
       return session;
     },
     // authorized: ({ auth, request }) => {
@@ -192,7 +192,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
   try {
     // Get a new access token from backend using the refresh token
-    console.log(nextAuthJWT,'NEXTAUTHJWTWWW')
+    //console.log(nextAuthJWT,'NEXTAUTHJWTWWW')
     const res = await refresh(nextAuthJWT.data.tokens.refresh_token);
     const accessToken: BackendAccessJWT = res?.data;
 

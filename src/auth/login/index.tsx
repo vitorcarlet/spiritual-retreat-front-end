@@ -1,7 +1,8 @@
 "use client";
 import { Box, Grid } from "@mui/material";
-import LoginForm from "@/src/auth/login/form";
+//import LoginForm from "@/src/auth/login/form";
 import Image from "next/image";
+import LoginFormServer from "./form/loginFormServer";
 
 export default function LoginPageContent() {
   //const theme = useTheme();
@@ -46,7 +47,7 @@ export default function LoginPageContent() {
         alignItems="center"
         padding={4}
       >
-        <LoginForm />
+        <LoginFormServer />
       </Grid>
     </Grid>
   );

@@ -1,4 +1,5 @@
-import { IconButton, Badge, Paper, Box } from "@mui/material";
+import { IconButton, Badge, Paper } from "@mui/material";
+import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { Iconify } from "@/src/components/Iconify";
 import UserMenu from "./UserIcon";
@@ -65,6 +66,7 @@ const TopBar = ({ onMenuToggle, onNotificationsOpen }: TopBarProps) => {
         >
           {/* Notifications button */}
           <Box marginRight={2}>
+            <Box id={"theme-badge"} />
             <IconButton
               onClick={onNotificationsOpen}
               aria-label="Open notifications"

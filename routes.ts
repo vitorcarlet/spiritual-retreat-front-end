@@ -53,13 +53,13 @@ export const ROUTES = {
   },
 
   // ========== ÁREA PROTEGIDA ==========
-  DASHBOARD: {
-    ROOT: "/dashboard",
-    PROFILE: "/dashboard/profile",
-    SETTINGS: "/dashboard/settings",
-    USERS: "/dashboard/users",
-    RETREATS: "/dashboard/retreats",
-    BOOKINGS: "/dashboard/bookings",
+  PROTECTED: {
+    DASHBOARD: "/dashboard",
+    PROFILE: "/profile",
+    SETTINGS: "/settings",
+    USERS: "/users",
+    RETREATS: "/retreats",
+    BOOKINGS: "/bookings",
   },
 
   // ========== RETIROS ==========
