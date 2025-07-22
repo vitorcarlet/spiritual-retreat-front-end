@@ -126,7 +126,7 @@ export default function UserPage({ children }: UserPageProps) {
     };
   }
 
-  const [menuMode, setMenuMode] = useState<"view" | "edit">("view");
+  const [menuMode, setMenuMode] = useState<"view" | "edit" | null>(null);
 
   return (
     <Box sx={{ width: "100%", height: "100%" }}>
@@ -134,7 +134,7 @@ export default function UserPage({ children }: UserPageProps) {
       <Paper elevation={1} sx={{ width: "100%", height: "100%" }}>
         {/* Tabs Header */}
         <Grid container spacing={0}>
-          <Grid size={{ xs: 12, lg: 6 }} sx={{ p: 2 }}>
+          <Grid size={{ xs: 12, md: 8, lg: 6 }} sx={{ p: 2, pr: 0, pb: 0 }}>
             <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
               <Tabs
                 value={value}
@@ -167,24 +167,34 @@ export default function UserPage({ children }: UserPageProps) {
             </Box>
           </Grid>
           <Grid
-            size={{ xs: 12, lg: 6 }}
+            size={{ xs: 12, md: 4, lg: 6 }}
             sx={{
-              borderBottom: 1,
-              borderColor: "divider",
               p: 2,
-              display: "flex",
-              justifyContent: "flex-end",
+              pl: 0,
+              pb: 0,
             }}
           >
-            {" "}
-            <SelectEditMode menuMode={menuMode} setMenuMode={setMenuMode} />
+            <Box
+              width={"100%"}
+              height={"65px"}
+              sx={{
+                borderBottom: 1,
+                borderColor: "divider",
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <SelectEditMode
+                menuMode={menuMode}
+                setMenuMode={setMenuMode}
+                isAllowedToEdit={true}
+              />
+            </Box>
           </Grid>
         </Grid>
 
         {/* Content Area - Renderiza os children baseado na rota */}
-        <Box height={"100%"} sx={{ p: 3 }}>
-          {children}
-        </Box>
+        <Box height={"100%"}>{children}</Box>
       </Paper>
     </Box>
   );

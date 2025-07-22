@@ -26,7 +26,7 @@ const TopBar = ({ onMenuToggle, onNotificationsOpen }: TopBarProps) => {
       <Grid container sx={{ px: 2, minHeight: 72 }}>
         {/* Left side - Menu toggle */}
         <Grid
-          size={{ xs: 12, lg: 6 }}
+          size={{ xs: 12, md: 8, lg: 6 }}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -57,7 +57,7 @@ const TopBar = ({ onMenuToggle, onNotificationsOpen }: TopBarProps) => {
         </Grid>
         {/* Right side - User actions */}
         <Grid
-          size={{ xs: 12, lg: 6 }}
+          size={{ xs: 12, md: 4, lg: 6 }}
           sx={{
             display: "flex",
             alignItems: "center",

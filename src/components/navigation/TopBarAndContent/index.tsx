@@ -10,23 +10,28 @@ export default function TopBarAndContent({
 }) {
   return (
     <BreadCrumbsProvider>
-      <Box sx={{ gridArea: "topbar", backgroundColor: "background.paper" }}>
-        <TopBar />
-      </Box>
       <Box
         sx={{
-          gridArea: "content",
-          overflow: "auto",
-          backgroundColor: "background.paper",
-          p: 2,
+          display: "grid",
+          gridTemplateAreas: `"topbar" "content"`,
+          gridTemplateRows: "auto 1fr",
+          height: "100vh",
+          //overflow: "hidden",
+          //paddingBottom: 2,
         }}
       >
+        <Box sx={{ gridArea: "topbar", backgroundColor: "background.paper" }}>
+          <TopBar />
+        </Box>
+
         <Box
           sx={{
+            gridArea: "content",
+            //overflow: "auto",
+            backgroundColor: "background.paper",
+            p: 2,
             width: "100%", // ✅ Agora funciona perfeitamente
-            borderRadius: 4,
-            backgroundColor: "background.default",
-            minHeight: "calc(100vh - 120px)",
+            maxHeight: "100%",
           }}
         >
           <ProtectedRoute>{children}</ProtectedRoute>
