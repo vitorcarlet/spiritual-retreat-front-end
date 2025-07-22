@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, use } from "react";
-import { Box, Tabs, Tab, Paper, useTheme } from "@mui/material";
+import { Box, Tabs, Tab, Paper, useTheme, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import { Iconify } from "../Iconify";
 import { api, handleApiResponse } from "@/src/lib/sendRequestServerVanilla";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
+import SelectEditMode from "../navigation/SelectEditMode";
 
 interface User {
   id: string;
@@ -71,7 +72,7 @@ export default function UserPage({ children }: UserPageProps) {
   useEffect(() => {
     // Atualizar o título do breadcrumb quando o usuário for carregado
     if (user) {
-      setBreadCrumbsTitle(user.name);
+      setBreadCrumbsTitle({ title: user.name, pathname: `/users/${user.id}` });
     }
   }, [user, setBreadCrumbsTitle]);
 
@@ -92,7 +93,7 @@ export default function UserPage({ children }: UserPageProps) {
     {
       label: "Segurança",
       icon: "lucide:lock",
-      path: `/users/${userId}/security`,
+      path: `/users/${userId}/credentials`,
       value: 2,
     },
   ];
@@ -125,44 +126,65 @@ export default function UserPage({ children }: UserPageProps) {
     };
   }
 
+  const [menuMode, setMenuMode] = useState<"view" | "edit">("view");
+
   return (
     <Box sx={{ width: "100%", height: "100%" }}>
       {/* Container das abas */}
       <Paper elevation={1} sx={{ width: "100%", height: "100%" }}>
         {/* Tabs Header */}
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs
-            value={value}
-            onChange={handleChange}
-            aria-label="Abas de gerenciamento de usuário"
-            variant="scrollable"
-            scrollButtons="auto"
+        <Grid container spacing={0}>
+          <Grid size={{ xs: 12, lg: 6 }} sx={{ p: 2 }}>
+            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+              <Tabs
+                value={value}
+                onChange={handleChange}
+                aria-label="Abas de gerenciamento de usuário"
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  "& .MuiTabs-indicator": {
+                    backgroundColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                {tabs.map((tab) => (
+                  <Tab
+                    key={tab.value}
+                    icon={<Iconify icon={tab.icon} />}
+                    iconPosition="start"
+                    label={tab.label}
+                    {...a11yProps(tab.value)}
+                    sx={{
+                      minHeight: 64,
+                      textTransform: "none",
+                      fontSize: "0.95rem",
+                      fontWeight: 500,
+                    }}
+                  />
+                ))}
+              </Tabs>
+            </Box>
+          </Grid>
+          <Grid
+            size={{ xs: 12, lg: 6 }}
             sx={{
-              "& .MuiTabs-indicator": {
-                backgroundColor: theme.palette.primary.main,
-              },
+              borderBottom: 1,
+              borderColor: "divider",
+              p: 2,
+              display: "flex",
+              justifyContent: "flex-end",
             }}
           >
-            {tabs.map((tab) => (
-              <Tab
-                key={tab.value}
-                icon={<Iconify icon={tab.icon} />}
-                iconPosition="start"
-                label={tab.label}
-                {...a11yProps(tab.value)}
-                sx={{
-                  minHeight: 64,
-                  textTransform: "none",
-                  fontSize: "0.95rem",
-                  fontWeight: 500,
-                }}
-              />
-            ))}
-          </Tabs>
-        </Box>
+            {" "}
+            <SelectEditMode menuMode={menuMode} setMenuMode={setMenuMode} />
+          </Grid>
+        </Grid>
 
         {/* Content Area - Renderiza os children baseado na rota */}
-        <Box sx={{ p: 3 }}>{children}</Box>
+        <Box height={"100%"} sx={{ p: 3 }}>
+          {children}
+        </Box>
       </Paper>
     </Box>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import {
   Breadcrumbs as MuiBreadcrumbs,
@@ -68,7 +68,23 @@ const Breadcrumbs: React.FC = () => {
 
   // Obter configuração de rotas
   const routeConfig = getRouteConfig();
-  const { breadCrumbsTitle: title } = useBreadCrumbs();
+  const { title, pathname: breadCrumbPathName } = useBreadCrumbs();
+
+  const allowBreadCrumbsTitle = useMemo(() => {
+    if (!breadCrumbPathName || !title) return null;
+    if (pathname.startsWith(breadCrumbPathName)) return title;
+    return null;
+  }, [pathname, breadCrumbPathName, title]);
+
+  console.log(
+    allowBreadCrumbsTitle,
+    "Breadcrumbs title:",
+    title,
+    "Pathname:",
+    pathname,
+    "Pattern:",
+    breadCrumbPathName
+  );
   // Gerar breadcrumbs baseado no pathname atual
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
     const pathSegments = pathname.split("/").filter(Boolean);
@@ -112,7 +128,7 @@ const Breadcrumbs: React.FC = () => {
   };
 
   const breadcrumbs = generateBreadcrumbs();
-
+  console.log(breadcrumbs, "Breadcrumbs items:", pathname);
   // Se só tem um item (Home), não mostrar breadcrumbs
   if (breadcrumbs.length <= 1) {
     return null;
@@ -127,7 +143,9 @@ const Breadcrumbs: React.FC = () => {
       />
       <Box>
         <Typography variant="h4">
-          {title ?? breadcrumbs[breadcrumbs.length - 1].label}
+          {allowBreadCrumbsTitle
+            ? allowBreadCrumbsTitle
+            : breadcrumbs[breadcrumbs.length - 1].label}
         </Typography>
         <MuiBreadcrumbs
           separator={
@@ -146,7 +164,7 @@ const Breadcrumbs: React.FC = () => {
         >
           {breadcrumbs.map((item, index) => {
             const isLast = index === breadcrumbs.length - 1;
-
+            if (!isNaN(Number(item.label))) return null;
             return (
               <Box
                 key={item.path}
@@ -170,7 +188,7 @@ const Breadcrumbs: React.FC = () => {
                 {/* Label */}
                 {isLast ? (
                   <Chip
-                    label={item.label}
+                    label={allowBreadCrumbsTitle ?? item.label}
                     size="small"
                     color="primary"
                     variant="outlined"
@@ -197,7 +215,7 @@ const Breadcrumbs: React.FC = () => {
                       },
                     }}
                   >
-                    {title ?? item.label}
+                    {item.label}
                   </Link>
                 )}
               </Box>

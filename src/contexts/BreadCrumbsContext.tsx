@@ -1,11 +1,26 @@
 "use client";
-import { createContext, useContext, useState } from "react";
+import {
+  createContext,
+  Dispatch,
+  SetStateAction,
+  useContext,
+  useState,
+} from "react";
 
-const BreadCrumbsContext = createContext<{
-  breadCrumbsTitle: string | null;
-  setBreadCrumbsTitle: (title: string | null) => void;
-}>({
-  breadCrumbsTitle: null,
+type BreadCrumbsContextProps = {
+  title: string | null;
+  pathname: string;
+  setBreadCrumbsTitle: Dispatch<SetStateAction<BreadCrumbsState>>;
+};
+
+type BreadCrumbsState = {
+  title: string | null;
+  pathname: string;
+};
+
+const BreadCrumbsContext = createContext<BreadCrumbsContextProps>({
+  title: null,
+  pathname: "",
   setBreadCrumbsTitle: () => {},
 });
 
@@ -16,11 +31,18 @@ interface BreadCrumbsProviderProps {
 }
 
 export const BreadCrumbsProvider = ({ children }: BreadCrumbsProviderProps) => {
-  const [breadCrumbsTitle, setBreadCrumbsTitle] = useState<string | null>(null);
+  const [breadCrumbsTitle, setBreadCrumbsTitle] = useState<BreadCrumbsState>({
+    title: null,
+    pathname: "",
+  });
 
   return (
     <BreadCrumbsContext.Provider
-      value={{ breadCrumbsTitle, setBreadCrumbsTitle }}
+      value={{
+        title: breadCrumbsTitle.title,
+        pathname: breadCrumbsTitle.pathname,
+        setBreadCrumbsTitle,
+      }}
     >
       {children}
     </BreadCrumbsContext.Provider>
