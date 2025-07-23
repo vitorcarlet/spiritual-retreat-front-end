@@ -1,8 +1,23 @@
 "use client";
-import { Box, Grid, TextField } from "@mui/material";
+import {
+  Box,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  TextField,
+} from "@mui/material";
 import Image from "next/image";
+import { useState } from "react";
 
 const UserEditPage = () => {
+  const [role, setRole] = useState<Roles | "">("");
+
+  const handleChange = (event: SelectChangeEvent) => {
+    setRole(event.target.value as Roles);
+  };
   return (
     <Box
       sx={{
@@ -78,7 +93,25 @@ const UserEditPage = () => {
               fullWidth
               label="CPF"
               variant="outlined"
-              placeholder="Enter your CPF"
+              placeholder="000.000.000-00"
+              onChange={(e) => {
+                // Remove all non-numeric characters
+                const value = e.target.value.replace(/\D/g, "");
+
+                // Apply CPF mask
+                let maskedValue = value;
+                if (value.length <= 11) {
+                  maskedValue = value
+                    .replace(/(\d{3})(\d)/, "$1.$2")
+                    .replace(/(\d{3})(\d)/, "$1.$2")
+                    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+                }
+
+                e.target.value = maskedValue;
+              }}
+              slotProps={{
+                htmlInput: { maxLength: 14 }, // 000.000.000-00
+              }}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
@@ -101,12 +134,29 @@ const UserEditPage = () => {
             />
           </Grid>
           <Grid size={12}>
-            <TextField
-              fullWidth
-              label="Role"
-              variant="outlined"
-              placeholder="Enter your role"
-            />
+            <FormControl variant="outlined" fullWidth>
+              <InputLabel id="select-role-label">Role</InputLabel>
+              <Select
+                labelId="select-role"
+                value={role}
+                onChange={(e) => handleChange(e)}
+                label="Role"
+                sx={{ minWidth: 150, width: "100%" }}
+              >
+                <MenuItem key={1} value={"admin"}>
+                  Administrador
+                </MenuItem>
+                <MenuItem key={2} value={"manager"}>
+                  Gestor
+                </MenuItem>
+                <MenuItem key={3} value={"consultant"}>
+                  Consultor
+                </MenuItem>
+                <MenuItem key={4} value={"participant"}>
+                  Participante
+                </MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
       </Box>

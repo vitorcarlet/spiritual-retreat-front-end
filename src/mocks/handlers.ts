@@ -53,6 +53,12 @@ export const handlers = [
         id: "1",
         name: "Vitor Admin",
         email: "admin@email.com",
+        birth: "1990-01-01",
+        role: "admin",
+        cpf: "973.628.730-00",
+        city: "Videira",
+        state: "Santa Catarina",
+        stateShort: "SC",
       });
     }
     return HttpResponse.json({ error: "User not found" }, { status: 404 });

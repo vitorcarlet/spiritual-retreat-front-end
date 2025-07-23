@@ -42,7 +42,7 @@ declare module "next-auth" {
     admin: boolean;
     manager: boolean;
     consultant: boolean;
-    user: boolean;
+    participant: boolean;
   }
 
   export type ResourceType =
