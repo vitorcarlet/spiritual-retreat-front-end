@@ -12,22 +12,15 @@ export default function TopBarAndContent({
     <BreadCrumbsProvider>
       <Box
         sx={{
-          display: "grid",
-          gridTemplateAreas: `"topbar" "content"`,
-          gridTemplateRows: "auto 1fr",
           height: "100vh",
-          //overflow: "hidden",
-          //paddingBottom: 2,
         }}
       >
-        <Box sx={{ gridArea: "topbar", backgroundColor: "background.paper" }}>
+        <Box sx={{ backgroundColor: "background.paper" }}>
           <TopBar />
         </Box>
 
         <Box
           sx={{
-            gridArea: "content",
-            //overflow: "auto",
             backgroundColor: "background.paper",
             p: 2,
             width: "100%", // ✅ Agora funciona perfeitamente

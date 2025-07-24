@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import { useEffect } from "react";
 import {
   Box,
   Drawer,
@@ -11,6 +11,7 @@ import {
   Typography,
   Divider,
   IconButton,
+  useTheme,
 } from "@mui/material";
 import { Iconify } from "../../Iconify";
 import { useMenuAccess } from "@/src/hooks/useMenuAccess";
@@ -19,36 +20,23 @@ import Link from "next/link";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 
 const SideMenu = () => {
-  const { isDrawerOpen, drawerWidth, toggleDrawer } = useDrawer();
+  const {
+    mobileOpen,
+    drawerWidth,
+    handleDrawerTransitionEnd,
+    handleDrawerClose,
+    openPersistent,
+    handleDrawerPersistentToggle,
+  } = useDrawer();
   const { getAccessibleMenus, debugUserAccess } = useMenuAccess();
   const router = useRouter();
-
+  const theme = useTheme();
+  const isXsUp = theme.breakpoints.up("xs");
   // ✅ Obter apenas os menus que o usuário tem acesso
   const accessibleMenus = getAccessibleMenus();
 
-  // Debug (remover em produção)
-  React.useEffect(() => {
-    debugUserAccess();
-  }, []);
-
-  console.log("SessionMenu:", accessibleMenus);
-  return (
-    <Drawer
-      variant="persistent" // ✅ Usar persistent ao invés de permanent
-      anchor="left"
-      open={isDrawerOpen}
-      sx={{
-        width: isDrawerOpen ? drawerWidth : 0,
-        flexShrink: 0,
-        transition: "width 0.3s ease",
-        "& .MuiDrawer-paper": {
-          width: drawerWidth,
-          boxSizing: "border-box",
-          transition: "transform 0.3s ease",
-        },
-      }}
-    >
-      {/* Header do Drawer */}
+  const drawerContent = (
+    <div>
       <Box
         sx={{
           display: "flex",
@@ -65,9 +53,11 @@ const SideMenu = () => {
           </Typography>
         </Box>
 
-        <IconButton onClick={toggleDrawer} size="small">
-          <Iconify icon="lucide:chevron-left" />
-        </IconButton>
+        {isXsUp && (
+          <IconButton onClick={handleDrawerPersistentToggle} size="small">
+            <Iconify icon="lucide:chevron-left" />
+          </IconButton>
+        )}
       </Box>
 
       <Divider />
@@ -99,7 +89,55 @@ const SideMenu = () => {
           </ListItem>
         )}
       </List>
-    </Drawer>
+    </div>
+  );
+
+  // Debug (remover em produção)
+  useEffect(() => {
+    debugUserAccess();
+  }, []);
+
+  console.log("SessionMenu:", accessibleMenus);
+
+  return (
+    <>
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onTransitionEnd={handleDrawerTransitionEnd}
+        onClose={handleDrawerClose}
+        sx={{
+          display: { xs: "block", sm: "none" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: drawerWidth,
+          },
+        }}
+        slotProps={{
+          root: {
+            keepMounted: true,
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: {
+            xs: "none",
+            sm: "block",
+          },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: drawerWidth,
+          },
+        }}
+        open={openPersistent}
+      >
+        {drawerContent}
+      </Drawer>
+    </>
   );
 };
 export default SideMenu;

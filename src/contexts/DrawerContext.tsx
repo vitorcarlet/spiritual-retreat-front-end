@@ -4,33 +4,53 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 
 interface DrawerContextType {
-  isDrawerOpen: boolean;
+  mobileOpen: boolean;
   drawerWidth: number;
-  toggleDrawer: () => void;
-  setDrawerOpen: (open: boolean) => void;
+  handleDrawerClose: () => void;
+  handleDrawerTransitionEnd: () => void;
+  handleDrawerToggle: () => void;
+  handleDrawerPersistentToggle: () => void;
+  openPersistent: boolean;
 }
 
 const DrawerContext = createContext<DrawerContextType | undefined>(undefined);
 
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  //const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [openPersistent, setOpenPersistent] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const drawerWidth = 280; // Largura fixa do drawer
 
-  const toggleDrawer = useCallback(() => {
-    setIsDrawerOpen((prev) => !prev);
+  const handleDrawerPersistentToggle = useCallback(() => {
+    setOpenPersistent((prev) => !prev);
   }, []);
 
-  const setDrawerOpen = useCallback((open: boolean) => {
-    setIsDrawerOpen(open);
+  const handleDrawerClose = useCallback(() => {
+    setIsClosing(true);
+    setMobileOpen(false);
   }, []);
+
+  const handleDrawerTransitionEnd = useCallback(() => {
+    setIsClosing(false);
+  }, []);
+
+  const handleDrawerToggle = useCallback(() => {
+    if (!isClosing) {
+      setMobileOpen(!mobileOpen);
+    }
+  }, [isClosing, mobileOpen]);
 
   return (
     <DrawerContext.Provider
       value={{
-        isDrawerOpen,
+        handleDrawerTransitionEnd,
+        handleDrawerToggle,
+        handleDrawerClose,
+        mobileOpen,
         drawerWidth,
-        toggleDrawer,
-        setDrawerOpen,
+        openPersistent,
+        handleDrawerPersistentToggle,
       }}
     >
       {children}

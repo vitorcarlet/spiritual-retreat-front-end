@@ -1,16 +1,16 @@
-import { IconButton, Badge, Paper } from "@mui/material";
+import { IconButton, Paper, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { Iconify } from "@/src/components/Iconify";
 import UserMenu from "./UserIcon";
 import Breadcrumbs from "./Breadcrumbs";
+import { useDrawer } from "@/src/contexts/DrawerContext";
+import { Notifications } from "@mui/icons-material";
 
-interface TopBarProps {
-  onMenuToggle?: () => void;
-  onNotificationsOpen?: () => void;
-}
-
-const TopBar = ({ onMenuToggle, onNotificationsOpen }: TopBarProps) => {
+const TopBar = () => {
+  const { handleDrawerToggle, handleDrawerPersistentToggle } = useDrawer();
+  const theme = useTheme();
+  const isXsUp = theme.breakpoints.up("xs");
   return (
     <Paper
       elevation={0}
@@ -35,7 +35,7 @@ const TopBar = ({ onMenuToggle, onNotificationsOpen }: TopBarProps) => {
           gap={2}
         >
           <IconButton
-            onClick={onMenuToggle}
+            onClick={isXsUp ? handleDrawerPersistentToggle : handleDrawerToggle}
             aria-label="Toggle menu"
             size="medium"
           >
@@ -66,21 +66,8 @@ const TopBar = ({ onMenuToggle, onNotificationsOpen }: TopBarProps) => {
         >
           {/* Notifications button */}
           <Box marginRight={2}>
-            <Box id={"theme-badge"} />
-            <IconButton
-              onClick={onNotificationsOpen}
-              aria-label="Open notifications"
-              size="medium"
-            >
-              <Badge
-                badgeContent=""
-                variant="dot"
-                color="error"
-                invisible={false} // Sempre mostrar para demo
-              >
-                <Iconify icon="lucide:bell" size={2.5} />
-              </Badge>
-            </IconButton>
+            {/* <Box id={"theme-badge"} /> */}
+            <Notifications />
             {/* User menu button */}
             <UserMenu />
           </Box>
