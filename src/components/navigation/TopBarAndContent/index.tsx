@@ -13,6 +13,7 @@ export default function TopBarAndContent({
       <Box
         sx={{
           height: "100vh",
+          flexGrow: 1,
         }}
       >
         <Box sx={{ backgroundColor: "background.paper" }}>

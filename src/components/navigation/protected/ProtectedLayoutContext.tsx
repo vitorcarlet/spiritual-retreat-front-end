@@ -1,27 +1,14 @@
-// app/(protected)/ProtectedLayoutContent.tsx
-"use client";
+import dynamic from "next/dynamic";
 
-import { Box } from "@mui/material";
-import SideMenu from "@/src/components/navigation/SideMenu";
-import TopBarAndContent from "../TopBarAndContent";
+//ainda nao entendi esse dynamic kkk
+const SideMenuDrawer = dynamic(
+  () => import("@/src/components/navigation/SideMenu")
+);
 
-export default function ProtectedLayoutContent({
+const ProtectedLayoutContent = ({
   children,
 }: {
   children: React.ReactNode;
-}) {
-  return (
-    <Box
-      sx={{
-        height: "100vh",
-        width: "100vw",
-        overflow: "hidden",
-      }}
-    >
-      {/* Sidebar */}
-      <SideMenu />
-      {/* TopBar */}
-      <TopBarAndContent>{children}</TopBarAndContent>
-    </Box>
-  );
-}
+}) => <SideMenuDrawer>{children}</SideMenuDrawer>;
+
+export default ProtectedLayoutContent;

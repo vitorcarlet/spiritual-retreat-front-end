@@ -20,7 +20,7 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openPersistent, setOpenPersistent] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const drawerWidth = 280; // Largura fixa do drawer
+  const drawerWidth = 240; // Largura fixa do drawer
 
   const handleDrawerPersistentToggle = useCallback(() => {
     setOpenPersistent((prev) => !prev);
