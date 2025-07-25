@@ -130,7 +130,7 @@ const columns: DataTableColumn<User>[] = [
   },
 ];
 
-export default function DataTableExample() {
+export default function UserDataTable() {
   // ✅ CORREÇÃO: Usar o tipo correto
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
@@ -182,7 +182,16 @@ export default function DataTableExample() {
 
   //console.log(selectedRows, "selectedRows");
   return (
-    <Box sx={{ p: 2, maxHeight: "100%", maxWidth: "100%", overflow: "auto" }}>
+    <Box
+      sx={{
+        p: 2,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        maxWidth: "100%",
+        overflow: "auto",
+      }}
+    >
       <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
         <Button variant="contained" onClick={handleRefresh} disabled={loading}>
           {loading ? "Carregando..." : "Atualizar Dados"}
@@ -203,11 +212,11 @@ export default function DataTableExample() {
         // Configurações de aparência
         title="Gerenciamento de Usuários"
         subtitle="Lista completa de usuários do sistema"
-        height={600}
-        //width={1200}
         autoWidth={true}
         autoHeight={true}
         // Paginação
+        width={1200}
+        height={600}
         pagination={true}
         pageSize={10}
         pageSizeOptions={[5, 10, 25, 50]}
