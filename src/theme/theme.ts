@@ -43,6 +43,16 @@ const initialTheme = {
       },
     },
   },
+  mixins: {
+    toolbar: {
+      minHeight: 64, // altura padrão mobile
+      paddingLeft: "16px",
+      paddingRight: "16px",
+      "@media (min-width:600px)": {
+        minHeight: 72, // altura em desktop
+      },
+    },
+  },
   cssVariables: {
     colorSchemeSelector: "class" as const,
   },
@@ -52,8 +62,7 @@ const initialTheme = {
   //     background: { paper: GREY[0], default: "#F0F6FC" },
   //     action: { active: GREY[600], ...COMMON.action },
   //   },
-  //shadows: mode === "light" ? shadows.light : shadows.dark,
-  //customShadows: mode === "light" ? customShadows.light : customShadows.dark,
+  //shadows: customShadows.light,
   shape: { borderRadius: 8 },
   // components,
   typography,
@@ -61,6 +70,7 @@ const initialTheme = {
   //cssVarPrefix: "",
   customShadows: {
     ...customShadows.light,
+    // ...customShadows.dark,
     // primary: `0 8px 16px 0 ${alpha(palette.light.primary.main, 0.24)}`,
   },
   shouldSkipGeneratingVar,

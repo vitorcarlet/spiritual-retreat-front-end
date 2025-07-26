@@ -1,6 +1,7 @@
 import { Theme } from "@mui/material/styles";
+import { Theme as MUITheme } from "@mui/material";
 
-export default function Button(theme: Theme) {
+export default function Button(theme: Theme & MUITheme) {
   return {
     MuiButton: {
       styleOverrides: {

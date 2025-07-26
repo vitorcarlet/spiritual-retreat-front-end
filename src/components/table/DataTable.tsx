@@ -233,11 +233,6 @@ export function DataTable<T extends GridValidRowModel>({
   onRowClick,
   onRowDoubleClick,
 
-  // Aparência
-  height = 600,
-  width = 1200,
-  autoWidth = false,
-  autoHeight = false,
   density: ds = "standard",
   disableColumnFilter = false,
   disableColumnMenu = false,
@@ -374,8 +369,11 @@ export function DataTable<T extends GridValidRowModel>({
     <Paper
       elevation={1}
       sx={{
-        width: autoWidth ? "auto" : width,
-        height: autoHeight ? "auto" : height,
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        maxHeight: "100%",
+        minWidth: "100%",
         "& .MuiDataGrid-root": {
           border: "none",
         },
@@ -446,7 +444,6 @@ export function DataTable<T extends GridValidRowModel>({
         onRowClick={onRowClick}
         onRowDoubleClick={onRowDoubleClick}
         // Aparência
-        autoHeight={autoHeight}
         density={density}
         disableColumnFilter={disableColumnFilter}
         disableColumnMenu={disableColumnMenu}

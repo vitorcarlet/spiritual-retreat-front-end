@@ -183,7 +183,7 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
   console.log("SessionMenu:", accessibleMenus);
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", height: "100vh" }}>
       <AppBar position="fixed" open={openPersistent}>
         <Box sx={{ backgroundColor: "background.paper" }}>
           <TopBar />
@@ -241,12 +241,20 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
       <Box
         sx={{
           backgroundColor: "background.paper",
-          p: 2,
-          width: "100%", // ✅ Agora funciona perfeitamente
-          maxHeight: "100%",
+          //p: 2,
+          width: "calc(100% - 240px)", // ✅ Agora funciona perfeitamente
+          height: "100%",
+          flexGrow: 1,
         }}
       >
-        <ProtectedRoute>{children}</ProtectedRoute>
+        <DrawerHeader />
+        <Box
+          sx={{
+            height: "calc(100% - 72px)",
+          }}
+        >
+          <ProtectedRoute>{children}</ProtectedRoute>
+        </Box>
       </Box>
     </Box>
   );

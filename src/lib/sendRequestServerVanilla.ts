@@ -23,10 +23,10 @@ export async function apiClient(
   const url = endpoint.startsWith("http") ? endpoint : `${baseUrl}${endpoint}`;
 
   // Headers padrão
-  const defaultHeaders: HeadersInit = {
+  const defaultHeaders = new Headers({
     "Content-Type": "application/json",
     ...headers,
-  };
+  });
 
   // Adicionar token se necessário
   if (requireAuth) {
@@ -37,7 +37,10 @@ export async function apiClient(
     }
 
     // Adicionar token do usuário autenticado
-    defaultHeaders.Authorization = `Bearer ${session.tokens?.access_token}`;
+    defaultHeaders.append(
+      "Authorization",
+      `Bearer ${session.tokens.access_token}`
+    );
   }
 
   // Fazer a requisição

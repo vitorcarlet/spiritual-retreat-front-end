@@ -1,8 +1,9 @@
 "use client";
 
-import { alpha, Shadows, Theme } from "@mui/material/styles";
+import { Theme } from "@mui/material/styles";
 
 import palette from "./palette";
+import { alpha, Shadows } from "@mui/material";
 
 export type CustomShadowOptions = {
   z2: string;

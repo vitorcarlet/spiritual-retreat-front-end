@@ -16,8 +16,8 @@ apiClient.interceptors.request.use(
     try {
       const session = await getSession(); // Use getSession para client-side
 
-      if (session?.accessToken) {
-        config.headers.Authorization = `Bearer ${session.accessToken}`;
+      if (session?.tokens?.access_token) {
+        config.headers.Authorization = `Bearer ${session.tokens.access_token}`;
       }
     } catch (error) {
       console.warn("Failed to get session in interceptor:", error);

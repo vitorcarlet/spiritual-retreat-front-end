@@ -7,12 +7,7 @@ import { Iconify } from "../Iconify";
 import { api, handleApiResponse } from "@/src/lib/sendRequestServerVanilla";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import SelectEditMode from "../navigation/SelectEditMode";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import { UserContentProvider } from "./context";
 
 interface UserPageProps {
   children: React.ReactNode;
@@ -24,11 +19,11 @@ const userCache = new Map<string, Promise<User | null>>();
 // Função para buscar dados do usuário
 const fetchUserData = async (userId: string): Promise<User | null> => {
   try {
-    const response = await api.get(`/api/user/${userId}`, {
-      baseUrl: "http://localhost:3001", // URL do MSW
-    });
-
-    const result = await handleApiResponse<User>(response);
+    const result = await handleApiResponse<User>(
+      await api.get(`/api/user/${userId}`, {
+        baseUrl: "http://localhost:3001", // URL do MSW
+      })
+    );
 
     if (result.success && result.data) {
       return result.data;
@@ -129,11 +124,14 @@ export default function UserPage({ children }: UserPageProps) {
   const [menuMode, setMenuMode] = useState<"view" | "edit" | null>(null);
 
   return (
-    <Box sx={{ width: "100%", height: "100%" }}>
+    <Box sx={{ width: "100%", height: "100%", maxHeight: "100%" }}>
       {/* Container das abas */}
-      <Paper elevation={1} sx={{ width: "100%", height: "100%" }}>
+      <Paper
+        elevation={1}
+        sx={{ width: "100%", height: "100%", maxHeight: "100%" }}
+      >
         {/* Tabs Header */}
-        <Grid container spacing={0}>
+        <Grid container spacing={0} maxHeight={"15%"}>
           <Grid size={{ xs: 12, md: 8, lg: 6 }} sx={{ p: 2, pr: 0, pb: 0 }}>
             <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
               <Tabs
@@ -156,7 +154,7 @@ export default function UserPage({ children }: UserPageProps) {
                     label={tab.label}
                     {...a11yProps(tab.value)}
                     sx={{
-                      minHeight: 64,
+                      minHeight: 72,
                       textTransform: "none",
                       fontSize: "0.95rem",
                       fontWeight: 500,
@@ -176,7 +174,7 @@ export default function UserPage({ children }: UserPageProps) {
           >
             <Box
               width={"100%"}
-              height={"65px"}
+              height={"90%"}
               sx={{
                 borderBottom: 1,
                 borderColor: "divider",
@@ -194,7 +192,9 @@ export default function UserPage({ children }: UserPageProps) {
         </Grid>
 
         {/* Content Area - Renderiza os children baseado na rota */}
-        <Box height={"100%"}>{children}</Box>
+        <Box flexGrow={1} sx={{ p: 2, height: "85%" }}>
+          <UserContentProvider user={user}>{children}</UserContentProvider>
+        </Box>
       </Paper>
     </Box>
   );

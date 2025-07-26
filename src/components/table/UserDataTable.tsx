@@ -186,10 +186,12 @@ export default function UserDataTable() {
       sx={{
         p: 2,
         height: "100%",
+        minWidth: "100%",
         display: "flex",
         flexDirection: "column",
         maxWidth: "100%",
-        overflow: "auto",
+        overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
       <Box sx={{ mb: 2, display: "flex", gap: 2 }}>

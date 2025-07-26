@@ -1,1 +1,14 @@
 type Roles = "admin" | "manager" | "consultant" | "participant";
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  birth: string;
+  role: Roles;
+  cpf: string;
+  city: string;
+  state: string;
+  stateShort: string;
+  profileImage?: string;
+};

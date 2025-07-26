@@ -1,5 +1,5 @@
 "use client";
-import { AxiosRequestConfig, AxiosResponse, Method } from "axios";
+import { AxiosRequestConfig, Method } from "axios";
 import { enqueueSnackbar } from "notistack";
 import useSWR, { SWRConfiguration } from "swr";
 import { AxiosError } from "axios";

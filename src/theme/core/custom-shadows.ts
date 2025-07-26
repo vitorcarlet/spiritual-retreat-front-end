@@ -1,8 +1,9 @@
 "use client";
 
-import { alpha, Shadows, Theme } from "@mui/material/styles";
+import { Theme } from "@mui/material/styles";
 
 import palette from "./palette";
+import { alpha, Shadows } from "@mui/material";
 
 export type CustomShadowOptions = {
   z1: string;
@@ -47,15 +48,6 @@ export const OptionsShadows = (theme: Theme): CustomShadowOptions => {
     dialog: theme.customShadows.dialog,
   };
 };
-
-declare module "@mui/material/styles" {
-  interface Theme {
-    customShadows: CustomShadowOptions;
-  }
-  interface ThemeOptions {
-    customShadows?: CustomShadowOptions;
-  }
-}
 
 const LIGHT_MODE = palette.light.grey[500];
 const DARK_MODE = "#000000";

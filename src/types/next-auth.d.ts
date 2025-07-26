@@ -134,6 +134,7 @@ declare module "next-auth" {
     user: UserObject;
     validity: AuthValidity;
     error: "RefreshTokenExpired" | "RefreshAccessTokenError";
+    tokens: BackendJWT;
   }
 }
 
