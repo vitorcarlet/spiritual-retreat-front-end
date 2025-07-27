@@ -70,7 +70,7 @@ declare module "next-auth" {
     acr: string;
     "allowed-origins": string[];
     roles: string[];
-    permissions: Record<ResourceType, Record<ActionType, boolean>>;
+    permissions: UserPermissions;
     scope: string;
     email_verified: boolean;
     name: string;

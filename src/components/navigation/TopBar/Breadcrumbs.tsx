@@ -63,30 +63,52 @@ const getRouteConfig = (): Record<
   return config;
 };
 
+const BreadcrumbIcon = ({
+  icon,
+  isLast,
+  size = 1.4,
+}: {
+  icon?: string;
+  isLast: boolean;
+  size?: number;
+}) => {
+  // ✅ Ícone padrão para evitar mudanças bruscas
+  const defaultIcon = "lucide:folder";
+  const iconToUse = icon || defaultIcon;
+
+  return (
+    <Box
+      sx={{
+        width: `${size * 16}px`, // ✅ Largura fixa para evitar shift
+        height: `${size * 16}px`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        // ✅ Transição suave para mudanças de cor
+        transition: "color 0.15s ease-in-out",
+      }}
+    >
+      <Iconify
+        icon={iconToUse}
+        size={size}
+        sx={{
+          color: isLast ? "primary.main" : "text.secondary",
+          // ✅ Evitar layout shift durante carregamento
+          display: "block",
+        }}
+      />
+    </Box>
+  );
+};
+
 const Breadcrumbs: React.FC = () => {
   const pathname = usePathname();
-
-  // Obter configuração de rotas
-  const routeConfig = getRouteConfig();
   const { title, pathname: breadCrumbPathName } = useBreadCrumbs();
 
-  const allowBreadCrumbsTitle = useMemo(() => {
-    if (!breadCrumbPathName || !title) return null;
-    if (pathname.startsWith(breadCrumbPathName)) return title;
-    return null;
-  }, [pathname, breadCrumbPathName, title]);
+  const routeConfig = useMemo(() => getRouteConfig(), []);
 
-  console.log(
-    allowBreadCrumbsTitle,
-    "Breadcrumbs title:",
-    title,
-    "Pathname:",
-    pathname,
-    "Pattern:",
-    breadCrumbPathName
-  );
   // Gerar breadcrumbs baseado no pathname atual
-  const generateBreadcrumbs = (): BreadcrumbItem[] => {
+  const breadcrumbs = useMemo((): BreadcrumbItem[] => {
     const pathSegments = pathname.split("/").filter(Boolean);
     const breadcrumbs: BreadcrumbItem[] = [];
 
@@ -125,27 +147,43 @@ const Breadcrumbs: React.FC = () => {
     });
 
     return breadcrumbs;
-  };
+  }, [pathname, routeConfig]);
 
-  const breadcrumbs = generateBreadcrumbs();
   console.log(breadcrumbs, "Breadcrumbs items:", pathname);
   // Se só tem um item (Home), não mostrar breadcrumbs
+
+  const mainIcon = useMemo(() => {
+    const lastBreadcrumb = breadcrumbs[breadcrumbs.length - 1];
+    return lastBreadcrumb?.icon || "lucide:folder";
+  }, [breadcrumbs]);
+
   if (breadcrumbs.length <= 1) {
     return null;
   }
 
   return (
     <Box display={"flex"} alignItems="center" gap={1}>
-      <Iconify
-        icon={breadcrumbs[breadcrumbs.length - 1].icon || "lucide:folder"}
-        size={6}
-        sx={{ color: "text.primary" }}
-      />
+      <Box
+        sx={{
+          width: 60, // ✅ Largura fixa
+          height: 60,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          // ✅ Previnir layout shift
+          flexShrink: 0,
+        }}
+      >
+        <Iconify
+          icon={breadcrumbs[breadcrumbs.length - 1].icon || "lucide:folder"}
+          size={6}
+          sx={{ color: "text.primary" }}
+        />
+      </Box>
+
       <Box>
         <Typography variant="h4">
-          {allowBreadCrumbsTitle
-            ? allowBreadCrumbsTitle
-            : breadcrumbs[breadcrumbs.length - 1].label}
+          {title ?? breadcrumbs[breadcrumbs.length - 1].label}
         </Typography>
         <MuiBreadcrumbs
           separator={
@@ -164,7 +202,71 @@ const Breadcrumbs: React.FC = () => {
         >
           {breadcrumbs.map((item, index) => {
             const isLast = index === breadcrumbs.length - 1;
-            if (!isNaN(Number(item.label))) return null;
+            if (Number(item.label))
+              return (
+                <Box
+                  key={item.path}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  {/* Ícone */}
+                  <Box
+                    sx={{
+                      width: 14, // ✅ Largura fixa
+                      height: 14,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      // ✅ Previnir layout shift
+                      flexShrink: 0,
+                    }}
+                  >
+                    <BreadcrumbIcon
+                      icon={item.icon}
+                      isLast={isLast}
+                      size={1.4}
+                    />
+                  </Box>
+
+                  {/* Label */}
+                  {isLast ? (
+                    <Chip
+                      label={title ?? item.label}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: 12,
+                        height: 24,
+                        transition: "all 0.15s ease-in-out",
+                      }}
+                    />
+                  ) : (
+                    <Link
+                      component={NextLink}
+                      href={item.path}
+                      underline="hover"
+                      color="inherit"
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        color: "text.secondary",
+                        fontSize: 14,
+                        fontWeight: 500,
+                        "&:hover": {
+                          color: "primary.main",
+                        },
+                      }}
+                    >
+                      {title ?? item.label}
+                    </Link>
+                  )}
+                </Box>
+              );
             return (
               <Box
                 key={item.path}
@@ -175,20 +277,24 @@ const Breadcrumbs: React.FC = () => {
                 }}
               >
                 {/* Ícone */}
-                {item.icon && (
-                  <Iconify
-                    icon={item.icon}
-                    size={1.4}
-                    sx={{
-                      color: isLast ? "primary.main" : "text.secondary",
-                    }}
-                  />
-                )}
+                <Box
+                  sx={{
+                    width: 14, // ✅ Largura fixa
+                    height: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    // ✅ Previnir layout shift
+                    flexShrink: 0,
+                  }}
+                >
+                  <BreadcrumbIcon icon={item.icon} isLast={isLast} size={1.4} />
+                </Box>
 
                 {/* Label */}
                 {isLast ? (
                   <Chip
-                    label={allowBreadCrumbsTitle ?? item.label}
+                    label={typeof item.label === "string" ? item.label : title}
                     size="small"
                     color="primary"
                     variant="outlined"

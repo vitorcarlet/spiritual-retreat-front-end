@@ -25,6 +25,7 @@ import TopBar from "../TopBar";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
 import ProtectedRoute from "../protected/ProtectedRoute";
 import Loading from "@/app/loading";
+import { BreadCrumbsProvider } from "@/src/contexts/BreadCrumbsContext";
 
 const drawerWidth: number = 240; // Largura fixa do drawer
 
@@ -184,78 +185,80 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
-      <AppBar position="fixed" open={openPersistent}>
-        <Box sx={{ backgroundColor: "background.paper" }}>
-          <TopBar />
-        </Box>
-      </AppBar>
-      <ResponsiveDrawer
-        variant="temporary"
-        open={mobileOpen}
-        onTransitionEnd={handleDrawerTransitionEnd}
-        onClose={handleDrawerClose}
-        sx={{
-          display: { xs: "block", sm: "none" },
-          "& .MuiDrawer-paper": {
-            boxSizing: "border-box",
-            width: drawerWidth,
-          },
-        }}
-        slotProps={{
-          root: {
-            keepMounted: true,
-          },
-        }}
-      >
-        {drawerContent}
-      </ResponsiveDrawer>
-      <ResponsiveDrawer
-        variant="permanent"
-        // sx={{
-        //   display: {
-        //     xs: "none",
-        //     sm: "block",
-        //   },
-        //   "& .MuiDrawer-paper": {
-        //     boxSizing: "border-box",
-        //     width: drawerWidth,
-        //   },
-        // }}
-        open={openPersistent}
-      >
-        <DrawerHeader>
-          <Iconify icon="lucide:mountain" size={1.8} color="primary.main" />
-          <Typography variant="h6" component="div">
-            SAM Gestor
-          </Typography>
-          <IconButton onClick={handleDrawerPersistentToggle}>
-            {theme.direction === "rtl" ? (
-              <Iconify icon="lucide:chevron-right" size={2} />
-            ) : (
-              <Iconify icon="lucide:chevron-left" size={2} />
-            )}
-          </IconButton>
-        </DrawerHeader>
-        {drawerContent}
-      </ResponsiveDrawer>
-      <Box
-        sx={{
-          backgroundColor: "background.paper",
-          //p: 2,
-          width: "calc(100% - 240px)", // ✅ Agora funciona perfeitamente
-          height: "100%",
-          flexGrow: 1,
-        }}
-      >
-        <DrawerHeader />
-        <Box
+      <BreadCrumbsProvider>
+        <AppBar position="fixed" open={openPersistent}>
+          <Box sx={{ backgroundColor: "background.paper" }}>
+            <TopBar />
+          </Box>
+        </AppBar>
+        <ResponsiveDrawer
+          variant="temporary"
+          open={mobileOpen}
+          onTransitionEnd={handleDrawerTransitionEnd}
+          onClose={handleDrawerClose}
           sx={{
-            height: "calc(100% - 72px)",
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
+          }}
+          slotProps={{
+            root: {
+              keepMounted: true,
+            },
           }}
         >
-          <ProtectedRoute>{children}</ProtectedRoute>
+          {drawerContent}
+        </ResponsiveDrawer>
+        <ResponsiveDrawer
+          variant="permanent"
+          // sx={{
+          //   display: {
+          //     xs: "none",
+          //     sm: "block",
+          //   },
+          //   "& .MuiDrawer-paper": {
+          //     boxSizing: "border-box",
+          //     width: drawerWidth,
+          //   },
+          // }}
+          open={openPersistent}
+        >
+          <DrawerHeader>
+            <Iconify icon="lucide:mountain" size={1.8} color="primary.main" />
+            <Typography variant="h6" component="div">
+              SAM Gestor
+            </Typography>
+            <IconButton onClick={handleDrawerPersistentToggle}>
+              {theme.direction === "rtl" ? (
+                <Iconify icon="lucide:chevron-right" size={2} />
+              ) : (
+                <Iconify icon="lucide:chevron-left" size={2} />
+              )}
+            </IconButton>
+          </DrawerHeader>
+          {drawerContent}
+        </ResponsiveDrawer>
+        <Box
+          sx={{
+            backgroundColor: "background.paper",
+            //p: 2,
+            width: "calc(100% - 240px)", // ✅ Agora funciona perfeitamente
+            height: "100%",
+            flexGrow: 1,
+          }}
+        >
+          <DrawerHeader />
+          <Box
+            sx={{
+              height: "calc(100% - 72px)",
+            }}
+          >
+            <ProtectedRoute>{children}</ProtectedRoute>
+          </Box>
         </Box>
-      </Box>
+      </BreadCrumbsProvider>
     </Box>
   );
 };

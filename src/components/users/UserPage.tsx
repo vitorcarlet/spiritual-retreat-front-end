@@ -67,6 +67,7 @@ export default function UserPage({ children }: UserPageProps) {
   useEffect(() => {
     // Atualizar o título do breadcrumb quando o usuário for carregado
     if (user) {
+      console.log("User data loaded:", user);
       setBreadCrumbsTitle({ title: user.name, pathname: `/users/${user.id}` });
     }
   }, [user, setBreadCrumbsTitle]);

@@ -3,11 +3,7 @@ import TopBar from "../TopBar";
 import ProtectedRoute from "../protected/ProtectedRoute";
 import { BreadCrumbsProvider } from "@/src/contexts/BreadCrumbsContext";
 
-export default function TopBarAndContent({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function TopBarAndContent({ children }: { children: React.ReactNode }) {
   return (
     <BreadCrumbsProvider>
       <Box

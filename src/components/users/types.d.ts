@@ -6,6 +6,7 @@ type User = {
   email: string;
   birth: string;
   role: Roles;
+  permissions: UserPermissions;
   cpf: string;
   city: string;
   state: string;
