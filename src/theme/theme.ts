@@ -20,6 +20,14 @@ const initialTheme = {
           menu: "#A6ABC8",
           contrastText: "#A6ABC8",
         },
+        warning: {
+          lighter: "#FFF3BF",
+          light: "#FFD33D",
+          main: "#f1ba23ff", // Amarelo suave do GitHub
+          dark: "#B08800",
+          darker: "#735C00",
+          contrastText: GREY[800],
+        },
         background: { paper: GREY[0], default: "#EBEBEB", active: "#DFE1EA" },
         action: { active: GREY[600], ...COMMON.action },
       },

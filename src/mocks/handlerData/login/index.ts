@@ -1,21 +1,18 @@
-import { UserObject } from "next-auth";
+import { UserObject, UserRoles } from "next-auth";
 
-export const createUserMock = (
-  roleType: "admin" | "manager" | "consultant" | "user"
-): UserObject => {
+export const createUserMock = (roleType: UserRoles): UserObject => {
   const baseUser = {
     id: 1,
     email: "admin@email.com",
     name: "Vitor Admin",
     first_name: "Vitor",
     last_name: "Admin",
-  };
-
-  const roles = {
-    admin: roleType === "admin",
-    manager: roleType === "manager",
-    consultant: roleType === "consultant",
-    user: true,
+    birth: "1990-01-01",
+    cpf: "123.456.789-00",
+    city: "Videira",
+    state: "Santa Catarina",
+    stateShort: "SC",
+    role: roleType,
   };
 
   const permissions = {
@@ -55,11 +52,16 @@ export const createUserMock = (
       update: roleType === "admin" || roleType === "manager" ? true : false,
       delete: roleType === "admin" ? true : false,
     },
+    reports: {
+      create: roleType === "admin" || roleType === "manager" ? true : false,
+      read: roleType === "admin" || roleType === "manager" ? true : false,
+      update: roleType === "admin" || roleType === "manager" ? true : false,
+      delete: roleType === "admin" ? true : false,
+    },
   };
 
   return {
     ...baseUser,
-    roles,
     permissions,
   };
 };

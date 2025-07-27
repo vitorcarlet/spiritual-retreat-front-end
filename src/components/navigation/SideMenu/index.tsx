@@ -71,6 +71,7 @@ const AppBar = styled(MuiAppBar, {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
+  boxShadow: "none",
   variants: [
     {
       props: ({ open }) => open,
@@ -90,9 +91,13 @@ const ResponsiveDrawer = styled(MuiDrawer, {
   shouldForwardProp: (prop) => prop !== "open",
 })(({ theme }) => ({
   width: drawerWidth,
+  backgroundColor: "background.default",
   flexShrink: 0,
   whiteSpace: "nowrap",
   boxSizing: "border-box",
+  "& .MuiPaper-root": {
+    backgroundColor: "inherit",
+  },
   variants: [
     {
       props: ({ open }) => open,
@@ -184,7 +189,7 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
   console.log("SessionMenu:", accessibleMenus);
 
   return (
-    <Box sx={{ display: "flex", height: "100vh" }}>
+    <Box id="side-menu-drawer" sx={{ display: "flex", height: "100vh" }}>
       <BreadCrumbsProvider>
         <AppBar position="fixed" open={openPersistent}>
           <Box sx={{ backgroundColor: "background.paper" }}>
@@ -197,6 +202,7 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
           onTransitionEnd={handleDrawerTransitionEnd}
           onClose={handleDrawerClose}
           sx={{
+            backgroundColor: "background.default",
             display: { xs: "block", sm: "none" },
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
@@ -253,9 +259,31 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
           <Box
             sx={{
               height: "calc(100% - 72px)",
+              backgroundColor: "background.paper",
             }}
           >
-            <ProtectedRoute>{children}</ProtectedRoute>
+            <Box
+              sx={{
+                p: 3,
+                pt: 1,
+                pb: 1,
+                width: "100%",
+                height: "100%",
+                borderRadius: 0,
+                backgroundColor: "background.paper",
+              }}
+            >
+              <Box
+                sx={{
+                  height: "100%",
+                  overflowY: "auto",
+                  backgroundColor: "background.default",
+                  borderRadius: 1,
+                }}
+              >
+                <ProtectedRoute>{children}</ProtectedRoute>
+              </Box>
+            </Box>
           </Box>
         </Box>
       </BreadCrumbsProvider>

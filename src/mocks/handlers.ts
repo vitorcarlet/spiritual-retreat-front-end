@@ -3,6 +3,7 @@ import { BackendJWT, UserObject } from "next-auth";
 import { create_access_token, create_refresh_token } from "./actions";
 import { RegisterSchema } from "../schemas";
 import { createUserMock } from "./handlerData/login";
+import getUserById from "./handlerData/getUserById";
 
 type Request = {
   email?: string;
@@ -47,19 +48,10 @@ export const handlers = [
   }),
 
   http.get("http://localhost:3001/api/user/:id", ({ params }) => {
-    const userId = params.id;
-    if (userId === "1") {
-      return HttpResponse.json({
-        id: "1",
-        name: "Vitor Admin",
-        email: "admin@email.com",
-        birth: "1990-01-01",
-        role: "admin",
-        cpf: "973.628.730-00",
-        city: "Videira",
-        state: "Santa Catarina",
-        stateShort: "SC",
-      });
+    const userId = params.id as string;
+    const user = getUserById(userId);
+    if (user) {
+      return HttpResponse.json(user);
     }
     return HttpResponse.json({ error: "User not found" }, { status: 404 });
   }),
@@ -94,8 +86,8 @@ export const handlers = [
       user = createUserMock("manager");
     } else if (email === "consultant@email.com" && password === "123") {
       user = createUserMock("consultant");
-    } else if (email === "user@email.com" && password === "123") {
-      user = createUserMock("user");
+    } else if (email === "participant@email.com" && password === "123") {
+      user = createUserMock("participant");
     } else {
       return HttpResponse.json(
         { error: "Invalid credentials" },

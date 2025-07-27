@@ -33,17 +33,17 @@ declare module "next-auth" {
     email: string;
     name: string;
     first_name: string;
+    birth: string;
     last_name: string;
-    roles: UserRoles;
+    cpf: string;
+    city: string;
+    state: string;
+    stateShort: string;
+    role: UserRoles;
     permissions: UserPermissions;
   }
 
-  interface UserRoles {
-    admin: boolean;
-    manager: boolean;
-    consultant: boolean;
-    participant: boolean;
-  }
+  type UserRoles = "admin" | "manager" | "consultant" | "participant";
 
   export type ResourceType =
     | "users"
@@ -51,7 +51,8 @@ declare module "next-auth" {
     | "settings"
     | "bookings"
     | "profile"
-    | "dashboard";
+    | "dashboard"
+    | "reports";
 
   export type ActionType = "create" | "read" | "update" | "delete";
 

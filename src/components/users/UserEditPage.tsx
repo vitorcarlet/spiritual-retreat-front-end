@@ -16,13 +16,16 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import TextFieldMasked from "../fields/maskedTextFields/TextFieldMasked";
 import { useUserContent } from "./context";
+import { StateField } from "../fields/LocalizationFields";
+import { UserRoles } from "next-auth";
 
 interface UserFormData {
   name: string;
   cpf: string;
   birthDate: string;
+  state: string;
   city: string;
-  role: Roles | "";
+  role: UserRoles | "";
 }
 
 const UserEditPage = () => {
@@ -34,6 +37,7 @@ const UserEditPage = () => {
     cpf: "",
     birthDate: "",
     city: "",
+    state: "",
     role: "",
   });
 
@@ -44,6 +48,7 @@ const UserEditPage = () => {
         cpf: user.cpf || "",
         birthDate: user.birth || "",
         city: user.city || "",
+        state: user.state || "",
         role: user.role || "",
       });
     }
@@ -61,13 +66,28 @@ const UserEditPage = () => {
   const handleRoleChange = (event: SelectChangeEvent) => {
     setFormData((prev) => ({
       ...prev,
-      role: event.target.value as Roles,
+      role: event.target.value as UserRoles,
     }));
   };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     console.log("Dados do formulário:", formData);
+  };
+
+  const handleStateChange = (state: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      state: state,
+      city: "", // Limpar cidade quando estado mudar
+    }));
+  };
+
+  const handleCityChange = (city: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      city: city,
+    }));
   };
 
   if (isLoading) {
@@ -195,27 +215,23 @@ const UserEditPage = () => {
               variant="outlined"
               value={formData.birthDate}
               onChange={handleInputChange("birthDate")}
-              InputLabelProps={{
-                shrink: true,
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                },
               }}
             />
           </Grid>
 
           {/* Cidade */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextFieldMasked
-              fullWidth
-              label="Cidade"
-              variant="outlined"
-              placeholder="Digite a cidade"
-              maskType="city"
-              value={formData.city}
-              onChange={(event) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  city: event.target.value,
-                }));
-              }}
+            <StateField
+              selectedState={formData.state}
+              selectedCity={formData.city}
+              onStateChange={handleStateChange}
+              onCityChange={handleCityChange}
+              required
+              size="medium"
             />
           </Grid>
 
@@ -263,6 +279,7 @@ const UserEditPage = () => {
                       cpf: user.cpf || "",
                       birthDate: user.birth || "",
                       city: user.city || "",
+                      state: user.state || "",
                       role: user.role || "",
                     });
                   }

@@ -6,12 +6,14 @@ type SelectEditModeProps = {
   menuMode: "view" | "edit" | null;
   setMenuMode: (mode: "view" | "edit" | null) => void;
   isAllowedToEdit: boolean;
+  sx: React.CSSProperties;
 };
 
 const SelectEditMode = ({
   menuMode,
   setMenuMode,
   isAllowedToEdit,
+  sx,
 }: SelectEditModeProps) => (
   <div>
     <FormControl variant="outlined">
@@ -21,7 +23,7 @@ const SelectEditMode = ({
         value={menuMode || ""}
         onChange={(e) => setMenuMode(e.target.value as "view" | "edit")}
         label="Modo" // ✅ CORREÇÃO: Adicionar esta prop
-        sx={{ minWidth: 150 }}
+        sx={sx}
       >
         <MenuItem key={1} value={"view"}>
           Visualização

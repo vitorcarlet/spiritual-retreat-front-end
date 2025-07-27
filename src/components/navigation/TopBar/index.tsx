@@ -21,6 +21,7 @@ const TopBar = () => {
         top: 0,
         zIndex: "appBar",
         borderRadius: "0",
+        boxShadow: "none",
       }}
     >
       <Grid container sx={{ px: 2, minHeight: 72 }}>

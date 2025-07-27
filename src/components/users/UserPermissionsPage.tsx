@@ -3,12 +3,7 @@ import {
   Box,
   Card,
   CardContent,
-  FormControl,
   Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   Switch,
   Typography,
   Button,
@@ -16,11 +11,12 @@ import {
   Chip,
   FormControlLabel,
   Alert,
+  Paper,
 } from "@mui/material";
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useUserContent } from "./context";
 import { Iconify } from "../Iconify";
+import { UserPermissions, UserRoles } from "next-auth";
 
 // Definir tipos para as permissões
 interface Permission {
@@ -38,8 +34,8 @@ interface PermissionSection {
 }
 
 interface UserPermissionsData {
-  role: Roles;
-  customPermissions: Record<string, boolean>;
+  role: UserRoles;
+  permissions: UserPermissions;
 }
 
 // Configuração das seções de permissões
@@ -50,7 +46,7 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
     icon: "solar:user-bold-duotone",
     permissions: [
       {
-        id: "users.view",
+        id: "users.read",
         label: "Visualizar usuários",
         description: "Pode ver a lista de usuários",
         icon: "solar:eye-bold",
@@ -62,7 +58,7 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
         icon: "solar:user-plus-bold",
       },
       {
-        id: "users.edit",
+        id: "users.update",
         label: "Editar usuários",
         description: "Pode editar dados de usuários",
         icon: "solar:pen-bold",
@@ -81,7 +77,7 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
     icon: "material-symbols:temple-buddhist",
     permissions: [
       {
-        id: "retreats.view",
+        id: "retreats.read",
         label: "Visualizar retiros",
         description: "Pode ver a lista de retiros",
         icon: "solar:eye-bold",
@@ -93,7 +89,7 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
         icon: "solar:add-circle-bold",
       },
       {
-        id: "retreats.edit",
+        id: "retreats.update",
         label: "Editar retiros",
         description: "Pode editar retiros existentes",
         icon: "solar:pen-bold",
@@ -108,179 +104,163 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
   },
   {
     id: "reports",
-    label: "Relatórios e Dashboard",
+    label: "Relatórios",
     icon: "solar:chart-bold-duotone",
     permissions: [
       {
-        id: "reports.view",
+        id: "reports.read",
         label: "Visualizar relatórios",
-        description: "Pode acessar relatórios e dashboard",
+        description: "Pode acessar relatórios",
         icon: "solar:document-text-bold",
       },
       {
-        id: "reports.export",
-        label: "Exportar relatórios",
-        description: "Pode exportar dados em diversos formatos",
-        icon: "solar:export-bold",
+        id: "reports.create",
+        label: "Criar relatórios",
+        description: "Pode criar novos relatórios",
+        icon: "solar:add-circle-bold",
+      },
+      {
+        id: "reports.update",
+        label: "Editar relatórios",
+        description: "Pode editar relatórios existentes",
+        icon: "solar:pen-bold",
+      },
+      {
+        id: "reports.delete",
+        label: "Deletar relatórios",
+        description: "Pode excluir relatórios",
+        icon: "solar:trash-bin-minimalistic-bold",
       },
     ],
   },
   {
-    id: "permissions",
-    label: "Permissões",
-    icon: "solar:shield-check-bold-duotone",
+    id: "settings",
+    label: "Configurações",
+    icon: "solar:settings-bold-duotone",
     permissions: [
       {
-        id: "permissions.view",
-        label: "Visualizar permissões",
-        description: "Pode ver permissões de outros usuários",
+        id: "settings.read",
+        label: "Visualizar configurações",
+        description: "Pode ver configurações do sistema",
         icon: "solar:eye-bold",
       },
       {
-        id: "permissions.edit",
-        label: "Editar permissões",
-        description: "Pode modificar permissões de outros usuários",
-        icon: "solar:shield-keyhole-bold",
+        id: "settings.create",
+        label: "Criar configurações",
+        description: "Pode criar novas configurações",
+        icon: "solar:add-circle-bold",
+      },
+      {
+        id: "settings.update",
+        label: "Editar configurações",
+        description: "Pode modificar configurações do sistema",
+        icon: "solar:pen-bold",
+      },
+      {
+        id: "settings.delete",
+        label: "Deletar configurações",
+        description: "Pode excluir configurações",
+        icon: "solar:trash-bin-minimalistic-bold",
       },
     ],
   },
   {
-    id: "enrollment",
-    label: "Inscrições",
-    icon: "solar:document-add-bold-duotone",
+    id: "bookings",
+    label: "Reservas",
+    icon: "solar:calendar-bold-duotone",
     permissions: [
       {
-        id: "enrollment.view",
-        label: "Visualizar inscrições",
-        description: "Pode ver inscrições em retiros",
+        id: "bookings.read",
+        label: "Visualizar reservas",
+        description: "Pode ver reservas de retiros",
         icon: "solar:eye-bold",
       },
       {
-        id: "enrollment.manage",
-        label: "Gerenciar inscrições",
-        description: "Pode aprovar/rejeitar inscrições",
-        icon: "solar:check-circle-bold",
+        id: "bookings.create",
+        label: "Criar reservas",
+        description: "Pode fazer novas reservas",
+        icon: "solar:calendar-add-bold",
+      },
+      {
+        id: "bookings.update",
+        label: "Editar reservas",
+        description: "Pode modificar reservas existentes",
+        icon: "solar:pen-bold",
+      },
+      {
+        id: "bookings.delete",
+        label: "Cancelar reservas",
+        description: "Pode cancelar reservas",
+        icon: "solar:calendar-cross-bold",
       },
     ],
   },
   {
-    id: "contemplation",
-    label: "Contemplação",
-    icon: "solar:meditation-bold-duotone",
+    id: "profile",
+    label: "Perfil",
+    icon: "solar:user-circle-bold-duotone",
     permissions: [
       {
-        id: "contemplation.view",
-        label: "Visualizar conteúdo",
-        description: "Pode acessar materiais de contemplação",
-        icon: "solar:book-bold",
-      },
-      {
-        id: "contemplation.manage",
-        label: "Gerenciar conteúdo",
-        description: "Pode criar e editar materiais",
-        icon: "solar:pen-new-square-bold",
-      },
-    ],
-  },
-  {
-    id: "payments",
-    label: "Pagamentos",
-    icon: "solar:card-bold-duotone",
-    permissions: [
-      {
-        id: "payments.view",
-        label: "Visualizar pagamentos",
-        description: "Pode ver histórico de pagamentos",
+        id: "profile.read",
+        label: "Visualizar perfil",
+        description: "Pode ver dados do próprio perfil",
         icon: "solar:eye-bold",
       },
       {
-        id: "payments.manage",
-        label: "Gerenciar pagamentos",
-        description: "Pode processar reembolsos e ajustes",
-        icon: "solar:wallet-money-bold",
+        id: "profile.create",
+        label: "Criar perfil",
+        description: "Pode criar perfil",
+        icon: "solar:user-plus-bold",
+      },
+      {
+        id: "profile.update",
+        label: "Editar perfil",
+        description: "Pode editar dados do próprio perfil",
+        icon: "solar:pen-bold",
+      },
+      {
+        id: "profile.delete",
+        label: "Deletar perfil",
+        description: "Pode excluir o próprio perfil",
+        icon: "solar:trash-bin-minimalistic-bold",
       },
     ],
   },
   {
-    id: "families",
-    label: "Famílias",
-    icon: "solar:users-group-two-rounded-bold-duotone",
+    id: "dashboard",
+    label: "Dashboard",
+    icon: "solar:widget-bold-duotone",
     permissions: [
       {
-        id: "families.view",
-        label: "Visualizar famílias",
-        description: "Pode ver grupos familiares",
+        id: "dashboard.read",
+        label: "Visualizar dashboard",
+        description: "Pode acessar o dashboard",
         icon: "solar:eye-bold",
       },
       {
-        id: "families.manage",
-        label: "Gerenciar famílias",
-        description: "Pode criar e editar grupos familiares",
-        icon: "solar:users-group-rounded-bold",
-      },
-    ],
-  },
-  {
-    id: "teams",
-    label: "Equipes de serviço",
-    icon: "solar:users-group-rounded-bold-duotone",
-    permissions: [
-      {
-        id: "teams.view",
-        label: "Visualizar equipes",
-        description: "Pode ver equipes de serviço",
-        icon: "solar:eye-bold",
+        id: "dashboard.create",
+        label: "Criar widgets",
+        description: "Pode criar novos widgets no dashboard",
+        icon: "solar:add-circle-bold",
       },
       {
-        id: "teams.manage",
-        label: "Gerenciar equipes",
-        description: "Pode organizar equipes de trabalho",
-        icon: "solar:settings-bold",
-      },
-    ],
-  },
-  {
-    id: "accommodations",
-    label: "Barracas",
-    icon: "solar:home-smile-bold-duotone",
-    permissions: [
-      {
-        id: "accommodations.view",
-        label: "Visualizar acomodações",
-        description: "Pode ver disponibilidade de barracas",
-        icon: "solar:eye-bold",
+        id: "dashboard.update",
+        label: "Editar dashboard",
+        description: "Pode personalizar o dashboard",
+        icon: "solar:pen-bold",
       },
       {
-        id: "accommodations.manage",
-        label: "Gerenciar acomodações",
-        description: "Pode alocar e gerenciar barracas",
-        icon: "solar:home-bold",
-      },
-    ],
-  },
-  {
-    id: "messages",
-    label: "Mensagens",
-    icon: "solar:chat-round-dots-bold-duotone",
-    permissions: [
-      {
-        id: "messages.view",
-        label: "Visualizar mensagens",
-        description: "Pode ver mensagens do sistema",
-        icon: "solar:eye-bold",
-      },
-      {
-        id: "messages.send",
-        label: "Enviar mensagens",
-        description: "Pode enviar mensagens para usuários",
-        icon: "solar:letter-bold",
+        id: "dashboard.delete",
+        label: "Remover widgets",
+        description: "Pode remover widgets do dashboard",
+        icon: "solar:trash-bin-minimalistic-bold",
       },
     ],
   },
 ];
 
 // Permissões padrão por cargo
-const ROLE_PERMISSIONS: Record<Roles, string[]> = {
+const ROLE_PERMISSIONS: Record<UserRoles, string[]> = {
   admin: PERMISSION_SECTIONS.flatMap((section) =>
     section.permissions.map((p) => p.id)
   ),
@@ -335,35 +315,36 @@ const UserPermissionsPage = () => {
   const { user } = useUserContent();
   const [permissionsData, setPermissionsData] = useState<UserPermissionsData>({
     role: "participant",
-    customPermissions: {},
+    permissions: {} as UserPermissions,
   });
+
+  // ✅ NOVO: Estado para seção selecionada
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     if (user) {
       setPermissionsData({
         role: user.role || "participant",
-        customPermissions: user.permissions || {},
+        permissions: user.permissions || {},
       });
     }
   }, [user]);
 
-  const handleRoleChange = (event: SelectChangeEvent) => {
-    const newRole = event.target.value as Roles;
-    setPermissionsData((prev) => ({
-      ...prev,
-      role: newRole,
-      customPermissions: {}, // Reset custom permissions when role changes
-    }));
-  };
-
   const handlePermissionToggle = (permissionId: string) => {
     setPermissionsData((prev) => ({
       ...prev,
-      customPermissions: {
-        ...prev.customPermissions,
-        [permissionId]: !prev.customPermissions[permissionId],
+      permissions: {
+        ...prev.permissions,
+        [permissionId]: !(prev.permissions as any)[permissionId],
       },
     }));
+  };
+
+  // ✅ NOVO: Handler para seleção de seção
+  const handleSectionSelect = (sectionId: string) => {
+    setSelectedSectionId(sectionId === selectedSectionId ? null : sectionId);
   };
 
   const isPermissionEnabled = (permissionId: string): boolean => {
@@ -372,9 +353,16 @@ const UserPermissionsPage = () => {
     if (rolePermissions.includes(permissionId)) {
       return true;
     }
+    const [section, action] = permissionId.split(".");
 
+    console.log(
+      permissionId,
+      "--",
+      permissionsData.permissions,
+      permissionsData.permissions[section][action] || false
+    );
     // Senão, verifica nas permissões customizadas
-    return permissionsData.customPermissions[permissionId] || false;
+    return permissionsData.permissions[section][action] || false;
   };
 
   const isPermissionFromRole = (permissionId: string): boolean => {
@@ -388,291 +376,365 @@ const UserPermissionsPage = () => {
     // Aqui você enviaria os dados para o servidor
   };
 
-  const getRoleDisplayName = (role: Roles): string => {
-    const roleMap = {
-      admin: "Administrador",
-      manager: "Gestor",
-      consultant: "Consultor",
-      participant: "Participante",
-    };
-    return roleMap[role] || role;
-  };
+  // const getRoleDisplayName = (role: Roles): string => {
+  //   const roleMap = {
+  //     admin: "Administrador",
+  //     manager: "Gestor",
+  //     consultant: "Consultor",
+  //     participant: "Participante",
+  //   };
+  //   return roleMap[role] || role;
+  // };
 
-  const getRoleColor = (role: Roles) => {
-    const colorMap = {
-      admin: "error",
-      manager: "warning",
-      consultant: "info",
-      participant: "success",
-    } as const;
-    return colorMap[role] || "default";
-  };
+  // const getRoleColor = (role: Roles) => {
+  //   const colorMap = {
+  //     admin: "error",
+  //     manager: "warning",
+  //     consultant: "info",
+  //     participant: "success",
+  //   } as const;
+  //   return colorMap[role] || "default";
+  // };
 
-  //   if (isLoading) {
-  //     return (
-  //       <Box sx={{ width: "100%", height: "100%", p: 3 }}>
-  //         <Skeleton variant="rectangular" height={200} sx={{ mb: 2 }} />
-  //         <Skeleton variant="circular" width={200} height={200} sx={{ mb: 3 }} />
-  //         <Grid container spacing={3}>
-  //           {[...Array(8)].map((_, index) => (
-  //             <Grid size={{ xs: 12, md: 6 }} key={index}>
-  //               <Skeleton variant="rectangular" height={120} />
-  //             </Grid>
-  //           ))}
-  //         </Grid>
-  //       </Box>
-  //     );
-  //   }
+  // ✅ NOVO: Encontrar seção selecionada
+  const selectedSection = PERMISSION_SECTIONS.find(
+    (section) => section.id === selectedSectionId
+  );
 
   return (
     <Box
       component="form"
       onSubmit={handleSubmit}
+      id="user-permissions-form"
       sx={{
         width: "100%",
         height: "100%",
-        overflowY: "auto",
+        overflowY: "hidden",
         pt: 0,
       }}
     >
-      {/* Header com imagem de fundo */}
-      <Box>
-        <Box
-          sx={{
-            position: "relative",
-            width: "100%",
-            height: "200px",
-          }}
+      <Paper elevation={1} sx={{ padding: 3, paddingTop: 3, borderRadius: 1 }}>
+        {/* Header */}
+        <Grid
+          size={12}
+          display={"flex"}
+          alignItems={"center"}
+          height={72}
+          gap={2}
+          borderBottom={1}
+          borderColor={"divider"}
         >
-          <Image
-            src="/images/background16-9.png"
-            alt="Background"
-            fill
-            style={{ objectFit: "cover" }}
-            priority
+          <Iconify
+            icon="solar:danger-triangle-bold-duotone"
+            color="warning.main"
           />
-        </Box>
+          <Typography
+            variant="h5"
+            component="h1"
+            sx={{
+              color: "warning.main",
+              textTransform: "capitalize",
+            }}
+          >
+            Cargo: {user?.role}
+          </Typography>
+        </Grid>
 
-        {/* Foto de perfil */}
-        <Box
-          sx={{
-            position: "relative",
-            transform: "translate(25%, -50%)",
-            width: "200px",
-            height: "200px",
-            borderRadius: "50%",
-            border: "4px solid white",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            marginBottom: "-100px",
-          }}
-        >
-          <Image
-            src={
-              user?.profileImage ||
-              "https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU"
-            }
-            alt="Profile"
-            fill
-            style={{ objectFit: "cover", borderRadius: "50%" }}
-          />
-        </Box>
-      </Box>
-
-      {/* Formulário */}
-      <Box sx={{ padding: 3, paddingTop: 3 }}>
-        <Typography variant="h5" component="h1" gutterBottom sx={{ mb: 3 }}>
-          Permissões do Usuário: {user?.name}
-        </Typography>
-
-        <Grid container spacing={3}>
-          {/* Cargo do usuário */}
-          <Grid size={12}>
-            <Card>
-              <CardContent>
-                <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
-                >
-                  <Iconify
-                    icon="solar:shield-user-bold-duotone"
-                    size={2}
-                    sx={{ color: "primary.main" }}
-                  />
-                  <Typography variant="h6">Cargo e Permissões Base</Typography>
-                </Box>
-
-                <Alert severity="info" sx={{ mb: 3 }}>
-                  As permissões marcadas em laranja são automáticas do cargo
-                  selecionado e não podem ser desabilitadas. As permissões em
-                  cinza podem ser habilitadas individualmente.
-                </Alert>
-
-                <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                  <FormControl variant="outlined" sx={{ minWidth: 200 }}>
-                    <InputLabel id="select-role-label">Cargo</InputLabel>
-                    <Select
-                      labelId="select-role-label"
-                      value={permissionsData.role}
-                      onChange={handleRoleChange}
-                      label="Cargo"
-                    >
-                      <MenuItem value="participant">Participante</MenuItem>
-                      <MenuItem value="consultant">Consultor</MenuItem>
-                      <MenuItem value="manager">Gestor</MenuItem>
-                      <MenuItem value="admin">Administrador</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <Chip
-                    label={getRoleDisplayName(permissionsData.role)}
-                    color={getRoleColor(permissionsData.role)}
-                    size="medium"
-                    icon={<Iconify icon="solar:crown-bold" />}
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Seções de permissões */}
-          {PERMISSION_SECTIONS.map((section) => (
-            <Grid size={{ xs: 12, md: 6 }} key={section.id}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      mb: 2,
-                    }}
-                  >
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+          {/* ✅ MODIFICADO: Lista de seções (clicáveis) */}
+          <Grid
+            size={{ xs: 12, lg: 3 }}
+            sx={{
+              width: "100%",
+              height: "100%",
+              overflowY: "auto",
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              Seções de Permissões
+            </Typography>
+            {PERMISSION_SECTIONS.map((section) => (
+              <Card
+                key={section.id}
+                sx={{
+                  mb: 2,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease-in-out",
+                  border: selectedSectionId === section.id ? 2 : 1,
+                  borderColor:
+                    selectedSectionId === section.id
+                      ? "primary.main"
+                      : "divider",
+                  "&:hover": {
+                    boxShadow: 2,
+                    transform: "translateY(-2px)",
+                  },
+                }}
+                onClick={() => handleSectionSelect(section.id)}
+              >
+                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Iconify
                       icon={section.icon}
                       size={1.5}
-                      sx={{ color: "text.secondary" }}
+                      sx={{
+                        color:
+                          selectedSectionId === section.id
+                            ? "primary.main"
+                            : "text.secondary",
+                      }}
                     />
-                    <Typography variant="h6">{section.label}</Typography>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight:
+                          selectedSectionId === section.id ? 600 : 400,
+                        color:
+                          selectedSectionId === section.id
+                            ? "primary.main"
+                            : "text.primary",
+                      }}
+                    >
+                      {section.label}
+                    </Typography>
+                    {selectedSectionId === section.id && (
+                      <Iconify
+                        icon="solar:alt-arrow-right-bold"
+                        size={1.2}
+                        sx={{ color: "primary.main", ml: "auto" }}
+                      />
+                    )}
                   </Box>
 
-                  <Divider sx={{ mb: 2 }} />
-
+                  {/* ✅ NOVO: Indicador de quantas permissões estão ativas */}
                   <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                    sx={{
+                      mt: 1,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
                   >
-                    {section.permissions.map((permission) => {
-                      const isEnabled = isPermissionEnabled(permission.id);
-                      const isFromRole = isPermissionFromRole(permission.id);
-
-                      return (
-                        <FormControlLabel
-                          key={permission.id}
-                          control={
-                            <Switch
-                              checked={isEnabled}
-                              onChange={() =>
-                                handlePermissionToggle(permission.id)
-                              }
-                              disabled={isFromRole}
-                              color={isFromRole ? "warning" : "primary"}
-                            />
-                          }
-                          label={
-                            <Box>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
-                                }}
-                              >
-                                <Iconify
-                                  icon={permission.icon}
-                                  size={1.2}
-                                  sx={{
-                                    color: isEnabled
-                                      ? "primary.main"
-                                      : "text.disabled",
-                                  }}
-                                />
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    fontWeight: isEnabled ? 600 : 400,
-                                    color: isEnabled
-                                      ? "text.primary"
-                                      : "text.secondary",
-                                  }}
-                                >
-                                  {permission.label}
-                                </Typography>
-                                {isFromRole && (
-                                  <Chip
-                                    label="Cargo"
-                                    size="small"
-                                    color="warning"
-                                    variant="outlined"
-                                  />
-                                )}
-                              </Box>
-                              <Typography
-                                variant="caption"
-                                sx={{ color: "text.secondary", ml: 3 }}
-                              >
-                                {permission.description}
-                              </Typography>
-                            </Box>
-                          }
-                          sx={{
-                            alignItems: "flex-start",
-                            "& .MuiFormControlLabel-label": { pt: 0.5 },
-                          }}
-                        />
-                      );
-                    })}
+                    <Typography variant="caption" color="text.secondary">
+                      {section.permissions.length} permissões
+                    </Typography>
+                    <Chip
+                      label={`${
+                        section.permissions.filter((p) =>
+                          isPermissionEnabled(p.id)
+                        ).length
+                      } ativas`}
+                      size="small"
+                      color={
+                        selectedSectionId === section.id ? "primary" : "default"
+                      }
+                      variant="outlined"
+                    />
                   </Box>
                 </CardContent>
               </Card>
-            </Grid>
-          ))}
+            ))}
+          </Grid>
 
-          {/* Botões de ação */}
-          <Grid size={12}>
-            <Box
-              sx={{
-                display: "flex",
-                gap: 2,
-                justifyContent: "flex-end",
-                mt: 2,
-              }}
-            >
-              <Button
-                variant="outlined"
-                color="secondary"
-                size="large"
-                onClick={() => {
-                  //   if (user) {
-                  //     setPermissionsData({
-                  //       role: user.role || "participant",
-                  //       customPermissions: user.customPermissions || {},
-                  //     });
-                  //   }
+          {/* ✅ NOVO: Área de detalhes das permissões */}
+          <Grid size={{ xs: 12, lg: 9 }}>
+            {selectedSection ? (
+              <Box>
+                {/* Header da seção selecionada */}
+                <Card>
+                  <CardContent>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Iconify
+                        icon={selectedSection.icon}
+                        size={2}
+                        sx={{ color: "primary.main" }}
+                      />
+                      <Typography variant="h5" color="primary.main">
+                        Permissões de {selectedSection.label}
+                      </Typography>
+                    </Box>
+
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      As permissões marcadas com{" "}
+                      <Chip
+                        label="Cargo"
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                        sx={{ mx: 0.5 }}
+                      />
+                      são automáticas do cargo atual e não podem ser
+                      desabilitadas.
+                    </Alert>
+                    <Divider sx={{ mb: 3 }} />
+
+                    <Grid container spacing={2}>
+                      {selectedSection.permissions.map((permission) => {
+                        const isEnabled = isPermissionEnabled(permission.id);
+                        const isFromRole = isPermissionFromRole(permission.id);
+
+                        return (
+                          <Grid size={{ xs: 12, md: 6 }} key={permission.id}>
+                            <Card
+                              variant="outlined"
+                              sx={{
+                                p: 2,
+                                border: isEnabled ? 2 : 1,
+                                backgroundColor: "background.default",
+                                borderColor: isEnabled
+                                  ? "primary.main"
+                                  : "divider",
+                                // bgcolor: isEnabled
+                                //   ? "primary.50"
+                                //   : "background.paper",
+                                transition: "all 0.2s ease-in-out",
+                                boxShadow: "none",
+                              }}
+                            >
+                              <FormControlLabel
+                                control={
+                                  <Switch
+                                    checked={isEnabled}
+                                    onChange={() =>
+                                      handlePermissionToggle(permission.id)
+                                    }
+                                    disabled={isFromRole}
+                                    color={isFromRole ? "warning" : "primary"}
+                                  />
+                                }
+                                label={
+                                  <Box sx={{ ml: 1 }}>
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        mb: 0.5,
+                                      }}
+                                    >
+                                      <Iconify
+                                        icon={permission.icon}
+                                        size={1.2}
+                                        sx={{
+                                          color: isEnabled
+                                            ? "primary.main"
+                                            : "text.disabled",
+                                        }}
+                                      />
+                                      <Typography
+                                        variant="subtitle2"
+                                        sx={{
+                                          fontWeight: isEnabled ? 600 : 400,
+                                          color: isEnabled
+                                            ? "text.primary"
+                                            : "text.secondary",
+                                        }}
+                                      >
+                                        {permission.label}
+                                      </Typography>
+                                      {isFromRole && (
+                                        <Chip
+                                          label="Cargo"
+                                          size="small"
+                                          color="warning"
+                                          variant="outlined"
+                                        />
+                                      )}
+                                    </Box>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{ color: "text.secondary" }}
+                                    >
+                                      {permission.description}
+                                    </Typography>
+                                  </Box>
+                                }
+                                sx={{
+                                  alignItems: "flex-start",
+                                  "& .MuiFormControlLabel-label": { pt: 0.5 },
+                                }}
+                              />
+                            </Card>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  </CardContent>
+                </Card>
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 400,
+                  textAlign: "center",
                 }}
               >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="large"
-                startIcon={<Iconify icon="solar:shield-check-bold" />}
-              >
-                Salvar Permissões
-              </Button>
-            </Box>
+                <Iconify
+                  icon="solar:widget-add-bold-duotone"
+                  size={4}
+                  sx={{ color: "text.disabled", mb: 2 }}
+                />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  Selecione uma seção
+                </Typography>
+                <Typography variant="body2" color="text.disabled">
+                  Clique em uma das seções à esquerda para ver e editar as
+                  permissões específicas.
+                </Typography>
+              </Box>
+            )}
           </Grid>
         </Grid>
-      </Box>
+
+        {/* Botões de ação */}
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            justifyContent: "flex-end",
+            mt: 4,
+            pt: 2,
+            borderTop: 1,
+            borderColor: "divider",
+          }}
+        >
+          <Button
+            variant="outlined"
+            color="secondary"
+            size="large"
+            onClick={() => {
+              if (user) {
+                setPermissionsData({
+                  role: user.role || "participant",
+                  permissions: user.permissions || {},
+                });
+              }
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={<Iconify icon="solar:shield-check-bold" />}
+          >
+            Salvar Permissões
+          </Button>
+        </Box>
+      </Paper>
     </Box>
   );
 };

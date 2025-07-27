@@ -1,25 +1,26 @@
 "use client";
 
 import React, { useState, useEffect, use } from "react";
-import { Box, Tabs, Tab, Paper, useTheme, Grid } from "@mui/material";
+import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import { Iconify } from "../Iconify";
 import { api, handleApiResponse } from "@/src/lib/sendRequestServerVanilla";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import SelectEditMode from "../navigation/SelectEditMode";
 import { UserContentProvider } from "./context";
+import { UserObject } from "next-auth";
 
 interface UserPageProps {
   children: React.ReactNode;
 }
 
 // Cache simples para dados do usuário
-const userCache = new Map<string, Promise<User | null>>();
+const userCache = new Map<string, Promise<UserObject | null>>();
 
 // Função para buscar dados do usuário
-const fetchUserData = async (userId: string): Promise<User | null> => {
+const fetchUserData = async (userId: string): Promise<UserObject | null> => {
   try {
-    const result = await handleApiResponse<User>(
+    const result = await handleApiResponse<UserObject>(
       await api.get(`/api/user/${userId}`, {
         baseUrl: "http://localhost:3001", // URL do MSW
       })
@@ -127,76 +128,80 @@ export default function UserPage({ children }: UserPageProps) {
   return (
     <Box sx={{ width: "100%", height: "100%", maxHeight: "100%" }}>
       {/* Container das abas */}
-      <Paper
-        elevation={1}
-        sx={{ width: "100%", height: "100%", maxHeight: "100%" }}
-      >
-        {/* Tabs Header */}
-        <Grid container spacing={0} maxHeight={"15%"}>
-          <Grid size={{ xs: 12, md: 8, lg: 6 }} sx={{ p: 2, pr: 0, pb: 0 }}>
-            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-              <Tabs
-                value={value}
-                onChange={handleChange}
-                aria-label="Abas de gerenciamento de usuário"
-                variant="scrollable"
-                scrollButtons="auto"
-                sx={{
-                  "& .MuiTabs-indicator": {
-                    backgroundColor: theme.palette.primary.main,
-                  },
-                }}
-              >
-                {tabs.map((tab) => (
-                  <Tab
-                    key={tab.value}
-                    icon={<Iconify icon={tab.icon} />}
-                    iconPosition="start"
-                    label={tab.label}
-                    {...a11yProps(tab.value)}
-                    sx={{
-                      minHeight: 72,
-                      textTransform: "none",
-                      fontSize: "0.95rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                ))}
-              </Tabs>
-            </Box>
-          </Grid>
-          <Grid
-            size={{ xs: 12, md: 4, lg: 6 }}
-            sx={{
-              p: 2,
-              pl: 0,
-              pb: 0,
-            }}
-          >
-            <Box
-              width={"100%"}
-              height={"90%"}
+      {/* Tabs Header */}
+      <Grid container spacing={0} minHeight={72} height={"15%"}>
+        <Grid
+          size={{ xs: 12, md: 8, lg: 6 }}
+          sx={{ p: 2, pr: 0, pb: 0, pt: 0, height: "100%" }}
+        >
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+            <Tabs
+              value={value}
+              onChange={handleChange}
+              aria-label="Abas de gerenciamento de usuário"
+              variant="scrollable"
+              scrollButtons="auto"
               sx={{
-                borderBottom: 1,
-                borderColor: "divider",
-                display: "flex",
-                justifyContent: "flex-end",
+                "& .MuiTabs-indicator": {
+                  backgroundColor: theme.palette.primary.main,
+                },
+                height: "100%",
               }}
             >
-              <SelectEditMode
-                menuMode={menuMode}
-                setMenuMode={setMenuMode}
-                isAllowedToEdit={true}
-              />
-            </Box>
-          </Grid>
+              {tabs.map((tab) => (
+                <Tab
+                  key={tab.value}
+                  icon={<Iconify icon={tab.icon} />}
+                  iconPosition="start"
+                  label={tab.label}
+                  {...a11yProps(tab.value)}
+                  sx={{
+                    //minHeight: 72,
+                    textTransform: "none",
+                    fontSize: "0.95rem",
+                    fontWeight: 500,
+                  }}
+                />
+              ))}
+            </Tabs>
+          </Box>
         </Grid>
+        <Grid
+          size={{ xs: 12, md: 4, lg: 6 }}
+          sx={{
+            p: 2,
+            pl: 0,
+            pb: 0,
+            pt: 0,
 
-        {/* Content Area - Renderiza os children baseado na rota */}
-        <Box flexGrow={1} sx={{ p: 2, height: "85%" }}>
-          <UserContentProvider user={user}>{children}</UserContentProvider>
-        </Box>
-      </Paper>
+            height: "100%",
+          }}
+        >
+          <Box
+            width={"100%"}
+            height={73}
+            sx={{
+              borderBottom: 1,
+              borderColor: "divider",
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+            }}
+          >
+            <SelectEditMode
+              sx={{ height: "90%", minWidth: 120 }}
+              menuMode={menuMode}
+              setMenuMode={setMenuMode}
+              isAllowedToEdit={true}
+            />
+          </Box>
+        </Grid>
+      </Grid>
+
+      {/* Content Area - Renderiza os children baseado na rota */}
+      <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "85%" }}>
+        <UserContentProvider user={user}>{children}</UserContentProvider>
+      </Box>
     </Box>
   );
 }
