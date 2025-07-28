@@ -17,28 +17,31 @@ import { useState, useEffect } from "react";
 import TextFieldMasked from "../fields/maskedTextFields/TextFieldMasked";
 import { useUserContent } from "./context";
 import { StateField } from "../fields/LocalizationFields";
-import { UserRoles } from "next-auth";
-
-interface UserFormData {
-  name: string;
-  cpf: string;
-  birthDate: string;
-  state: string;
-  city: string;
-  role: UserRoles | "";
-}
+import { UserObject, UserRoles } from "next-auth";
 
 const UserEditPage = () => {
   const { user } = useUserContent();
   const isLoading = false;
   // Estado do formulário
-  const [formData, setFormData] = useState<UserFormData>({
+  const [formData, setFormData] = useState<
+    Omit<
+      UserObject,
+      | "id"
+      | "createdAt"
+      | "updatedAt"
+      | "state"
+      | "email"
+      | "permissions"
+      | "first_name"
+      | "last_name"
+    >
+  >({
     name: "",
     cpf: "",
-    birthDate: "",
+    birth: "",
     city: "",
-    state: "",
-    role: "",
+    stateShort: "",
+    role: "participant",
   });
 
   useEffect(() => {
@@ -46,16 +49,16 @@ const UserEditPage = () => {
       setFormData({
         name: user.name || "",
         cpf: user.cpf || "",
-        birthDate: user.birth || "",
+        birth: user.birth || "",
         city: user.city || "",
-        state: user.state || "",
+        stateShort: user.stateShort || "",
         role: user.role || "",
       });
     }
   }, [user]);
 
   const handleInputChange =
-    (field: keyof UserFormData) =>
+    (field: keyof UserObject) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setFormData((prev) => ({
         ...prev,
@@ -78,7 +81,7 @@ const UserEditPage = () => {
   const handleStateChange = (state: string) => {
     setFormData((prev) => ({
       ...prev,
-      state: state,
+      stateShort: state,
       city: "", // Limpar cidade quando estado mudar
     }));
   };
@@ -213,8 +216,8 @@ const UserEditPage = () => {
               label="Data de Nascimento"
               type="date"
               variant="outlined"
-              value={formData.birthDate}
-              onChange={handleInputChange("birthDate")}
+              value={formData.birth}
+              onChange={handleInputChange("birth")}
               slotProps={{
                 inputLabel: {
                   shrink: true,
@@ -226,7 +229,7 @@ const UserEditPage = () => {
           {/* Cidade */}
           <Grid size={{ xs: 12, md: 6 }}>
             <StateField
-              selectedState={formData.state}
+              selectedState={formData.stateShort}
               selectedCity={formData.city}
               onStateChange={handleStateChange}
               onCityChange={handleCityChange}
@@ -277,9 +280,9 @@ const UserEditPage = () => {
                     setFormData({
                       name: user.name || "",
                       cpf: user.cpf || "",
-                      birthDate: user.birth || "",
+                      birth: user.birth || "",
                       city: user.city || "",
-                      state: user.state || "",
+                      stateShort: user.state || "",
                       role: user.role || "",
                     });
                   }

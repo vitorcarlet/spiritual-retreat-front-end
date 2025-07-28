@@ -111,7 +111,7 @@ const UserPermissionsPage = () => {
         elevation={1}
         sx={{
           padding: 3,
-          paddingTop: 3,
+          paddingTop: 0,
           borderRadius: 1,
           width: "100%",
           height: "100%",
@@ -222,7 +222,14 @@ const UserPermissionsPage = () => {
           </Grid>
 
           {/* ✅ NOVO: Área de detalhes das permissões */}
-          <Grid size={{ xs: 12, lg: 9 }}>
+          <Grid
+            size={{ xs: 12, lg: 9 }}
+            sx={{
+              width: "100%",
+              height: "100%",
+              overflowY: "auto",
+            }}
+          >
             {selectedSection ? (
               <>
                 <Box>

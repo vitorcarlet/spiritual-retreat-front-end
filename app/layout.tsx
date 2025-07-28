@@ -11,6 +11,7 @@ import { initMocks } from "@/src/mocks";
 import { MSWProvider } from "@/src/providers/MSWProvider";
 import EmotionCacheProvider from "@/src/components/navbar/mui/EmotionCacheProvider";
 import ThemeMuiProvider from "@/src/providers/ThemeMuiProvider";
+import { ModalProvider } from "@/src/contexts/ModalContext";
 //import { initMocks } from "@/src/mocks";
 
 if (process.env.NODE_ENV === "development") {
@@ -52,7 +53,7 @@ export default async function RootLayout({
                 <NextIntlClientProvider locale={realLocale}>
                   <MSWProvider>
                     <ModeSwitch />
-                    {children}
+                    <ModalProvider>{children}</ModalProvider>
                     {/* <ToastContainer /> */}
                   </MSWProvider>
                 </NextIntlClientProvider>

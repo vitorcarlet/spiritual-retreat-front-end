@@ -4,7 +4,10 @@ import React, { useState, useEffect, use } from "react";
 import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import { Iconify } from "../Iconify";
-import { api, handleApiResponse } from "@/src/lib/sendRequestServerVanilla";
+import {
+  sendRequestServerVanilla,
+  handleApiResponse,
+} from "@/src/lib/sendRequestServerVanilla";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import SelectEditMode from "../navigation/SelectEditMode";
 import { UserContentProvider } from "./context";
@@ -21,7 +24,7 @@ const userCache = new Map<string, Promise<UserObject | null>>();
 const fetchUserData = async (userId: string): Promise<UserObject | null> => {
   try {
     const result = await handleApiResponse<UserObject>(
-      await api.get(`/api/user/${userId}`, {
+      await sendRequestServerVanilla.get(`/api/user/${userId}`, {
         baseUrl: "http://localhost:3001", // URL do MSW
       })
     );
@@ -129,12 +132,12 @@ export default function UserPage({ children }: UserPageProps) {
     <Box sx={{ width: "100%", height: "100%", maxHeight: "100%" }}>
       {/* Container das abas */}
       {/* Tabs Header */}
-      <Grid container spacing={0} minHeight={72} height={"15%"}>
+      <Grid container spacing={0} height={72}>
         <Grid
           size={{ xs: 12, md: 8, lg: 6 }}
           sx={{ p: 2, pr: 0, pb: 0, pt: 0, height: "100%" }}
         >
-          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Box>
             <Tabs
               value={value}
               onChange={handleChange}
@@ -181,8 +184,8 @@ export default function UserPage({ children }: UserPageProps) {
             width={"100%"}
             height={73}
             sx={{
-              borderBottom: 1,
-              borderColor: "divider",
+              //borderBottom: 1,
+              // borderColor: "divider",
               display: "flex",
               justifyContent: "flex-end",
               alignItems: "center",
@@ -199,7 +202,7 @@ export default function UserPage({ children }: UserPageProps) {
       </Grid>
 
       {/* Content Area - Renderiza os children baseado na rota */}
-      <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "85%" }}>
+      <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "calc(100% - 72px)" }}>
         <UserContentProvider user={user}>{children}</UserContentProvider>
       </Box>
     </Box>

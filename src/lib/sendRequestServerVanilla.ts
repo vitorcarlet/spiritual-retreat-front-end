@@ -8,7 +8,7 @@ interface ApiOptions extends RequestInit {
 /**
  * Wrapper customizado do fetch para Server Actions/Components
  */
-export async function apiClient(
+export async function sendRequestServerVanillaFn(
   endpoint: string,
   options: ApiOptions = {}
 ): Promise<Response> {
@@ -61,29 +61,29 @@ export async function apiClient(
 /**
  * Helpers específicos para diferentes métodos HTTP
  */
-export const api = {
+export const sendRequestServerVanilla = {
   get: (endpoint: string, options?: ApiOptions) =>
-    apiClient(endpoint, { ...options, method: "GET" }),
+    sendRequestServerVanillaFn(endpoint, { ...options, method: "GET" }),
 
   post: (endpoint: string, data?: any, options?: ApiOptions) =>
-    apiClient(endpoint, {
+    sendRequestServerVanillaFn(endpoint, {
       ...options,
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
   put: (endpoint: string, data?: any, options?: ApiOptions) =>
-    apiClient(endpoint, {
+    sendRequestServerVanillaFn(endpoint, {
       ...options,
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
   delete: (endpoint: string, options?: ApiOptions) =>
-    apiClient(endpoint, { ...options, method: "DELETE" }),
+    sendRequestServerVanillaFn(endpoint, { ...options, method: "DELETE" }),
 
   patch: (endpoint: string, data?: any, options?: ApiOptions) =>
-    apiClient(endpoint, {
+    sendRequestServerVanillaFn(endpoint, {
       ...options,
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
