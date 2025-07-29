@@ -1,81 +1,182 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Box, Button, Typography, Stack } from "@mui/material";
-import { ParamValue } from "next/dist/server/request/params";
+import { useState, Fragment } from "react";
 import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import { useParams } from "next/navigation";
-import { useModal } from "@/src/hooks/useModal";
+  Box,
+  Button,
+  Typography,
+  Stack,
+  Alert,
+  Chip,
+  alpha,
+} from "@mui/material";
 
-interface UserCredentialsInfo {
-  login: string;
-  email: string;
-  emailVerified: boolean;
-  canEditLogin?: boolean;
+import ButtonBase from "@mui/material/ButtonBase";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import { useModal } from "@/src/hooks/useModal";
+import { useUserContent } from "../context";
+import NewLoginForm from "./newLoginForm";
+import { User } from "next-auth";
+
+function SettingRow({
+  icon,
+  title,
+  subtitle,
+  onClick,
+  endAdornment,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  subtitle?: React.ReactNode;
+  onClick?: () => void;
+  endAdornment?: React.ReactNode;
+}) {
+  return (
+    <ButtonBase
+      onClick={onClick}
+      focusRipple
+      TouchRippleProps={{ center: false }}
+      sx={(theme) => ({
+        // Layout
+        width: "100%",
+        textAlign: "left",
+        borderRadius: 2,
+        p: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 2,
+
+        // Border & bg
+        border: "1px solid",
+        borderColor: "divider",
+        bgcolor: "background.paper",
+
+        // Transitions
+        transition: theme.transitions.create(
+          ["border-color", "box-shadow", "background-color", "transform"],
+          { duration: theme.transitions.duration.shorter }
+        ),
+
+        // Hover + Focus ring
+        "&:hover": {
+          borderColor: "primary.main",
+          backgroundColor: alpha(theme.palette.primary.main, 0.04),
+        },
+        "&:focus-visible": {
+          borderColor: "primary.main",
+          boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.25)}`,
+        },
+
+        // Press feedback
+        "&:active": {
+          transform: "translateY(1px)",
+          borderColor: "primary.main",
+          boxShadow: `0 0 0 3px ${alpha(
+            theme.palette.primary.main,
+            0.18
+          )} inset`,
+        },
+
+        // Ripple color tweak (subtle primary-tinted ripple)
+        "& .MuiTouchRipple-child": {
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? alpha(theme.palette.primary.light, 0.35)
+              : alpha(theme.palette.primary.main, 0.25),
+        },
+      })}
+    >
+      <Box display="flex" alignItems="center" gap={2} minWidth={0}>
+        {icon}
+        <Box minWidth={0}>
+          <Typography fontWeight={600} fontSize={18} noWrap>
+            {title}
+          </Typography>
+          {subtitle && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              noWrap
+              sx={{ mt: 0.25 }}
+            >
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
+      {endAdornment ? (
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+        >
+          {endAdornment}
+        </Box>
+      ) : null}
+    </ButtonBase>
+  );
 }
 
-// const userCredentialsRequest = async (id: ParamValue) => {
-//   try {
-//     const credentials = await handleApiResponse<UserCredentialsInfo>(
-//       await sendRequestServerVanilla.get(`/api/user/${id}/credentials`)
-//     );
-//     return credentials.data;
-//   } catch (error) {
-//     console.error("Error fetching user credentials:", error);
-//   }
-// };
-
 export const UserCredentialsPage = () => {
-  const params = useParams();
-  const id = params?.id;
-  console.log("UserCredentialsPage params:", params);
-  console.log("UserCredentialsPage id:", id);
+  const { user, setUser } = useUserContent();
   const modal = useModal();
   const [userCredentials, setUserCredentials] =
-    useState<UserCredentialsInfo | null>(null);
+    useState<UserCredentialsInfo | null>(user);
+
   const {
     login,
     email,
     emailVerified,
-    canEditLogin = false,
+    canEditLogin = true,
   } = userCredentials || {};
-  const [currentEmail, setCurrentEmail] = useState(email);
-  const [isVerified, setIsVerified] = useState(emailVerified);
 
-  useEffect(() => {
-    const userCredentialsRequest = async (id: ParamValue) => {
-      try {
-        const { data } = await handleApiResponse<UserCredentialsInfo>(
-          await sendRequestServerVanilla.get(`/api/user/${id}/credentials`)
-        );
-        if (data) setUserCredentials(data);
-      } catch (error) {
-        console.error("Error fetching user credentials:", error);
-      }
-    };
-    userCredentialsRequest(id);
-  }, []);
+  const [currentEmail, setCurrentEmail] = useState<string | undefined>(email);
+  const [isVerified, setIsVerified] = useState<boolean | undefined>(
+    emailVerified
+  );
 
-  // Modal handlers
+  // useEffect(() => {
+  //   if (!id) return;
+  //   const userCredentialsRequest = async (idParam: ParamValue) => {
+  //     try {
+  //       const { data } = await handleApiResponse<UserCredentialsInfo>(
+  //         await sendRequestServerVanilla.get(`/api/user/${idParam}/credentials`)
+  //       );
+  //       if (data) {
+  //         setUserCredentials(data);
+  //         setCurrentEmail(data.email);
+  //         setIsVerified(data.emailVerified);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching user credentials:", error);
+  //     }
+  //   };
+  //   userCredentialsRequest(id);
+  // }, [id]);
+
+  const setUserForModal = (data: UserCredentialsInfo) => {
+    setUserCredentials((prev) => ({
+      ...prev!,
+      ...data,
+    }));
+    setUser((prev: User) => ({
+      ...prev!,
+      ...data,
+    }));
+  };
+
+  // Modals
   const handleEditLogin = () => {
+    if (!canEditLogin) return;
     modal.open({
       title: "Alterar Login",
       customRender: () => (
-        <Box p={2}>
-          <Typography>Digite o novo login:</Typography>
-          {/* ...input e lógica de confirmação... */}
-          <Button
-            variant="contained"
-            onClick={() => {
-              // Simula atualização do login
-              modal.close();
-            }}
-          >
-            Confirmar
-          </Button>
-        </Box>
+        <NewLoginForm
+          userLogin={login ?? ""}
+          setUserForModal={setUserForModal}
+        />
       ),
     });
   };
@@ -86,11 +187,11 @@ export const UserCredentialsPage = () => {
       customRender: () => (
         <Box p={2}>
           <Typography>Digite o novo e-mail:</Typography>
-          {/* ...input e lógica de confirmação... */}
           <Button
+            sx={{ mt: 2 }}
             variant="contained"
             onClick={() => {
-              // Simula alteração de email e verificação
+              // TODO: chamada API para atualizar email
               setCurrentEmail("novo.email@exemplo.com");
               setIsVerified(false);
               modal.close();
@@ -112,22 +213,10 @@ export const UserCredentialsPage = () => {
             Escolha como deseja receber o processo de recuperação de senha:
           </Typography>
           <Stack direction="row" spacing={2}>
-            <Button
-              variant="contained"
-              onClick={() => {
-                // Simula envio por email
-                modal.close();
-              }}
-            >
+            <Button variant="contained" onClick={() => modal.close()}>
               Via Email
             </Button>
-            <Button
-              variant="contained"
-              onClick={() => {
-                // Simula envio por SMS
-                modal.close();
-              }}
-            >
+            <Button variant="contained" onClick={() => modal.close()}>
               Via SMS
             </Button>
           </Stack>
@@ -137,53 +226,56 @@ export const UserCredentialsPage = () => {
   };
 
   return (
-    <Box p={3} bgcolor="background.paper" borderRadius={4}>
-      <Stack spacing={3}>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center" gap={2}>
-            {/* Ícone login */}
-            <Typography fontWeight={600} fontSize={18}>
-              Login
-            </Typography>
-            <Typography>{login}</Typography>
-          </Box>
-          {canEditLogin && (
-            <Button variant="outlined" onClick={handleEditLogin}>
-              Editar
+    <Box>
+      <Alert severity="info" sx={{ mb: 2, mt: 2 }}>
+        Seção dedicada à redefinição de credenciais de usuários.
+      </Alert>
+
+      <Stack spacing={1.5}>
+        <SettingRow
+          icon={<PersonOutlineIcon fontSize="medium" />}
+          title="Login"
+          subtitle={login || "—"}
+          onClick={canEditLogin ? handleEditLogin : undefined}
+          endAdornment={
+            !canEditLogin ? <Chip size="small" label="Somente leitura" /> : null
+          }
+        />
+
+        <SettingRow
+          icon={<EmailOutlinedIcon fontSize="medium" />}
+          title="Email"
+          subtitle={
+            <Fragment>
+              {currentEmail || "—"}
+              {isVerified === false && (
+                <Typography component="span" color="warning.main" ml={1}>
+                  • não verificado
+                </Typography>
+              )}
+            </Fragment>
+          }
+          onClick={handleEditEmail}
+          endAdornment={
+            isVerified ? (
+              <Chip size="small" color="success" label="Verificado" />
+            ) : (
+              <Chip size="small" color="warning" label="Pendente" />
+            )
+          }
+        />
+
+        <SettingRow
+          icon={<LockOutlinedIcon fontSize="medium" />}
+          title="Senha"
+          subtitle="************"
+          onClick={handleEditPassword}
+          endAdornment={
+            <Button variant="outlined" onClick={handleEditPassword}>
+              Recuperar
             </Button>
-          )}
-        </Box>
-
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center" gap={2}>
-            {/* Ícone email */}
-            <Typography fontWeight={600} fontSize={18}>
-              Email
-            </Typography>
-            <Typography>{currentEmail}</Typography>
-            {!isVerified && (
-              <Typography color="warning.main" fontSize={14} ml={1}>
-                não verificado
-              </Typography>
-            )}
-          </Box>
-          <Button variant="outlined" onClick={handleEditEmail}>
-            Editar
-          </Button>
-        </Box>
-
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center" gap={2}>
-            {/* Ícone senha */}
-            <Typography fontWeight={600} fontSize={18}>
-              Senha
-            </Typography>
-            <Typography>************</Typography>
-          </Box>
-          <Button variant="outlined" onClick={handleEditPassword}>
-            Recuperar
-          </Button>
-        </Box>
+          }
+        />
       </Stack>
     </Box>
   );
