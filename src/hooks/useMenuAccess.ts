@@ -54,9 +54,9 @@ export function useMenuAccess() {
     });
   };
 
-  const hasAnyRole = (roles: (keyof UserRoles)[]): boolean => {
-    if (!user?.roles) return false;
-    return roles.some((role) => user.roles[role]);
+  const hasAnyRole = (roles: UserRoles[]): boolean => {
+    if (!user?.role) return false;
+    return roles.some((role) => user.role === role);
   };
 
   const getAccessibleMenus = (): MenuItem[] => {

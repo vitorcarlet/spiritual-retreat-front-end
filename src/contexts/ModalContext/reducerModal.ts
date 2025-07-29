@@ -13,7 +13,7 @@ export const reducerModal = (
       return { ...state, ...data, isOpened: true };
 
     case "SET_CLOSE":
-      return { ...state, ...initialStateModal };
+      return { ...state, ...initialStateModal, keepMounted: true };
 
     case "KEEP_MOUNTED":
       return { ...state, isOpened: false, isMounted: true };

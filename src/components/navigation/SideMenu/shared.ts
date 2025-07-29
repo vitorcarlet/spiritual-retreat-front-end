@@ -4,7 +4,7 @@ export type MenuPermission = {
   // Permissions necessárias (OR logic - qualquer uma serve)
   permissions?: Partial<Record<ResourceType, ActionType[]>>;
   // Roles necessárias (OR logic - qualquer uma serve)
-  roles?: (keyof UserRoles)[];
+  roles?: UserRoles[];
   // Lógica customizada (opcional)
   customCheck?: (user: UserObject) => boolean;
 };

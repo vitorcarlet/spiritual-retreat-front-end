@@ -14,18 +14,21 @@ import {
   Paper,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import { useUserContent } from "../context";
 import { Iconify } from "../../Iconify";
-import { UserPermissions } from "next-auth";
+import { UserObject, UserPermissions } from "next-auth";
 import { PERMISSION_SECTIONS, ROLE_PERMISSIONS } from "./shared";
 import Header from "./Header";
+import { useUserContent } from "../context";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const UserPermissionsPage = () => {
-  const { user } = useUserContent();
+  const { user, setUser } = useUserContent();
   const [permissionsData, setPermissionsData] = useState<UserPermissionsData>({
     role: "participant",
     permissions: {} as UserPermissions,
   });
+
+  const queryClient = useQueryClient();
 
   // ✅ NOVO: Estado para seção selecionada
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
@@ -50,7 +53,7 @@ const UserPermissionsPage = () => {
         ...prev.permissions,
         [section]: {
           ...prev.permissions[section],
-          [action]: !(prev.permissions as any)[section]?.[action],
+          [action]: !prev.permissions[section]?.[action],
         },
       },
     }));
@@ -62,8 +65,8 @@ const UserPermissionsPage = () => {
   };
 
   const isPermissionEnabled = (permissionId: string): boolean => {
-    // Se está nas permissões do cargo, está habilitado
-    const rolePermissions = ROLE_PERMISSIONS[permissionsData.role] || [];
+    const rolePermissions =
+      ROLE_PERMISSIONS[permissionsData.role as keyof typeof ROLE_PERMISSIONS];
     if (rolePermissions.includes(permissionId)) {
       return true;
     }
@@ -84,9 +87,32 @@ const UserPermissionsPage = () => {
     return user.permissions?.[section]?.[action];
   };
 
+  const mutationUpdatePermissions = useMutation({
+    mutationFn: async (data: UserPermissionsData) => {
+      // Chame sua API para salvar permissões
+      await fetch("/api/permissions", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
+      });
+    },
+    onSuccess: () => {
+      setUser((prev: UserObject) => ({
+        ...prev,
+        permissions: permissionsData.permissions,
+      }));
+      // Feedback de sucesso, fechar modal, etc.
+    },
+    onSettled: () => {
+      // Invalida a query para garantir que os dados estejam atualizados
+      queryClient.invalidateQueries({ queryKey: ["user", user?.id] });
+    },
+  });
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    console.log("Dados das permissões:", permissionsData);
+    mutationUpdatePermissions.mutate(permissionsData);
+
     // Aqui você enviaria os dados para o servidor
   };
 
@@ -400,8 +426,11 @@ const UserPermissionsPage = () => {
                     color="primary"
                     size="large"
                     startIcon={<Iconify icon="solar:shield-check-bold" />}
+                    disabled={mutationUpdatePermissions.isPending}
                   >
-                    Salvar Permissões
+                    {mutationUpdatePermissions.isPending
+                      ? "Salvando..."
+                      : "Salvar Permissões"}
                   </Button>
                 </Box>
               </>

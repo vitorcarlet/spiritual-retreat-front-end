@@ -4,14 +4,11 @@ import React, { useState, useEffect, use } from "react";
 import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import { Iconify } from "../Iconify";
-import {
-  sendRequestServerVanilla,
-  handleApiResponse,
-} from "@/src/lib/sendRequestServerVanilla";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import SelectEditMode from "../navigation/SelectEditMode";
 import { UserContentProvider } from "./context";
 import { UserObject } from "next-auth";
+import { fetchUserData } from "./shared";
 
 interface UserPageProps {
   children: React.ReactNode;
@@ -19,26 +16,6 @@ interface UserPageProps {
 
 // Cache simples para dados do usuário
 const userCache = new Map<string, Promise<UserObject | null>>();
-
-// Função para buscar dados do usuário
-const fetchUserData = async (userId: string): Promise<UserObject | null> => {
-  try {
-    const result = await handleApiResponse<UserObject>(
-      await sendRequestServerVanilla.get(`/api/user/${userId}`, {
-        baseUrl: "http://localhost:3001", // URL do MSW
-      })
-    );
-
-    if (result.success && result.data) {
-      return result.data;
-    }
-
-    return null;
-  } catch (error) {
-    console.error("Erro ao buscar dados do usuário:", error);
-    return null;
-  }
-};
 
 export default function UserPage({ children }: UserPageProps) {
   const router = useRouter();

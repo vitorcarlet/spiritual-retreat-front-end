@@ -12,6 +12,7 @@ import { MSWProvider } from "@/src/providers/MSWProvider";
 import EmotionCacheProvider from "@/src/components/navbar/mui/EmotionCacheProvider";
 import ThemeMuiProvider from "@/src/providers/ThemeMuiProvider";
 import { ModalProvider } from "@/src/contexts/ModalContext";
+import QueryClientProviderWrapper from "@/src/providers/QueryClientProvider";
 //import { initMocks } from "@/src/mocks";
 
 if (process.env.NODE_ENV === "development") {
@@ -42,25 +43,28 @@ export default async function RootLayout({
   //const locale = getLocale();
   const session = await auth();
   const realLocale = "pt-br"; // Fallback para 'pt-br' se locale não for fornecido
+
   return (
     <html lang={realLocale} suppressHydrationWarning>
       <body className={poppins.className}>
-        <SessionProvider session={session}>
-          <EmotionCacheProvider>
-            <InitColorSchemeScript attribute="class" />
-            <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-              <ThemeMuiProvider>
-                <NextIntlClientProvider locale={realLocale}>
-                  <MSWProvider>
-                    <ModeSwitch />
-                    <ModalProvider>{children}</ModalProvider>
-                    {/* <ToastContainer /> */}
-                  </MSWProvider>
-                </NextIntlClientProvider>
-              </ThemeMuiProvider>
-            </AppRouterCacheProvider>
-          </EmotionCacheProvider>
-        </SessionProvider>
+        <QueryClientProviderWrapper>
+          <SessionProvider session={session}>
+            <EmotionCacheProvider>
+              <InitColorSchemeScript attribute="class" />
+              <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+                <ThemeMuiProvider>
+                  <NextIntlClientProvider locale={realLocale}>
+                    <MSWProvider>
+                      <ModeSwitch />
+                      <ModalProvider>{children}</ModalProvider>
+                      {/* <ToastContainer /> */}
+                    </MSWProvider>
+                  </NextIntlClientProvider>
+                </ThemeMuiProvider>
+              </AppRouterCacheProvider>
+            </EmotionCacheProvider>
+          </SessionProvider>
+        </QueryClientProviderWrapper>
       </body>
     </html>
   );
