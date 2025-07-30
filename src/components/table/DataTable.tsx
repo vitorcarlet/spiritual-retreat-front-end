@@ -30,7 +30,7 @@ import {
   Chip,
   Button,
 } from "@mui/material";
-import { Iconify } from "../Iconify";
+import Iconify from "../Iconify";
 import theme from "@/src/theme/theme";
 
 // Tipos para o componente

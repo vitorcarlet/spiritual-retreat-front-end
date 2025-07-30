@@ -1,5 +1,5 @@
 import { Grid, Typography } from "@mui/material";
-import { Iconify } from "../../Iconify";
+import Iconify from "../../Iconify";
 import { memo } from "react";
 
 const Header = ({ role }: { role: string }) => {

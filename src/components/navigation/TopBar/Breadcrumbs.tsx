@@ -9,7 +9,7 @@ import {
   Chip,
   Typography,
 } from "@mui/material";
-import { Iconify } from "@/src/components/Iconify";
+import Iconify from "@/src/components/Iconify";
 import NextLink from "next/link";
 import { menuConfig } from "../SideMenu/shared";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";

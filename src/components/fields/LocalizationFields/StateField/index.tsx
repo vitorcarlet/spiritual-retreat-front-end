@@ -7,9 +7,8 @@ import {
   Box,
   Autocomplete,
   TextField,
-  Typography,
 } from "@mui/material";
-import { Iconify } from "../../../Iconify";
+import Iconify from "../../../Iconify";
 import { Estado, Cidade, StateFieldProps, FALLBACK_STATES } from "../types";
 
 const StateField: React.FC<StateFieldProps> = ({

@@ -1,7 +1,7 @@
 import { IconButton, Paper, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import { Iconify } from "@/src/components/Iconify";
+import Iconify from "@/src/components/Iconify";
 import UserMenu from "./UserIcon";
 import Breadcrumbs from "./Breadcrumbs";
 import { useDrawer } from "@/src/contexts/DrawerContext";
@@ -64,14 +64,10 @@ const TopBar = () => {
             alignItems: "center",
             justifyContent: "flex-end",
           }}
+          paddingRight={2}
         >
-          {/* Notifications button */}
-          <Box marginRight={2}>
-            {/* <Box id={"theme-badge"} /> */}
-            <Notifications />
-            {/* User menu button */}
-            <UserMenu />
-          </Box>
+          <UserMenu />
+          <Notifications />
         </Grid>
       </Grid>
     </Paper>

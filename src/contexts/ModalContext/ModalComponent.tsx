@@ -1,4 +1,4 @@
-import { Iconify } from "@/src/components/Iconify";
+import Iconify from "@/src/components/Iconify";
 import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import { CloseButtonProps, ModalComponentProps } from "./types";
 

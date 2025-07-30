@@ -14,7 +14,7 @@ import {
   Paper,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import { Iconify } from "../../Iconify";
+import Iconify from "../../Iconify";
 import { UserObject, UserPermissions } from "next-auth";
 import { PERMISSION_SECTIONS, ROLE_PERMISSIONS } from "./shared";
 import Header from "./Header";

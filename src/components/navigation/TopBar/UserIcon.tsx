@@ -1,21 +1,23 @@
 "use client";
 
 import React from "react";
-import { signOut } from "next-auth/react"; // ← Client-side signOut
+import { signOut, useSession } from "next-auth/react"; // ← Client-side signOut
 import {
   Avatar,
   IconButton,
   Menu,
   MenuItem,
   ListItemIcon,
-  Divider,
+  Typography,
+  Box,
 } from "@mui/material";
-import { Logout, Settings } from "@mui/icons-material";
+import { Logout, PortableWifiOffOutlined, Settings } from "@mui/icons-material";
+import Iconify from "../../Iconify";
 
 export default function UserMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-
+  const session = useSession();
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -36,16 +38,20 @@ export default function UserMenu() {
   };
 
   return (
-    <>
+    <Box display={"flex"} gap={1} alignItems={"center"}>
+      <Avatar sx={{ bgcolor: "primary.lighter", width: 36, height: 36 }}>
+        👨
+      </Avatar>
+      <Typography>{session.data?.user.name}</Typography>
       <IconButton
         onClick={handleClick}
         size="small"
-        sx={{ ml: 2 }}
+        sx={{ mr: 1, bgcolor: "transparent", width: 32, height: 32 }}
         aria-controls={open ? "account-menu" : undefined}
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
       >
-        <Avatar sx={{ width: 32, height: 32 }}>U</Avatar>
+        <Iconify icon="lucide:chevron-down" size={3.2} />
       </IconButton>
 
       <Menu
@@ -78,12 +84,11 @@ export default function UserMenu() {
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
         <MenuItem>
-          <Avatar /> Profile
+          <ListItemIcon>
+            <PortableWifiOffOutlined fontSize="small" />
+          </ListItemIcon>
+          Profile
         </MenuItem>
-        <MenuItem>
-          <Avatar /> My account
-        </MenuItem>
-        <Divider />
         <MenuItem>
           <ListItemIcon>
             <Settings fontSize="small" />
@@ -97,6 +102,6 @@ export default function UserMenu() {
           Logout
         </MenuItem>
       </Menu>
-    </>
+    </Box>
   );
 }

@@ -17,7 +17,7 @@ const fallbackIcon = (icon: Props["icon"]) => {
   return icon.replace("fa6-solid:", "fa-solid:");
 };
 
-export const Iconify = ({ icon, size = 2, sx, ...other }: Props) => {
+const Iconify = ({ icon, size = 2, sx, ...other }: Props) => {
   return (
     <Box
       component={Icon}
@@ -27,3 +27,5 @@ export const Iconify = ({ icon, size = 2, sx, ...other }: Props) => {
     />
   );
 };
+
+export default Iconify;

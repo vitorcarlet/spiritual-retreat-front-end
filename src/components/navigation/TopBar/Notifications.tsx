@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { Iconify } from "../../Iconify";
+import Iconify from "../../Iconify";
 
 export const Notifications = () => {
   return (

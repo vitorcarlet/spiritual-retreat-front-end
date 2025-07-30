@@ -16,7 +16,7 @@ import {
   Theme,
 } from "@mui/material";
 import MuiDrawer from "@mui/material/Drawer";
-import { Iconify } from "../../Iconify";
+import Iconify from "../../Iconify";
 import { useMenuAccess } from "@/src/hooks/useMenuAccess";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

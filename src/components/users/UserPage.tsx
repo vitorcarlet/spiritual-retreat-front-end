@@ -3,7 +3,7 @@
 import React, { useState, useEffect, use } from "react";
 import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
-import { Iconify } from "../Iconify";
+import Iconify from "../Iconify";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import SelectEditMode from "../navigation/SelectEditMode";
 import { UserContentProvider } from "./context";
