@@ -1,4 +1,4 @@
-import { UserRoles } from "next-auth";
+import { UserRoles, UserPermissions } from "next-auth";
 
 export const PERMISSION_SECTIONS: PermissionSection[] = [
   {
@@ -271,3 +271,33 @@ export const ROLE_PERMISSIONS: Record<UserRoles, string[]> = {
     // "messages.view",
   ],
 };
+
+const isPermissionFromRole = (
+  permissionId: string[],
+  role: UserRoles,
+  permissions?: string[]
+): boolean => {
+  return permissions?.includes(permissionId.join(".") || "") || false;
+};
+
+const getPermission = (
+  permissions: UserPermissions,
+  permission: string,
+  role: UserRoles
+): boolean => {
+  console.log(permission, "permissionSplit");
+  const [section, action]: string[] = permission.split(".");
+  const sectionPermissions = permissions?.[section as keyof UserPermissions] as
+    | Record<string, boolean>
+    | undefined;
+  return (
+    sectionPermissions?.[action] === true ||
+    isPermissionFromRole(
+      [section, action],
+      role,
+      ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS]
+    )
+  );
+};
+
+export default getPermission;
