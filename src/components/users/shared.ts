@@ -24,3 +24,26 @@ export const fetchUserData = async (
     return null;
   }
 };
+
+export const getPermissionByPathname = (pathname: string): string => {
+  // Remove query params/hash and split by "/"
+  const cleanPath = pathname.split("?")[0].split("#")[0];
+  const parts = cleanPath.replace(/^\/+|\/+$/g, "").split("/");
+
+  //  /user/123 → ["user", "123"]
+  console.log(parts, "parts");
+  if (parts.length === 2 && parts[0] === "users" && parts[1]) {
+    return "users.update";
+  }
+
+  //  userPermissions → ["userPermissions"]
+  if (
+    parts.length === 3 &&
+    parts[0] === "users" &&
+    parts[2] === "permissions"
+  ) {
+    return "users.update";
+  }
+
+  return "";
+};
