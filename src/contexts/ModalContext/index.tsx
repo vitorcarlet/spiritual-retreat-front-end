@@ -16,7 +16,6 @@ import { reducerModal } from "./reducerModal";
 import { ModalContextOpen } from "./types";
 import { ModalActions } from "./ModalActions";
 import { ModalComponent } from "./ModalComponent";
-// import { SecondaryModalComponent } from "./SecondaryModalComponent";
 import { getModalComponentProps } from "./shared";
 import type { Breakpoint } from "@mui/system";
 
@@ -119,14 +118,10 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
   const pathname = usePathname();
   const prevPath = useRef(pathname);
   const [state, dispatch] = useReducer(reducerModal, initialStateModal);
-  //const [stateSec, dispatchSec] = useReducer(reducerModal, initialStateModal);
   const onAfterClose = useRef<(() => void) | null>(null);
 
   const handleOpen = useCallback((options?: ModalContextOpen) => {
     const { ...data } = options || ({} as ModalContextOpen);
-    // if (isSecondary) {
-    //   dispatchSec({ type: ModalActions.SET_OPEN, data });
-    // } else {
     dispatch({ type: ModalActions.SET_OPEN, data });
   }, []);
 
@@ -136,14 +131,10 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
   }, []);
 
   const handleClose = () => {
-    // se existir keepMounted com statecSec, provavelmente vai ter que editar esse trecho pra suportar
     if (state.keepMounted) {
       // @ts-expect-error: KEEP_MOUNTED action may not be fully typed for stateSec, but is needed for keepMounted logic
       return dispatch({ type: ModalActions.KEEP_MOUNTED });
     }
-    // if (stateSec.isOpened) {
-    //   dispatchSec({ type: ModalActions.SET_CLOSE });
-    // } else {
     dispatch({ type: ModalActions.SET_CLOSE });
   };
 
@@ -158,8 +149,6 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
   const setOnAfterClose = useCallback((callback: (() => void) | null) => {
     onAfterClose.current = callback;
   }, []);
-
-  // Detecta mudanças nos dados principais do modal para destruir/reabrir automaticamente
 
   type ModalRelevantData = {
     Id?: number;
@@ -177,7 +166,6 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
   }, [destroy, pathname]);
 
   useEffect(() => {
-    // Extrai os campos relevantes do estado
     const currentData: ModalRelevantData = {
       Id: state.Id,
       currentItem: state.currentItem,
@@ -187,7 +175,6 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
     };
     const prevData = prevModalData.current;
     if (prevData && JSON.stringify(prevData) !== JSON.stringify(currentData)) {
-      // Dados mudaram: destrói e reabre modal
       destroy();
       handleOpen({ ...state });
     }
@@ -214,8 +201,6 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
         handleClose={handleClose}
         {...modalComponentProps}
       />
-
-      {/* <SecondaryModalComponent state={stateSec} handleClose={handleClose} /> */}
     </ModalContext.Provider>
   );
 };
