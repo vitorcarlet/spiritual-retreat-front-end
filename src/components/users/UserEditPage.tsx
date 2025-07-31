@@ -18,9 +18,12 @@ import TextFieldMasked from "../fields/maskedTextFields/TextFieldMasked";
 import { useUserContent } from "./context";
 import { StateField } from "../fields/LocalizationFields";
 import { UserObject, UserRoles } from "next-auth";
+import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 
 const UserEditPage = () => {
   const { user } = useUserContent();
+  const { menuMode } = useMenuMode();
+  const isReadOnly = menuMode === "view";
   const isLoading = false;
   // Estado do formulário
   const [formData, setFormData] = useState<
@@ -188,6 +191,7 @@ const UserEditPage = () => {
               value={formData.name}
               onChange={handleInputChange("name")}
               required
+              disabled={isReadOnly}
             />
           </Grid>
 
@@ -206,6 +210,7 @@ const UserEditPage = () => {
                   cpf: event.target.value,
                 }));
               }}
+              disabled={isReadOnly}
             />
           </Grid>
 
@@ -223,6 +228,7 @@ const UserEditPage = () => {
                   shrink: true,
                 },
               }}
+              disabled={isReadOnly}
             />
           </Grid>
 
@@ -235,6 +241,7 @@ const UserEditPage = () => {
               onCityChange={handleCityChange}
               required
               size="medium"
+              disabled={isReadOnly}
             />
           </Grid>
 
@@ -248,6 +255,7 @@ const UserEditPage = () => {
                 onChange={handleRoleChange}
                 label="Função"
                 required
+                disabled={isReadOnly}
               >
                 <MenuItem value="">
                   <em>Selecione uma função</em>
@@ -261,45 +269,47 @@ const UserEditPage = () => {
           </Grid>
 
           {/* Botões de ação */}
-          <Grid size={12}>
-            <Box
-              sx={{
-                display: "flex",
-                gap: 2,
-                justifyContent: "flex-end",
-                mt: 2,
-              }}
-            >
-              <Button
-                variant="outlined"
-                color="secondary"
-                size="large"
-                onClick={() => {
-                  // Reset para dados originais do usuário
-                  if (user) {
-                    setFormData({
-                      name: user.name || "",
-                      cpf: user.cpf || "",
-                      birth: user.birth || "",
-                      city: user.city || "",
-                      stateShort: user.state || "",
-                      role: user.role || "",
-                    });
-                  }
+          {!isReadOnly && (
+            <Grid size={12}>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 2,
+                  justifyContent: "flex-end",
+                  mt: 2,
                 }}
               >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="large"
-              >
-                Salvar Alterações
-              </Button>
-            </Box>
-          </Grid>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  size="large"
+                  onClick={() => {
+                    // Reset para dados originais do usuário
+                    if (user) {
+                      setFormData({
+                        name: user.name || "",
+                        cpf: user.cpf || "",
+                        birth: user.birth || "",
+                        city: user.city || "",
+                        stateShort: user.state || "",
+                        role: user.role || "",
+                      });
+                    }
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                >
+                  Salvar Alterações
+                </Button>
+              </Box>
+            </Grid>
+          )}
         </Grid>
       </Box>
     </Box>
