@@ -9,12 +9,12 @@ import SelectEditMode from "../navigation/SelectEditMode";
 import { UserContentProvider } from "./context";
 import { UserObject } from "next-auth";
 import { fetchUserData } from "./shared";
+import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 
 interface UserPageProps {
   children: React.ReactNode;
 }
 
-// Cache simples para dados do usuário
 const userCache = new Map<string, Promise<UserObject | null>>();
 
 export default function UserPage({ children }: UserPageProps) {
@@ -22,10 +22,9 @@ export default function UserPage({ children }: UserPageProps) {
   const pathname = usePathname();
   const theme = useTheme();
 
-  // Extrair o ID do usuário da URL
+  const { menuMode, toggleMenuMode, isAllowedToEdit } = useMenuMode();
 
   const userId = pathname.split("/")[2];
-  // Buscar dados do usuário com cache
   const getUserData = (userId: string) => {
     if (!userCache.has(userId)) {
       userCache.set(userId, fetchUserData(userId));
@@ -33,27 +32,17 @@ export default function UserPage({ children }: UserPageProps) {
     return userCache.get(userId)!;
   };
 
-  // Usar React 19 use hook para buscar dados
   const userPromise = getUserData(userId);
   const user = use(userPromise);
-  //const [isLoading, setIsLoading] = useState(true);
   const { setBreadCrumbsTitle } = useBreadCrumbs();
 
-  // useEffect(() => {
-  //   userPromise
-  //     .then(() => setIsLoading(false))
-  //     .catch(() => setIsLoading(false));
-  // }, [userPromise]);
-
   useEffect(() => {
-    // Atualizar o título do breadcrumb quando o usuário for carregado
     if (user) {
       console.log("User data loaded:", user);
       setBreadCrumbsTitle({ title: user.name, pathname: `/users/${user.id}` });
     }
   }, [user, setBreadCrumbsTitle]);
 
-  // Definir as abas e suas rotas correspondentes
   const tabs = [
     {
       label: "Informações",
@@ -75,7 +64,6 @@ export default function UserPage({ children }: UserPageProps) {
     },
   ];
 
-  // Determinar qual aba está ativa baseado na rota atual
   const getCurrentTabValue = () => {
     const currentTab = tabs.find((tab) => pathname === tab.path);
     return currentTab ? currentTab.value : 0;
@@ -83,7 +71,6 @@ export default function UserPage({ children }: UserPageProps) {
 
   const [value, setValue] = useState(getCurrentTabValue());
 
-  // Atualizar a aba quando a rota mudar
   useEffect(() => {
     setValue(getCurrentTabValue());
   }, [pathname]);
@@ -102,8 +89,6 @@ export default function UserPage({ children }: UserPageProps) {
       "aria-controls": `user-tabpanel-${index}`,
     };
   }
-
-  const [menuMode, setMenuMode] = useState<"view" | "edit" | null>(null);
 
   return (
     <Box sx={{ width: "100%", height: "100%", maxHeight: "100%" }}>
@@ -171,8 +156,8 @@ export default function UserPage({ children }: UserPageProps) {
             <SelectEditMode
               sx={{ height: "90%", minWidth: 120 }}
               menuMode={menuMode}
-              setMenuMode={setMenuMode}
-              isAllowedToEdit={true}
+              setMenuMode={toggleMenuMode}
+              isAllowedToEdit={isAllowedToEdit}
             />
           </Box>
         </Grid>
