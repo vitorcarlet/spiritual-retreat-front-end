@@ -16,13 +16,19 @@ import {
 import { useState, useEffect } from "react";
 import Iconify from "../../Iconify";
 import { UserObject, UserPermissions } from "next-auth";
-import { PERMISSION_SECTIONS, ROLE_PERMISSIONS } from "./shared";
+import {
+  PERMISSION_SECTIONS,
+  ROLE_PERMISSIONS,
+} from "@/src/utils/getPermission";
 import Header from "./Header";
 import { useUserContent } from "../context";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 
 const UserPermissionsPage = () => {
   const { user, setUser } = useUserContent();
+  const { menuMode } = useMenuMode();
+  const isReadOnly = menuMode === "view";
   const [permissionsData, setPermissionsData] = useState<UserPermissionsData>({
     role: "participant",
     permissions: {} as UserPermissions,
@@ -285,16 +291,22 @@ const UserPermissionsPage = () => {
                       </Box>
 
                       <Alert severity="info" sx={{ mb: 2 }}>
-                        As permissões marcadas com{" "}
-                        <Chip
-                          label="Cargo"
-                          size="small"
-                          color="warning"
-                          variant="outlined"
-                          sx={{ mx: 0.5 }}
-                        />
-                        são automáticas do cargo atual e não podem ser
-                        desabilitadas.
+                        {isReadOnly ? (
+                          "Permissões não podem ser editadas no modo de visualização."
+                        ) : (
+                          <>
+                            As permissões marcadas com{" "}
+                            <Chip
+                              label="Cargo"
+                              size="small"
+                              color="warning"
+                              variant="outlined"
+                              sx={{ mx: 0.5 }}
+                            />
+                            são automáticas do cargo atual e não podem ser
+                            desabilitadas.
+                          </>
+                        )}
                       </Alert>
                       <Divider sx={{ mb: 3 }} />
 
@@ -313,7 +325,9 @@ const UserPermissionsPage = () => {
                                   p: 2,
                                   border: isEnabled ? 2 : 1,
                                   backgroundColor: "background.default",
-                                  borderColor: isEnabled
+                                  borderColor: isReadOnly
+                                    ? "grey.600"
+                                    : isEnabled
                                     ? "primary.main"
                                     : "divider",
                                   // bgcolor: isEnabled
@@ -330,8 +344,14 @@ const UserPermissionsPage = () => {
                                       onChange={() =>
                                         handlePermissionToggle(permission.id)
                                       }
-                                      disabled={isFromRole}
-                                      color={isFromRole ? "default" : "primary"}
+                                      disabled={isFromRole || isReadOnly}
+                                      color={
+                                        isReadOnly
+                                          ? "primary"
+                                          : isFromRole
+                                          ? "default"
+                                          : "primary"
+                                      }
                                     />
                                   }
                                   label={
