@@ -290,7 +290,7 @@ export function DataTable<T extends GridValidRowModel>({
                       action.onClick(params.row);
                     }}
                   >
-                    <Iconify icon={action.icon} size={1.2} />
+                    <Iconify icon={action.icon} size={2} />
                   </IconButton>
                 </span>
               </Tooltip>

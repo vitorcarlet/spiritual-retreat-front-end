@@ -2,10 +2,10 @@ import { IconButton, Paper, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Iconify from "@/src/components/Iconify";
-import UserMenu from "./UserIcon";
+import UserMenu from "./UserMenu";
 import Breadcrumbs from "./Breadcrumbs";
 import { useDrawer } from "@/src/contexts/DrawerContext";
-import { Notifications } from "@mui/icons-material";
+import NotificationsMenu from "./NotificationsMenu";
 
 const TopBar = () => {
   const { handleDrawerToggle, handleDrawerPersistentToggle } = useDrawer();
@@ -67,7 +67,7 @@ const TopBar = () => {
           paddingRight={2}
         >
           <UserMenu />
-          <Notifications />
+          <NotificationsMenu />
         </Grid>
       </Grid>
     </Paper>

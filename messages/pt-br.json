@@ -1,5 +1,9 @@
 {
   "HomePage": {
     "title": "Olá Mundo!"
+  },
+  "notifications": {
+    "configuration": "Configurações",
+    "notifications": "Notificações"
   }
 }

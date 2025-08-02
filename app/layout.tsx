@@ -13,6 +13,7 @@ import EmotionCacheProvider from "@/src/components/navbar/mui/EmotionCacheProvid
 import ThemeMuiProvider from "@/src/providers/ThemeMuiProvider";
 import { ModalProvider } from "@/src/contexts/ModalContext";
 import QueryClientProviderWrapper from "@/src/providers/QueryClientProvider";
+import { getLocale } from "next-intl/server";
 //import { initMocks } from "@/src/mocks";
 
 if (process.env.NODE_ENV === "development") {
@@ -42,10 +43,11 @@ export default async function RootLayout({
 }) {
   //const locale = getLocale();
   const session = await auth();
+  const locale = await getLocale();
   const realLocale = "pt-br"; // Fallback para 'pt-br' se locale não for fornecido
 
   return (
-    <html lang={realLocale} suppressHydrationWarning>
+    <html lang={locale ?? realLocale} suppressHydrationWarning>
       <body className={poppins.className}>
         <QueryClientProviderWrapper>
           <SessionProvider session={session}>
@@ -53,7 +55,7 @@ export default async function RootLayout({
               <InitColorSchemeScript attribute="class" />
               <AppRouterCacheProvider options={{ enableCssLayer: true }}>
                 <ThemeMuiProvider>
-                  <NextIntlClientProvider locale={realLocale}>
+                  <NextIntlClientProvider locale={locale ?? realLocale}>
                     <MSWProvider>
                       <ModeSwitch />
                       <ModalProvider>{children}</ModalProvider>

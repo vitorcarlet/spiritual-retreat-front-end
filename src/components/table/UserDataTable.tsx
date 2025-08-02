@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { Box, Button, Chip } from "@mui/material";
 import { DataTable, DataTableColumn } from "./DataTable";
 import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useRouter } from "next/navigation";
+import { useModal } from "@/src/hooks/useModal";
+import UserSummaryModal from "../users/userSummaryModal";
 
 // Tipo de exemplo para usuários
 interface User {
@@ -137,6 +139,7 @@ export default function UserDataTable() {
   >(undefined);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const modal = useModal();
 
   // ✅ Helper para obter IDs selecionados
   const getSelectedIds = (): GridRowId[] => {
@@ -150,7 +153,6 @@ export default function UserDataTable() {
   };
 
   const handleEdit = (user: User) => {
-    console.log("Editar usuário:", user);
     router.push(`/users/${user.id}`);
   };
 
@@ -159,7 +161,15 @@ export default function UserDataTable() {
   };
 
   const handleView = (user: User) => {
-    console.log("Visualizar usuário:", user);
+    modal.open({
+      title: `Detalhes do Usuário: ${user.name}`,
+      size: "xl",
+      customRender: () => (
+        <Suspense fallback={<div>Carregando detalhes do usuário...</div>}>
+          <UserSummaryModal userId={user.id.toString()} />
+        </Suspense>
+      ),
+    });
   };
 
   const handleBulkAction = () => {

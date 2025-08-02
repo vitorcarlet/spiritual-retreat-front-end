@@ -6,7 +6,7 @@ export const ModalComponent = ({
   size,
   scroll,
   verticalAlign,
-  variant = "compact",
+  variant = "small",
   key,
   keepMounted,
   customRender,
@@ -18,7 +18,7 @@ export const ModalComponent = ({
   closeButtonSx,
   isOpened,
 }: ModalComponentProps) => {
-  const isCompact = variant === "compact";
+  const isCompact = variant === "small";
   const contentHeight = isCompact ? 300 : "80vh";
 
   return (

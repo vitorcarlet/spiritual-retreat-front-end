@@ -1,5 +1,12 @@
 {
   "HomePage": {
     "title": "Hello world!"
+  },
+  "notifications": {
+    "configuration": "Configurations",
+    "notifications": "Notifications"
+  },
+  "userPage": {
+    "info": "userPage.info"
   }
 }

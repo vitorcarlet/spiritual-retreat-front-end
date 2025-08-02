@@ -119,7 +119,7 @@ function SettingRow({
   );
 }
 
-export const UserCredentialsPage = () => {
+const UserCredentialsPage = () => {
   const { user, setUser } = useUserContent();
   const modal = useModal();
   const [userCredentials, setUserCredentials] =
@@ -171,6 +171,7 @@ export const UserCredentialsPage = () => {
   const handleEditLogin = () => {
     if (!canEditLogin) return;
     modal.open({
+      key: "edit-login",
       title: "Alterar Login",
       customRender: () => (
         <NewLoginForm
@@ -183,6 +184,7 @@ export const UserCredentialsPage = () => {
 
   const handleEditEmail = () => {
     modal.open({
+      key: "edit-email",
       title: "Alterar Email",
       customRender: () => (
         <Box p={2}>
@@ -206,6 +208,7 @@ export const UserCredentialsPage = () => {
 
   const handleEditPassword = () => {
     modal.open({
+      key: "edit-password",
       title: "Recuperar Senha",
       customRender: () => (
         <Box p={2}>
@@ -280,3 +283,5 @@ export const UserCredentialsPage = () => {
     </Box>
   );
 };
+
+export default UserCredentialsPage;

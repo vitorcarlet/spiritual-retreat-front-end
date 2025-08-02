@@ -4,6 +4,7 @@ import { create_access_token, create_refresh_token } from "./actions";
 import { RegisterSchema } from "../schemas";
 import { createUserMock } from "./handlerData/login";
 import getUserById from "./handlerData/getUserById";
+import { mockMetrics, mockRetreats } from "./handlerData/dashboard";
 
 type Request = {
   email?: string;
@@ -138,5 +139,19 @@ export const handlers = [
   http.all("http://localhost:3001/*", ({ request }) => {
     console.log("⚠️ Unhandled request:", request.method, request.url);
     return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });
+  }),
+
+  http.get("/api/retreats", () => {
+    return HttpResponse.json(mockRetreats, { status: 200 });
+  }),
+
+  // Mock para /api/retreats/:id/metrics
+  http.get("/api/retreats/:id/metrics", ({ params }) => {
+    const id = params.id as string;
+    const metrics = mockMetrics[id];
+    if (metrics) {
+      return HttpResponse.json(metrics, { status: 200 });
+    }
+    return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
   }),
 ];

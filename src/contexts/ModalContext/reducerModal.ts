@@ -8,13 +8,13 @@ export const reducerModal = (
   switch (type) {
     case "SET_OPEN":
       return { ...state, ...data, currentItem: null, isOpened: true };
-
-    case "SET_EDIT":
-      return { ...state, ...data, isOpened: true };
-
     case "SET_CLOSE":
-      return { ...state, ...initialStateModal, keepMounted: true };
-
+      return {
+        ...state,
+        ...initialStateModal,
+        isOpened: false,
+        isMounted: true,
+      };
     case "KEEP_MOUNTED":
       return { ...state, isOpened: false, isMounted: true };
 

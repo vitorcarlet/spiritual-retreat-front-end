@@ -7,14 +7,13 @@ import { ModalProviderStates } from "@/contexts/ModalContext";
 interface ModalContextOpen {
   title?: string;
   closeOnSubmit?: boolean;
-  isSecondary?: boolean;
   fields?: [];
   titleIcon?: string | IconifyIcon;
   modalClassName?: string;
   verticalAlign?: "middle" | "center" | "top";
   size?: Breakpoint | false;
   customRender: () => React.JSX.Element;
-  variant?: "compact" | "spaced";
+  variant?: "small" | "big";
   closeButtonSx?: IconButtonProps["sx"];
   customContentSx?: BoxProps["sx"];
   keepMounted?: boolean;
@@ -29,7 +28,7 @@ type ReducerModalProviderStates = (
 type UseModalStatesContext =
   ActionMap<UseModalProviderStatesActionData>[keyof ActionMap<UseModalProviderStatesActionData>];
 
-type ActionMap<M extends { [index: string]: any }> = {
+type ActionMap<M extends { [index: string]: unknown }> = {
   [Key in keyof M]: M[Key] extends undefined
     ? { type: Key; data?: M[Key] }
     : { type: Key; data: M[Key] };
@@ -37,9 +36,8 @@ type ActionMap<M extends { [index: string]: any }> = {
 
 type UseModalProviderStatesActionData = {
   SET_OPEN: ModalContextOpen;
-  SET_EDIT: ModalContextOpen & { currentItem?: any; Id: number };
   SET_CLOSE: undefined;
-  KEEP_MOUNTED: ModalContextOpen;
+  KEEP_MOUNTED: undefined;
 };
 
 interface SecondaryModalComponentProps {
@@ -60,7 +58,7 @@ interface ModalComponentProps
     | "modalClassName"
   > {
   handleClose: VoidFunction;
-  variant?: "spaced" | "compact";
+  variant?: "small" | "big";
   closeButtonSx?: IconButtonProps["sx"];
   customContentSx?: BoxProps["sx"];
   keepMounted?: boolean;

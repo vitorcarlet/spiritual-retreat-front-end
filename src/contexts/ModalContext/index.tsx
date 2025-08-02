@@ -116,8 +116,8 @@ type handleEditFunction = <T>(
 
 const ModalProvider = ({ children }: ModalProviderProps) => {
   const pathname = usePathname();
-  const prevPath = useRef(pathname);
   const [state, dispatch] = useReducer(reducerModal, initialStateModal);
+  const prevPath = useRef(pathname);
   const onAfterClose = useRef<(() => void) | null>(null);
 
   const handleOpen = useCallback((options?: ModalContextOpen) => {
@@ -125,14 +125,8 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
     dispatch({ type: ModalActions.SET_OPEN, data });
   }, []);
 
-  const handleEdit: handleEditFunction = useCallback((Id, options) => {
-    const { ...data } = options || ({} as ModalContextOpen);
-    dispatch({ type: ModalActions.SET_EDIT, data: { ...data, Id } });
-  }, []);
-
   const handleClose = () => {
     if (state.keepMounted) {
-      // @ts-expect-error: KEEP_MOUNTED action may not be fully typed for stateSec, but is needed for keepMounted logic
       return dispatch({ type: ModalActions.KEEP_MOUNTED });
     }
     dispatch({ type: ModalActions.SET_CLOSE });
@@ -174,12 +168,23 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
       index: state.index,
     };
     const prevData = prevModalData.current;
-    if (prevData && JSON.stringify(prevData) !== JSON.stringify(currentData)) {
+    if (
+      prevData &&
+      JSON.stringify(prevData) !== JSON.stringify(currentData) &&
+      state.isOpened // Só reabre se deveria estar aberto
+    ) {
       destroy();
       handleOpen({ ...state });
     }
     prevModalData.current = currentData;
-  }, [state.Id, state.currentItem, state.title, state.size, state.index]);
+  }, [
+    state.Id,
+    state.currentItem,
+    state.title,
+    state.size,
+    state.index,
+    state.isOpened,
+  ]);
 
   const modalComponentProps = getModalComponentProps(state);
   return (
@@ -187,7 +192,6 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
       value={{
         ...state,
         open: handleOpen,
-        edit: handleEdit,
         close: handleClose,
         destroy,
         onAfterClose: onAfterClose.current,
