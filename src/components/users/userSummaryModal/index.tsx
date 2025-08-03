@@ -9,25 +9,26 @@ import { fetchUserData } from "../shared";
 import { UserContentProvider } from "../context";
 import { MenuModeProvider } from "@/src/contexts/users-context/MenuModeContext";
 import dynamic from "next/dynamic";
+import LoadingScreenCircular from "../../loading-screen/client/LoadingScreenCircular";
 
 const UserEditPage = dynamic(
   () => import("@/src/components/users/UserEditPage"),
   {
-    loading: () => <div>Carregando informações...</div>,
+    loading: () => <LoadingScreenCircular />,
   }
 );
 
 const UserPermissionsPage = dynamic(
   () => import("@/src/components/users/permissions/index"),
   {
-    loading: () => <div>Carregando permissões...</div>,
+    loading: () => <LoadingScreenCircular />,
   }
 );
 
 const UserCredentialsPage = dynamic(
   () => import("@/src/components/users/credentials/index"),
   {
-    loading: () => <div>Carregando segurança...</div>,
+    loading: () => <LoadingScreenCircular />,
   }
 );
 

@@ -7,15 +7,14 @@ import api from "./axiosClientInstance";
 import Helpers from "../helpers";
 import { DefaultResponse } from "../auth/types";
 
-interface Payload {
-  id?: number | Array<number>;
-  [key: string]: unknown;
+interface Payload<T> {
+  [key: string]: T | Method | undefined;
 }
 
-export type SendRequestFunctionProps = {
+export type SendRequestFunctionProps<T> = {
   url: string;
   method?: Method;
-  payload?: Payload;
+  payload?: Payload<T>;
   isSilent?: boolean;
 };
 
@@ -28,7 +27,7 @@ export const sendRequestClient = async <T>({
   method = "get",
   isSilent,
   payload,
-}: SendRequestFunctionProps): Promise<T> => {
+}: SendRequestFunctionProps<T>): Promise<T> => {
   if (!payload) payload = {};
 
   payload._method = method;

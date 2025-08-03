@@ -14,7 +14,7 @@ export async function sendRequestServerVanillaFn(
 ): Promise<Response> {
   const {
     requireAuth = false,
-    baseUrl = process.env.API_BASE_URL || "http://localhost:3000",
+    baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
     headers = {},
     ...fetchOptions
   } = options;

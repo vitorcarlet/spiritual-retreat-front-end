@@ -5,6 +5,7 @@ import { RegisterSchema } from "../schemas";
 import { createUserMock } from "./handlerData/login";
 import getUserById from "./handlerData/getUserById";
 import { mockMetrics, mockRetreats } from "./handlerData/dashboard";
+import { mockReports } from "./handlerData/reports";
 
 type Request = {
   email?: string;
@@ -136,22 +137,112 @@ export const handlers = [
     );
   }),
 
-  http.all("http://localhost:3001/*", ({ request }) => {
-    console.log("⚠️ Unhandled request:", request.method, request.url);
-    return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });
-  }),
-
-  http.get("/api/retreats", () => {
+  http.get("http://localhost:3001/api/retreats", () => {
     return HttpResponse.json(mockRetreats, { status: 200 });
   }),
 
   // Mock para /api/retreats/:id/metrics
-  http.get("/api/retreats/:id/metrics", ({ params }) => {
+  http.get("http://localhost:3001/api/retreats/:id/metrics", ({ params }) => {
     const id = params.id as string;
     const metrics = mockMetrics[id];
     if (metrics) {
       return HttpResponse.json(metrics, { status: 200 });
     }
     return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
+  }),
+
+  http.get("http://localhost:3001/api/reports", () => {
+    return HttpResponse.json(mockReports, { status: 200 });
+  }),
+
+  // GET - Obter relatório específico
+  http.get("http://localhost:3001/api/reports/:id", ({ params }) => {
+    const id = params.id as string;
+    const report = mockReports.find((r) => r.id === id);
+
+    if (report) {
+      return HttpResponse.json(report, { status: 200 });
+    }
+
+    return HttpResponse.json(
+      { error: "Relatório não encontrado" },
+      { status: 404 }
+    );
+  }),
+
+  // POST - Criar novo relatório
+  http.post("http://localhost:3001/api/reports", async ({ request }) => {
+    const newReport = await request.json();
+
+    // Garante que newReport é um objeto
+    const reportData =
+      typeof newReport === "object" && newReport !== null ? newReport : {};
+
+    // Simula a criação atribuindo um ID
+    const createdReport = {
+      ...reportData,
+      id: (mockReports.length + 1).toString(),
+      dateCreation: new Date().toISOString(),
+    };
+
+    return HttpResponse.json(createdReport, { status: 201 });
+  }),
+
+  // PUT - Atualizar relatório existente
+  http.put(
+    "http://localhost:3001/api/reports/:id",
+    async ({ params, request }) => {
+      const id = params.id as string;
+      const updatedData = await request.json();
+
+      const reportData =
+        typeof updatedData === "object" && updatedData !== null
+          ? updatedData
+          : {};
+      const reportExists = mockReports.some((r) => r.id === id);
+
+      if (!reportExists) {
+        return HttpResponse.json(
+          { error: "Relatório não encontrado" },
+          { status: 404 }
+        );
+      }
+
+      // Simula a atualização
+      const updatedReport = {
+        ...reportData,
+        id,
+      };
+
+      return HttpResponse.json(updatedReport, { status: 200 });
+    }
+  ),
+
+  // DELETE - Excluir relatório
+  http.delete("http://localhost:3001/api/reports/:id", ({ params }) => {
+    const id = params.id as string;
+    const reportExists = mockReports.some((r) => r.id === id);
+
+    if (!reportExists) {
+      return HttpResponse.json(
+        { error: "Relatório não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Simula a exclusão retornando uma mensagem de sucesso
+    return HttpResponse.json(
+      {
+        message: "Relatório excluído com sucesso",
+        id,
+      },
+      { status: 200 }
+    );
+  }),
+
+  //fallback handler for unhandled requests
+  http.all("http://localhost:3001/*", ({ request }) => {
+    console.log("⚠️ Unhandled request:", request.method, request.url);
+    return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });
   }),
 ];

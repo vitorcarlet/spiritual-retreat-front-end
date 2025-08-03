@@ -33,6 +33,18 @@ export const menuConfig: MenuItem[] = [
     },
   },
   {
+    id: "reports",
+    label: "Relatórios",
+    icon: "lucide:bar-chart",
+    path: "/reports",
+    access: {
+      permissions: {
+        reports: ["read"],
+      },
+      roles: ["admin", "manager", "consultant"],
+    },
+  },
+  {
     id: "user-management",
     label: "Gestão de Usuários",
     icon: "solar:user-bold-duotone",

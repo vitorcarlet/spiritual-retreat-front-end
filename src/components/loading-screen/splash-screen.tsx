@@ -1,10 +1,10 @@
 "use client";
 
 import Box, { BoxProps } from "@mui/material/Box";
-import { alpha } from "@mui/material/styles";
 import { LogoRectangle } from "./LogoRectangle";
 // import { motion as m } from "framer-motion";
 import { motion as m } from "framer-motion";
+import { alpha } from "@mui/material";
 export default function SplashScreen({ sx, ...other }: BoxProps) {
   return (
     <Box
