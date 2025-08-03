@@ -8,6 +8,9 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   console.log("🚀 MIDDLEWARE EXECUTED FOR:", req.nextUrl.pathname);
   const { nextUrl } = req;
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-url", req.url);
+
   // // 🔍 LOGS DETALHADOS PARA DEBUG
   // console.log("=== MIDDLEWARE DEBUG ===");
   // console.log("URL:", nextUrl.href);
@@ -37,7 +40,11 @@ export default auth((req) => {
       return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
     }
     console.log("✅ Allowing access to auth route for non-logged user");
-    return NextResponse.next();
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   // Se não estiver logado e não for uma rota pública, redirecionar para login
@@ -77,7 +84,12 @@ export default auth((req) => {
 
   console.log("✅ Allowing request to continue");
   console.log("=== END DEBUG ===\n");
-  return NextResponse.next();
+  return NextResponse.next({
+    request: {
+      //it was for callback but does not work yet
+      headers: requestHeaders,
+    },
+  });
 });
 
 export const config = {

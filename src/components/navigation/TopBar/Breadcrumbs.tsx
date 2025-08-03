@@ -299,9 +299,14 @@ const Breadcrumbs: React.FC = () => {
                     color="primary"
                     variant="outlined"
                     sx={{
+                      bgcolor: "background.paper",
+                      color: "background.main",
                       fontWeight: 600,
                       fontSize: 12,
                       height: 24,
+                      "& .MuiChip-label": {
+                        color: "primary.main",
+                      },
                     }}
                   />
                 ) : (

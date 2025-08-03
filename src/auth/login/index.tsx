@@ -5,8 +5,6 @@ import Image from "next/image";
 import LoginFormServer from "./form/loginFormServer";
 
 export default function LoginPageContent() {
-  //const theme = useTheme();
-
   return (
     <Grid
       container

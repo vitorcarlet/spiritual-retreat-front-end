@@ -5,6 +5,7 @@ import { signIn } from "@/auth";
 import { z } from "zod";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 // Schema de validação
 const loginSchema = z.object({
@@ -12,16 +13,15 @@ const loginSchema = z.object({
   password: z.string().min(3, "A senha deve ter no mínimo 3 caracteres"),
 });
 
-export async function loginServerAction(
-  prevState: any,
-  formData: FormData
-) {
+export async function loginServerAction(prevState: any, formData: FormData) {
   // Validar dados com Zod
   const validatedFields = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
   });
-
+  const headersList = headers();
+  const pathname = (await headersList).get("x-pathname") || "/dashboard";
+  //console.log("Login action called with pathname:", pathname, headersList);
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
@@ -54,5 +54,5 @@ export async function loginServerAction(
   }
 
   // Se chegou aqui, login foi bem-sucedido
-  redirect("/dashboard");
+  redirect(pathname);
 }
