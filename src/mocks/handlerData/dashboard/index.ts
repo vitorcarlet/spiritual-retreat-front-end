@@ -1,27 +1,44 @@
-export const mockRetreats = [
+export const mockRetreats: Retreat[] = [
   {
-    id: "1",
-    name: "Retiro de Verão 2025",
+    id: 1,
+    title: "Retiro de Verão 2025",
+    description:
+      "Um retiro especial de verão para renovação espiritual e convivência.",
     startDate: "2025-01-10",
     endDate: "2025-01-20",
+    capacity: 50,
+    enrolled: 45,
     location: "Sítio Esperança",
     isActive: false,
+    image: "/images/retreats/retreat-1.jpg", // Substitua pelo caminho correto das imagens
+    status: "open" as const,
   },
   {
-    id: "2",
-    name: "Retiro de Inverno 2025",
+    id: 2,
+    title: "Retiro de Inverno 2025",
+    description: "Vivencie momentos de paz e reflexão no retiro de inverno.",
     startDate: "2025-07-05",
     endDate: "2025-07-15",
+    capacity: 60,
+    enrolled: 58,
     location: "Chácara da Paz",
     isActive: true,
+    image: "/images/retreats/retreat-2.jpg",
+    status: "closed" as const,
   },
   {
-    id: "3",
-    name: "Retiro Jovem 2024",
+    id: 3,
+    title: "Retiro Jovem 2024",
+    description:
+      "Retiro voltado para jovens com atividades dinâmicas e espirituais.",
     startDate: "2024-09-01",
     endDate: "2024-09-10",
+    capacity: 30,
+    enrolled: 30,
     location: "Fazenda Luz",
     isActive: false,
+    image: "/images/retreats/retreat-3.jpg",
+    status: "running" as const,
   },
 ];
 

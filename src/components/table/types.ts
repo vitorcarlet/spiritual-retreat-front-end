@@ -117,16 +117,3 @@ export interface User {
   createdAt: Date;
   lastLogin?: Date;
 }
-
-export interface Retreat {
-  id: number;
-  title: string;
-  description: string;
-  startDate: Date;
-  endDate: Date;
-  capacity: number;
-  enrolled: number;
-  price: number;
-  status: "draft" | "published" | "cancelled" | "completed";
-  instructor: string;
-}

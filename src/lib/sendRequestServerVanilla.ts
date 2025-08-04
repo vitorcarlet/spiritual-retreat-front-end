@@ -8,7 +8,7 @@ interface ApiOptions extends RequestInit {
 /**
  * Wrapper customizado do fetch para Server Actions/Components
  */
-export async function sendRequestServerVanillaFn(
+export async function sendRequestServerVanillaFn<T>(
   endpoint: string,
   options: ApiOptions = {}
 ): Promise<Response> {
@@ -50,10 +50,6 @@ export async function sendRequestServerVanillaFn(
   });
 
   // Log para debug (remover em produção)
-  console.log(`🌐 API Call: ${fetchOptions.method || "GET"} ${url}`, {
-    status: response.status,
-    requireAuth,
-  });
 
   return response;
 }
@@ -93,13 +89,9 @@ export const sendRequestServerVanilla = {
 /**
  * Helper para lidar com respostas da API
  */
-export async function handleApiResponse<T = any>(
+export async function handleApiResponse<T = unknown>(
   response: Response
-): Promise<{
-  data?: T;
-  error?: string;
-  success: boolean;
-}> {
+): Promise<RequestResponse<T>> {
   try {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -120,4 +112,14 @@ export async function handleApiResponse<T = any>(
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
+}
+
+export function handleApiPromise<T = unknown>(
+  promise: Promise<T>
+): Promise<{
+  data?: T;
+  error?: string;
+  success: boolean;
+}> {
+  return promise.then();
 }

@@ -19,14 +19,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // Tipos
-interface Retreat {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  isActive: boolean;
-}
 
 interface RetreatMetrics {
   payments: {
@@ -70,7 +62,7 @@ const fetchRetreats = async (): Promise<Retreat[]> => {
 };
 
 const fetchRetreatMetrics = async (
-  retreatId: string
+  retreatId: number
 ): Promise<RetreatMetrics> => {
   if (!retreatId) return Promise.reject("ID do retiro não fornecido");
 
@@ -330,7 +322,7 @@ const DashboardPage = () => {
                 {selectedRetreat && (
                   <Box>
                     <Typography variant="subtitle1" fontWeight="bold">
-                      {selectedRetreat.name}
+                      {selectedRetreat.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {formattedDate} • {selectedRetreat.location}
@@ -342,7 +334,7 @@ const DashboardPage = () => {
                 <Autocomplete
                   options={retreats || []}
                   loading={isLoadingRetreats}
-                  getOptionLabel={(option) => option.name}
+                  getOptionLabel={(option) => option.title}
                   value={selectedRetreat}
                   onChange={(_event, newValue) => setSelectedRetreat(newValue)}
                   renderInput={(params) => (
@@ -374,7 +366,7 @@ const DashboardPage = () => {
                     <li {...props}>
                       <Box>
                         <Typography variant="body1">
-                          {option.name}
+                          {option.title}
                           {option.isActive && (
                             <Chip
                               label="Atual"
