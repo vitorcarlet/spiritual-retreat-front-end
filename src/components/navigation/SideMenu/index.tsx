@@ -230,14 +230,30 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
           //     width: drawerWidth,
           //   },
           // }}
+          sx={{ zIndex: 1000 }}
           open={openPersistent}
         >
           <DrawerHeader>
             <Iconify icon="lucide:mountain" size={1.8} color="primary.main" />
-            <Typography variant="h6" component="div">
+            <Typography
+              variant="h6"
+              component="div"
+              sx={[
+                openPersistent
+                  ? { opacity: 1, visibility: "visible" }
+                  : { opacity: 0, visibility: "hidden" },
+              ]}
+            >
               SAM Gestor
             </Typography>
-            <IconButton onClick={handleDrawerPersistentToggle}>
+            <IconButton
+              onClick={handleDrawerPersistentToggle}
+              sx={[
+                openPersistent
+                  ? { opacity: 1, visibility: "visible" }
+                  : { opacity: 0 },
+              ]}
+            >
               {theme.direction === "rtl" ? (
                 <Iconify icon="lucide:chevron-right" size={2} />
               ) : (
