@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -24,27 +24,90 @@ import {
   InputLabel,
 } from "@mui/material";
 import Iconify from "../Iconify";
+import { useDebounce } from "@/src/hooks/useDebounce";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface RetreatsCardTableProps {
   data: Retreat | Retreat[] | undefined;
+   total: number;
   onEdit?: (retreat: Retreat) => void;
   onView?: (retreat: Retreat) => void;
+  onFiltersChange?: (filters: RetreatsFilters) => void;
 }
 
 export default function RetreatsCardTable({
   data,
+  total,
   onEdit,
   onView,
+  onFiltersChange
 }: RetreatsCardTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Extrair filtros da URL
+  const currentFilters = useMemo((): RetreatsFilters => {
+    return {
+      search: searchParams.get('search') || '',
+      status: searchParams.get('status') || '',
+      page: parseInt(searchParams.get('page') || '1'),
+      pageSize: parseInt(searchParams.get('pageSize') || '8'),
+    };
+  }, [searchParams]);
+  
+  const debouncedSearch = useDebounce(currentFilters.search, 500);
+
+   const updateURL = (newFilters: Partial<RetreatsFilters>) => {
+    const params = new URLSearchParams(searchParams);
+    
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value && value !== '') {
+        params.set(key, value.toString());
+      } else {
+        params.delete(key);
+      }
+    });
+
+    // Reset page when filters change (except when changing page itself)
+    if (!('page' in newFilters)) {
+      params.set('page', '1');
+    }
+
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  useEffect(() => {
+    const filters = {
+      ...currentFilters,
+      search: debouncedSearch,
+    };
+    onFiltersChange?.(filters);
+  }, [debouncedSearch, currentFilters.status, currentFilters.page, currentFilters.pageSize, onFiltersChange]);
+
+  const handleSearchChange = (value: string) => {
+    updateURL({ search: value });
+  };
+
+  const handleStatusChange = (value: string) => {
+    updateURL({ status: value });
+  };
+
+  const handlePageChange = (page: number) => {
+    updateURL({ page });
+  };
+
+  const handlePageSizeChange = (pageSize: number) => {
+    updateURL({ pageSize, page: 1 });
+  };
 
   // Define columns for TanStack Table
   const columns: ColumnDef<Retreat>[] = [
     {
       id: "card",
-      cell: ({ row }) => {
+      cell: ({ row }: { row: Retreat & ColumnDef<Retreat> }) => {
         const retreat = row.original;
 
         // Define status color based on status value
@@ -233,19 +296,21 @@ export default function RetreatsCardTable({
     data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      pagination: {
-        pageSize: rowsPerPage,
-        pageIndex: 0,
-      },
-    },
-    initialState: {
-      pagination: {
-        pageSize: rowsPerPage,
-      },
-    },
+    //getPaginationRowModel: getPaginationRowModel(),
+    //getFilteredRowModel: getFilteredRowModel(),
+    // state: {
+    //   pagination: {
+    //     pageSize: rowsPerPage,
+    //     pageIndex: 0,
+    //   },
+    // },
+    // initialState: {
+    //   pagination: {
+    //     pageSize: rowsPerPage,
+    //   },
+    // },
+    manualPagination: true,
+    pageCount: Math.ceil(total / currentFilters.pageSize),
   });
 
   return (
@@ -277,11 +342,12 @@ export default function RetreatsCardTable({
               label="Status"
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <MenuItem value="todos">Todos</MenuItem>
-              <MenuItem value="aberto">Aberto</MenuItem>
-              <MenuItem value="fechado">Fechado</MenuItem>
-              <MenuItem value="em_breve">Em breve</MenuItem>
-              <MenuItem value="encerrado">Encerrado</MenuItem>
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="open">Aberto</MenuItem>
+              <MenuItem value="closed">Fechado</MenuItem>
+              <MenuItem value="upcoming">Em breve</MenuItem>
+              <MenuItem value="running">Em andamento</MenuItem>
+              <MenuItem value="ended">Encerrado</MenuItem>
             </Select>
           </FormControl>
         </Grid>

@@ -8,6 +8,52 @@ interface ApiOptions extends RequestInit {
 /**
  * Wrapper customizado do fetch para Server Actions/Components
  */
+export async function api<T>(
+  endpoint: string,
+  options: ApiOptions = {}
+): Promise<Response> {
+  const {
+    requireAuth = false,
+    baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
+    headers = {},
+    ...fetchOptions
+  } = options;
+
+  // Construir URL completa
+  const url = endpoint.startsWith("http") ? endpoint : `${baseUrl}${endpoint}`;
+
+  // Headers padrão
+  const defaultHeaders = new Headers({
+    "Content-Type": "application/json",
+    ...headers,
+  });
+
+  // Adicionar token se necessário
+  if (requireAuth) {
+    const session = await auth();
+
+    if (!session?.user) {
+      throw new Error("Authentication required");
+    }
+
+    // Adicionar token do usuário autenticado
+    defaultHeaders.append(
+      "Authorization",
+      `Bearer ${session.tokens.access_token}`
+    );
+  }
+
+  // Fazer a requisição
+  const response = await fetch(url, {
+    ...fetchOptions,
+    headers: defaultHeaders,
+  });
+
+  // Log para debug (remover em produção)
+
+  return response;
+}
+
 export async function sendRequestServerVanillaFn<T>(
   endpoint: string,
   options: ApiOptions = {}

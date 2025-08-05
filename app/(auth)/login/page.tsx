@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+
 import { Metadata } from "next";
 import LoginPageContent from "@/src/auth/login";
 
@@ -8,9 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default async function LoginPage() {
-  return (
-    <Suspense>
-      <LoginPageContent />
-    </Suspense>
-  );
+  return <LoginPageContent />;
 }
