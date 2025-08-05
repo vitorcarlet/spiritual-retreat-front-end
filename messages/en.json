@@ -8,5 +8,10 @@
   },
   "userPage": {
     "info": "userPage.info"
-  }
+  },
+  "period": "Period",
+  "reports-data": "Reports Data",
+  "custom-fields": "Custom Fields",
+  "status": "Status",
+  "city": "City"
 }

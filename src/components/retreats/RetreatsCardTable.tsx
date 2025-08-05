@@ -10,9 +10,6 @@ import {
 } from "@tanstack/react-table";
 import {
   Box,
-  Card,
-  CardMedia,
-  CardContent,
   Typography,
   Button,
   Chip,
@@ -52,81 +49,166 @@ export default function RetreatsCardTable({
 
         // Define status color based on status value
         const statusColor = {
-          aberto: "success",
-          fechado: "error",
-          em_breve: "warning",
-          encerrado: "default",
+          open: {
+            color: "success",
+            sx: {
+              bgcolor: "rgba(27, 73, 23, 0.61)",
+              color: "rgba(72, 255, 0, 0.93)",
+            },
+          },
+          closed: {
+            color: "error",
+            sx: {
+              bgcolor: "rgba(97, 34, 26, 0.4)",
+              color: "rgba(255, 30, 0, 0.93)",
+            },
+          },
+          upcoming: {
+            color: "warning",
+            sx: {
+              bgcolor: "rgba(73, 23, 23, 0.61)",
+              color: "rgba(72, 255, 0, 0.93)",
+            },
+          },
+          running: {
+            color: "default",
+            sx: {
+              bgcolor: "rgba(99, 76, 15, 0.61)",
+              color: "rgba(255, 196, 0, 0.86)",
+            },
+          },
+          ended: {
+            color: "info",
+            sx: {
+              bgcolor: "rgba(27, 73, 23, 0.61)",
+              color: "rgba(101, 107, 106, 0.07)",
+            },
+          },
         } as const;
 
         // Status label text translation
         const statusText = {
-          aberto: "Aberto",
-          fechado: "Fechado",
-          em_breve: "Em breve",
-          encerrado: "Encerrado",
+          open: "open",
+          closed: "closed",
+          upcoming: "upcoming",
+          running: "running",
+          ended: "ended",
         };
 
         return (
-          <Card
-            sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+          <Box
+            sx={{
+              width: 263,
+              borderRadius: "8px",
+              borderColor: "divider",
+              borderStyle: "solid",
+              borderWidth: 2,
+              overflow: "hidden",
+            }}
           >
-            <Box sx={{ position: "relative" }}>
-              <CardMedia
-                component="img"
-                height="200"
-                image={retreat.image}
-                alt={retreat.title}
-              />
-              <Chip
-                label={statusText[retreat.status]}
-                color={statusColor[retreat.status]}
-                sx={{
-                  position: "absolute",
-                  bottom: 16,
-                  left: 16,
-                  fontWeight: "medium",
-                }}
-              />
-            </Box>
-            <CardContent sx={{ flexGrow: 1, pb: 0 }}>
-              <Typography variant="h6" component="div" gutterBottom>
-                {retreat.title}
-              </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Iconify
-                  icon="solar:map-point-bold"
-                  sx={{ color: "text.secondary", mr: 0.5 }}
-                />
-                <Typography variant="body2" color="text.secondary">
-                  {retreat.location}
-                </Typography>
-              </Box>
-            </CardContent>
             <Box
               sx={{
-                p: 2,
-                pt: 0,
+                height: 304,
+                position: "relative",
+                borderColor: "divider",
+                overflow: "hidden",
                 display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-end",
+                backgroundImage: `url(${retreat.image})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              {/* Gradient overlay */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  top: 0,
+                  borderRadius: "8px 8px 0 0",
+                  background:
+                    "linear-gradient(to top, rgba(0,0,0,0.55) 5%, rgba(255, 255, 255, 0) 100%)",
+                  zIndex: 1,
+                }}
+              />
+              {/* Content */}
+              <Box
+                sx={{
+                  position: "relative",
+                  zIndex: 2,
+                  p: 2,
+                  color: "common.white",
+                }}
+              >
+                <Chip
+                  label={statusText[retreat.status]}
+                  color={statusColor[retreat.status].color}
+                  sx={{
+                    mb: 1,
+                    fontWeight: "medium",
+                    bgcolor: statusColor[retreat.status].sx.bgcolor,
+                    color: statusColor[retreat.status].sx.color,
+                    borderStyle: "solid",
+                    borderColor: "common.white",
+                    borderWidth: 1,
+                  }}
+                />
+                <Typography variant="h6" component="div" gutterBottom>
+                  {retreat.title}
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  <Iconify
+                    icon="solar:map-point-bold"
+                    sx={{ color: "common.white", mr: 0.5 }}
+                  />
+                  <Typography variant="body2" color="common.white">
+                    {retreat.location}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+            <Box
+              sx={{
+                flex: 1,
+                p: 2,
+                pb: 1,
+                borderRadius: "0 0 8px 8px",
+                backgroundColor: "background.paper",
+                display: "flex",
+                alignContent: "center",
                 justifyContent: "space-between",
               }}
             >
               <Button
-                size="small"
+                size="medium"
                 variant="outlined"
-                color="primary"
+                sx={{
+                  width: 100,
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  borderColor: "primary.main",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                    borderColor: "primary.dark",
+                  },
+                }}
                 onClick={() => onView?.(retreat)}
               >
                 Ver mais
               </Button>
               <Button
-                size="small"
+                sx={{ width: 100 }}
+                size="medium"
                 variant="outlined"
                 onClick={() => onEdit?.(retreat)}
               >
                 Editar
               </Button>
             </Box>
-          </Card>
+          </Box>
         );
       },
     },
@@ -220,7 +302,12 @@ export default function RetreatsCardTable({
       {/* Card grid */}
       <Grid container spacing={3}>
         {table.getRowModel().rows.map((row) => (
-          <Grid key={row.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+          <Grid
+            key={row.id}
+            size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+            display={"flex"}
+            justifyContent={"center"}
+          >
             {flexRender(
               row.getVisibleCells()[0].column.columnDef.cell,
               row.getVisibleCells()[0].getContext()
