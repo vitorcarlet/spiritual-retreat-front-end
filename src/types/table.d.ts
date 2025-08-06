@@ -36,6 +36,7 @@ interface FilterItem {
 }
 
 interface Filters<Filters, DateFilters> {
+  variantDate?: "month" | "day" | "year" | "dateRange";
   date?: FiltersDate<Filters & DateFilters>[];
   items?: FilterItem<Filters & DateFilters>[];
 }

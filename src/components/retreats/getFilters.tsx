@@ -17,9 +17,9 @@ export const getDateFilters = (): DateFilters => {
 export const getFilters = (): Filters<Retreat, RetreatsCardTableFilters> => {
   const t = useTranslations();
   return {
-    date: [{ title: t("period"), variantDate: "month" }],
+    variantDate: "dateRange",
+    date: [{ title: t("period"), filter: "period" }],
     items: [
-      // ...configKey,
       {
         title: t("status"),
         fields: [

@@ -1,4 +1,5 @@
 type RetreatsCardTableFilters = {
+  period?: [string, string];
   search: string;
   name?: string;
   state?: string;
