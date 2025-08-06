@@ -3,55 +3,34 @@ import { auth } from "@/auth";
 interface ApiOptions extends RequestInit {
   requireAuth?: boolean;
   baseUrl?: string;
+  params?: Record<string, any>;
 }
 
 /**
- * Wrapper customizado do fetch para Server Actions/Components
+ * Helper function to build URL with query parameters
  */
-export async function api<T>(
-  endpoint: string,
-  options: ApiOptions = {}
-): Promise<Response> {
-  const {
-    requireAuth = false,
-    baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
-    headers = {},
-    ...fetchOptions
-  } = options;
-
-  // Construir URL completa
-  const url = endpoint.startsWith("http") ? endpoint : `${baseUrl}${endpoint}`;
-
-  // Headers padrão
-  const defaultHeaders = new Headers({
-    "Content-Type": "application/json",
-    ...headers,
-  });
-
-  // Adicionar token se necessário
-  if (requireAuth) {
-    const session = await auth();
-
-    if (!session?.user) {
-      throw new Error("Authentication required");
-    }
-
-    // Adicionar token do usuário autenticado
-    defaultHeaders.append(
-      "Authorization",
-      `Bearer ${session.tokens.access_token}`
-    );
+function buildUrlWithParams(
+  baseUrl: string,
+  params?: Record<string, any>
+): string {
+  if (!params || Object.keys(params).length === 0) {
+    return baseUrl;
   }
 
-  // Fazer a requisição
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers: defaultHeaders,
+  const url = new URL(baseUrl);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      // Handle arrays (for multiple values)
+      if (Array.isArray(value)) {
+        value.forEach((v) => url.searchParams.append(key, String(v)));
+      } else {
+        url.searchParams.set(key, String(value));
+      }
+    }
   });
 
-  // Log para debug (remover em produção)
-
-  return response;
+  return url.toString();
 }
 
 export async function sendRequestServerVanillaFn<T>(
@@ -60,13 +39,19 @@ export async function sendRequestServerVanillaFn<T>(
 ): Promise<Response> {
   const {
     requireAuth = false,
-    baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
+    baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
     headers = {},
+    params,
     ...fetchOptions
   } = options;
 
   // Construir URL completa
-  const url = endpoint.startsWith("http") ? endpoint : `${baseUrl}${endpoint}`;
+  let url = endpoint.startsWith("http") ? endpoint : `${baseUrl}${endpoint}`;
+
+  // Add query parameters if provided
+  if (params) {
+    url = buildUrlWithParams(url, params);
+  }
 
   // Headers padrão
   const defaultHeaders = new Headers({
@@ -96,6 +81,7 @@ export async function sendRequestServerVanillaFn<T>(
   });
 
   // Log para debug (remover em produção)
+  console.log(`API Request: ${fetchOptions.method || "GET"} ${url}`);
 
   return response;
 }

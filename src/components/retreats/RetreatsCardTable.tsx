@@ -1,10 +1,10 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel,
-  getFilteredRowModel,
+  // getPaginationRowModel,
+  // getFilteredRowModel,
   ColumnDef,
   flexRender,
 } from "@tanstack/react-table";
@@ -28,11 +28,11 @@ import { useDebounce } from "@/src/hooks/useDebounce";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface RetreatsCardTableProps {
-  data: Retreat | Retreat[] | undefined;
-   total: number;
+  data?: Retreat[];
+  total: number;
   onEdit?: (retreat: Retreat) => void;
   onView?: (retreat: Retreat) => void;
-  onFiltersChange?: (filters: RetreatsFilters) => void;
+  onFiltersChange?: (filters: RetreatsCardTableFilters) => void;
 }
 
 export default function RetreatsCardTable({
@@ -40,7 +40,7 @@ export default function RetreatsCardTable({
   total,
   onEdit,
   onView,
-  onFiltersChange
+  onFiltersChange,
 }: RetreatsCardTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
@@ -49,22 +49,22 @@ export default function RetreatsCardTable({
   const searchParams = useSearchParams();
 
   // Extrair filtros da URL
-  const currentFilters = useMemo((): RetreatsFilters => {
+  const currentFilters = useMemo((): RetreatsCardTableFilters => {
     return {
-      search: searchParams.get('search') || '',
-      status: searchParams.get('status') || '',
-      page: parseInt(searchParams.get('page') || '1'),
-      pageSize: parseInt(searchParams.get('pageSize') || '8'),
+      search: searchParams.get("search") || "",
+      status: searchParams.get("status") || "",
+      page: parseInt(searchParams.get("page") || "1"),
+      pageSize: parseInt(searchParams.get("pageSize") || "8"),
     };
   }, [searchParams]);
-  
+
   const debouncedSearch = useDebounce(currentFilters.search, 500);
 
-   const updateURL = (newFilters: Partial<RetreatsFilters>) => {
+  const updateURL = (newFilters: Partial<RetreatsCardTableFilters>) => {
     const params = new URLSearchParams(searchParams);
-    
+
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value && value !== '') {
+      if (value && value !== "") {
         params.set(key, value.toString());
       } else {
         params.delete(key);
@@ -72,8 +72,8 @@ export default function RetreatsCardTable({
     });
 
     // Reset page when filters change (except when changing page itself)
-    if (!('page' in newFilters)) {
-      params.set('page', '1');
+    if (!("page" in newFilters)) {
+      params.set("page", "1");
     }
 
     router.push(`?${params.toString()}`, { scroll: false });
@@ -85,7 +85,13 @@ export default function RetreatsCardTable({
       search: debouncedSearch,
     };
     onFiltersChange?.(filters);
-  }, [debouncedSearch, currentFilters.status, currentFilters.page, currentFilters.pageSize, onFiltersChange]);
+  }, [
+    debouncedSearch,
+    currentFilters.status,
+    currentFilters.page,
+    currentFilters.pageSize,
+    onFiltersChange,
+  ]);
 
   const handleSearchChange = (value: string) => {
     updateURL({ search: value });
@@ -278,22 +284,24 @@ export default function RetreatsCardTable({
   ];
 
   // Apply filters to data
-  const filteredData = data.filter((retreat) => {
-    // Text search filter
-    const textMatch =
-      retreat.title.toLowerCase().includes(globalFilter.toLowerCase()) ||
-      retreat.location.toLowerCase().includes(globalFilter.toLowerCase());
+  const filteredData =
+    data &&
+    data.filter((retreat) => {
+      // Text search filter
+      const textMatch =
+        retreat.title.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        retreat.location.toLowerCase().includes(globalFilter.toLowerCase());
 
-    // Status filter
-    const statusMatch =
-      statusFilter === "todos" || retreat.status === statusFilter;
+      // Status filter
+      const statusMatch =
+        statusFilter === "todos" || retreat.status === statusFilter;
 
-    return textMatch && statusMatch;
-  });
+      return textMatch && statusMatch;
+    });
 
   // Set up the table instance
   const table = useReactTable({
-    data: filteredData,
+    data: filteredData || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     //getPaginationRowModel: getPaginationRowModel(),
@@ -310,7 +318,7 @@ export default function RetreatsCardTable({
     //   },
     // },
     manualPagination: true,
-    pageCount: Math.ceil(total / currentFilters.pageSize),
+    pageCount: Math.ceil(total / (currentFilters.pageSize ?? 1)),
   });
 
   return (
@@ -409,9 +417,9 @@ export default function RetreatsCardTable({
             {Math.min(
               table.getState().pagination.pageIndex +
                 table.getState().pagination.pageSize,
-              filteredData.length
+              filteredData.length ?? 0
             )}{" "}
-            de {filteredData.length}
+            de {filteredData.length ?? 0}
           </Typography>
           <Pagination
             count={table.getPageCount()}

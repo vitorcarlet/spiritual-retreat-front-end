@@ -2,10 +2,13 @@
 import { Container, Typography } from "@mui/material";
 import { useState } from "react";
 import RetreatsCardTable from "./RetreatsCardTable";
-import { handleApiResponse, sendRequestServerVanilla } from "@/src/lib/sendRequestServerVanilla";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
 import { useQuery } from "@tanstack/react-query";
 
-const getRetreats = async (filters) => {
+const getRetreats = async (filters: RetreatsCardTableFilters) => {
   const response = await handleApiResponse<Retreat>(
     await sendRequestServerVanilla.get(
       "/retreats", // Replace with your actual API endpoint
@@ -34,29 +37,32 @@ export default function RetreatsPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes,
   });
 
-  const handleEdit = (retreat: any) => {
+  const handleEdit = (retreat: Retreat) => {
     console.log("Editar retiro:", retreat);
   };
 
-  const handleView = (retreat: any) => {
+  const handleView = (retreat: Retreat) => {
     console.log("Ver detalhes do retiro:", retreat);
   };
 
-  const handleFiltersChange = (newFilters: any) => {
+  const handleFiltersChange = (newFilters: RetreatsCardTableFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
   console.log("Retreats data loaded:", retreatsData);
-
+  const retreatsDataArray: Retreat[] = Array.isArray(retreatsData)
+    ? retreatsData
+    : ([retreatsData] as Retreat[]);
   if (isLoading) return <Typography>Loading retreats...</Typography>;
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <RetreatsCardTable
-        data={retreatsData}
+        data={retreatsDataArray}
         onEdit={handleEdit}
         onView={handleView}
         onFiltersChange={handleFiltersChange}
+        total={retreatsDataArray.length || 0}
       />
     </Container>
   );

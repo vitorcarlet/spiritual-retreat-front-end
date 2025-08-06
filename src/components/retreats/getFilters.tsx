@@ -14,7 +14,7 @@ export const getDateFilters = (): DateFilters => {
 
 //type Filters = Filters;
 
-export const getFilters = (): Filters => {
+export const getFilters = (): Filters<Retreat, RetreatsCardTableFilters> => {
   const t = useTranslations();
   return {
     date: [{ title: t("period"), variantDate: "month" }],
