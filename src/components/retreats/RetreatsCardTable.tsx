@@ -16,9 +16,10 @@ import {
   Grid,
   Pagination,
   Stack,
-  Select,
+  Popover,
+  MenuList,
   MenuItem,
-  FormControl,
+  ListItemText,
 } from "@mui/material";
 import Iconify from "../Iconify";
 
@@ -39,9 +40,22 @@ export default function RetreatsCardTable({
   onView,
   onFiltersChange,
 }: RetreatsCardTableProps) {
-  // const [globalFilter, setGlobalFilter] = useState("");
-  // const [statusFilter, setStatusFilter] = useState<string>("todos");
-  const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+  const handlePopoverOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handlePageLimitChange = (newPageLimit: number) => {
+    onFiltersChange({ pageLimit: newPageLimit });
+    handlePopoverClose();
+  };
+
+  const open = Boolean(anchorEl);
 
   // Extrair filtros da URL
 
@@ -286,21 +300,44 @@ export default function RetreatsCardTable({
         alignItems="center"
         mt={4}
       >
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <Select
-            value={filters.pageLimit || 8}
-            onChange={(e) =>
-              onFiltersChange({ pageLimit: Number(e.target.value) })
-            }
-            displayEmpty
-            variant="outlined"
-          >
-            <MenuItem value={4}>4 por linha</MenuItem>
-            <MenuItem value={8}>8 por linha</MenuItem>
-            <MenuItem value={12}>12 por linha</MenuItem>
-            <MenuItem value={16}>16 por linha</MenuItem>
-          </Select>
-        </FormControl>
+        <Button
+          variant="outlined"
+          size="small"
+          endIcon={<Iconify icon="solar:alt-arrow-down-linear" />}
+          onClick={handlePopoverOpen}
+          sx={{ minWidth: 120 }}
+        >
+          {filters.pageLimit || 8} por linha
+        </Button>
+
+        <Popover
+          open={open}
+          anchorEl={anchorEl}
+          onClose={handlePopoverClose}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "left",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "left",
+          }}
+        >
+          <MenuList>
+            <MenuItem onClick={() => handlePageLimitChange(4)}>
+              <ListItemText primary="4 por linha" />
+            </MenuItem>
+            <MenuItem onClick={() => handlePageLimitChange(8)}>
+              <ListItemText primary="8 por linha" />
+            </MenuItem>
+            <MenuItem onClick={() => handlePageLimitChange(12)}>
+              <ListItemText primary="12 por linha" />
+            </MenuItem>
+            <MenuItem onClick={() => handlePageLimitChange(16)}>
+              <ListItemText primary="16 por linha" />
+            </MenuItem>
+          </MenuList>
+        </Popover>
 
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Typography variant="body2" color="text.secondary" mr={2}>

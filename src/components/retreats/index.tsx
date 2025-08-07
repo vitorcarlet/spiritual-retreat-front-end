@@ -1,6 +1,5 @@
 "use client";
 import { Container, Typography } from "@mui/material";
-import { useState } from "react";
 import RetreatsCardTable from "./RetreatsCardTable";
 import {
   handleApiResponse,
@@ -11,13 +10,14 @@ import { Box, Stack } from "@mui/material";
 import FilterButton from "@/src/components/filters/FilterButton";
 import { getFilters } from "./getFilters";
 import { useTranslations } from "next-intl";
+import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 
 const getRetreats = async (
   filters: TableDefaultFields<RetreatsCardTableFilters>
 ) => {
   const response = await handleApiResponse<Retreat>(
     await sendRequestServerVanilla.get(
-      "/retreats", // Replace with your actual API endpoint
+      "/retreats",
       { params: filters }
     )
   );
@@ -31,15 +31,19 @@ const getRetreats = async (
 
 export default function RetreatsPage() {
   const t = useTranslations();
-  const [filters, setFilters] = useState<
-    TableDefaultFields<RetreatsCardTableFilters>
-  >({
-    search: "",
-    status: "",
-    page: 1,
-    pageLimit: 4,
+  
+  const { 
+    filters, 
+    updateFilters, 
+    activeFiltersCount, 
+    resetFilters 
+  } = useUrlFilters<TableDefaultFields<RetreatsCardTableFilters>>({
+    defaultFilters: {
+      page: 1,
+      pageLimit: 4,
+    },
+    excludeFromCount: ['page', 'pageLimit'] // Don't count pagination in active filters
   });
-  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
   const filtersConfig = getFilters();
 
@@ -60,33 +64,18 @@ export default function RetreatsPage() {
   const handleFiltersChange = (
     newFilters: TableDefaultFields<RetreatsCardTableFilters>
   ) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
+    updateFilters({ ...filters, ...newFilters });
   };
 
-  const handleApplyFilters = (newFilters: any) => {
-    setFilters(newFilters);
-
-    // Count active filters
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const count = Object.entries(newFilters).filter(([_, value]) => {
-      if (Array.isArray(value)) return value.length > 0;
-      return value !== null && value !== undefined && value !== "";
-    }).length;
-
-    setActiveFiltersCount(count);
-
-    // Fetch data with new filters...
-  };
-
-  const handleResetFilters = () => {
-    setFilters({});
-    setActiveFiltersCount(0);
+  const handleApplyFilters = (newFilters: Partial<TableDefaultFields<RetreatsCardTableFilters>>) => {
+    updateFilters({ ...filters, ...newFilters });
   };
 
   console.log("Retreats data loaded:", retreatsData);
   const retreatsDataArray: Retreat[] = Array.isArray(retreatsData)
     ? retreatsData
     : ([retreatsData] as Retreat[]);
+  
   if (isLoading) return <Typography>Loading retreats...</Typography>;
 
   return (
@@ -98,7 +87,7 @@ export default function RetreatsPage() {
             filters={filtersConfig}
             defaultValues={filters}
             onApplyFilters={handleApplyFilters}
-            onReset={handleResetFilters}
+            onReset={resetFilters}
             activeFiltersCount={activeFiltersCount}
           />
         </Stack>
