@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Box,
   Button,
-  Divider,
   Drawer,
   IconButton,
-  InputAdornment,
   List,
   ListItemButton,
   ListItemText,
@@ -19,7 +16,6 @@ import {
   Typography,
   ToggleButtonGroup,
   ToggleButton,
-  Collapse,
   Autocomplete,
   Chip,
   FormControlLabel,
@@ -34,7 +30,7 @@ import { Filters, FilterField, FiltersDate } from "@/src/types/table";
 
 interface DynamicFiltersProps<T = any, F = any> {
   filters: Filters<T, F>;
-  defaultValues?: Partial<F>;
+  defaultValues?: Partial<TableDefaultFields<F>>;
   onApplyFilters: (filters: Partial<F>) => void;
   onReset?: () => void;
   open: boolean;

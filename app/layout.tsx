@@ -44,7 +44,7 @@ export default async function RootLayout({
   //const locale = getLocale();
   const session = await auth();
   const locale = await getLocale();
-  const realLocale = "pt-br"; // Fallback para 'pt-br' se locale não for fornecido
+  const realLocale = "pt-BR"; // Fallback para 'pt-br' se locale não for fornecido
 
   return (
     <html lang={locale ?? realLocale} suppressHydrationWarning>

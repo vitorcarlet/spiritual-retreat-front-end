@@ -35,6 +35,14 @@ interface FilterItem {
   fields: FilterField[];
 }
 
+interface TableBase {
+  search?: string;
+  page?: number;
+  pageLimit?: number;
+}
+
+type TableDefaultFields<T = unknown> = TableBase & T;
+
 interface Filters<Filters, DateFilters> {
   variantDate?: "month" | "day" | "year" | "dateRange";
   date?: FiltersDate<Filters & DateFilters>[];

@@ -12,7 +12,9 @@ import FilterButton from "@/src/components/filters/FilterButton";
 import { getFilters } from "./getFilters";
 import { useTranslations } from "next-intl";
 
-const getRetreats = async (filters: RetreatsCardTableFilters) => {
+const getRetreats = async (
+  filters: TableDefaultFields<RetreatsCardTableFilters>
+) => {
   const response = await handleApiResponse<Retreat>(
     await sendRequestServerVanilla.get(
       "/retreats", // Replace with your actual API endpoint
@@ -29,11 +31,13 @@ const getRetreats = async (filters: RetreatsCardTableFilters) => {
 
 export default function RetreatsPage() {
   const t = useTranslations();
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<
+    TableDefaultFields<RetreatsCardTableFilters>
+  >({
     search: "",
     status: "",
     page: 1,
-    pageSize: 10,
+    pageLimit: 4,
   });
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
@@ -53,7 +57,9 @@ export default function RetreatsPage() {
     console.log("Ver detalhes do retiro:", retreat);
   };
 
-  const handleFiltersChange = (newFilters: RetreatsCardTableFilters) => {
+  const handleFiltersChange = (
+    newFilters: TableDefaultFields<RetreatsCardTableFilters>
+  ) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
@@ -61,6 +67,7 @@ export default function RetreatsPage() {
     setFilters(newFilters);
 
     // Count active filters
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const count = Object.entries(newFilters).filter(([_, value]) => {
       if (Array.isArray(value)) return value.length > 0;
       return value !== null && value !== undefined && value !== "";
@@ -97,11 +104,11 @@ export default function RetreatsPage() {
         </Stack>
 
         <RetreatsCardTable
+          filters={filters}
           data={retreatsDataArray}
           onEdit={handleEdit}
           onView={handleView}
           onFiltersChange={handleFiltersChange}
-          total={retreatsDataArray.length || 0}
         />
       </Box>
     </Container>

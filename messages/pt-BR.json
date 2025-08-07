@@ -1,0 +1,25 @@
+{
+  "HomePage": {
+    "title": "Olá mundo!"
+  },
+  "notifications": {
+    "configuration": "Configurações",
+    "notifications": "Notificações"
+  },
+  "userPage": {
+    "info": "userpage.info"
+  },
+  "period": "Período",
+  "reports-data": "Relata dados",
+  "custom-fields": "Campos personalizados",
+  "status": "Status",
+  "city": "Cidade",
+  "filters": "Filtros",
+  "retreats": "Retiros",
+  "startDate": "Data de Início",
+  "date": "Data",
+  "toClose": "Fechar",
+  "cleanUp": "Limpar",
+  "apply": "Aplicar",
+  "endDate": "Data de Fim"
+}

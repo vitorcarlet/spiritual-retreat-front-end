@@ -8,7 +8,7 @@ import DynamicFilters from ".";
 
 interface FilterButtonProps<T = any, F = any> {
   filters: Filters<T, F>;
-  defaultValues?: Partial<F>;
+  defaultValues?: Partial<TableDefaultFields<F>>;
   onApplyFilters: (filters: Partial<F>) => void;
   onReset?: () => void;
   activeFiltersCount?: number;

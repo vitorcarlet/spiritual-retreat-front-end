@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -14,107 +14,43 @@ import {
   Button,
   Chip,
   Grid,
-  TextField,
-  InputAdornment,
   Pagination,
   Stack,
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
 } from "@mui/material";
 import Iconify from "../Iconify";
-import { useDebounce } from "@/src/hooks/useDebounce";
-import { useRouter, useSearchParams } from "next/navigation";
 
 interface RetreatsCardTableProps {
   data?: Retreat[];
-  total: number;
+  filters: TableDefaultFields<RetreatsCardTableFilters>;
   onEdit?: (retreat: Retreat) => void;
   onView?: (retreat: Retreat) => void;
-  onFiltersChange?: (filters: RetreatsCardTableFilters) => void;
+  onFiltersChange: (
+    filters: TableDefaultFields<RetreatsCardTableFilters>
+  ) => void;
 }
 
 export default function RetreatsCardTable({
   data,
-  total,
+  filters,
   onEdit,
   onView,
   onFiltersChange,
 }: RetreatsCardTableProps) {
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  // const [globalFilter, setGlobalFilter] = useState("");
+  // const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [rowsPerPage, setRowsPerPage] = useState(8);
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
   // Extrair filtros da URL
-  const currentFilters = useMemo((): RetreatsCardTableFilters => {
-    return {
-      search: searchParams.get("search") || "",
-      status: searchParams.get("status") || "",
-      page: parseInt(searchParams.get("page") || "1"),
-      pageSize: parseInt(searchParams.get("pageSize") || "8"),
-    };
-  }, [searchParams]);
-
-  const debouncedSearch = useDebounce(currentFilters.search, 500);
-
-  const updateURL = (newFilters: Partial<RetreatsCardTableFilters>) => {
-    const params = new URLSearchParams(searchParams);
-
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value && value !== "") {
-        params.set(key, value.toString());
-      } else {
-        params.delete(key);
-      }
-    });
-
-    // Reset page when filters change (except when changing page itself)
-    if (!("page" in newFilters)) {
-      params.set("page", "1");
-    }
-
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
-
-  useEffect(() => {
-    const filters = {
-      ...currentFilters,
-      search: debouncedSearch,
-    };
-    onFiltersChange?.(filters);
-  }, [
-    debouncedSearch,
-    currentFilters.status,
-    currentFilters.page,
-    currentFilters.pageSize,
-    onFiltersChange,
-  ]);
-
-  const handleSearchChange = (value: string) => {
-    updateURL({ search: value });
-  };
-
-  const handleStatusChange = (value: string) => {
-    updateURL({ status: value });
-  };
-
-  const handlePageChange = (page: number) => {
-    updateURL({ page });
-  };
-
-  const handlePageSizeChange = (pageSize: number) => {
-    updateURL({ pageSize, page: 1 });
-  };
 
   // Define columns for TanStack Table
   const columns: ColumnDef<Retreat>[] = [
     {
       id: "card",
-      cell: ({ row }: { row: Retreat & ColumnDef<Retreat> }) => {
-        const retreat = row.original;
+      cell: (row) => {
+        const { original: retreat } = row.cell.row;
 
         // Define status color based on status value
         const statusColor = {
@@ -284,24 +220,10 @@ export default function RetreatsCardTable({
   ];
 
   // Apply filters to data
-  const filteredData =
-    data &&
-    data.filter((retreat) => {
-      // Text search filter
-      const textMatch =
-        retreat.title.toLowerCase().includes(globalFilter.toLowerCase()) ||
-        retreat.location.toLowerCase().includes(globalFilter.toLowerCase());
-
-      // Status filter
-      const statusMatch =
-        statusFilter === "todos" || retreat.status === statusFilter;
-
-      return textMatch && statusMatch;
-    });
 
   // Set up the table instance
   const table = useReactTable({
-    data: filteredData || [],
+    data: data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     //getPaginationRowModel: getPaginationRowModel(),
@@ -318,49 +240,15 @@ export default function RetreatsCardTable({
     //   },
     // },
     manualPagination: true,
-    pageCount: Math.ceil(total / (currentFilters.pageSize ?? 1)),
+    pageCount: Math.ceil((data?.length || 0) / (filters.pageLimit || 1)),
   });
 
   return (
     <Box>
       {/* Filters and search bar */}
       <Grid container spacing={2} mb={3} alignItems="center">
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <TextField
-            fullWidth
-            placeholder="Buscar"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Iconify icon="solar:magnifer-line-duotone" />
-                </InputAdornment>
-              ),
-            }}
-            size="small"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel id="status-filter-label">Status</InputLabel>
-            <Select
-              labelId="status-filter-label"
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="open">Aberto</MenuItem>
-              <MenuItem value="closed">Fechado</MenuItem>
-              <MenuItem value="upcoming">Em breve</MenuItem>
-              <MenuItem value="running">Em andamento</MenuItem>
-              <MenuItem value="ended">Encerrado</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
         <Grid
-          size={{ xs: 12, sm: 6, md: 5 }}
+          size={{ xs: 12 }}
           sx={{ display: "flex", justifyContent: "flex-end" }}
         >
           <Button
@@ -400,9 +288,12 @@ export default function RetreatsCardTable({
       >
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <Select
-            value={rowsPerPage}
-            onChange={(e) => setRowsPerPage(Number(e.target.value))}
+            value={filters.pageLimit || 8}
+            onChange={(e) =>
+              onFiltersChange({ pageLimit: Number(e.target.value) })
+            }
             displayEmpty
+            variant="outlined"
           >
             <MenuItem value={4}>4 por linha</MenuItem>
             <MenuItem value={8}>8 por linha</MenuItem>
@@ -417,14 +308,14 @@ export default function RetreatsCardTable({
             {Math.min(
               table.getState().pagination.pageIndex +
                 table.getState().pagination.pageSize,
-              filteredData.length ?? 0
+              data?.length ?? 0
             )}{" "}
-            de {filteredData.length ?? 0}
+            de {data?.length ?? 0}
           </Typography>
           <Pagination
             count={table.getPageCount()}
             page={table.getState().pagination.pageIndex + 1}
-            onChange={(_, page) => table.setPageIndex(page - 1)}
+            onChange={(_, page) => onFiltersChange?.({ page: page })}
             color="primary"
           />
         </Box>
