@@ -25,11 +25,11 @@ import Iconify from "../Iconify";
 
 interface RetreatsCardTableProps {
   data?: Retreat[];
-  filters: TableDefaultFields<RetreatsCardTableFilters>;
+  filters: TableDefaultFilters<RetreatsCardTableFilters>;
   onEdit?: (retreat: Retreat) => void;
   onView?: (retreat: Retreat) => void;
   onFiltersChange: (
-    filters: TableDefaultFields<RetreatsCardTableFilters>
+    filters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => void;
 }
 

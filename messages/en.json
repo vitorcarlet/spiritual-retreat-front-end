@@ -16,5 +16,10 @@
   "city": "City",
   "filters": "Filters",
   "startDate": "Start Date",
-  "retreats": "Retreats"
+  "retreats": "Retreats",
+  "date": "Date",
+  "cleanUp": "Clear",
+  "toClose": "Close",
+  "apply": "Apply",
+  "endDate": "End Date"
 }

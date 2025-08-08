@@ -14,7 +14,10 @@ export const getDateFilters = (): DateFilters => {
 
 //type Filters = Filters;
 
-export const getFilters = (): Filters<Retreat, RetreatsCardTableFilters> => {
+export const getFilters = (): Filters<
+  RetreatsCardTableFilters,
+  RetreatsCardTableDateFilters
+> => {
   const t = useTranslations();
   return {
     variantDate: "dateRange",

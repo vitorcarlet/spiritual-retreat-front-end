@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { ptBR } from "date-fns/locale";
 import {
@@ -26,18 +26,19 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import Iconify from "../Iconify";
-import { Filters, FilterField, FiltersDate } from "@/src/types/table";
 
-interface DynamicFiltersProps<T = any, F = any> {
+type StringKey<T> = Extract<keyof T, string>;
+
+interface DynamicFiltersProps<T, F> {
   filters: Filters<T, F>;
-  defaultValues?: Partial<TableDefaultFields<F>>;
+  defaultValues?: Partial<TableDefaultFilters<F>>;
   onApplyFilters: (filters: Partial<F>) => void;
   onReset?: () => void;
   open: boolean;
   onClose: () => void;
 }
 
-export default function DynamicFilters<T = any, F = any>({
+export default function DynamicFilters<T, F>({
   filters,
   defaultValues = {},
   onApplyFilters,
@@ -50,10 +51,114 @@ export default function DynamicFilters<T = any, F = any>({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Partial<F>>(defaultValues);
 
-  // Reset values when defaultValues change
+  const defaultValuesKey = useMemo(
+    () => JSON.stringify(defaultValues ?? {}),
+    [defaultValues]
+  );
+
+  // Build a quick lookup for select fields (name -> config)
+  const selectFieldConfig = useMemo(() => {
+    const map = new Map<string, { multiple?: boolean; primaryKey?: string }>();
+    filters.items?.forEach((cat: FilterItem) => {
+      (cat.fields ?? []).forEach((field: FilterField) => {
+        if (field?.typeField === "selectAutocomplete") {
+          map.set(field.name, {
+            multiple: field.isMultiple,
+            primaryKey: field.primaryKey || "value",
+          });
+        }
+      });
+    });
+    return map;
+  }, [filters.items]);
+
+  // Helpers for Autocomplete options/values
+  const getPrimaryKey = (name: string) =>
+    selectFieldConfig.get(name)?.primaryKey || "value";
+  const getOptionLabelSafe = (option: any, name?: string) => {
+    if (option == null) return "";
+    if (typeof option === "string" || typeof option === "number")
+      return String(option);
+    if (option.label != null) return String(option.label);
+    const pk = name ? getPrimaryKey(name) : "value";
+    if (option[pk] != null) return String(option[pk]);
+    return "";
+  };
+  const isOptionEqualToValueSafe = (option: any, value: any, name: string) => {
+    const pk = getPrimaryKey(name);
+    const optVal =
+      typeof option === "object" && option
+        ? option[pk] ?? option.value ?? option.id
+        : option;
+    const valVal =
+      typeof value === "object" && value
+        ? value[pk] ?? value.value ?? value.id
+        : value;
+    return String(optVal) === String(valVal);
+  };
+  const normalizeToOption = (v: any, options: any[], name: string) => {
+    const pk = getPrimaryKey(name);
+    if (v == null) return null;
+    if (typeof v === "object") return v; // assume already option
+    const found = options.find(
+      (o: any) => String(o?.[pk] ?? o?.value ?? o?.id) === String(v)
+    );
+    return (
+      found || {
+        [pk]: v,
+        label: String(v),
+      }
+    );
+  };
+  const serializeFromOption = (v: any, name: string) => {
+    const pk = getPrimaryKey(name);
+    if (v == null) return v;
+    return typeof v === "object" ? v?.[pk] ?? v?.value ?? v?.id ?? null : v;
+  };
+
+  // Normalize incoming defaults from URL into local state shape (e.g., map `period` => `periodStart`/`periodEnd`)
+  const normalizeDefaults = useCallback(
+    (values: Partial<F>): Partial<F> => {
+      const next: Record<string, unknown> = {
+        ...(values as Record<string, unknown>),
+      };
+      if (
+        filters.variantDate &&
+        filters.date &&
+        filters.variantDate === "dateRange"
+      ) {
+        for (const d of filters.date) {
+          const key = String(d.filter);
+          const startKey = `${key}Start`;
+          const endKey = `${key}End`;
+          const tuple = next[key];
+          // If tuple like [start, end] is present and start/end not yet set, hydrate them
+          if (
+            Array.isArray(tuple) &&
+            tuple.length &&
+            next[startKey] == null &&
+            next[endKey] == null
+          ) {
+            next[startKey] = tuple[0] ?? null;
+            next[endKey] = tuple[1] ?? null;
+          }
+        }
+      }
+      return next as Partial<F>;
+    },
+    [filters.variantDate, filters.date]
+  );
+
+  // Sync local state with defaultValues when content actually changed and when drawer is open
   useEffect(() => {
-    setFilterValues(defaultValues);
-  }, [defaultValues]);
+    if (!open) return; // sync only when drawer is open
+    setFilterValues((prev) => {
+      const prevKey = JSON.stringify(prev ?? {});
+      if (prevKey === defaultValuesKey) return prev; // avoid redundant updates
+      const normalized = normalizeDefaults((defaultValues as Partial<F>) ?? {});
+      return normalized;
+    });
+  }, [defaultValuesKey, open, normalizeDefaults, defaultValues]);
 
   // Set first category as selected by default when drawer opens
   useEffect(() => {
@@ -91,27 +196,98 @@ export default function DynamicFilters<T = any, F = any>({
     }));
   };
 
-  const handleDateFilterChange = (filter: keyof F, dateValue: Date | null) => {
+  const handleDateFilterChange = <K extends StringKey<F>>(
+    filter: K,
+    dateValue: Date | null
+  ) => {
+    const key = `${String(filter)}` as K; // força string
     setFilterValues((prev) => ({
       ...prev,
-      [filter]: dateValue ? dateValue.toISOString() : null,
+      [key]: dateValue ? dateValue.toISOString() : null,
     }));
   };
 
-  const handleDateRangeFilterChange = (
-    filter: keyof F,
+  const handleDateRangeFilterChange = <K extends StringKey<F>>(
+    filter: K,
     startDate: Date | null,
     endDate: Date | null
   ) => {
-    setFilterValues((prev) => ({
-      ...prev,
-      [`${filter}Start`]: startDate ? startDate.toISOString() : null,
-      [`${filter}End`]: endDate ? endDate.toISOString() : null,
-    }));
+    const startKey = `${String(filter)}Start` as `${K}Start`;
+    const endKey = `${String(filter)}End` as `${K}End`;
+
+    setFilterValues((prev) => {
+      const startISO = startDate ? startDate.toISOString() : null;
+      const endISO = endDate ? endDate.toISOString() : null;
+      return {
+        ...prev,
+        [startKey]: startISO,
+        [endKey]: endISO,
+        // keep tuple value in sync so consumers relying on `period` still see it
+        [filter]:
+          startISO != null || endISO != null
+            ? ([startISO ?? "", endISO ?? ""] as unknown as F[typeof filter])
+            : (undefined as unknown as F[typeof filter]),
+      } as typeof prev;
+    });
   };
 
   const handleApply = () => {
-    onApplyFilters(filterValues);
+    // serialize any selectAutocomplete values back to primitives for URL syncing
+    const cleaned: Record<string, unknown> = {};
+    Object.entries(filterValues as Record<string, unknown>).forEach(
+      ([name, value]) => {
+        if (selectFieldConfig.has(name)) {
+          const cfg = selectFieldConfig.get(name)!;
+          if (cfg.multiple) {
+            const arr = Array.isArray(value)
+              ? value
+              : value == null
+              ? []
+              : [value];
+            cleaned[name] = arr
+              .map((v) => serializeFromOption(v, name))
+              .filter((v) => v !== null && v !== undefined);
+          } else {
+            cleaned[name] = serializeFromOption(value, name);
+          }
+        } else {
+          cleaned[name] = value as unknown;
+        }
+      }
+    );
+
+    // Ensure date filters are emitted in tuple/single format under the main key and not as start/end auxiliary keys
+    if (filters.date && filters.date.length) {
+      for (const d of filters.date as FiltersDate<F>[]) {
+        const key = String(d.filter);
+        const startKey = `${key}Start`;
+        const endKey = `${key}End`;
+        if (filters.variantDate === "dateRange") {
+          const start =
+            (filterValues as any)[startKey] ??
+            (Array.isArray((filterValues as any)[key])
+              ? (filterValues as any)[key][0]
+              : undefined);
+          const end =
+            (filterValues as any)[endKey] ??
+            (Array.isArray((filterValues as any)[key])
+              ? (filterValues as any)[key][1]
+              : undefined);
+          if (start != null || end != null) {
+            cleaned[key] = [start ?? "", end ?? ""];
+          }
+          delete cleaned[startKey];
+          delete cleaned[endKey];
+        } else {
+          const single = (filterValues as any)[key];
+          if (single != null && single !== "") cleaned[key] = single;
+          delete cleaned[startKey];
+          delete cleaned[endKey];
+        }
+      }
+    }
+
+    onApplyFilters(cleaned as Partial<F>);
     onClose();
   };
 
@@ -140,38 +316,79 @@ export default function DynamicFilters<T = any, F = any>({
           />
         );
 
-      case "selectAutocomplete":
-        return (
-          <Autocomplete
-            key={field.name}
-            multiple={field.isMultiple}
-            options={field.options || []}
-            getOptionLabel={(option) => option.label}
-            value={
-              (filterValues as any)[field.name] ||
-              (field.isMultiple ? [] : null)
-            }
-            onChange={(_, newValue) => handleFilterChange(field.name, newValue)}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  label={option.label}
+      case "selectAutocomplete": {
+        const name = field.name as string;
+        const options = field.options || [];
+        const raw = (filterValues as any)[name];
+        if (field.isMultiple) {
+          const value = (
+            Array.isArray(raw) ? raw : raw == null ? [] : [raw]
+          ).map((v: any) => normalizeToOption(v, options, name));
+          return (
+            <Autocomplete
+              key={name}
+              multiple
+              options={options}
+              getOptionLabel={(option) => getOptionLabelSafe(option, name)}
+              isOptionEqualToValue={(opt, val) =>
+                isOptionEqualToValueSafe(opt as any, val as any, name)
+              }
+              value={value as any}
+              onChange={(_, newValue) => {
+                const serialized = (newValue as any[]).map((v) =>
+                  serializeFromOption(v, name)
+                );
+                handleFilterChange(name, serialized);
+              }}
+              renderTags={(vals, getTagProps) =>
+                (vals as any[]).map((option, index) => (
+                  // eslint-disable-next-line react/jsx-key
+                  <Chip
+                    label={getOptionLabelSafe(option, name)}
+                    size="small"
+                    {...getTagProps({ index })}
+                  />
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={field.label}
+                  placeholder={field.placeholder}
+                  margin="normal"
                   size="small"
-                  {...getTagProps({ index })}
                 />
-              ))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={field.label}
-                placeholder={field.placeholder}
-                margin="normal"
-                size="small"
-              />
-            )}
-          />
-        );
+              )}
+            />
+          );
+        } else {
+          const value = normalizeToOption(raw, options, name);
+          return (
+            <Autocomplete
+              key={name}
+              options={options}
+              getOptionLabel={(option) => getOptionLabelSafe(option, name)}
+              isOptionEqualToValue={(opt, val) =>
+                isOptionEqualToValueSafe(opt as any, val as any, name)
+              }
+              value={value as any}
+              onChange={(_, newValue) => {
+                const serialized = serializeFromOption(newValue, name);
+                handleFilterChange(name, serialized);
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label={field.label}
+                  placeholder={field.placeholder}
+                  margin="normal"
+                  size="small"
+                />
+              )}
+            />
+          );
+        }
+      }
 
       case "checkbox":
         return (
@@ -205,103 +422,88 @@ export default function DynamicFilters<T = any, F = any>({
     return (
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
         <Stack spacing={3} sx={{ p: 2 }}>
-          {filters.date.map((dateFilter: FiltersDate<F>) => (
-            <Paper
-              key={String(dateFilter.filter)}
-              variant="outlined"
-              sx={{ p: 2 }}
-            >
-              <Typography variant="subtitle2" gutterBottom>
-                {dateFilter.title}
-              </Typography>
+          {filters.date.map((dateFilter: FiltersDate<F>) => {
+            const baseKey = String(dateFilter.filter);
+            const startKey = `${baseKey}Start` as keyof typeof filterValues;
+            const endKey = `${baseKey}End` as keyof typeof filterValues;
+            const tuple = (filterValues as any)[baseKey] as
+              | string[]
+              | undefined;
+            const startStr =
+              (filterValues as any)[startKey] ??
+              (Array.isArray(tuple) ? tuple[0] : undefined);
+            const endStr =
+              (filterValues as any)[endKey] ??
+              (Array.isArray(tuple) ? tuple[1] : undefined);
+            return (
+              <Paper
+                key={String(dateFilter.filter)}
+                variant="outlined"
+                sx={{ p: 2 }}
+              >
+                <Typography variant="subtitle2" gutterBottom>
+                  {dateFilter.title}
+                </Typography>
 
-              {filters.variantDate === "dateRange" ? (
-                // Date range filter with start and end date
-                <Stack direction="row" spacing={2}>
+                {filters.variantDate === "dateRange" ? (
+                  // Date range filter with start and end date
+                  <Stack direction="row" spacing={2}>
+                    <DatePicker
+                      label={t("startDate")}
+                      value={startStr ? new Date(startStr) : null}
+                      onChange={(date) => {
+                        const endDate = endStr ? new Date(endStr) : null;
+                        handleDateRangeFilterChange(
+                          dateFilter.filter as StringKey<F>,
+                          date,
+                          endDate
+                        );
+                      }}
+                      slotProps={{
+                        textField: { fullWidth: true, size: "small" },
+                      }}
+                    />
+                    <DatePicker
+                      label={t("endDate")}
+                      value={endStr ? new Date(endStr) : null}
+                      onChange={(date) => {
+                        const startDate = startStr ? new Date(startStr) : null;
+                        handleDateRangeFilterChange(
+                          dateFilter.filter as StringKey<F>,
+                          startDate,
+                          date
+                        );
+                      }}
+                      slotProps={{
+                        textField: { fullWidth: true, size: "small" },
+                      }}
+                    />
+                  </Stack>
+                ) : (
+                  // Single date filter
                   <DatePicker
-                    label={t("startDate")}
+                    label={dateFilter.title}
                     value={
-                      filterValues[
-                        `${dateFilter.filter as string}Start` as keyof F
-                      ]
+                      (filterValues as any)[dateFilter.filter]
                         ? new Date(
-                            filterValues[
-                              `${dateFilter.filter as string}Start` as keyof F
-                            ] as string
+                            (filterValues as any)[dateFilter.filter] as string
                           )
                         : null
                     }
-                    onChange={(date) => {
-                      const endDate = filterValues[
-                        `${dateFilter.filter as string}End` as keyof F
-                      ]
-                        ? new Date(
-                            filterValues[
-                              `${dateFilter.filter as string}End` as keyof F
-                            ] as string
-                          )
-                        : null;
-                      handleDateRangeFilterChange(
-                        dateFilter.filter,
-                        date,
-                        endDate
-                      );
-                    }}
-                    slotProps={{
-                      textField: { fullWidth: true, size: "small" },
-                    }}
-                  />
-                  <DatePicker
-                    label={t("endDate")}
-                    value={
-                      filterValues[
-                        `${dateFilter.filter as string}End` as keyof F
-                      ]
-                        ? new Date(
-                            filterValues[
-                              `${dateFilter.filter as string}End` as keyof F
-                            ] as string
-                          )
-                        : null
-                    }
-                    onChange={(date) => {
-                      const startDate = filterValues[
-                        `${dateFilter.filter as string}Start` as keyof F
-                      ]
-                        ? new Date(
-                            filterValues[
-                              `${dateFilter.filter as string}Start` as keyof F
-                            ] as string
-                          )
-                        : null;
-                      handleDateRangeFilterChange(
-                        dateFilter.filter,
-                        startDate,
+                    onChange={(date) =>
+                      handleDateFilterChange(
+                        dateFilter.filter as StringKey<F>,
                         date
-                      );
-                    }}
+                      )
+                    }
                     slotProps={{
                       textField: { fullWidth: true, size: "small" },
                     }}
                   />
-                </Stack>
-              ) : (
-                // Single date filter
-                <DatePicker
-                  label={dateFilter.title}
-                  value={
-                    filterValues[dateFilter.filter]
-                      ? new Date(filterValues[dateFilter.filter] as string)
-                      : null
-                  }
-                  onChange={(date) =>
-                    handleDateFilterChange(dateFilter.filter, date)
-                  }
-                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
-                />
-              )}
-            </Paper>
-          ))}
+                )}
+              </Paper>
+            );
+          })}
         </Stack>
       </LocalizationProvider>
     );
@@ -352,7 +554,9 @@ export default function DynamicFilters<T = any, F = any>({
               <Typography variant="subtitle1">
                 {activeCategory.title}
               </Typography>
-              {activeCategory.fields.map((field) => renderField(field))}
+              {(activeCategory.fields ?? []).map((field: FilterField) =>
+                renderField(field)
+              )}
             </Stack>
           ) : (
             <Typography>Selecione uma categoria</Typography>

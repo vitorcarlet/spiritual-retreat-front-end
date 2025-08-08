@@ -1,7 +1,6 @@
 interface FiltersDate<T = unknown> {
   title: string;
   filter: keyof T;
-  configKey?: string;
   variantDate?: "month" | "day" | "year" | "week";
 }
 
@@ -41,7 +40,7 @@ interface TableBase {
   pageLimit?: number;
 }
 
-type TableDefaultFields<T = unknown> = TableBase & T;
+type TableDefaultFilters<T = unknown> = TableBase & T;
 
 interface Filters<Filters, DateFilters> {
   variantDate?: "month" | "day" | "year" | "dateRange";

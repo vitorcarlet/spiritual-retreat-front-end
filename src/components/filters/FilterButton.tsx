@@ -6,15 +6,15 @@ import { useTranslations } from "next-intl";
 import Iconify from "../Iconify";
 import DynamicFilters from ".";
 
-interface FilterButtonProps<T = any, F = any> {
+interface FilterButtonProps<T, F> {
   filters: Filters<T, F>;
-  defaultValues?: Partial<TableDefaultFields<F>>;
+  defaultValues?: Partial<TableDefaultFilters<F>>;
   onApplyFilters: (filters: Partial<F>) => void;
   onReset?: () => void;
   activeFiltersCount?: number;
 }
 
-export default function FilterButton<T = any, F = any>({
+export default function FilterButton<T, F>({
   filters,
   defaultValues,
   onApplyFilters,
@@ -45,7 +45,7 @@ export default function FilterButton<T = any, F = any>({
         </Button>
       </Badge>
 
-      <DynamicFilters
+      <DynamicFilters<T, F>
         open={open}
         onClose={handleClose}
         filters={filters}

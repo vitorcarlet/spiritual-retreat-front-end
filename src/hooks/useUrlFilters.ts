@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface UseUrlFiltersOptions<T> {
@@ -7,43 +7,56 @@ interface UseUrlFiltersOptions<T> {
   excludeFromCount?: (keyof T)[];
 }
 
-export function useUrlFilters<T extends Record<string, any>>({
+export function useUrlFilters<T extends Record<string, unknown>>({
   defaultFilters,
-  excludeFromCount = []
+  excludeFromCount = [],
 }: UseUrlFiltersOptions<T>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Parse URL params to filters
-  const parseUrlParamsToFilters = useCallback((searchParams: URLSearchParams): T => {
-    const filters = { ...defaultFilters };
+  // Keep a stable reference of defaultFilters to avoid reruns from new object identities
+  const defaultRef = useRef<T>(defaultFilters);
 
-    searchParams.forEach((value, key) => {
-      if (key in filters) {
-        // Handle arrays (comma-separated values)
-        if (value.includes(',')) {
-          (filters as any)[key] = value.split(',');
+  // Simple deep equality to avoid redundant updates
+  const areFiltersEqual = useCallback((a: T, b: T) => {
+    try {
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Parse URL params to filters based on the initial defaults
+  const parseUrlParamsToFilters = useCallback((sp: URLSearchParams): T => {
+    const tmp: Record<string, unknown> = { ...defaultRef.current } as Record<
+      string,
+      unknown
+    >;
+
+    sp.forEach((value, key) => {
+      if (key in tmp) {
+        if (value.includes(",")) {
+          tmp[key] = value.split(",");
         } else {
-          // Try to parse as number, otherwise keep as string
           const numValue = Number(value);
-          (filters as any)[key] = !isNaN(numValue) ? numValue : value;
+          tmp[key] = !isNaN(numValue) ? numValue : value;
         }
       }
     });
 
-    return filters;
-  }, [defaultFilters]);
+    return tmp as T;
+  }, []);
 
   // Convert filters to URL params
-  const filtersToUrlParams = useCallback((filters: T): URLSearchParams => {
+  const filtersToUrlParams = useCallback((fs: T): URLSearchParams => {
     const params = new URLSearchParams();
 
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+    Object.entries(fs).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
         if (Array.isArray(value)) {
           if (value.length > 0) {
-            params.set(key, value.join(','));
+            params.set(key, value.join(","));
           }
         } else {
           params.set(key, String(value));
@@ -55,7 +68,9 @@ export function useUrlFilters<T extends Record<string, any>>({
   }, []);
 
   // Initialize filters from URL
-  const [filters, setFilters] = useState<T>(() => parseUrlParamsToFilters(searchParams));
+  const [filters, setFilters] = useState<T>(() =>
+    parseUrlParamsToFilters(searchParams)
+  );
 
   // Calculate active filters count
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
@@ -64,29 +79,42 @@ export function useUrlFilters<T extends Record<string, any>>({
     return value !== null && value !== undefined && value !== "";
   }).length;
 
-  // Update URL when filters change
-  const updateUrlWithFilters = useCallback((newFilters: T) => {
-    const params = filtersToUrlParams(newFilters);
-    const newUrl = `${pathname}?${params.toString()}`;
-    router.replace(newUrl, { scroll: false });
-  }, [pathname, router, filtersToUrlParams]);
+  // Update URL when filters change (no-op if params didn't change)
+  const updateUrlWithFilters = useCallback(
+    (newFilters: T) => {
+      const params = filtersToUrlParams(newFilters);
+      const newParamsStr = params.toString();
+      const currentParamsStr = searchParams.toString();
+      if (newParamsStr === currentParamsStr) return; // avoid unnecessary replace
+      const newUrl = newParamsStr ? `${pathname}?${newParamsStr}` : pathname;
+      router.replace(newUrl, { scroll: false });
+    },
+    [pathname, router, filtersToUrlParams, searchParams]
+  );
 
   // Update filters and URL
-  const updateFilters = useCallback((newFilters: T) => {
-    setFilters(newFilters);
-    updateUrlWithFilters(newFilters);
-  }, [updateUrlWithFilters]);
+  const updateFilters = useCallback(
+    (newFilters: T) => {
+      setFilters((prev) =>
+        areFiltersEqual(prev, newFilters) ? prev : newFilters
+      );
+      updateUrlWithFilters(newFilters);
+    },
+    [updateUrlWithFilters, areFiltersEqual]
+  );
 
-  // Listen to URL changes
+  // Listen to URL changes but avoid resetting state if values are equal
   useEffect(() => {
     const urlFilters = parseUrlParamsToFilters(searchParams);
-    setFilters(urlFilters);
-  }, [searchParams, parseUrlParamsToFilters]);
+    setFilters((prev) =>
+      areFiltersEqual(prev, urlFilters) ? prev : urlFilters
+    );
+  }, [searchParams, parseUrlParamsToFilters, areFiltersEqual]);
 
   return {
     filters,
     updateFilters,
     activeFiltersCount,
-    resetFilters: () => updateFilters(defaultFilters)
+    resetFilters: () => updateFilters(defaultRef.current),
   };
 }

@@ -13,13 +13,10 @@ import { useTranslations } from "next-intl";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 
 const getRetreats = async (
-  filters: TableDefaultFields<RetreatsCardTableFilters>
+  filters: TableDefaultFilters<RetreatsCardTableFilters>
 ) => {
   const response = await handleApiResponse<Retreat>(
-    await sendRequestServerVanilla.get(
-      "/retreats",
-      { params: filters }
-    )
+    await sendRequestServerVanilla.get("/retreats", { params: filters })
   );
 
   if (!response || response.error) {
@@ -31,19 +28,15 @@ const getRetreats = async (
 
 export default function RetreatsPage() {
   const t = useTranslations();
-  
-  const { 
-    filters, 
-    updateFilters, 
-    activeFiltersCount, 
-    resetFilters 
-  } = useUrlFilters<TableDefaultFields<RetreatsCardTableFilters>>({
-    defaultFilters: {
-      page: 1,
-      pageLimit: 4,
-    },
-    excludeFromCount: ['page', 'pageLimit'] // Don't count pagination in active filters
-  });
+
+  const { filters, updateFilters, activeFiltersCount, resetFilters } =
+    useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
+      defaultFilters: {
+        page: 1,
+        pageLimit: 4,
+      },
+      excludeFromCount: ["page", "pageLimit"], // Don't count pagination in active filters
+    });
 
   const filtersConfig = getFilters();
 
@@ -62,12 +55,14 @@ export default function RetreatsPage() {
   };
 
   const handleFiltersChange = (
-    newFilters: TableDefaultFields<RetreatsCardTableFilters>
+    newFilters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const handleApplyFilters = (newFilters: Partial<TableDefaultFields<RetreatsCardTableFilters>>) => {
+  const handleApplyFilters = (
+    newFilters: Partial<TableDefaultFilters<RetreatsCardTableFilters>>
+  ) => {
     updateFilters({ ...filters, ...newFilters });
   };
 
@@ -75,7 +70,7 @@ export default function RetreatsPage() {
   const retreatsDataArray: Retreat[] = Array.isArray(retreatsData)
     ? retreatsData
     : ([retreatsData] as Retreat[]);
-  
+
   if (isLoading) return <Typography>Loading retreats...</Typography>;
 
   return (
@@ -83,7 +78,10 @@ export default function RetreatsPage() {
       <Box sx={{ p: 3 }}>
         <Stack direction="row" spacing={2} alignItems="center" mb={3}>
           <Typography variant="h5">{t("retreats")}</Typography>
-          <FilterButton
+          <FilterButton<
+            TableDefaultFilters<RetreatsCardTableFilters>,
+            RetreatsCardTableDateFilters
+          >
             filters={filtersConfig}
             defaultValues={filters}
             onApplyFilters={handleApplyFilters}
