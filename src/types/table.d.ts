@@ -38,13 +38,14 @@ interface TableBase {
   search?: string;
   page?: number;
   pageLimit?: number;
+  [key: string]: unknown;
 }
 
 type TableDefaultFilters<T = unknown> = TableBase & T;
 
 interface Filters<Filters, DateFilters> {
   variantDate?: "month" | "day" | "year" | "dateRange";
-  date?: FiltersDate<Filters & DateFilters>[];
+  date?: FiltersDate<DateFilters>[];
   items?: FilterItem<Filters & DateFilters>[];
 }
 

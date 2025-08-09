@@ -33,7 +33,7 @@ type StringKey<T> = Extract<keyof T, string>;
 interface DynamicFiltersProps<T, F> {
   filters: Filters<T, F>;
   defaultValues?: Partial<TableDefaultFilters<F>>;
-  onApplyFilters: (filters: Partial<allFilters<T, F>>) => void;
+  onApplyFilters: (filters: Partial<T>) => void;
   onReset?: () => void;
   open: boolean;
   onClose: () => void;
@@ -236,9 +236,11 @@ export default function DynamicFilters<T, F>({
 
     setFilterValues((prev) => {
       // Format dates as YYYY-MM-DD only (no time)
-      const startFormatted = startDate ? startDate.toISOString().slice(0, 10) : null;
+      const startFormatted = startDate
+        ? startDate.toISOString().slice(0, 10)
+        : null;
       const endFormatted = endDate ? endDate.toISOString().slice(0, 10) : null;
-      
+
       return {
         ...prev,
         [startKey]: startFormatted,
@@ -246,7 +248,9 @@ export default function DynamicFilters<T, F>({
         // Create a clean date range string for URL: "2025-08-01&2025-08-08"
         [filter]:
           startFormatted || endFormatted
-            ? `${startFormatted || ''}&${endFormatted || ''}` as unknown as F[typeof filter]
+            ? (`${startFormatted || ""}&${
+                endFormatted || ""
+              }` as unknown as F[typeof filter])
             : (undefined as unknown as F[typeof filter]),
       } as typeof prev;
     });
@@ -283,14 +287,14 @@ export default function DynamicFilters<T, F>({
         const key = String(d.filter);
         const startKey = `${key}Start`;
         const endKey = `${key}End`;
-        
+
         if (filters.variantDate === "dateRange") {
           const start = (filterValues as any)[startKey];
           const end = (filterValues as any)[endKey];
-          
+
           if (start || end) {
             // Format as "2025-08-01&2025-08-08" for URL
-            cleaned[key] = `${start || ''}&${end || ''}`;
+            cleaned[key] = `${start || ""}&${end || ""}`;
           }
           delete cleaned[startKey];
           delete cleaned[endKey];
@@ -310,7 +314,7 @@ export default function DynamicFilters<T, F>({
       }
     }
 
-    onApplyFilters(cleaned as Partial<allFilters<T, F>>);
+    onApplyFilters(cleaned as Partial<T>);
     onClose();
   };
 
