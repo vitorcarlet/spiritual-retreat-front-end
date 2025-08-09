@@ -26,13 +26,14 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import Iconify from "../Iconify";
+import { allFilters } from "./FilterButton";
 
 type StringKey<T> = Extract<keyof T, string>;
 
 interface DynamicFiltersProps<T, F> {
   filters: Filters<T, F>;
   defaultValues?: Partial<TableDefaultFilters<F>>;
-  onApplyFilters: (filters: Partial<F>) => void;
+  onApplyFilters: (filters: Partial<allFilters<T, F>>) => void;
   onReset?: () => void;
   open: boolean;
   onClose: () => void;
@@ -131,16 +132,32 @@ export default function DynamicFilters<T, F>({
           const key = String(d.filter);
           const startKey = `${key}Start`;
           const endKey = `${key}End`;
-          const tuple = next[key];
-          // If tuple like [start, end] is present and start/end not yet set, hydrate them
+          const dateRangeValue = next[key];
+
+          // Parse date range string like "2025-08-01&2025-08-08"
           if (
-            Array.isArray(tuple) &&
-            tuple.length &&
+            typeof dateRangeValue === "string" &&
+            dateRangeValue.includes("&") &&
             next[startKey] == null &&
             next[endKey] == null
           ) {
-            next[startKey] = tuple[0] ?? null;
-            next[endKey] = tuple[1] ?? null;
+            const [start, end] = dateRangeValue.split("&");
+            next[startKey] = start || null;
+            next[endKey] = end || null;
+          }
+          // Handle legacy array format [start, end]
+          else if (
+            Array.isArray(dateRangeValue) &&
+            dateRangeValue.length &&
+            next[startKey] == null &&
+            next[endKey] == null
+          ) {
+            next[startKey] = dateRangeValue[0]
+              ? String(dateRangeValue[0]).slice(0, 10)
+              : null;
+            next[endKey] = dateRangeValue[1]
+              ? String(dateRangeValue[1]).slice(0, 10)
+              : null;
           }
         }
       }
@@ -200,10 +217,12 @@ export default function DynamicFilters<T, F>({
     filter: K,
     dateValue: Date | null
   ) => {
-    const key = `${String(filter)}` as K; // força string
+    const key = `${String(filter)}` as K;
     setFilterValues((prev) => ({
       ...prev,
-      [key]: dateValue ? dateValue.toISOString() : null,
+      [key]: dateValue
+        ? dateValue.toISOString().slice(0, 10) // YYYY-MM-DD only
+        : null,
     }));
   };
 
@@ -216,16 +235,18 @@ export default function DynamicFilters<T, F>({
     const endKey = `${String(filter)}End` as `${K}End`;
 
     setFilterValues((prev) => {
-      const startISO = startDate ? startDate.toISOString() : null;
-      const endISO = endDate ? endDate.toISOString() : null;
+      // Format dates as YYYY-MM-DD only (no time)
+      const startFormatted = startDate ? startDate.toISOString().slice(0, 10) : null;
+      const endFormatted = endDate ? endDate.toISOString().slice(0, 10) : null;
+      
       return {
         ...prev,
-        [startKey]: startISO,
-        [endKey]: endISO,
-        // keep tuple value in sync so consumers relying on `period` still see it
+        [startKey]: startFormatted,
+        [endKey]: endFormatted,
+        // Create a clean date range string for URL: "2025-08-01&2025-08-08"
         [filter]:
-          startISO != null || endISO != null
-            ? ([startISO ?? "", endISO ?? ""] as unknown as F[typeof filter])
+          startFormatted || endFormatted
+            ? `${startFormatted || ''}&${endFormatted || ''}` as unknown as F[typeof filter]
             : (undefined as unknown as F[typeof filter]),
       } as typeof prev;
     });
@@ -256,38 +277,40 @@ export default function DynamicFilters<T, F>({
       }
     );
 
-    // Ensure date filters are emitted in tuple/single format under the main key and not as start/end auxiliary keys
+    // Format date filters for URL
     if (filters.date && filters.date.length) {
       for (const d of filters.date as FiltersDate<F>[]) {
         const key = String(d.filter);
         const startKey = `${key}Start`;
         const endKey = `${key}End`;
+        
         if (filters.variantDate === "dateRange") {
-          const start =
-            (filterValues as any)[startKey] ??
-            (Array.isArray((filterValues as any)[key])
-              ? (filterValues as any)[key][0]
-              : undefined);
-          const end =
-            (filterValues as any)[endKey] ??
-            (Array.isArray((filterValues as any)[key])
-              ? (filterValues as any)[key][1]
-              : undefined);
-          if (start != null || end != null) {
-            cleaned[key] = [start ?? "", end ?? ""];
+          const start = (filterValues as any)[startKey];
+          const end = (filterValues as any)[endKey];
+          
+          if (start || end) {
+            // Format as "2025-08-01&2025-08-08" for URL
+            cleaned[key] = `${start || ''}&${end || ''}`;
           }
           delete cleaned[startKey];
           delete cleaned[endKey];
         } else {
           const single = (filterValues as any)[key];
-          if (single != null && single !== "") cleaned[key] = single;
+          if (single != null && single !== "") {
+            // Ensure single dates are also formatted as YYYY-MM-DD
+            if (single instanceof Date) {
+              cleaned[key] = single.toISOString().slice(0, 10);
+            } else {
+              cleaned[key] = single;
+            }
+          }
           delete cleaned[startKey];
           delete cleaned[endKey];
         }
       }
     }
 
-    onApplyFilters(cleaned as Partial<F>);
+    onApplyFilters(cleaned as Partial<allFilters<T, F>>);
     onClose();
   };
 

@@ -20,8 +20,8 @@ export const getFilters = (): Filters<
 > => {
   const t = useTranslations();
   return {
-    variantDate: "dateRange",
-    date: [{ title: t("period"), filter: "period" }],
+    //variantDate: "dateRange",
+    date: [{ title: t("periodStart"), filter: "periodStart", }, { title: t("periodEnd"), filter: "periodEnd", }],
     items: [
       {
         title: t("status"),

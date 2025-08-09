@@ -1,5 +1,4 @@
 type RetreatsCardTableFilters = {
-  period?: [string, string];
   name?: string;
   state?: string;
   city?: string;
@@ -9,5 +8,6 @@ type RetreatsCardTableFilters = {
 };
 
 type RetreatsCardTableDateFilters = {
-  period?: [string, string];
+  periodStart?: string;
+  periodEnd?: string;
 };

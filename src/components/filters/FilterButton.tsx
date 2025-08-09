@@ -9,10 +9,13 @@ import DynamicFilters from ".";
 interface FilterButtonProps<T, F> {
   filters: Filters<T, F>;
   defaultValues?: Partial<TableDefaultFilters<F>>;
-  onApplyFilters: (filters: Partial<F>) => void;
+  onApplyFilters: (filters: Partial<allFilters<T, F>>) => void;
   onReset?: () => void;
   activeFiltersCount?: number;
 }
+
+
+export type allFilters<T, F> = T extends F ? T : never;
 
 export default function FilterButton<T, F>({
   filters,

@@ -39,7 +39,7 @@ export default function RetreatsPage() {
     });
 
   const filtersConfig = getFilters();
-
+    console.log(filters,'filters')
   const { data: retreatsData, isLoading } = useQuery({
     queryKey: ["retreats", filters],
     queryFn: () => getRetreats(filters),

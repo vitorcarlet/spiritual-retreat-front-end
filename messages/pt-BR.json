@@ -9,7 +9,8 @@
   "userPage": {
     "info": "userpage.info"
   },
-  "period": "Período",
+  "periodStart": "Data de Início",
+  "periodEnd": "Data de Fim",
   "reports-data": "Relata dados",
   "custom-fields": "Campos personalizados",
   "status": "Status",

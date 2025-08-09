@@ -7,7 +7,7 @@ interface UseUrlFiltersOptions<T> {
   excludeFromCount?: (keyof T)[];
 }
 
-export function useUrlFilters<T extends Record<string, unknown>>({
+export function useUrlFilters<T extends Partial<Record<keyof T, unknown>>>({
   defaultFilters,
   excludeFromCount = [],
 }: UseUrlFiltersOptions<T>) {
@@ -28,20 +28,19 @@ export function useUrlFilters<T extends Record<string, unknown>>({
   }, []);
 
   // Parse URL params to filters based on the initial defaults
-  const parseUrlParamsToFilters = useCallback((sp: URLSearchParams): T => {
-    const tmp: Record<string, unknown> = { ...defaultRef.current } as Record<
-      string,
-      unknown
-    >;
+   const parseUrlParamsToFilters = useCallback((sp: URLSearchParams): T => {
+    const tmp: Record<string, unknown> = { ...defaultRef.current } as Record<string, unknown>;
 
     sp.forEach((value, key) => {
-      if (key in tmp) {
-        if (value.includes(",")) {
-          tmp[key] = value.split(",");
-        } else {
-          const numValue = Number(value);
-          tmp[key] = !isNaN(numValue) ? numValue : value;
-        }
+      // Aceita qualquer chave (mesmo não estando no default)
+      if (value.includes(",")) {
+        tmp[key] = value.split(",");
+      } else if (value.includes("&")) {
+        // Suporta ranges no formato YYYY-MM-DD&YYYY-MM-DD
+        tmp[key] = value; // ou value.split("&") se preferir array
+      } else {
+        const numValue = Number(value);
+        tmp[key] = !isNaN(numValue) && value.trim() !== "" ? numValue : value;
       }
     });
 

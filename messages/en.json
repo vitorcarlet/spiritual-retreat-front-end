@@ -10,6 +10,8 @@
     "info": "userPage.info"
   },
   "period": "Period",
+  "periodStart": "Period Start",
+  "periodEnd": "Period End",
   "reports-data": "Reports Data",
   "custom-fields": "Custom Fields",
   "status": "Status",

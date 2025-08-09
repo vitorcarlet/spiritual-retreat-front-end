@@ -41,6 +41,8 @@ export default function RetreatsCardTable({
   onFiltersChange,
 }: RetreatsCardTableProps) {
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  // const searchParams = useSearchParams();
+  // const router = useRouter();
 
   const handlePopoverOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -56,6 +58,37 @@ export default function RetreatsCardTable({
   };
 
   const open = Boolean(anchorEl);
+
+  // Atualizar URL quando filtros mudarem
+  // const updateURL = (newFilters: Partial<RetreatsFilters>) => {
+  //   const params = new URLSearchParams(searchParams);
+
+  //   Object.entries(newFilters).forEach(([key, value]) => {
+  //     if (value && value !== "") {
+  //       // Format dates properly for URL
+  //       if (value instanceof Date) {
+  //         params.set(key, value.toISOString().slice(0, 10));
+  //       } else if (
+  //         typeof value === "string" &&
+  //         value.match(/^\d{4}-\d{2}-\d{2}T/)
+  //       ) {
+  //         // If it's an ISO string with time, remove the time part
+  //         params.set(key, value.slice(0, 10));
+  //       } else {
+  //         params.set(key, value.toString());
+  //       }
+  //     } else {
+  //       params.delete(key);
+  //     }
+  //   });
+
+  //   // Reset page when filters change (except when changing page itself)
+  //   if (!("page" in newFilters)) {
+  //     params.set("page", "1");
+  //   }
+
+  //   router.push(`?${params.toString()}`, { scroll: false });
+  // };
 
   // Extrair filtros da URL
 
