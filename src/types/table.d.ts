@@ -1,7 +1,7 @@
 interface FiltersDate<T = unknown> {
   title: string;
-  filter: keyof T;
-  variantDate?: "month" | "day" | "year" | "week";
+  filter?: keyof T;
+  variantDate?: "dateRange" | "month" | "day" | "year" | "week";
 }
 
 interface FilterField {

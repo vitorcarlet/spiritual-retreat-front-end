@@ -2,7 +2,7 @@
 export { DataTable, type DataTableProps, type DataTableColumn } from "./DataTable";
 
 // Exportar o exemplo
-export { default as DataTableExample } from "./UserDataTable";
+export { default as DataTableExample } from "../users/table/UserDataTable";
 
 // Re-exportar tipos úteis do MUI X DataGrid
 export type {

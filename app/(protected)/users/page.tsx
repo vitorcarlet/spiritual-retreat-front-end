@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import dynamic from "next/dynamic";
 const UserDataTable = dynamic(
-  () => import("@/src/components/table/UserDataTable")
+  () => import("@/src/components/users/table/UserDataTable")
 );
 export default function Page() {
   return (

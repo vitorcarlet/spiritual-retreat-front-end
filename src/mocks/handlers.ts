@@ -6,6 +6,7 @@ import { createUserMock } from "./handlerData/login";
 import getUserById from "./handlerData/getUserById";
 import { mockMetrics, mockRetreats } from "./handlerData/dashboard";
 import { mockReports } from "./handlerData/reports";
+import { mockUsers } from "./handlerData/users";
 
 type Request = {
   email?: string;
@@ -22,31 +23,7 @@ export const handlers = [
   }),
 
   http.get("http://localhost:3001/api/users", () => {
-    return HttpResponse.json(
-      [
-        {
-          id: "1",
-          name: "Vitor Admin",
-          email: "admin@email.com",
-        },
-        {
-          id: "2",
-          name: "Maria Manager",
-          email: "manager@email.com",
-        },
-        {
-          id: "3",
-          name: "Pedro Consultant",
-          email: "consultant@email.com",
-        },
-        {
-          id: "4",
-          name: "Ana User",
-          email: "user@email.com",
-        },
-      ],
-      { status: 200 }
-    );
+    return HttpResponse.json(mockUsers, { status: 200 });
   }),
 
   http.get("http://localhost:3001/api/user/:id", ({ params }) => {

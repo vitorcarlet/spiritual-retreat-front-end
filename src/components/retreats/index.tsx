@@ -13,7 +13,9 @@ import { useTranslations } from "next-intl";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 
 const getRetreats = async (
-  filters: TableDefaultFilters<RetreatsCardTableFilters>
+  filters: TableDefaultFilters<
+    RetreatsCardTableFilters & RetreatsCardTableDateFilters
+  >
 ) => {
   const response = await handleApiResponse<Retreat>(
     await sendRequestServerVanilla.get("/retreats", { params: filters })
@@ -39,7 +41,7 @@ export default function RetreatsPage() {
     });
 
   const filtersConfig = getFilters();
-    console.log(filters,'filters')
+  console.log(filters, "filters");
   const { data: retreatsData, isLoading } = useQuery({
     queryKey: ["retreats", filters],
     queryFn: () => getRetreats(filters),

@@ -2,81 +2,37 @@
 
 import React, { Suspense, useState } from "react";
 import { Box, Button, Chip } from "@mui/material";
-import { DataTable, DataTableColumn } from "./DataTable";
+import { DataTable, DataTableColumn } from "../../table/DataTable";
 import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/src/hooks/useModal";
-import UserSummaryModal from "../users/userSummaryModal";
-
-// Tipo de exemplo para usuários
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  status: "active" | "inactive";
-  createdAt: Date;
-  age: number;
-}
+import UserSummaryModal from "../userSummaryModal";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
+import { getFilters } from "./getFilters";
+import { useUrlFilters } from "@/src/hooks/useUrlFilters";
+import { useQuery } from "@tanstack/react-query";
+import FilterButton from "../../filters/FilterButton";
+import dayjs from "dayjs";
+import SearchField from "../../filters/SearchField";
+import DeleteConfirmation from "../../confirmations/DeleteConfirmation";
 
 // Dados de exemplo
-const sampleUsers: User[] = [
-  {
-    id: 1,
-    name: "Vitor Admin",
-    email: "admin@email.com",
-    role: "Admin",
-    status: "active",
-    createdAt: new Date("2023-01-15"),
-    age: 21,
-  },
-  {
-    id: 2,
-    name: "Maria Santos",
-    email: "maria@email.com",
-    role: "Manager",
-    status: "active",
-    createdAt: new Date("2023-02-20"),
-    age: 35,
-  },
-  {
-    id: 3,
-    name: "Pedro Costa",
-    email: "pedro@email.com",
-    role: "User",
-    status: "inactive",
-    createdAt: new Date("2023-03-10"),
-    age: 24,
-  },
-  {
-    id: 4,
-    name: "Ana Oliveira",
-    email: "ana@email.com",
-    role: "Manager",
-    status: "active",
-    createdAt: new Date("2023-04-05"),
-    age: 31,
-  },
-  {
-    id: 5,
-    name: "Carlos Pereira",
-    email: "carlos@email.com",
-    role: "User",
-    status: "active",
-    createdAt: new Date("2023-05-12"),
-    age: 27,
-  },
-  // Adicionar mais dados para demonstrar a paginação
-  ...Array.from({ length: 20 }, (_, i) => ({
-    id: i + 6,
-    name: `Usuário ${i + 6}`,
-    email: `usuario${i + 6}@email.com`,
-    role: ["Admin", "Manager", "User"][i % 3],
-    status: ["active", "inactive"][i % 2] as "active" | "inactive",
-    createdAt: new Date(2023, i % 12, (i % 28) + 1),
-    age: 20 + (i % 40),
-  })),
-];
+const getUsers = async (
+  filters: TableDefaultFilters<UsersTableFiltersWithDates>
+) => {
+  const response = await handleApiResponse<User>(
+    await sendRequestServerVanilla.get("/users", { params: filters })
+  );
+
+  if (!response || response.error) {
+    throw new Error("Failed to fetch users");
+  }
+  console.log("Fetched users:", response);
+  return response.data;
+};
 
 // Definir as colunas da tabela
 const columns: DataTableColumn<User>[] = [
@@ -129,10 +85,33 @@ const columns: DataTableColumn<User>[] = [
     headerName: "Criado em",
     width: 150,
     type: "date",
+    valueGetter: (params: string | Date) => {
+      console.log(params, "params");
+      const v = params;
+      if (v == null) return null;
+
+      return new Date(v as string | number);
+    },
+    // Opcional: apenas para exibir formatado
+    valueFormatter: (params: string | Date) =>
+      params ? dayjs(params as Date).format("DD/MM/YYYY") : "",
   },
 ];
 
 export default function UserDataTable() {
+  const { filters, updateFilters, activeFiltersCount, resetFilters } =
+    useUrlFilters<TableDefaultFilters<UsersTableFiltersWithDates>>({
+      defaultFilters: {
+        page: 1,
+        pageLimit: 4,
+      },
+      excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
+    });
+  const { data: usersData, isLoading } = useQuery({
+    queryKey: ["users", filters],
+    queryFn: () => getUsers(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes,
+  });
   // ✅ CORREÇÃO: Usar o tipo correto
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
@@ -140,6 +119,7 @@ export default function UserDataTable() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const modal = useModal();
+  const filtersConfig = getFilters();
 
   // ✅ Helper para obter IDs selecionados
   const getSelectedIds = (): GridRowId[] => {
@@ -157,7 +137,43 @@ export default function UserDataTable() {
   };
 
   const handleDelete = (user: User) => {
-    console.log("Deletar usuário:", user);
+    modal.open({
+      title: "Confirm deletion",
+      size: "sm",
+      customRender: () => (
+        <DeleteConfirmation
+          title="Delete user"
+          resourceName={user.name}
+          description="This action cannot be undone and will permanently remove the user."
+          requireCheckboxLabel="I understand the consequences."
+          onConfirm={async () => {
+            try {
+              const res = await sendRequestServerVanilla.delete(
+                `/users/${user.id}`
+              );
+              const result = await handleApiResponse(res);
+              if (result.error) {
+                throw new Error(result.error || "Server error");
+              }
+              // Optionally trigger a refetch outside
+              if (typeof window !== "undefined") {
+                const { enqueueSnackbar } = await import("notistack");
+                enqueueSnackbar("User deleted successfully", {
+                  variant: "success",
+                });
+              }
+            } catch (err: any) {
+              if (typeof window !== "undefined") {
+                const { enqueueSnackbar } = await import("notistack");
+                enqueueSnackbar(err.message || "Failed to delete user", {
+                  variant: "errorMUI",
+                });
+              }
+            }
+          }}
+        />
+      ),
+    });
   };
 
   const handleView = (user: User) => {
@@ -184,13 +200,25 @@ export default function UserDataTable() {
     }, 2000);
   };
 
-  // ✅ Debug para verificar
-  // useEffect(() => {
-  //   const selectedIds = getSelectedIds();
-  //   //console.log("🔍 Selection changed:", selectedIds.length, "items");
-  // }, [selectedRows]);
+  // const handleFiltersChange = (
+  //   newFilters: TableDefaultFilters<RetreatsCardTableFilters>
+  // ) => {
+  //   updateFilters({ ...filters, ...newFilters });
+  // };
 
-  //console.log(selectedRows, "selectedRows");
+  const handleApplyFilters = (
+    newFilters: Partial<TableDefaultFilters<RetreatsCardTableFilters>>
+  ) => {
+    updateFilters({ ...filters, ...newFilters });
+  };
+
+  const usersDataArray: User[] = Array.isArray(usersData)
+    ? usersData
+    : ([usersData] as User[]);
+
+  if (isLoading) return <div>Carregando usuários...</div>;
+
+  console.log("selectedRows:", selectedRows);
   return (
     <Box
       sx={{
@@ -200,7 +228,7 @@ export default function UserDataTable() {
         display: "flex",
         flexDirection: "column",
         maxWidth: "100%",
-        overflow: "hidden",
+        overflowY: "scroll",
         boxSizing: "border-box",
       }}
     >
@@ -208,6 +236,26 @@ export default function UserDataTable() {
         <Button variant="contained" onClick={handleRefresh} disabled={loading}>
           {loading ? "Carregando..." : "Atualizar Dados"}
         </Button>
+
+        <FilterButton<
+          TableDefaultFilters<UsersTableFilters>,
+          UsersTableDateFilters
+        >
+          filters={filtersConfig}
+          defaultValues={filters}
+          onApplyFilters={handleApplyFilters}
+          onReset={resetFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+
+        <SearchField
+          sx={{ height: "100%", minWidth: "120px", width: "max-content" }}
+          value={filters.search || ""}
+          onChange={(e) => {
+            updateFilters({ ...filters, search: e });
+          }}
+          placeholder="search-field"
+        />
 
         {/* ✅ CORREÇÃO: Usar helper para contar */}
         {getSelectedIds().length > 0 && (
@@ -218,7 +266,7 @@ export default function UserDataTable() {
       </Box>
 
       <DataTable<User>
-        rows={sampleUsers}
+        rows={usersDataArray}
         columns={columns}
         loading={loading}
         // Configurações de aparência
@@ -230,8 +278,11 @@ export default function UserDataTable() {
         width={1200}
         height={600}
         pagination={true}
-        pageSize={10}
-        pageSizeOptions={[5, 10, 25, 50]}
+        pageSize={filters.pageLimit || 10}
+        pageSizeOptions={[5, 10, 25, 50, 100]}
+        onPaginationModelChange={(pageModel) => {
+          updateFilters({ ...filters, page: pageModel.page + 1 });
+        }}
         // Seleção
         checkboxSelection={true}
         rowSelectionModel={selectedRows}

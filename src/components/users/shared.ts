@@ -15,7 +15,7 @@ export const fetchUserData = async (
     );
 
     if (result.success && result.data) {
-      return result.data;
+      return result.data as UserObject;
     }
 
     return null;

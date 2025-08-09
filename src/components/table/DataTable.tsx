@@ -29,6 +29,9 @@ import {
   Stack,
   Chip,
   Button,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import Iconify from "../Iconify";
 import theme from "@/src/theme/theme";
@@ -143,15 +146,22 @@ const CustomToolbar = React.memo(function CustomToolbar({
   selectedCount,
   onClearSelection,
   setDensity,
+  pageSize,
+  pageSizeOptions,
+  onChangePageSize,
 }: {
   title?: string;
   subtitle?: string;
   selectedCount?: number;
   onClearSelection?: () => void;
   setDensity: (density: "compact" | "standard" | "comfortable") => void;
+  pageSize: number;
+  pageSizeOptions: number[];
+  onChangePageSize: (size: number) => void;
 }) {
   return (
     <Toolbar style={{ backgroundColor: "--mui-palette-background-default" }}>
+      <Typography id="textToolbar">ASDASDASDAS</Typography>
       <Box
         sx={{ flex: 1, display: "flex", alignItems: "center", gap: 2, p: 1 }}
       >
@@ -185,7 +195,7 @@ const CustomToolbar = React.memo(function CustomToolbar({
         )}
       </Box>
 
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" spacing={1} alignItems="center">
         <ColumnsPanelTrigger />
         <FilterPanelTrigger />
         <Button onClick={() => setDensity("compact")}>Compact</Button>
@@ -193,6 +203,21 @@ const CustomToolbar = React.memo(function CustomToolbar({
         <Button onClick={() => setDensity("comfortable")}>Comfortable</Button>
         <ExportPrint />
         <ExportCsv />
+        {/* Page size selector */}
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <Select
+            value={pageSize}
+            onChange={(e) => onChangePageSize(Number(e.target.value))}
+            displayEmpty
+            renderValue={(val) => `${val} / página`}
+          >
+            {pageSizeOptions.map((opt) => (
+              <MenuItem key={opt} value={opt}>
+                {opt} / página
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Stack>
     </Toolbar>
   );
@@ -204,40 +229,33 @@ export function DataTable<T extends GridValidRowModel>({
   columns,
   loading = false,
   getRowId,
-
   // Paginação
   //pagination = true,
   pageSize = 25,
   pageSizeOptions = [10, 25, 50, 100],
   rowCount,
   paginationMode = "client",
-
   // Seleção
   checkboxSelection = false,
   disableRowSelectionOnClick = false,
   rowSelectionModel,
   onRowSelectionModelChange,
-
   // Filtros e ordenação
   filterMode = "client",
   sortingMode = "client",
   onSortModelChange,
   onFilterModelChange,
   onPaginationModelChange,
-
   // Colunas
   columnVisibilityModel,
   onColumnVisibilityModelChange,
-
   // Eventos
   onRowClick,
   onRowDoubleClick,
-
   density: ds = "standard",
   disableColumnFilter = false,
   disableColumnMenu = false,
   disableColumnResize = false,
-
   // Customização
   title,
   subtitle,
@@ -245,11 +263,9 @@ export function DataTable<T extends GridValidRowModel>({
   customToolbar,
   noRowsOverlay,
   noResultsOverlay,
-
   // Virtualização
   rowBuffer = 2,
   columnBuffer = 2,
-
   // Ações
   actions,
 }: DataTableProps<T>) {
@@ -260,6 +276,7 @@ export function DataTable<T extends GridValidRowModel>({
   const [density, setDensity] = useState<
     "compact" | "standard" | "comfortable"
   >(ds);
+
   // Preparar colunas com ações se necessário
   const processedColumns = useMemo<GridColDef[]>(() => {
     const cols = [...columns] as GridColDef[];
@@ -312,6 +329,15 @@ export function DataTable<T extends GridValidRowModel>({
     [onPaginationModelChange]
   );
 
+  const handlePageSizeChange = useCallback(
+    (size: number) => {
+      const model: GridPaginationModel = { page: 0, pageSize: size };
+      setPaginationModel(model);
+      onPaginationModelChange?.(model);
+    },
+    [onPaginationModelChange]
+  );
+
   // Handle selection clearing
   const handleClearSelection = useCallback(() => {
     const emptySelection: GridRowSelectionModel = {
@@ -352,6 +378,9 @@ export function DataTable<T extends GridValidRowModel>({
           selectedCount={selectedCount}
           onClearSelection={handleClearSelection}
           setDensity={setDensity}
+          pageSize={paginationModel.pageSize}
+          pageSizeOptions={pageSizeOptions}
+          onChangePageSize={handlePageSizeChange}
         />
       );
     }
@@ -418,6 +447,7 @@ export function DataTable<T extends GridValidRowModel>({
         loading={loading}
         getRowId={getRowId}
         // Paginação
+        pagination
         paginationModel={paginationModel}
         onPaginationModelChange={handlePaginationModelChange}
         pageSizeOptions={pageSizeOptions}
@@ -432,6 +462,7 @@ export function DataTable<T extends GridValidRowModel>({
             onRowSelectionModelChange(newSelection);
           }
         }}
+        showToolbar={true}
         // Filtros e ordenação
         filterMode={filterMode}
         sortingMode={sortingMode}

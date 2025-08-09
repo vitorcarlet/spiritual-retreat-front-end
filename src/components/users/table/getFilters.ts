@@ -1,14 +1,13 @@
 import { useTranslations } from "next-intl";
 
-type DateFilters = FiltersDate<ServiceOrdersReportsFilters>;
+type DateFilters = FiltersDate<UsersTableDateFilters>;
 
 export const getDateFilters = (): DateFilters => {
   const t = useTranslations();
   return {
     // configKey,
-    // variantDate: 'month',
-    title: t("period"),
     variantDate: "dateRange",
+    title: t("period"),
   };
 };
 
@@ -20,12 +19,8 @@ export const getFilters = (): Filters<
 > => {
   const t = useTranslations();
   return {
+    //variantDate: "dateRange",
     date: [
-      // {
-      //   variantDate: "dateRange",
-      //   { title: t("periodStart"), filter: "periodStart" },
-      //   { title: t("periodEnd"), filter: "periodEnd" },
-      // }
       { title: t("periodStart"), filter: "periodStart" },
       { title: t("periodEnd"), filter: "periodEnd" },
     ],

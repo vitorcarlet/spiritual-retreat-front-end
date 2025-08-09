@@ -26,7 +26,6 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import Iconify from "../Iconify";
-import { allFilters } from "./FilterButton";
 
 type StringKey<T> = Extract<keyof T, string>;
 

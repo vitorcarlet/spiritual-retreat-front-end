@@ -2,9 +2,9 @@ type RetreatsCardTableFilters = {
   name?: string;
   state?: string;
   city?: string;
-  startDate?: string;
-  endDate?: string;
   status?: string;
+  periodStart?: string;
+  periodEnd?: string;
 };
 
 type RetreatsCardTableDateFilters = {
