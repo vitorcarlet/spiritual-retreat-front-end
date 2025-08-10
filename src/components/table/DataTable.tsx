@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   DataGrid,
   GridColDef,
@@ -35,6 +35,7 @@ import {
 } from "@mui/material";
 import Iconify from "../Iconify";
 import theme from "@/src/theme/theme";
+import CustomPagination from "./CustomPagination";
 
 // Tipos para o componente
 export interface DataTableColumn<
@@ -63,18 +64,21 @@ export interface DataTableColumn<
 }
 
 export interface DataTableProps<
-  T extends GridValidRowModel = GridValidRowModel
+  T extends GridValidRowModel = GridValidRowModel,
+  F = unknown
 > {
   // Dados
   rows: T[];
   columns: DataTableColumn<T>[];
   loading?: boolean;
+  showToolbar?: boolean;
 
   // Identificação única
   getRowId?: (row: T) => GridRowId;
 
   // Paginação
   pagination?: boolean;
+  page: number; // Página inicial
   pageSize?: number;
   pageSizeOptions?: number[];
   rowCount?: number; // Para paginação server-side
@@ -87,6 +91,7 @@ export interface DataTableProps<
   onRowSelectionModelChange?: (selectionModel: GridRowSelectionModel) => void;
 
   // Filtros e ordenação
+  serverFilters?: F;
   filterMode?: "client" | "server";
   sortingMode?: "client" | "server";
   onSortModelChange?: (model: GridSortModel) => void;
@@ -224,11 +229,15 @@ const CustomToolbar = React.memo(function CustomToolbar({
 });
 
 // Componente principal
-export function DataTable<T extends GridValidRowModel>({
+export function DataTable<
+  T extends GridValidRowModel,
+  F extends TableDefaultFilters
+>({
   rows,
   columns,
   loading = false,
   getRowId,
+  showToolbar = true,
   // Paginação
   //pagination = true,
   pageSize = 25,
@@ -266,13 +275,27 @@ export function DataTable<T extends GridValidRowModel>({
   // Virtualização
   rowBuffer = 2,
   columnBuffer = 2,
+  serverFilters,
+  page,
   // Ações
   actions,
-}: DataTableProps<T>) {
+}: DataTableProps<T, F>) {
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    page: 0,
+    page: page,
     pageSize,
   });
+  const [firstFiltersTrigger, setFirstFiltersTrigger] = useState(false);
+
+  useEffect(() => {
+    if (serverFilters && !firstFiltersTrigger) {
+      setPaginationModel((prev) => ({
+        ...prev,
+        page: serverFilters.page ? serverFilters.page - 1 : 0,
+      }));
+      setFirstFiltersTrigger(true);
+    }
+  }, [serverFilters]);
+
   const [density, setDensity] = useState<
     "compact" | "standard" | "comfortable"
   >(ds);
@@ -323,7 +346,11 @@ export function DataTable<T extends GridValidRowModel>({
   // Handle pagination
   const handlePaginationModelChange = useCallback(
     (model: GridPaginationModel) => {
-      setPaginationModel(model);
+      setPaginationModel((prev) => {
+        if (prev.page === model.page && prev.pageSize === model.pageSize)
+          return prev; // evita no-op
+        return model;
+      });
       onPaginationModelChange?.(model);
     },
     [onPaginationModelChange]
@@ -394,6 +421,9 @@ export function DataTable<T extends GridValidRowModel>({
     slots.noResultsOverlay = () => <>{noResultsOverlay}</>;
   }
 
+  // Use custom pagination to replace default Select with Button+Popover
+  slots.pagination = CustomPagination;
+
   return (
     <Paper
       elevation={1}
@@ -448,6 +478,7 @@ export function DataTable<T extends GridValidRowModel>({
         getRowId={getRowId}
         // Paginação
         pagination
+        hideFooterPagination={false}
         paginationModel={paginationModel}
         onPaginationModelChange={handlePaginationModelChange}
         pageSizeOptions={pageSizeOptions}
@@ -462,7 +493,7 @@ export function DataTable<T extends GridValidRowModel>({
             onRowSelectionModelChange(newSelection);
           }
         }}
-        showToolbar={true}
+        showToolbar={showToolbar}
         // Filtros e ordenação
         filterMode={filterMode}
         sortingMode={sortingMode}
@@ -484,6 +515,12 @@ export function DataTable<T extends GridValidRowModel>({
         columnBufferPx={columnBuffer}
         // Slots customizados
         slots={slots}
+        slotProps={{
+          pagination: {
+            pageSizeOptions, // pass options to our custom footer
+            labelRowsPerPage: "Itens por página",
+          },
+        }}
         // Configurações de localização
         localeText={{
           // Toolbar

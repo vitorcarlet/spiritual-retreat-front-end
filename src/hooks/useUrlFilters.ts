@@ -28,8 +28,11 @@ export function useUrlFilters<T extends Partial<Record<keyof T, unknown>>>({
   }, []);
 
   // Parse URL params to filters based on the initial defaults
-   const parseUrlParamsToFilters = useCallback((sp: URLSearchParams): T => {
-    const tmp: Record<string, unknown> = { ...defaultRef.current } as Record<string, unknown>;
+  const parseUrlParamsToFilters = useCallback((sp: URLSearchParams): T => {
+    const tmp: Record<string, unknown> = { ...defaultRef.current } as Record<
+      string,
+      unknown
+    >;
 
     sp.forEach((value, key) => {
       // Aceita qualquer chave (mesmo não estando no default)
@@ -109,6 +112,12 @@ export function useUrlFilters<T extends Partial<Record<keyof T, unknown>>>({
       areFiltersEqual(prev, urlFilters) ? prev : urlFilters
     );
   }, [searchParams, parseUrlParamsToFilters, areFiltersEqual]);
+
+  useEffect(() => {
+    if (searchParams.toString().length === 0) {
+      updateUrlWithFilters(defaultFilters);
+    }
+  }, [defaultFilters]);
 
   return {
     filters,

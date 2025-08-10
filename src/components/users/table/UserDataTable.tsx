@@ -19,11 +19,18 @@ import dayjs from "dayjs";
 import SearchField from "../../filters/SearchField";
 import DeleteConfirmation from "../../confirmations/DeleteConfirmation";
 
+type UserRequest = {
+  rows: User[];
+  total: number;
+  page: number;
+  pageLimit: number;
+};
+
 // Dados de exemplo
 const getUsers = async (
   filters: TableDefaultFilters<UsersTableFiltersWithDates>
 ) => {
-  const response = await handleApiResponse<User>(
+  const response = await handleApiResponse<UserRequest>(
     await sendRequestServerVanilla.get("/users", { params: filters })
   );
 
@@ -31,7 +38,7 @@ const getUsers = async (
     throw new Error("Failed to fetch users");
   }
   console.log("Fetched users:", response);
-  return response.data;
+  return response.data as UserRequest;
 };
 
 // Definir as colunas da tabela
@@ -103,7 +110,7 @@ export default function UserDataTable() {
     useUrlFilters<TableDefaultFilters<UsersTableFiltersWithDates>>({
       defaultFilters: {
         page: 1,
-        pageLimit: 4,
+        pageLimit: 10,
       },
       excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
     });
@@ -212,13 +219,13 @@ export default function UserDataTable() {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const usersDataArray: User[] = Array.isArray(usersData)
-    ? usersData
-    : ([usersData] as User[]);
-
-  if (isLoading) return <div>Carregando usuários...</div>;
+  const usersDataArray: User[] | undefined = Array.isArray(usersData?.rows)
+    ? usersData?.rows
+    : ([usersData?.rows] as unknown as User[]);
 
   console.log("selectedRows:", selectedRows);
+
+  if (isLoading) return <div>Carregando usuários...</div>;
   return (
     <Box
       sx={{
@@ -228,11 +235,13 @@ export default function UserDataTable() {
         display: "flex",
         flexDirection: "column",
         maxWidth: "100%",
-        overflowY: "scroll",
+        overflowY: "hidden",
         boxSizing: "border-box",
       }}
     >
-      <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
+      <Box
+        sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
+      >
         <Button variant="contained" onClick={handleRefresh} disabled={loading}>
           {loading ? "Carregando..." : "Atualizar Dados"}
         </Button>
@@ -249,7 +258,12 @@ export default function UserDataTable() {
         />
 
         <SearchField
-          sx={{ height: "100%", minWidth: "120px", width: "max-content" }}
+          sx={{
+            height: "100%",
+            minWidth: "120px",
+            width: "max-content",
+            flexShrink: 0,
+          }}
           value={filters.search || ""}
           onChange={(e) => {
             updateFilters({ ...filters, search: e });
@@ -265,61 +279,72 @@ export default function UserDataTable() {
         )}
       </Box>
 
-      <DataTable<User>
-        rows={usersDataArray}
-        columns={columns}
-        loading={loading}
-        // Configurações de aparência
-        title="Gerenciamento de Usuários"
-        subtitle="Lista completa de usuários do sistema"
-        autoWidth={true}
-        autoHeight={true}
-        // Paginação
-        width={1200}
-        height={600}
-        pagination={true}
-        pageSize={filters.pageLimit || 10}
-        pageSizeOptions={[5, 10, 25, 50, 100]}
-        onPaginationModelChange={(pageModel) => {
-          updateFilters({ ...filters, page: pageModel.page + 1 });
-        }}
-        // Seleção
-        checkboxSelection={true}
-        rowSelectionModel={selectedRows}
-        onRowSelectionModelChange={setSelectedRows}
-        // Virtualização otimizada
-        rowBuffer={5}
-        columnBuffer={2}
-        // Ações personalizadas
-        actions={[
-          {
-            icon: "lucide:eye",
-            label: "Visualizar",
-            onClick: handleView,
-            color: "info",
-          },
-          {
-            icon: "lucide:edit",
-            label: "Editar",
-            onClick: handleEdit,
-            color: "primary",
-          },
-          {
-            icon: "lucide:trash-2",
-            label: "Deletar",
-            onClick: handleDelete,
-            color: "error",
-            disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
-          },
-        ]}
-        // Eventos
-        onRowClick={(params) => {
-          console.log("Linha clicada:", params.row);
-        }}
-        onRowDoubleClick={(params) => {
-          handleView(params.row);
-        }}
-      />
+      <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
+        <DataTable<User, UsersTableFiltersWithDates>
+          rows={usersDataArray}
+          rowCount={usersData?.total || 0}
+          columns={columns}
+          loading={isLoading || loading}
+          // Configurações de aparência
+          title="Gerenciamento de Usuários"
+          subtitle="Lista completa de usuários do sistema"
+          autoWidth={true}
+          autoHeight={true}
+          // Paginação
+          width={1200}
+          height={600}
+          pagination={true}
+          showToolbar={false}
+          paginationMode="server"
+          page={filters.page ? filters.page - 1 : 0}
+          pageSize={filters.pageLimit || 10}
+          pageSizeOptions={[10, 25, 50, 100]}
+          onPaginationModelChange={(newModel) => {
+            updateFilters({
+              ...filters,
+              page: newModel.page + 1,
+              pageLimit: newModel.pageSize,
+            });
+          }}
+          serverFilters={filters}
+          // Seleção
+          checkboxSelection={true}
+          rowSelectionModel={selectedRows}
+          onRowSelectionModelChange={setSelectedRows}
+          // Virtualização otimizada
+          rowBuffer={500}
+          columnBuffer={2}
+          // Ações personalizadas
+          actions={[
+            {
+              icon: "lucide:eye",
+              label: "Visualizar",
+              onClick: handleView,
+              color: "info",
+            },
+            {
+              icon: "lucide:edit",
+              label: "Editar",
+              onClick: handleEdit,
+              color: "primary",
+            },
+            {
+              icon: "lucide:trash-2",
+              label: "Deletar",
+              onClick: handleDelete,
+              color: "error",
+              disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+          ]}
+          // Eventos
+          onRowClick={(params) => {
+            console.log("Linha clicada:", params.row);
+          }}
+          onRowDoubleClick={(params) => {
+            handleView(params.row);
+          }}
+        />
+      </Box>
     </Box>
   );
 }

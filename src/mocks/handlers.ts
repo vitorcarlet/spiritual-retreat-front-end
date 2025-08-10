@@ -22,8 +22,25 @@ export const handlers = [
     });
   }),
 
-  http.get("http://localhost:3001/api/users", () => {
-    return HttpResponse.json(mockUsers, { status: 200 });
+  http.get("http://localhost:3001/api/users", ({ request }) => {
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get("page") || "1", 10);
+    const pageLimit = parseInt(url.searchParams.get("pageLimit") || "8", 10);
+
+    const start = (page - 1) * pageLimit;
+    const end = start + pageLimit;
+
+    const paginatedUsers = mockUsers.slice(start, end);
+
+    return HttpResponse.json(
+      {
+        rows: paginatedUsers,
+        total: mockUsers.length,
+        page,
+        pageLimit,
+      },
+      { status: 200 }
+    );
   }),
 
   http.get("http://localhost:3001/api/user/:id", ({ params }) => {
