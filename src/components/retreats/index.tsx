@@ -1,6 +1,6 @@
 "use client";
 import { Container, Typography } from "@mui/material";
-import RetreatsCardTable from "./RetreatsCardTable";
+import RetreatsCardTable from "./CardTable/RetreatsCardTable";
 import {
   handleApiResponse,
   sendRequestServerVanilla,
@@ -8,7 +8,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Box, Stack } from "@mui/material";
 import FilterButton from "@/src/components/filters/FilterButton";
-import { getFilters } from "./getFilters";
+import { getFilters } from "./CardTable/getFilters";
 import { useTranslations } from "next-intl";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 

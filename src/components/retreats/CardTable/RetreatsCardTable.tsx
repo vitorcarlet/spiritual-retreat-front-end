@@ -21,7 +21,7 @@ import {
   MenuItem,
   ListItemText,
 } from "@mui/material";
-import Iconify from "../Iconify";
+import Iconify from "../../Iconify";
 
 interface RetreatsCardTableProps {
   data?: Retreat[];

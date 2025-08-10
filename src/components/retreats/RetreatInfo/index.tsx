@@ -3,75 +3,81 @@
 import React, { useState, useEffect, use } from "react";
 import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
-import Iconify from "../Iconify";
+import Iconify from "@/src/components/Iconify";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import SelectEditMode from "../navigation/SelectEditMode";
 import { UserContentProvider } from "./context";
 import { UserObject } from "next-auth";
-import { fetchUserData } from "./shared";
+import { fetchRetreatData } from "./shared";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 
-interface UserPageProps {
+interface RetreatPageProps {
   children: React.ReactNode;
-  // Indica que estamos criando um novo usuário (ainda não salvo)
-  isCreating?: boolean;
 }
 
-const userCache = new Map<string, Promise<UserObject | null>>();
+const retreatCache = new Map<string, Promise<UserObject | null>>();
 
-export default function UserPage({ children, isCreating = false }: UserPageProps) {
+export default function RetreatPage({ children }: RetreatPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
 
   const { menuMode, toggleMenuMode, isAllowedToEdit } = useMenuMode();
 
-  const userId = pathname.split("/")[2];
-  const getUserData = (userId: string) => {
-    if (!userCache.has(userId)) {
-      userCache.set(userId, fetchUserData(userId));
+  const retreatId = pathname.split("/")[2];
+  const getRetreatData = (retreatId: string) => {
+    if (!retreatCache.has(retreatId)) {
+      retreatCache.set(retreatId, fetchRetreatData(retreatId));
     }
-    return userCache.get(userId)!;
+    return retreatCache.get(retreatId)!;
   };
 
-  // Em modo de criação, não carrega dados do usuário
-  const userPromise = isCreating
-    ? Promise.resolve<UserObject | null>(null)
-    : getUserData(userId);
-  const user = use(userPromise);
+  const retreatPromise = getRetreatData(retreatId);
+  const retreat = use(retreatPromise);
   const { setBreadCrumbsTitle } = useBreadCrumbs();
 
   useEffect(() => {
-    if (user) {
-      console.log("User data loaded:", user);
-      setBreadCrumbsTitle({ title: user.name, pathname: `/users/${user.id}` });
+    if (retreat) {
+      console.log("retreat data loaded:", retreat);
+      setBreadCrumbsTitle({ title: retreat.name, pathname: `/users/${retreat.id}` });
     }
-  }, [user, setBreadCrumbsTitle]);
+  }, [retreat, setBreadCrumbsTitle]);
 
   const tabs = [
     {
-      label: "Informações",
-      icon: "lucide:user",
-      path: `/users/${userId}`,
+      label: "Geral",
+      icon: "lucide:retreat",
+      path: `/users/${retreatId}`,
       value: 0,
     },
     {
-      label: "Permissões",
+      label: "Contemplação",
       icon: "lucide:shield-check",
-      path: `/users/${userId}/permissions`,
+      path: `/users/${retreatId}/contemplation`,
       value: 1,
+      disabled: !retreat
     },
     {
-      label: "Segurança",
+      label: "Formulário",
       icon: "lucide:lock",
-      path: `/users/${userId}/credentials`,
+      path: `/users/${retreatId}/form`,
       value: 2,
+    },
+    {
+      label: "Famílias",
+      icon: "lucide:lock",
+      path: `/users/${retreatId}/families`,
+      value: 3,
+    },
+    {
+      label: "Equipes de Serviço",
+      icon: "lucide:lock",
+      path: `/users/${retreatId}/service-teams`,
+      value: 4,
     },
   ];
 
   const getCurrentTabValue = () => {
-    // Em modo de criação, mantém sempre na primeira aba
-    if (isCreating) return 0;
     const currentTab = tabs.find((tab) => pathname === tab.path);
     return currentTab ? currentTab.value : 0;
   };
@@ -80,13 +86,9 @@ export default function UserPage({ children, isCreating = false }: UserPageProps
 
   useEffect(() => {
     setValue(getCurrentTabValue());
-  }, [pathname, isCreating]);
+  }, [pathname]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    // Bloqueia navegação para outras abas enquanto estiver criando
-    if (isCreating && newValue !== 0) {
-      return;
-    }
     setValue(newValue);
     const selectedTab = tabs.find((tab) => tab.value === newValue);
     if (selectedTab) {
@@ -96,8 +98,8 @@ export default function UserPage({ children, isCreating = false }: UserPageProps
 
   function a11yProps(index: number) {
     return {
-      id: `user-tab-${index}`,
-      "aria-controls": `user-tabpanel-${index}`,
+      id: `retreat-tab-${index}`,
+      "aria-controls": `retreat-tabpanel-${index}`,
     };
   }
 
@@ -114,7 +116,7 @@ export default function UserPage({ children, isCreating = false }: UserPageProps
             <Tabs
               value={value}
               onChange={handleChange}
-              aria-label="Abas de gerenciamento de usuário"
+              aria-label="Abas de gerenciamento de retiro"
               variant="scrollable"
               scrollButtons="auto"
               sx={{
@@ -131,8 +133,6 @@ export default function UserPage({ children, isCreating = false }: UserPageProps
                   iconPosition="start"
                   label={tab.label}
                   {...a11yProps(tab.value)}
-                  // Desabilita abas 1 e 2 quando está criando
-                  disabled={isCreating && tab.value !== 0}
                   sx={{
                     //minHeight: 72,
                     textTransform: "none",
@@ -178,7 +178,7 @@ export default function UserPage({ children, isCreating = false }: UserPageProps
 
       {/* Content Area - Renderiza os children baseado na rota */}
       <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "calc(100% - 72px)" }}>
-        <UserContentProvider user={user as unknown as User | null}>{children}</UserContentProvider>
+        <RetreatContentProvider retreat={retreat}>{children}</RetreatContentProvider>
       </Box>
     </Box>
   );

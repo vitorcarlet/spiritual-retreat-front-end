@@ -25,6 +25,8 @@ const UserEditPage = () => {
   const { menuMode } = useMenuMode();
   const isReadOnly = menuMode === "view";
   const isLoading = false;
+  // Modo de criação quando não há usuário carregado
+  const isCreating = !user;
   // Estado do formulário
   const [formData, setFormData] = useState<
     Omit<
@@ -78,7 +80,11 @@ const UserEditPage = () => {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    console.log("Dados do formulário:", formData);
+    if (isCreating) {
+      console.log("Criando usuário com dados:", formData);
+    } else {
+      console.log("Atualizando usuário com dados:", formData);
+    }
   };
 
   const handleStateChange = (state: string) => {
@@ -177,7 +183,7 @@ const UserEditPage = () => {
       {/* Formulário */}
       <Box sx={{ padding: 3, paddingTop: 3 }}>
         <Typography variant="h5" component="h1" gutterBottom sx={{ mb: 3 }}>
-          Editar Usuário: {user?.name}
+          {isCreating ? "Criar Usuário" : `Editar Usuário: ${user?.name ?? ""}`}
         </Typography>
 
         <Grid container spacing={3}>
@@ -191,7 +197,7 @@ const UserEditPage = () => {
               value={formData.name}
               onChange={handleInputChange("name")}
               required
-              disabled={isReadOnly}
+              disabled={isReadOnly && !isCreating}
             />
           </Grid>
 
@@ -210,7 +216,7 @@ const UserEditPage = () => {
                   cpf: event.target.value,
                 }));
               }}
-              disabled={isReadOnly}
+              disabled={isReadOnly && !isCreating}
             />
           </Grid>
 
@@ -228,7 +234,7 @@ const UserEditPage = () => {
                   shrink: true,
                 },
               }}
-              disabled={isReadOnly}
+              disabled={isReadOnly && !isCreating}
             />
           </Grid>
 
@@ -241,7 +247,7 @@ const UserEditPage = () => {
               onCityChange={handleCityChange}
               required
               size="medium"
-              disabled={isReadOnly}
+              disabled={isReadOnly && !isCreating}
             />
           </Grid>
 
@@ -255,7 +261,7 @@ const UserEditPage = () => {
                 onChange={handleRoleChange}
                 label="Função"
                 required
-                disabled={isReadOnly}
+                disabled={isReadOnly && !isCreating}
               >
                 <MenuItem value="">
                   <em>Selecione uma função</em>
@@ -269,7 +275,7 @@ const UserEditPage = () => {
           </Grid>
 
           {/* Botões de ação */}
-          {!isReadOnly && (
+          {(isCreating || !isReadOnly) && (
             <Grid size={12}>
               <Box
                 sx={{
@@ -279,33 +285,35 @@ const UserEditPage = () => {
                   mt: 2,
                 }}
               >
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  size="large"
-                  onClick={() => {
-                    // Reset para dados originais do usuário
-                    if (user) {
-                      setFormData({
-                        name: user.name || "",
-                        cpf: user.cpf || "",
-                        birth: user.birth || "",
-                        city: user.city || "",
-                        stateShort: user.state || "",
-                        role: user.role || "",
-                      });
-                    }
-                  }}
-                >
-                  Cancelar
-                </Button>
+                {!isCreating && (
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    size="large"
+                    onClick={() => {
+                      // Reset para dados originais do usuário
+                      if (user) {
+                        setFormData({
+                          name: user.name || "",
+                          cpf: user.cpf || "",
+                          birth: user.birth || "",
+                          city: user.city || "",
+                          stateShort: user.stateShort || "",
+                          role: user.role || "",
+                        });
+                      }
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                )}
                 <Button
                   type="submit"
                   variant="contained"
                   color="primary"
                   size="large"
                 >
-                  Salvar Alterações
+                  {isCreating ? "Salvar Usuário" : "Salvar Alterações"}
                 </Button>
               </Box>
             </Grid>

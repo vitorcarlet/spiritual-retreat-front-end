@@ -17,6 +17,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PieChart } from '@mui/x-charts/PieChart';
 
 // Tipos
 
@@ -54,11 +55,11 @@ interface RetreatMetrics {
 // Serviços para buscar dados
 const fetchRetreats = async (): Promise<Retreat[]> => {
   // Em produção, substitua por chamada real à API
-  const response = await fetch("/api/retreats");
-  if (!response.ok) {
+  const response = await handleApiResponse<any>(await sendRequestServerVanilla.get("/retreats"));
+  if (!response.success) {
     throw new Error("Falha ao carregar retiros");
   }
-  return response.json();
+  return response.data;
 };
 
 const fetchRetreatMetrics = async (
@@ -67,11 +68,11 @@ const fetchRetreatMetrics = async (
   if (!retreatId) return Promise.reject("ID do retiro não fornecido");
 
   // Em produção, substitua por chamada real à API
-  const response = await fetch(`/api/retreats/${retreatId}/metrics`);
-  if (!response.ok) {
+  const response = await handleApiResponse<any>(await sendRequestServerVanilla.get(`/retreats/${retreatId}/metrics`));
+  if (!response.success) {
     throw new Error("Falha ao carregar métricas do retiro");
   }
-  return response.json();
+  return response.data;
 };
 
 // Componentes de métricas
@@ -165,6 +166,7 @@ const MetricCard = ({
 // Importação do LinearProgress que faltou
 import { LinearProgress } from "@mui/material";
 import Iconify from "../Iconify";
+import { handleApiResponse, sendRequestServerVanilla } from "@/src/lib/sendRequestServerVanilla";
 
 const CriticalIssuesCard = ({
   issues,
@@ -455,6 +457,22 @@ const DashboardPage = () => {
             isLoading={isLoadingMetrics}
             suffix="msgs"
           />
+        </Grid>
+
+        <Grid size={{xs: 12, md:6}}>
+          <PieChart
+  series={[
+    {
+      data: [
+        { id: 0, value: 10, label: 'series A' },
+        { id: 1, value: 15, label: 'series B' },
+        { id: 2, value: 20, label: 'series C' },
+      ],
+    },
+  ]}
+  width={200}
+  height={200}
+/>
         </Grid>
 
         <Grid size={{ xs: 12, sm: 12, md: 6 }}>
