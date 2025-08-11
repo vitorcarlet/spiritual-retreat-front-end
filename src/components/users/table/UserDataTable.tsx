@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Box, Button, Chip } from "@mui/material";
 import { DataTable, DataTableColumn } from "../../table/DataTable";
 import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
@@ -18,6 +18,8 @@ import FilterButton from "../../filters/FilterButton";
 import dayjs from "dayjs";
 import SearchField from "../../filters/SearchField";
 import DeleteConfirmation from "../../confirmations/DeleteConfirmation";
+import getPermission from "@/src/utils/getPermission";
+import { useSession } from "next-auth/react";
 
 type UserRequest = {
   rows: User[];
@@ -119,6 +121,21 @@ export default function UserDataTable() {
     queryFn: () => getUsers(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes,
   });
+  const session = useSession();
+  const [hasCreatePermission, setHasCreatePermission] = useState(false);
+
+  useEffect(() => {
+    if (session.data && session.data.user) {
+      setHasCreatePermission(
+        getPermission({
+          permissions: session.data.user.permissions,
+          permission: "users.create",
+          role: session.data.user.role,
+        })
+      );
+    }
+  }, [session.data]);
+
   // ✅ CORREÇÃO: Usar o tipo correto
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
@@ -183,6 +200,10 @@ export default function UserDataTable() {
     });
   };
 
+  const handleCreateNewUser = () => {
+    router.push("/users/create");
+  };
+
   const handleView = (user: User) => {
     modal.open({
       title: `Detalhes do Usuário: ${user.name}`,
@@ -225,7 +246,9 @@ export default function UserDataTable() {
 
   console.log("selectedRows:", selectedRows);
 
-  if (isLoading) return <div>Carregando usuários...</div>;
+  if (isLoading || session.status === "loading" || !session.data?.user) {
+    return <div>Carregando usuários...</div>;
+  }
   return (
     <Box
       sx={{
@@ -242,6 +265,11 @@ export default function UserDataTable() {
       <Box
         sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
       >
+        {hasCreatePermission && (
+          <Button variant="contained" onClick={handleCreateNewUser}>
+            {"Criar Novo Usuário"}
+          </Button>
+        )}
         <Button variant="contained" onClick={handleRefresh} disabled={loading}>
           {loading ? "Carregando..." : "Atualizar Dados"}
         </Button>

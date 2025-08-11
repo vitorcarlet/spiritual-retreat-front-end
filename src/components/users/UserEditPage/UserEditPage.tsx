@@ -14,17 +14,27 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import TextFieldMasked from "../fields/maskedTextFields/TextFieldMasked";
-import { useUserContent } from "./context";
-import { StateField } from "../fields/LocalizationFields";
+import TextFieldMasked from "../../fields/maskedTextFields/TextFieldMasked";
+import { useUserContent } from "../context";
+import { StateField } from "../../fields/LocalizationFields";
 import { UserObject, UserRoles } from "next-auth";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
+import { useRouter } from "next/navigation";
+import { useSnackbar } from "notistack";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
+import { UserObjectWithId } from "./types";
 
 const UserEditPage = () => {
   const { user } = useUserContent();
   const { menuMode } = useMenuMode();
+  const router = useRouter();
+  const { enqueueSnackbar } = useSnackbar();
   const isReadOnly = menuMode === "view";
   const isLoading = false;
+  const { setUser } = useUserContent();
   // Modo de criação quando não há usuário carregado
   const isCreating = !user;
   // Estado do formulário
@@ -39,6 +49,7 @@ const UserEditPage = () => {
       | "permissions"
       | "first_name"
       | "last_name"
+      | "profile_picture"
     >
   >({
     name: "",
@@ -48,6 +59,7 @@ const UserEditPage = () => {
     stateShort: "",
     role: "participant",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -78,12 +90,51 @@ const UserEditPage = () => {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (isCreating) {
-      console.log("Criando usuário com dados:", formData);
-    } else {
-      console.log("Atualizando usuário com dados:", formData);
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      if (isCreating) {
+        // CREATE
+        const res = await handleApiResponse<UserObjectWithId>(
+          await sendRequestServerVanilla.post("/users/create", formData)
+        );
+
+        if (res.error || !res.data)
+          throw new Error(res.error || "Falha ao criar usuário");
+        const data = res.data as unknown as UserObject;
+        router.push(`/users/${data.id}`);
+      } else {
+        // UPDATE
+        if (!user?.id) throw new Error("ID do usuário não encontrado");
+        const res = await handleApiResponse<UserObjectWithId>(
+          await sendRequestServerVanilla.put(`/api/user/${user.id}`, formData)
+        );
+
+        if (res.error)
+          throw new Error(res.error || "Falha ao atualizar usuário");
+
+        const updatedUser = (res.data as unknown as UserObject) ?? null;
+        if (updatedUser) {
+          setUser(updatedUser);
+        }
+
+        enqueueSnackbar("Usuário atualizado com sucesso!", {
+          variant: "success",
+        });
+
+        // Replace para manter rota atual e garantir sincronização
+        //router.replace(`/users/${updatedUser?.id ?? user.id}`);
+      }
+    } catch (e: any) {
+      enqueueSnackbar(e?.message || "Ocorreu um erro. Tente novamente.", {
+        variant: "errorMUI",
+      });
+      console.error("User submit error:", e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -166,7 +217,7 @@ const UserEditPage = () => {
         >
           <Image
             src={
-              user?.profileImage ||
+              user?.profile_picture ||
               "https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU"
             }
             alt="Profile"
@@ -252,7 +303,7 @@ const UserEditPage = () => {
           </Grid>
 
           {/* Role/Função */}
-          <Grid size={12}>
+          <Grid size={12} sx={{ mb: 5 }}>
             <FormControl variant="outlined" fullWidth>
               <InputLabel id="select-role-label">Função</InputLabel>
               <Select
@@ -303,6 +354,7 @@ const UserEditPage = () => {
                         });
                       }
                     }}
+                    disabled={isSubmitting}
                   >
                     Cancelar
                   </Button>
@@ -312,8 +364,13 @@ const UserEditPage = () => {
                   variant="contained"
                   color="primary"
                   size="large"
+                  disabled={isSubmitting}
                 >
-                  {isCreating ? "Salvar Usuário" : "Salvar Alterações"}
+                  {isSubmitting
+                    ? "Salvando..."
+                    : isCreating
+                    ? "Salvar Usuário"
+                    : "Salvar Alterações"}
                 </Button>
               </Box>
             </Grid>

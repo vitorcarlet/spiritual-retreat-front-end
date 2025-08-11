@@ -14,12 +14,12 @@ import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 interface UserPageProps {
   children: React.ReactNode;
   // Indica que estamos criando um novo usuário (ainda não salvo)
-  isCreating?: boolean;
+  isCreating?: true;
 }
 
 const userCache = new Map<string, Promise<UserObject | null>>();
 
-export default function UserPage({ children, isCreating = false }: UserPageProps) {
+export default function UserPage({ children, isCreating }: UserPageProps) {
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
@@ -35,10 +35,8 @@ export default function UserPage({ children, isCreating = false }: UserPageProps
   };
 
   // Em modo de criação, não carrega dados do usuário
-  const userPromise = isCreating
-    ? Promise.resolve<UserObject | null>(null)
-    : getUserData(userId);
-  const user = use(userPromise);
+  const userPromise = isCreating ? undefined : getUserData(userId);
+  const user = !isCreating && userPromise ? use(userPromise) : null;
   const { setBreadCrumbsTitle } = useBreadCrumbs();
 
   useEffect(() => {
@@ -159,7 +157,7 @@ export default function UserPage({ children, isCreating = false }: UserPageProps
             width={"100%"}
             height={73}
             sx={{
-              //borderBottom: 1,
+              // borderBottom: 1,
               // borderColor: "divider",
               display: "flex",
               justifyContent: "flex-end",
@@ -178,7 +176,9 @@ export default function UserPage({ children, isCreating = false }: UserPageProps
 
       {/* Content Area - Renderiza os children baseado na rota */}
       <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "calc(100% - 72px)" }}>
-        <UserContentProvider user={user as unknown as User | null}>{children}</UserContentProvider>
+        <UserContentProvider user={user as unknown as UserObject | null}>
+          {children}
+        </UserContentProvider>
       </Box>
     </Box>
   );

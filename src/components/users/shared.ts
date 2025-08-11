@@ -36,6 +36,11 @@ export const getPermissionByPathname = (pathname: string): string => {
     return "users.update";
   }
 
+  // /users/create → ["users", "create"]
+  if (parts.length === 2 && parts[0] === "users" && parts[1] === "create") {
+    return "users.create";
+  }
+
   //  userPermissions → ["userPermissions"]
   if (
     parts.length === 3 &&

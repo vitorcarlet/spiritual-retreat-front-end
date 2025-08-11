@@ -280,12 +280,16 @@ const isPermissionFromRole = (
   return permissions?.includes(permissionId.join(".") || "") || false;
 };
 
-const getPermission = (
-  permissions: UserPermissions,
-  permission: string,
-  role: UserRoles
-): boolean => {
-  console.log(permission, "permissionSplit");
+const getPermission = ({
+  permissions,
+  permission,
+  role,
+}: {
+  permissions: UserPermissions;
+  permission: string;
+  role: UserRoles;
+}): boolean => {
+  if (!permissions || !permission) return false;
   const [section, action]: string[] = permission.split(".");
   const sectionPermissions = permissions?.[section as keyof UserPermissions] as
     | Record<string, boolean>
@@ -294,7 +298,7 @@ const getPermission = (
     sectionPermissions?.[action] === true ||
     isPermissionFromRole(
       [section, action],
-      role,
+      role || "participant",
       ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS]
     )
   );

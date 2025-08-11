@@ -33,13 +33,13 @@ function buildUrlWithParams(
   return url.toString();
 }
 
-export async function sendRequestServerVanillaFn<T>(
+export async function sendRequestServerVanillaFn(
   endpoint: string,
   options: ApiOptions = {}
 ): Promise<Response> {
   const {
     requireAuth = false,
-    baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+    baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
     headers = {},
     params,
     ...fetchOptions

@@ -12,7 +12,7 @@ import dynamic from "next/dynamic";
 import LoadingScreenCircular from "../../loading-screen/client/LoadingScreenCircular";
 
 const UserEditPage = dynamic(
-  () => import("@/src/components/users/UserEditPage"),
+  () => import("@/src/components/users/UserEditPage/UserEditPage"),
   {
     loading: () => <LoadingScreenCircular />,
   }

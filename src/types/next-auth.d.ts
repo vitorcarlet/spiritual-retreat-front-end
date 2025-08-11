@@ -35,6 +35,7 @@ declare module "next-auth" {
     first_name: string;
     birth: string;
     last_name: string;
+    profile_picture: string;
     cpf: string;
     city: string;
     state: string;

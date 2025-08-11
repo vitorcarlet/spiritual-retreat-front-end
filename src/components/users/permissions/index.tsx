@@ -90,7 +90,7 @@ const UserPermissionsPage = () => {
 
   const isPermissionFromRole = (permissionId: string): boolean => {
     const [section, action] = permissionId.split(".");
-    return user.permissions?.[section]?.[action];
+    return user?.permissions?.[section]?.[action];
   };
 
   const mutationUpdatePermissions = useMutation({

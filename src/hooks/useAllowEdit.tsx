@@ -18,7 +18,12 @@ const useAllowEdit = ({ permission }: AllowEditProps) => {
   const { permissions: userPermissions, role: userRole } = user.data.user;
 
   const hasPermission = useMemo(
-    () => getPermission(userPermissions, permission, userRole),
+    () =>
+      getPermission({
+        permissions: userPermissions,
+        permission,
+        role: userRole,
+      }),
     [userPermissions, permission, userRole]
   );
 

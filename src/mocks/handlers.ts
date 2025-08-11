@@ -43,6 +43,18 @@ export const handlers = [
     );
   }),
 
+  http.post("http://localhost:3001/api/users/create", () => {
+    const userId = Math.floor(Math.random() * 10) + 1;
+    const user = getUserById(userId.toString());
+    if (user) {
+      return HttpResponse.json(user);
+    }
+    return HttpResponse.json(
+      { error: "Creation has failed." },
+      { status: 404 }
+    );
+  }),
+
   http.get("http://localhost:3001/api/user/:id", ({ params }) => {
     const userId = params.id as string;
     const user = getUserById(userId);

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-
+import { UserObject as User } from "next-auth";
 type UserContentContextType = {
   user: User | null;
   setUser: (user: User | null) => void;
