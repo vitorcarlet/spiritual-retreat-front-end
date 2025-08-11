@@ -5,9 +5,7 @@ import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import Iconify from "@/src/components/Iconify";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
-import SelectEditMode from "../navigation/SelectEditMode";
-import { UserContentProvider } from "./context";
-import { UserObject } from "next-auth";
+import SelectEditMode from "@/src/components/navigation/SelectEditMode";
 import { fetchRetreatData } from "./shared";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 
@@ -15,7 +13,7 @@ interface RetreatPageProps {
   children: React.ReactNode;
 }
 
-const retreatCache = new Map<string, Promise<UserObject | null>>();
+const retreatCache = new Map<string, Promise<Retreat | null>>();
 
 export default function RetreatPage({ children }: RetreatPageProps) {
   const router = useRouter();
@@ -39,7 +37,10 @@ export default function RetreatPage({ children }: RetreatPageProps) {
   useEffect(() => {
     if (retreat) {
       console.log("retreat data loaded:", retreat);
-      setBreadCrumbsTitle({ title: retreat.name, pathname: `/users/${retreat.id}` });
+      setBreadCrumbsTitle({
+        title: retreat.title,
+        pathname: `/users/${retreat.id}`,
+      });
     }
   }, [retreat, setBreadCrumbsTitle]);
 
@@ -55,7 +56,7 @@ export default function RetreatPage({ children }: RetreatPageProps) {
       icon: "lucide:shield-check",
       path: `/users/${retreatId}/contemplation`,
       value: 1,
-      disabled: !retreat
+      disabled: !retreat,
     },
     {
       label: "Formulário",
@@ -178,7 +179,7 @@ export default function RetreatPage({ children }: RetreatPageProps) {
 
       {/* Content Area - Renderiza os children baseado na rota */}
       <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "calc(100% - 72px)" }}>
-        <RetreatContentProvider retreat={retreat}>{children}</RetreatContentProvider>
+        {children}
       </Box>
     </Box>
   );
