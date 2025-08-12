@@ -1,10 +1,11 @@
 import dynamic from "next/dynamic";
-const RetreatInfo = dynamic(
-  () => import("@/src/components/retreats/RetreatInfo"),
+const RetreatEditPage = dynamic(
+  () => import("@/src/components/retreats/RetreatEditPage/index"),
   {
     ssr: false,
+    loading: () => <p>Loading...</p>,
   }
 );
 export default function Page() {
-  return <RetreatInfo />;
+  return <RetreatEditPage />;
 }
