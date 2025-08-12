@@ -1,22 +1,14 @@
 "use client";
 import {
   Box,
-  FormControl,
   Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   TextField,
   Button,
   Typography,
   Skeleton,
 } from "@mui/material";
-import Image from "next/image";
+//import Image from "next/image";
 import { useState, useEffect } from "react";
-import TextFieldMasked from "../../fields/maskedTextFields/TextFieldMasked";
-import { StateField } from "../../fields/LocalizationFields";
-import { UserObject, UserRoles } from "next-auth";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 import { useParams, useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
@@ -25,18 +17,20 @@ import {
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
 import { useQuery } from "@tanstack/react-query";
-import { fetchRetreatData } from "./shared";
+import { fetchRetreatData } from "../shared";
 
 const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   const { menuMode } = useMenuMode();
   const router = useRouter();
   const params = useParams();
   const retreatId = params.id as string;
+
   const { data: retreatData, isLoading } = useQuery({
     queryKey: ["retreats", retreatId],
     queryFn: () => fetchRetreatData(retreatId),
-    staleTime: 5 * 60 * 1000, // 5 minutes,
+    staleTime: 5 * 60 * 1000,
   });
+
   const { enqueueSnackbar } = useSnackbar();
   const [retreat, setRetreat] = useState<Retreat | null>(retreatData || null);
   const isReadOnly = menuMode === "view";
@@ -74,20 +68,16 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   }, [retreatData]);
 
   const handleInputChange =
-    (field: keyof UserObject) =>
+    (field: keyof Retreat) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setFormData((prev) => ({
         ...prev,
-        [field]: event.target.value,
+        [field]:
+          field === "capacity" || field === "enrolled"
+            ? Number(event.target.value)
+            : event.target.value,
       }));
     };
-
-  const handleRoleChange = (event: SelectChangeEvent) => {
-    setFormData((prev) => ({
-      ...prev,
-      role: event.target.value as UserRoles,
-    }));
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -96,63 +86,31 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
     setIsSubmitting(true);
     try {
       if (isCreating) {
-        // CREATE
         const res = await handleApiResponse<Retreat>(
-          await sendRequestServerVanilla.post("/users/create", formData)
+          await sendRequestServerVanilla.post("/api/retreat/create", formData)
         );
-
-        if (res.error || !res.data)
-          throw new Error(res.error || "Falha ao criar usuário");
-        const data = res.data as unknown as UserObject;
-        router.push(`/users/${data.id}`);
+        if (res.error || !res.data) throw new Error(res.error || "Falha ao criar retiro");
+        const result = res.data as Retreat;
+        router.push(`/retreats/${result.id}`);
       } else {
-        // UPDATE
-        if (!retreat?.id) throw new Error("ID do usuário não encontrado");
+        if (!retreat?.id) throw new Error("ID do retiro não encontrado");
         const res = await handleApiResponse<Retreat>(
           await sendRequestServerVanilla.put(
             `/api/retreat/${retreat.id}`,
             formData
           )
         );
-
-        if (res.error)
-          throw new Error(res.error || "Falha ao atualizar usuário");
-
-        const updatedRetreat = (res.data as unknown as Retreat) ?? null;
-        if (updatedRetreat) {
-          setRetreat(updatedRetreat);
-        }
-
-        enqueueSnackbar("Retiro atualizado com sucesso!", {
-          variant: "success",
-        });
-
-        // Replace para manter rota atual e garantir sincronização
-        //router.replace(`/users/${updatedUser?.id ?? retreat.id}`);
+        if (res.error) throw new Error(res.error || "Falha ao atualizar retiro");
+        setRetreat(res.data as Retreat ?? null);
+        enqueueSnackbar("Retiro atualizado com sucesso!", { variant: "success" });
       }
-    } catch (e: any) {
-      enqueueSnackbar(e?.message || "Ocorreu um erro. Tente novamente.", {
+    } catch (e: unknown) {
+      enqueueSnackbar((e as Error)?.message || "Ocorreu um erro. Tente novamente.", {
         variant: "errorMUI",
       });
-      console.error("Retreat submit error:", e);
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleStateChange = (state: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      stateShort: state,
-      city: "", // Limpar cidade quando estado mudar
-    }));
-  };
-
-  const handleCityChange = (city: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      city: city,
-    }));
   };
 
   if (isLoading) {
@@ -172,220 +130,125 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   }
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        width: "100%",
-        height: "100%",
-        overflowY: "auto",
-        pt: 0,
-      }}
-    >
-      {/* Header com imagem de fundo */}
-      <Box>
-        <Box
-          sx={{
-            position: "relative",
-            width: "100%",
-            height: "200px",
-          }}
-        >
-          <Image
-            src={"/images/background16-9.png"}
-            alt="Background"
-            fill
-            style={{ objectFit: "cover" }}
-            priority
-            onLoad={() => console.log("✅ Imagem de fundo carregou")}
-            onError={(e) =>
-              console.error("❌ Erro ao carregar imagem de fundo:", e)
-            }
+    <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        {isCreating ? "Criar Retiro" : `Editar Retiro: ${retreat?.title ?? ""}`}
+      </Typography>
+
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Título"
+            value={formData.title}
+            onChange={handleInputChange("title")}
+            required
+            disabled={isReadOnly}
           />
-        </Box>
-
-        {/* Foto de perfil */}
-        <Box
-          sx={{
-            position: "relative",
-            transform: "translate(25%, -50%)",
-            width: "200px",
-            height: "200px",
-            borderRadius: "50%",
-            border: "4px solid white",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            marginBottom: "-100px",
-          }}
-        >
-          <Image
-            src={
-              retreat?.profile_picture ||
-              "https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU"
-            }
-            alt="Profile"
-            fill
-            style={{ objectFit: "cover", borderRadius: "50%" }}
-            onLoad={() => console.log("✅ Imagem de perfil carregou")}
-            onError={(e) =>
-              console.error("❌ Erro ao carregar imagem de perfil:", e)
-            }
-          />
-        </Box>
-      </Box>
-
-      {/* Formulário */}
-      <Box sx={{ padding: 3, paddingTop: 3 }}>
-        <Typography variant="h5" component="h1" gutterBottom sx={{ mb: 3 }}>
-          {isCreating
-            ? "Criar Usuário"
-            : `Editar Usuário: ${retreat?.name ?? ""}`}
-        </Typography>
-
-        <Grid container spacing={3}>
-          {/* Nome */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Nome"
-              variant="outlined"
-              placeholder="Digite o nome"
-              value={formData.name}
-              onChange={handleInputChange("name")}
-              required
-              disabled={isReadOnly && !isCreating}
-            />
-          </Grid>
-
-          {/* CPF */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextFieldMasked
-              fullWidth
-              label="CPF"
-              variant="outlined"
-              placeholder="000.000.000-00"
-              maskType="cpf"
-              value={formData.cpf}
-              onChange={(event) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  cpf: event.target.value,
-                }));
-              }}
-              disabled={isReadOnly && !isCreating}
-            />
-          </Grid>
-
-          {/* Data de Nascimento */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Data de Nascimento"
-              type="date"
-              variant="outlined"
-              value={formData.birth}
-              onChange={handleInputChange("birth")}
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                },
-              }}
-              disabled={isReadOnly && !isCreating}
-            />
-          </Grid>
-
-          {/* Cidade */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <StateField
-              selectedState={formData.stateShort}
-              selectedCity={formData.city}
-              onStateChange={handleStateChange}
-              onCityChange={handleCityChange}
-              required
-              size="medium"
-              disabled={isReadOnly && !isCreating}
-            />
-          </Grid>
-
-          {/* Role/Função */}
-          <Grid size={12} sx={{ mb: 5 }}>
-            <FormControl variant="outlined" fullWidth>
-              <InputLabel id="select-role-label">Função</InputLabel>
-              <Select
-                labelId="select-role-label"
-                value={formData.role}
-                onChange={handleRoleChange}
-                label="Função"
-                required
-                disabled={isReadOnly && !isCreating}
-              >
-                <MenuItem value="">
-                  <em>Selecione uma função</em>
-                </MenuItem>
-                <MenuItem value="admin">Administrador</MenuItem>
-                <MenuItem value="manager">Gestor</MenuItem>
-                <MenuItem value="consultant">Consultor</MenuItem>
-                <MenuItem value="participant">Participante</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Botões de ação */}
-          {(isCreating || !isReadOnly) && (
-            <Grid size={12}>
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 2,
-                  justifyContent: "flex-end",
-                  mt: 2,
-                }}
-              >
-                {!isCreating && (
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    size="large"
-                    onClick={() => {
-                      // Reset para dados originais do usuário
-                      if (retreat) {
-                        setFormData({
-                          title: retreat.title,
-                          description: retreat.description,
-                          startDate: retreat.startDate,
-                          endDate: retreat.endDate,
-                          capacity: retreat.capacity,
-                          enrolled: retreat.enrolled,
-                          location: retreat.location,
-                          isActive: retreat.isActive,
-                          image: retreat.image,
-                          status: retreat.status,
-                          instructor: retreat.instructor,
-                        });
-                      }
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    Cancelar
-                  </Button>
-                )}
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting
-                    ? "Salvando..."
-                    : isCreating
-                    ? "Salvar Usuário"
-                    : "Salvar Alterações"}
-                </Button>
-              </Box>
-            </Grid>
-          )}
         </Grid>
-      </Box>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Localização"
+            value={formData.location}
+            onChange={handleInputChange("location")}
+            required
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <TextField
+            fullWidth
+            label="Descrição"
+            multiline
+            minRows={3}
+            value={formData.description}
+            onChange={handleInputChange("description")}
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Data de Início"
+            type="date"
+            value={formData.startDate}
+            onChange={handleInputChange("startDate")}
+            InputLabelProps={{ shrink: true }}
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Data de Fim"
+            type="date"
+            value={formData.endDate}
+            onChange={handleInputChange("endDate")}
+            InputLabelProps={{ shrink: true }}
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Capacidade"
+            type="number"
+            value={formData.capacity}
+            onChange={handleInputChange("capacity")}
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Inscritos"
+            type="number"
+            value={formData.enrolled}
+            onChange={handleInputChange("enrolled")}
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Instrutor"
+            value={formData.instructor}
+            onChange={handleInputChange("instructor")}
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12 }} sx={{
+          position: 'sticky', bottom: 0
+        }}>
+          <Box sx={{  display: "flex", gap: 2, justifyContent: "flex-end" }}>
+            {!isCreating && (
+              <Button
+                variant="outlined"
+                onClick={() => setFormData(retreatData)}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button type="submit" variant="contained" disabled={isSubmitting}>
+              {isSubmitting
+                ? "Salvando..."
+                : isCreating
+                ? "Salvar Retiro"
+                : "Salvar Alterações"}
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

@@ -98,7 +98,7 @@ export default function UserSummaryModal({ userId }: UserPageProps) {
                   scrollButtons="auto"
                   sx={{
                     "& .MuiTabs-indicator": {
-                      backgroundColor: theme.palette.primary.main,
+                      backgroundColor: theme => theme.vars?.palette.primary.main,
                     },
                     height: "100%",
                   }}

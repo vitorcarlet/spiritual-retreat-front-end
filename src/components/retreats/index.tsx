@@ -11,6 +11,7 @@ import FilterButton from "@/src/components/filters/FilterButton";
 import { getFilters } from "./CardTable/getFilters";
 import { useTranslations } from "next-intl";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
+import { useRouter } from "next/navigation";
 
 const getRetreats = async (
   filters: TableDefaultFilters<
@@ -28,8 +29,9 @@ const getRetreats = async (
   return response.data;
 };
 
-export default function RetreatsPage() {
+export default function RetreatsTablePage() {
   const t = useTranslations();
+  const router = useRouter();
 
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
@@ -49,11 +51,11 @@ export default function RetreatsPage() {
   });
 
   const handleEdit = (retreat: Retreat) => {
-    console.log("Editar retiro:", retreat);
+    router.push(`/retreats/${retreat.id}`);
   };
 
   const handleView = (retreat: Retreat) => {
-    console.log("Ver detalhes do retiro:", retreat);
+    router.push(`/retreats/${retreat.id}`);
   };
 
   const handleFiltersChange = (

@@ -8,7 +8,7 @@ export const fetchRetreatData = async (
 ): Promise<Retreat | null> => {
   try {
     const result = await handleApiResponse<Retreat>(
-      await sendRequestServerVanilla.get(`/api/retreats/${retreatId}`)
+      await sendRequestServerVanilla.get(`/retreats/${retreatId}`)
     );
 
     if (result.success && result.data) {

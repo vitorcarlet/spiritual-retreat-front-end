@@ -147,6 +147,15 @@ export const handlers = [
     return HttpResponse.json(mockRetreats, { status: 200 });
   }),
 
+  http.get("http://localhost:3001/api/retreats/:id", ({ params }) => {
+    const id = params.id as string;
+    const retreat = mockRetreats.find((r) => r.id.toString() === id);
+    if (retreat) {
+      return HttpResponse.json(retreat, { status: 200 });
+    }
+    return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
+  }),
+
   // Mock para /api/retreats/:id/metrics
   http.get("http://localhost:3001/api/retreats/:id/metrics", ({ params }) => {
     const id = params.id as string;
