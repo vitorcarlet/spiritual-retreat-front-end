@@ -16,7 +16,6 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import TextFieldMasked from "../../fields/maskedTextFields/TextFieldMasked";
 import { useUserContent } from "../context";
-import { StateField } from "../../fields/LocalizationFields";
 import { UserObject, UserRoles } from "next-auth";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 import { useRouter } from "next/navigation";
@@ -26,6 +25,7 @@ import {
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
 import { UserObjectWithId } from "./types";
+import LocationField from "../../fields/LocalizationFields/LocationField";
 
 const UserEditPage = () => {
   const { user } = useUserContent();
@@ -291,7 +291,7 @@ const UserEditPage = () => {
 
           {/* Cidade */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <StateField
+            <LocationField
               selectedState={formData.stateShort}
               selectedCity={formData.city}
               onStateChange={handleStateChange}

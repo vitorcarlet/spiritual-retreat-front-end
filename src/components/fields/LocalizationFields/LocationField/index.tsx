@@ -11,7 +11,7 @@ import {
 import Iconify from "../../../Iconify";
 import { Estado, Cidade, StateFieldProps, FALLBACK_STATES } from "../types";
 
-const StateField: React.FC<StateFieldProps> = ({
+const LocationField: React.FC<StateFieldProps> = ({
   selectedState = "",
   selectedCity = "",
   onStateChange,
@@ -254,4 +254,4 @@ const StateField: React.FC<StateFieldProps> = ({
   );
 };
 
-export default StateField;
+export default LocationField;

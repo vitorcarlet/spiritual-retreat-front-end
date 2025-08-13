@@ -1,14 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
-import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { Box, Tabs, Tab, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import Iconify from "../Iconify";
-import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import SelectEditMode from "../navigation/SelectEditMode";
-import { RetreatContentProvider } from "./context";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
-import { fetchRetreatData } from "./shared";
 
 interface RetreatPageProps {
   children: React.ReactNode;
@@ -16,33 +13,18 @@ interface RetreatPageProps {
   isCreating?: true;
 }
 
-const retreatCache = new Map<string, Promise<any | null>>();
+//const retreatCache = new Map<string, Promise<any | null>>();
 
-export default function RetreatPage({ children, isCreating }: RetreatPageProps) {
+export default function RetreatPage({
+  children,
+  isCreating,
+}: RetreatPageProps) {
   const router = useRouter();
   const pathname = usePathname();
 
   const { menuMode, toggleMenuMode, isAllowedToEdit } = useMenuMode();
 
   const retreatId = pathname.split("/")[2];
-  const getRetreatData = (retreatId: string) => {
-    if (!retreatCache.has(retreatId)) {
-      retreatCache.set(retreatId, fetchRetreatData(retreatId));
-    }
-    return retreatCache.get(retreatId)!;
-  };
-
-  // Em modo de criação, não carrega dados do retiro
-  const retreatPromise = isCreating ? undefined : getRetreatData(retreatId);
-  const retreat = !isCreating && retreatPromise ? use(retreatPromise) : null;
-  const { setBreadCrumbsTitle } = useBreadCrumbs();
-
-  useEffect(() => {
-    if (retreat) {
-      console.log("Retiro data loaded:", retreat);
-      setBreadCrumbsTitle({ title: retreat.name, pathname: `/retreats/${retreat.id}` });
-    }
-  }, [retreat, setBreadCrumbsTitle]);
 
   const tabs = [
     {
@@ -127,7 +109,7 @@ export default function RetreatPage({ children, isCreating }: RetreatPageProps) 
               scrollButtons="auto"
               sx={{
                 "& .MuiTabs-indicator": {
-                  backgroundColor: theme => theme.vars?.palette.primary.main,
+                  backgroundColor: (theme) => theme.vars?.palette.primary.main,
                 },
                 height: "100%",
               }}
@@ -182,9 +164,7 @@ export default function RetreatPage({ children, isCreating }: RetreatPageProps) 
 
       {/* Content Area - Renderiza os children baseado na rota */}
       <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "calc(100% - 72px)" }}>
-        <RetreatContentProvider retreat={retreat}>
-          {children}
-        </RetreatContentProvider>
+        {children}
       </Box>
     </Box>
   );

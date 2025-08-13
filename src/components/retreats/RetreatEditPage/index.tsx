@@ -18,9 +18,13 @@ import {
 } from "@/src/lib/sendRequestServerVanilla";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRetreatData } from "../shared";
+import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
+import LocationField from "../../fields/LocalizationFields/LocationField";
+import TextFieldMasked from "../../fields/maskedTextFields/TextFieldMasked";
 
 const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   const { menuMode } = useMenuMode();
+  const { setBreadCrumbsTitle } = useBreadCrumbs();
   const router = useRouter();
   const params = useParams();
   const retreatId = params.id as string;
@@ -34,9 +38,12 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [retreat, setRetreat] = useState<Retreat | null>(retreatData || null);
   const isReadOnly = menuMode === "view";
-  const [formData, setFormData] = useState<Omit<Retreat, "id">>({
+  const [formData, setFormData] = useState<Omit<Retreat, "id" | "state">>({
     title: "",
     description: "",
+    city: "",
+    stateShort: "",
+    edition: 1,
     startDate: "",
     endDate: "",
     capacity: 0,
@@ -54,6 +61,9 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
       setFormData({
         title: retreatData.title,
         description: retreatData.description,
+        city: retreatData.city,
+        stateShort: retreatData.stateShort,
+        edition: retreatData.edition,
         startDate: retreatData.startDate,
         endDate: retreatData.endDate,
         capacity: retreatData.capacity,
@@ -62,14 +72,23 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
         isActive: retreatData.isActive,
         image: retreatData.image,
         status: retreatData.status,
-        instructor: retreatData.instructor,
+        instructor: retreatData.instructor ?? "",
       });
     }
   }, [retreatData]);
 
+  useEffect(() => {
+    if (retreatData) {
+      console.log("Retiro data loaded:", retreatData);
+      setBreadCrumbsTitle({
+        title: retreatData.title,
+        pathname: `/retreats/${retreatData.id}`,
+      });
+    }
+  }, [retreatData, setBreadCrumbsTitle]);
+
   const handleInputChange =
-    (field: keyof Retreat) =>
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    (field: keyof Retreat) => (event: React.ChangeEvent<HTMLInputElement>) => {
       setFormData((prev) => ({
         ...prev,
         [field]:
@@ -78,6 +97,21 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
             : event.target.value,
       }));
     };
+
+  const handleStateChange = (state: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      estado: state,
+      cidade: "", // Limpar cidade quando estado mudar
+    }));
+  };
+
+  const handleCityChange = (city: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      cidade: city,
+    }));
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -89,7 +123,8 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
         const res = await handleApiResponse<Retreat>(
           await sendRequestServerVanilla.post("/api/retreat/create", formData)
         );
-        if (res.error || !res.data) throw new Error(res.error || "Falha ao criar retiro");
+        if (res.error || !res.data)
+          throw new Error(res.error || "Falha ao criar retiro");
         const result = res.data as Retreat;
         router.push(`/retreats/${result.id}`);
       } else {
@@ -100,14 +135,20 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
             formData
           )
         );
-        if (res.error) throw new Error(res.error || "Falha ao atualizar retiro");
-        setRetreat(res.data as Retreat ?? null);
-        enqueueSnackbar("Retiro atualizado com sucesso!", { variant: "success" });
+        if (res.error)
+          throw new Error(res.error || "Falha ao atualizar retiro");
+        setRetreat((res.data as Retreat) ?? null);
+        enqueueSnackbar("Retiro atualizado com sucesso!", {
+          variant: "success",
+        });
       }
     } catch (e: unknown) {
-      enqueueSnackbar((e as Error)?.message || "Ocorreu um erro. Tente novamente.", {
-        variant: "errorMUI",
-      });
+      enqueueSnackbar(
+        (e as Error)?.message || "Ocorreu um erro. Tente novamente.",
+        {
+          variant: "errorMUI",
+        }
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -150,11 +191,44 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
         <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
+            label="Edição"
+            value={formData.edition}
+            onChange={handleInputChange("edition")}
+            required
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Tema"
+            value={formData.theme}
+            onChange={handleInputChange("theme")}
+            required
+            disabled={isReadOnly}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
             label="Localização"
             value={formData.location}
             onChange={handleInputChange("location")}
             required
             disabled={isReadOnly}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <LocationField
+            selectedState={formData.stateShort}
+            selectedCity={formData.city}
+            onStateChange={handleStateChange}
+            onCityChange={handleCityChange}
+            required
+            size="medium"
+            disabled={isReadOnly && !isCreating}
           />
         </Grid>
 
@@ -197,7 +271,7 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
         <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
-            label="Capacidade"
+            label="Vagas"
             type="number"
             value={formData.capacity}
             onChange={handleInputChange("capacity")}
@@ -205,13 +279,15 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
+        <Grid size={{ xs: 12 }}>
+          <TextFieldMasked
+            maskType={"currency"}
             fullWidth
-            label="Inscritos"
-            type="number"
-            value={formData.enrolled}
-            onChange={handleInputChange("enrolled")}
+            label="Descrição"
+            multiline
+            minRows={3}
+            value={formData.description}
+            onChange={handleInputChange("description")}
             disabled={isReadOnly}
           />
         </Grid>
@@ -226,10 +302,14 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
           />
         </Grid>
 
-        <Grid size={{ xs: 12 }} sx={{
-          position: 'sticky', bottom: 0
-        }}>
-          <Box sx={{  display: "flex", gap: 2, justifyContent: "flex-end" }}>
+        <Grid
+          size={{ xs: 12 }}
+          sx={{
+            position: "sticky",
+            bottom: 0,
+          }}
+        >
+          <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
             {!isCreating && (
               <Button
                 variant="outlined"

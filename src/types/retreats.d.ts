@@ -1,6 +1,10 @@
 interface Retreat {
   id: number;
   title: string;
+  edition: number;
+  state: string;
+  stateShort: string;
+  city: string;
   description: string;
   startDate: string;
   endDate: string;

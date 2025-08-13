@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Box, Paper, Typography, Button, TextField, Grid } from "@mui/material";
-import StateField from "../StateField";
+import LocationField from ".";
 
 const ExampleUsage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -62,7 +62,7 @@ const ExampleUsage: React.FC = () => {
 
             {/* ✅ Uso do componente StateField */}
             <Grid size={12}>
-              <StateField
+              <LocationField
                 selectedState={formData.estado}
                 selectedCity={formData.cidade}
                 onStateChange={handleStateChange}
