@@ -5,10 +5,12 @@ interface Retreat {
   state: string;
   stateShort: string;
   city: string;
+  theme: string;
   description: string;
   startDate: string;
   endDate: string;
   capacity: number;
+  participationTax: string;
   enrolled: number;
   location: string;
   isActive: boolean;

@@ -7,11 +7,36 @@ import getUserById from "./handlerData/getUserById";
 import { mockMetrics, mockRetreats } from "./handlerData/dashboard";
 import { mockReports } from "./handlerData/reports";
 import { mockUsers } from "./handlerData/users";
+import { mockContemplatedParticipants } from "./handlerData/contemplated";
 
 type Request = {
   email?: string;
   password?: string;
 };
+
+function paginate<T>(items: T[], urlObj: URL) {
+  const rawPage = urlObj.searchParams.get("page");
+  const rawLimit = urlObj.searchParams.get("pageLimit");
+  // Aceita pageLimit=all para retornar tudo
+  const pageLimitAll = rawLimit === "all";
+  const page = Math.max(parseInt(rawPage || "1", 10), 1);
+  const pageLimit = pageLimitAll
+    ? items.length
+    : Math.max(parseInt(rawLimit || "10", 10), 1);
+
+  const start = (page - 1) * pageLimit;
+  const end = start + pageLimit;
+  const slice = items.slice(start, end);
+
+  return {
+    rows: slice,
+    total: items.length,
+    page,
+    pageLimit: pageLimitAll ? "all" : pageLimit,
+    hasNextPage: pageLimitAll ? false : end < items.length,
+    hasPrevPage: page > 1,
+  };
+}
 
 export const handlers = [
   http.get("http://localhost:3001/api/user", () => {
@@ -24,23 +49,8 @@ export const handlers = [
 
   http.get("http://localhost:3001/api/users", ({ request }) => {
     const url = new URL(request.url);
-    const page = parseInt(url.searchParams.get("page") || "1", 10);
-    const pageLimit = parseInt(url.searchParams.get("pageLimit") || "8", 10);
-
-    const start = (page - 1) * pageLimit;
-    const end = start + pageLimit;
-
-    const paginatedUsers = mockUsers.slice(start, end);
-
-    return HttpResponse.json(
-      {
-        rows: paginatedUsers,
-        total: mockUsers.length,
-        page,
-        pageLimit,
-      },
-      { status: 200 }
-    );
+    const payload = paginate(mockUsers, url);
+    return HttpResponse.json(payload, { status: 200 });
   }),
 
   http.post("http://localhost:3001/api/users/create", () => {
@@ -165,6 +175,24 @@ export const handlers = [
     }
     return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
   }),
+
+  http.get(
+    "http://localhost:3001/api/retreats/:id/contemplated",
+    ({ request /*, params */ }) => {
+      const url = new URL(request.url);
+      const payload = paginate(mockContemplatedParticipants, url);
+      return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
+
+  http.get(
+    "http://localhost:3001/api/retreats/:id/non-contemplated",
+    ({ request /*, params */ }) => {
+      const url = new URL(request.url);
+      const payload = paginate(mockContemplatedParticipants, url);
+      return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
 
   http.get("http://localhost:3001/api/reports", () => {
     return HttpResponse.json(mockReports, { status: 200 });

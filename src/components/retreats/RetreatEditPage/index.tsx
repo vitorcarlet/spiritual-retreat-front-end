@@ -22,6 +22,46 @@ import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import LocationField from "../../fields/LocalizationFields/LocationField";
 import TextFieldMasked from "../../fields/maskedTextFields/TextFieldMasked";
 
+const emptyFormData: Omit<Retreat, "id" | "state"> = {
+  title: "",
+  description: "",
+  city: "",
+  stateShort: "",
+  edition: 1,
+  startDate: "",
+  endDate: "",
+  theme: "",
+  capacity: 0,
+  enrolled: 0,
+  location: "",
+  participationTax: "",
+  isActive: false,
+  image: "",
+  status: "upcoming",
+  instructor: "",
+};
+
+function mapRetreatToFormData(r: Retreat): Omit<Retreat, "id" | "state"> {
+  return {
+    title: r.title ?? "",
+    description: r.description ?? "",
+    city: r.city ?? "",
+    stateShort: r.stateShort ?? "",
+    edition: r.edition ?? 1,
+    startDate: r.startDate ?? "",
+    endDate: r.endDate ?? "",
+    theme: r.theme ?? "",
+    capacity: r.capacity ?? 0,
+    enrolled: r.enrolled ?? 0,
+    location: r.location ?? "",
+    participationTax: r.participationTax ?? "",
+    isActive: r.isActive ?? false,
+    image: r.image ?? "",
+    status: r.status ?? "upcoming",
+    instructor: r.instructor ?? "",
+  };
+}
+
 const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   const { menuMode } = useMenuMode();
   const { setBreadCrumbsTitle } = useBreadCrumbs();
@@ -36,44 +76,18 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   });
 
   const { enqueueSnackbar } = useSnackbar();
-  const [retreat, setRetreat] = useState<Retreat | null>(retreatData || null);
+  const [retreat, setRetreat] = useState<Retreat | null | undefined>(
+    retreatData || null
+  );
   const isReadOnly = menuMode === "view";
-  const [formData, setFormData] = useState<Omit<Retreat, "id" | "state">>({
-    title: "",
-    description: "",
-    city: "",
-    stateShort: "",
-    edition: 1,
-    startDate: "",
-    endDate: "",
-    capacity: 0,
-    enrolled: 0,
-    location: "",
-    isActive: false,
-    image: "",
-    status: "upcoming",
-    instructor: "",
-  });
+  console.log("isReadOnly", isReadOnly);
+  const [formData, setFormData] =
+    useState<Omit<Retreat, "id" | "state">>(emptyFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (retreatData) {
-      setFormData({
-        title: retreatData.title,
-        description: retreatData.description,
-        city: retreatData.city,
-        stateShort: retreatData.stateShort,
-        edition: retreatData.edition,
-        startDate: retreatData.startDate,
-        endDate: retreatData.endDate,
-        capacity: retreatData.capacity,
-        enrolled: retreatData.enrolled,
-        location: retreatData.location,
-        isActive: retreatData.isActive,
-        image: retreatData.image,
-        status: retreatData.status,
-        instructor: retreatData.instructor ?? "",
-      });
+      setFormData(mapRetreatToFormData(retreatData));
     }
   }, [retreatData]);
 
@@ -101,15 +115,15 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   const handleStateChange = (state: string) => {
     setFormData((prev) => ({
       ...prev,
-      estado: state,
-      cidade: "", // Limpar cidade quando estado mudar
+      stateShort: state,
+      city: "", // limpa cidade ao trocar estado
     }));
   };
 
   const handleCityChange = (city: string) => {
     setFormData((prev) => ({
       ...prev,
-      cidade: city,
+      city,
     }));
   };
 
@@ -283,11 +297,11 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
           <TextFieldMasked
             maskType={"currency"}
             fullWidth
-            label="Descrição"
+            label="Taxa de Participação"
             multiline
             minRows={3}
-            value={formData.description}
-            onChange={handleInputChange("description")}
+            value={formData.participationTax}
+            onChange={handleInputChange("participationTax")}
             disabled={isReadOnly}
           />
         </Grid>
@@ -313,7 +327,13 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
             {!isCreating && (
               <Button
                 variant="outlined"
-                onClick={() => setFormData(retreatData)}
+                onClick={() =>
+                  setFormData(
+                    retreatData
+                      ? mapRetreatToFormData(retreatData)
+                      : emptyFormData
+                  )
+                }
                 disabled={isSubmitting}
               >
                 Cancelar

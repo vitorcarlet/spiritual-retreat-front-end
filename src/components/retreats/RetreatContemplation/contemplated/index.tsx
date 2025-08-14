@@ -1,12 +1,10 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
-import { Box, Button, Chip } from "@mui/material";
-import { DataTable, DataTableColumn } from "../../table/DataTable";
+import React, { useState } from "react";
+import { Avatar, Box, Button, Chip, Stack } from "@mui/material";
+import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
 import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
-import { useRouter } from "next/navigation";
-import { useModal } from "@/src/hooks/useModal";
-import UserSummaryModal from "../userSummaryModal";
+//import ContemplatedummaryModal from "../ContemplatedummaryModal";
 import {
   handleApiResponse,
   sendRequestServerVanilla,
@@ -14,37 +12,50 @@ import {
 import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useQuery } from "@tanstack/react-query";
-import FilterButton from "../../filters/FilterButton";
-import dayjs from "dayjs";
-import SearchField from "../../filters/SearchField";
-import DeleteConfirmation from "../../confirmations/DeleteConfirmation";
-import getPermission from "@/src/utils/getPermission";
+import FilterButton from "@/src/components/filters/FilterButton";
+import SearchField from "@/src/components/filters/SearchField";
 import { useSession } from "next-auth/react";
+import {
+  ContemplatedTableDateFilters,
+  ContemplatedTableFilters,
+  ContemplatedTableFiltersWithDates,
+} from "../types";
 
-type UserRequest = {
-  rows: User[];
+type ContemplatedDataRequest = {
+  rows: ContemplatedParticipant[];
   total: number;
   page: number;
   pageLimit: number;
 };
 
-// Dados de exemplo
-const getUsers = async (
-  filters: TableDefaultFilters<UsersTableFiltersWithDates>
+// Helper para iniciais (caso não haja foto)
+const getInitials = (name?: string) =>
+  (name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase())
+    .join("");
+
+const getContemplated = async (
+  filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
+  id: string
 ) => {
-  const response = await handleApiResponse<UserRequest>(
-    await sendRequestServerVanilla.get("/users", { params: filters })
+  const response = await handleApiResponse<ContemplatedDataRequest>(
+    await sendRequestServerVanilla.get(`/retreats/${id}/contemplated`, {
+      params: filters,
+    })
   );
 
   if (!response || response.error) {
-    throw new Error("Failed to fetch users");
+    throw new Error("Failed to fetch Contemplated");
   }
-  console.log("Fetched users:", response);
-  return response.data as UserRequest;
+  console.log("Fetched Contemplated:", response);
+  return response.data as ContemplatedDataRequest;
 };
 
 // Definir as colunas da tabela
-const columns: DataTableColumn<User>[] = [
+const columns: DataTableColumn<ContemplatedParticipant>[] = [
   {
     field: "id",
     headerName: "ID",
@@ -54,95 +65,142 @@ const columns: DataTableColumn<User>[] = [
   {
     field: "name",
     headerName: "Nome",
-    width: 200,
     flex: 1,
+    minWidth: 180,
+    renderCell: (params) => (
+      <Stack
+        direction="row"
+        spacing={1}
+        alignItems="center"
+        sx={{ minWidth: 0 }}
+      >
+        <Avatar
+          src={params.row.photoUrl}
+          alt={params.value}
+          sx={{ width: 32, height: 32, fontSize: 14 }}
+        >
+          {getInitials(params.value)}
+        </Avatar>
+        <Box
+          component="span"
+          sx={{
+            fontSize: 14,
+            fontWeight: 500,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            maxWidth: 160,
+          }}
+        >
+          {params.value}
+        </Box>
+      </Stack>
+    ),
   },
   {
     field: "email",
     headerName: "Email",
-    width: 250,
     flex: 1,
+    minWidth: 220,
   },
   {
-    field: "role",
-    headerName: "Função",
-    width: 120,
-    type: "singleSelect",
-    valueOptions: ["Admin", "Manager", "User"],
+    field: "phone",
+    headerName: "Telefone",
+    width: 140,
+    valueFormatter: (v) => (v?.value ? String(v.value) : ""),
+  },
+  {
+    field: "activity",
+    headerName: "Atividade",
+    flex: 1,
+    minWidth: 160,
   },
   {
     field: "status",
     headerName: "Status",
-    width: 120,
+    width: 140,
+    renderCell: (params) => {
+      const val = params.value as ContemplatedParticipant["status"];
+      const map: Record<
+        ContemplatedParticipant["status"],
+        { label: string; color: "success" | "default" }
+      > = {
+        contemplated: { label: "Contemplado", color: "success" },
+        not_contemplated: { label: "Não Contemplado", color: "default" },
+      };
+      const cfg = map[val] || map.not_contemplated;
+      return (
+        <Chip
+          label={cfg.label}
+          color={cfg.color}
+          size="small"
+          variant="outlined"
+        />
+      );
+    },
+  },
+  {
+    field: "paymentStatus",
+    headerName: "Pagamento",
+    width: 150,
+    renderCell: (params) => {
+      const val = params.value as ContemplatedParticipant["paymentStatus"];
+      const map: Record<
+        ContemplatedParticipant["paymentStatus"],
+        { label: string; color: "success" | "warning" | "error" }
+      > = {
+        paid: { label: "Pago", color: "success" },
+        pending: { label: "Pendente", color: "warning" },
+        overdue: { label: "Atrasado", color: "error" },
+      };
+      const cfg = map[val] || map.pending;
+      return (
+        <Chip
+          label={cfg.label}
+          color={cfg.color}
+          size="small"
+          variant="outlined"
+        />
+      );
+    },
+  },
+  {
+    field: "participation",
+    headerName: "Participação",
+    width: 150,
+    type: "boolean",
     renderCell: (params) => (
       <Chip
-        label={params.value === "active" ? "Ativo" : "Inativo"}
-        color={params.value === "active" ? "success" : "error"}
+        label={params.value ? "Presente" : "Ausente"}
+        color={params.value ? "primary" : "default"}
         size="small"
         variant="outlined"
       />
     ),
   },
-  {
-    field: "age",
-    headerName: "Idade",
-    width: 100,
-    type: "number",
-  },
-  {
-    field: "createdAt",
-    headerName: "Criado em",
-    width: 150,
-    type: "date",
-    valueGetter: (params: string | Date) => {
-      console.log(params, "params");
-      const v = params;
-      if (v == null) return null;
-
-      return new Date(v as string | number);
-    },
-    // Opcional: apenas para exibir formatado
-    valueFormatter: (params: string | Date) =>
-      params ? dayjs(params as Date).format("DD/MM/YYYY") : "",
-  },
 ];
 
-export default function UserDataTable() {
+export default function ContemplatedTable({ id }: { id: string }) {
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
-    useUrlFilters<TableDefaultFilters<UsersTableFiltersWithDates>>({
+    useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
       defaultFilters: {
         page: 1,
         pageLimit: 10,
       },
       excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
     });
-  const { data: usersData, isLoading } = useQuery({
-    queryKey: ["users", filters],
-    queryFn: () => getUsers(filters),
+  const { data: contemplatedData, isLoading } = useQuery({
+    queryKey: ["Contemplated", filters],
+    queryFn: () => getContemplated(filters, id),
     staleTime: 5 * 60 * 1000, // 5 minutes,
   });
   const session = useSession();
-  const [hasCreatePermission, setHasCreatePermission] = useState(false);
-
-  useEffect(() => {
-    if (session.data && session.data.user) {
-      setHasCreatePermission(
-        getPermission({
-          permissions: session.data.user.permissions,
-          permission: "users.create",
-          role: session.data.user.role,
-        })
-      );
-    }
-  }, [session.data]);
 
   // ✅ CORREÇÃO: Usar o tipo correto
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
   >(undefined);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const modal = useModal();
   const filtersConfig = getFilters();
 
   // ✅ Helper para obter IDs selecionados
@@ -156,65 +214,45 @@ export default function UserDataTable() {
     return [];
   };
 
-  const handleEdit = (user: User) => {
-    router.push(`/users/${user.id}`);
-  };
-
-  const handleDelete = (user: User) => {
-    modal.open({
-      title: "Confirm deletion",
-      size: "sm",
-      customRender: () => (
-        <DeleteConfirmation
-          title="Delete user"
-          resourceName={user.name}
-          description="This action cannot be undone and will permanently remove the user."
-          requireCheckboxLabel="I understand the consequences."
-          onConfirm={async () => {
-            try {
-              const res = await sendRequestServerVanilla.delete(
-                `/users/${user.id}`
-              );
-              const result = await handleApiResponse(res);
-              if (result.error) {
-                throw new Error(result.error || "Server error");
-              }
-              // Optionally trigger a refetch outside
-              if (typeof window !== "undefined") {
-                const { enqueueSnackbar } = await import("notistack");
-                enqueueSnackbar("User deleted successfully", {
-                  variant: "success",
-                });
-              }
-            } catch (err: any) {
-              if (typeof window !== "undefined") {
-                const { enqueueSnackbar } = await import("notistack");
-                enqueueSnackbar(err.message || "Failed to delete user", {
-                  variant: "errorMUI",
-                });
-              }
-            }
-          }}
-        />
-      ),
-    });
-  };
-
-  const handleCreateNewUser = () => {
-    router.push("/users/create");
-  };
-
-  const handleView = (user: User) => {
-    modal.open({
-      title: `Detalhes do Usuário: ${user.name}`,
-      size: "xl",
-      customRender: () => (
-        <Suspense fallback={<div>Carregando detalhes do usuário...</div>}>
-          <UserSummaryModal userId={user.id.toString()} />
-        </Suspense>
-      ),
-    });
-  };
+  // const handleDelete = (user: User) => {
+  //   modal.open({
+  //     title: "Confirm deletion",
+  //     size: "sm",
+  //     customRender: () => (
+  //       <DeleteConfirmation
+  //         title="Delete user"
+  //         resourceName={user.name}
+  //         description="This action cannot be undone and will permanently remove the user."
+  //         requireCheckboxLabel="I understand the consequences."
+  //         onConfirm={async () => {
+  //           try {
+  //             const res = await sendRequestServerVanilla.delete(
+  //               `/Contemplated/${user.id}`
+  //             );
+  //             const result = await handleApiResponse(res);
+  //             if (result.error) {
+  //               throw new Error(result.error || "Server error");
+  //             }
+  //             // Optionally trigger a refetch outside
+  //             if (typeof window !== "undefined") {
+  //               const { enqueueSnackbar } = await import("notistack");
+  //               enqueueSnackbar("User deleted successfully", {
+  //                 variant: "success",
+  //               });
+  //             }
+  //           } catch (err: any) {
+  //             if (typeof window !== "undefined") {
+  //               const { enqueueSnackbar } = await import("notistack");
+  //               enqueueSnackbar(err.message || "Failed to delete user", {
+  //                 variant: "errorMUI",
+  //               });
+  //             }
+  //           }
+  //         }}
+  //       />
+  //     ),
+  //   });
+  // };
 
   const handleBulkAction = () => {
     const selectedIds = getSelectedIds();
@@ -240,14 +278,52 @@ export default function UserDataTable() {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const usersDataArray: User[] | undefined = Array.isArray(usersData?.rows)
-    ? usersData?.rows
-    : ([usersData?.rows] as unknown as User[]);
+  const contemplatedDataArray: ContemplatedParticipant[] | undefined =
+    Array.isArray(contemplatedData?.rows)
+      ? contemplatedData?.rows
+      : ([contemplatedData?.rows] as unknown as ContemplatedParticipant[]);
 
   console.log("selectedRows:", selectedRows);
 
   if (isLoading || session.status === "loading" || !session.data?.user) {
-    return <div>Carregando usuários...</div>;
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 400,
+          width: "100%",
+        }}
+      >
+        <Avatar
+          sx={{
+            bgcolor: "primary.main",
+            width: 56,
+            height: 56,
+            mb: 2,
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              fontSize: 32,
+              fontWeight: 700,
+              color: "white",
+            }}
+          >
+            ...
+          </Box>
+        </Avatar>
+        <Box sx={{ fontSize: 18, fontWeight: 500, mb: 1 }}>
+          Carregando contemplados
+        </Box>
+        <Box sx={{ color: "text.secondary", fontSize: 14 }}>
+          Aguarde enquanto os dados são carregados.
+        </Box>
+      </Box>
+    );
   }
   return (
     <Box
@@ -265,18 +341,13 @@ export default function UserDataTable() {
       <Box
         sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
       >
-        {hasCreatePermission && (
-          <Button variant="contained" onClick={handleCreateNewUser}>
-            {"Criar Novo Usuário"}
-          </Button>
-        )}
         <Button variant="contained" onClick={handleRefresh} disabled={loading}>
           {loading ? "Carregando..." : "Atualizar Dados"}
         </Button>
 
         <FilterButton<
-          TableDefaultFilters<UsersTableFilters>,
-          UsersTableDateFilters
+          TableDefaultFilters<ContemplatedTableFilters>,
+          ContemplatedTableDateFilters
         >
           filters={filtersConfig}
           defaultValues={filters}
@@ -308,9 +379,9 @@ export default function UserDataTable() {
       </Box>
 
       <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
-        <DataTable<User, UsersTableFiltersWithDates>
-          rows={usersDataArray}
-          rowCount={usersData?.total || 0}
+        <DataTable<ContemplatedParticipant, ContemplatedTableFiltersWithDates>
+          rows={contemplatedDataArray}
+          rowCount={contemplatedData?.total || 0}
           columns={columns}
           loading={isLoading || loading}
           // Configurações de aparência
@@ -343,34 +414,24 @@ export default function UserDataTable() {
           rowBuffer={500}
           columnBuffer={2}
           // Ações personalizadas
-          actions={[
-            {
-              icon: "lucide:eye",
-              label: "Visualizar",
-              onClick: handleView,
-              color: "info",
-            },
-            {
-              icon: "lucide:edit",
-              label: "Editar",
-              onClick: handleEdit,
-              color: "primary",
-            },
-            {
-              icon: "lucide:trash-2",
-              label: "Deletar",
-              onClick: handleDelete,
-              color: "error",
-              disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
-            },
-          ]}
+          actions={
+            [
+              // {
+              //   icon: "lucide:trash-2",
+              //   label: "Deletar",
+              //   onClick: handleDelete,
+              //   color: "error",
+              //   disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+              // },
+            ]
+          }
           // Eventos
           onRowClick={(params) => {
             console.log("Linha clicada:", params.row);
           }}
-          onRowDoubleClick={(params) => {
-            handleView(params.row);
-          }}
+          // onRowDoubleClick={(params) => {
+          //   handleView(params.row);
+          // }}
         />
       </Box>
     </Box>

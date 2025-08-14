@@ -1,13 +1,14 @@
-type UsersTableFilters = {
+export type ContemplatedTableFilters = {
   name?: string;
   state?: string;
   city?: string;
   status?: string;
 };
 
-type UsersTableDateFilters = {
+export type ContemplatedTableDateFilters = {
   periodStart?: string;
   periodEnd?: string;
 };
 
-type UsersTableFiltersWithDates = UsersTableFilters & UsersTableDateFilters;
+export type ContemplatedTableFiltersWithDates = ContemplatedTableFilters &
+  ContemplatedTableDateFilters;
