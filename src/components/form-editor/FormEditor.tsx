@@ -81,7 +81,7 @@ export function FormEditor({ id }: { id: string }) {
       <Box
         sx={{
           position: "fixed",
-          left: 32,
+          right: 32,
           top: 160,
           zIndex: 10,
           display: "flex",
