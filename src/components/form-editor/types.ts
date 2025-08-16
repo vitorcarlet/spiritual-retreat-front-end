@@ -16,7 +16,6 @@ export type BaseFieldType =
 
 export interface OptionItem {
   id: string;
-  label: string;
   value: string;
 }
 
@@ -62,6 +61,15 @@ export type FormEditorAction =
       type: "UPDATE_SCHEMA_META";
       patch: Partial<Pick<FormSchemaDefinition, "title" | "description">>;
     }
+  | { type: "ADD_OPTION"; fieldId: string; option: OptionItem }
+  | {
+      type: "UPDATE_OPTION";
+      fieldId: string;
+      optionId: string;
+      patch: Partial<OptionItem>;
+    }
+  | { type: "REMOVE_OPTION"; fieldId: string; optionId: string }
+  | { type: "REORDER_OPTIONS"; fieldId: string; from: number; to: number }
   | { type: "MARK_CLEAN" };
 
 export const formSchemaZod = z.object({

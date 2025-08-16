@@ -4,8 +4,23 @@ import {
   FormEditorState,
   FieldDefinition,
   FormSchemaDefinition,
+  OptionItem,
 } from "./types";
 import { nanoid } from "nanoid";
+
+function makeUniqueValue(
+  options: OptionItem[],
+  baseValue: string,
+  excludeId?: string
+) {
+  const sanitized = (baseValue || "option").trim() || "option";
+  let candidate = sanitized;
+  let i = 1;
+  while (options.some((o) => o.id !== excludeId && o.value === candidate)) {
+    candidate = `${sanitized}_${i++}`;
+  }
+  return candidate;
+}
 
 function createEmptySchema(): FormSchemaDefinition {
   return {
@@ -85,6 +100,87 @@ function reducer(
         },
         dirty: true,
       };
+    case "ADD_OPTION": {
+      return {
+        ...state,
+        schema: {
+          ...state.schema,
+          fields: state.schema.fields.map((f) => {
+            if (f.id !== action.fieldId) return f;
+            const existing: OptionItem[] = f.options || [];
+            const uniqueValue = makeUniqueValue(existing, action.option.value);
+            return {
+              ...f,
+              options: [...existing, { ...action.option, value: uniqueValue }],
+            };
+          }),
+          updatedAt: new Date().toISOString(),
+        },
+        dirty: true,
+      };
+    }
+    case "UPDATE_OPTION": {
+      return {
+        ...state,
+        schema: {
+          ...state.schema,
+          fields: state.schema.fields.map((f) => {
+            if (f.id !== action.fieldId) return f;
+            const existing: OptionItem[] = f.options || [];
+            return {
+              ...f,
+              options: existing.map((o) => {
+                if (o.id !== action.optionId) return o;
+                const patch: Partial<OptionItem> = { ...action.patch };
+                if (patch.value) {
+                  patch.value = makeUniqueValue(existing, patch.value, o.id);
+                }
+                return { ...o, ...patch };
+              }),
+            };
+          }),
+          updatedAt: new Date().toISOString(),
+        },
+        dirty: true,
+      };
+    }
+    case "REMOVE_OPTION": {
+      return {
+        ...state,
+        schema: {
+          ...state.schema,
+          fields: state.schema.fields.map((f) =>
+            f.id === action.fieldId
+              ? {
+                  ...f,
+                  options: (f.options || []).filter(
+                    (o) => o.id !== action.optionId
+                  ),
+                }
+              : f
+          ),
+          updatedAt: new Date().toISOString(),
+        },
+        dirty: true,
+      };
+    }
+    case "REORDER_OPTIONS": {
+      return {
+        ...state,
+        schema: {
+          ...state.schema,
+          fields: state.schema.fields.map((f) => {
+            if (f.id !== action.fieldId) return f;
+            const opts = [...(f.options || [])];
+            const [removed] = opts.splice(action.from, 1);
+            opts.splice(action.to, 0, removed);
+            return { ...f, options: opts };
+          }),
+          updatedAt: new Date().toISOString(),
+        },
+        dirty: true,
+      };
+    }
     default:
       return state;
   }
@@ -139,6 +235,28 @@ export function useFormEditorSchema(initial?: FormSchemaDefinition) {
     []
   );
 
+  const addOption = useCallback(
+    (fieldId: string, option: { id: string; value: string }) => {
+      dispatch({ type: "ADD_OPTION", fieldId, option });
+    },
+    []
+  );
+  const updateOption = useCallback(
+    (fieldId: string, optionId: string, patch: Partial<{ value: string }>) => {
+      dispatch({ type: "UPDATE_OPTION", fieldId, optionId, patch });
+    },
+    []
+  );
+  const removeOption = useCallback((fieldId: string, optionId: string) => {
+    dispatch({ type: "REMOVE_OPTION", fieldId, optionId });
+  }, []);
+  const reorderOptions = useCallback(
+    (fieldId: string, from: number, to: number) => {
+      dispatch({ type: "REORDER_OPTIONS", fieldId, from, to });
+    },
+    []
+  );
+
   return {
     state,
     dispatch,
@@ -148,5 +266,9 @@ export function useFormEditorSchema(initial?: FormSchemaDefinition) {
     reorderFields,
     selectField,
     updateSchemaMeta,
+    addOption,
+    updateOption,
+    removeOption,
+    reorderOptions,
   };
 }
