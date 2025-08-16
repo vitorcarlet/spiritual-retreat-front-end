@@ -8,6 +8,7 @@ import { mockMetrics, mockRetreats } from "./handlerData/dashboard";
 import { mockReports } from "./handlerData/reports";
 import { mockUsers } from "./handlerData/users";
 import { mockContemplatedParticipants } from "./handlerData/contemplated";
+import { mockFamilyParticipants } from "./handlerData/families";
 
 type Request = {
   email?: string;
@@ -153,8 +154,10 @@ export const handlers = [
     );
   }),
 
-  http.get("http://localhost:3001/api/retreats", () => {
-    return HttpResponse.json(mockRetreats, { status: 200 });
+  http.get("http://localhost:3001/api/retreats", ({ request }) => {
+    const url = new URL(request.url);
+    const payload = paginate(mockRetreats, url);
+    return HttpResponse.json(payload, { status: 200 });
   }),
 
   http.get("http://localhost:3001/api/retreats/:id", ({ params }) => {
@@ -190,6 +193,15 @@ export const handlers = [
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
       const payload = paginate(mockContemplatedParticipants, url);
+      return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
+
+  http.get(
+    "http://localhost:3001/api/retreats/:id/families",
+    ({ request /*, params */ }) => {
+      const url = new URL(request.url);
+      const payload = paginate(mockFamilyParticipants, url);
       return HttpResponse.json(payload, { status: 200 });
     }
   ),

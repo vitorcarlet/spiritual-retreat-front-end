@@ -20,6 +20,8 @@ import SearchField from "../../filters/SearchField";
 import DeleteConfirmation from "../../confirmations/DeleteConfirmation";
 import getPermission from "@/src/utils/getPermission";
 import { useSession } from "next-auth/react";
+import { User } from "../types";
+import { RetreatsCardTableFilters } from "../../retreats/types";
 
 type UserRequest = {
   rows: User[];

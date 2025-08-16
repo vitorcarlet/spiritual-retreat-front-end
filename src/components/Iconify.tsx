@@ -22,7 +22,11 @@ const Iconify = ({ icon, size = 2, sx, ...other }: Props) => {
     <Box
       component={Icon}
       icon={fallbackIcon(icon)}
-      sx={{ fontSize: `${size * 0.625}rem`, ...sx }}
+      sx={{
+        minWidth: `${size * 0.625}rem`,
+        fontSize: `${size * 0.625}rem`,
+        ...sx,
+      }}
       {...other}
     />
   );

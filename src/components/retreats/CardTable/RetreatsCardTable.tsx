@@ -3,8 +3,6 @@ import { useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
-  // getPaginationRowModel,
-  // getFilteredRowModel,
   ColumnDef,
   flexRender,
 } from "@tanstack/react-table";
@@ -22,9 +20,11 @@ import {
   ListItemText,
 } from "@mui/material";
 import Iconify from "../../Iconify";
+import { RetreatsCardTableFilters } from "../types";
 
 interface RetreatsCardTableProps {
   data?: Retreat[];
+  total?: number;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
   onEdit?: (retreat: Retreat) => void;
   onView?: (retreat: Retreat) => void;
@@ -35,6 +35,7 @@ interface RetreatsCardTableProps {
 
 export default function RetreatsCardTable({
   data,
+  total,
   filters,
   onEdit,
   onView,
@@ -237,62 +238,78 @@ export default function RetreatsCardTable({
 
   // Apply filters to data
 
+  const page = filters.page || 1; // 1-based externo
+  const pageLimit = filters.pageLimit || 8;
+  // Total de itens e páginas
+  const totalItems = total ?? data?.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageLimit));
+
   // Set up the table instance
   const table = useReactTable({
     data: data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
-    //getPaginationRowModel: getPaginationRowModel(),
-    //getFilteredRowModel: getFilteredRowModel(),
-    // state: {
-    //   pagination: {
-    //     pageSize: rowsPerPage,
-    //     pageIndex: 0,
-    //   },
-    // },
-    // initialState: {
-    //   pagination: {
-    //     pageSize: rowsPerPage,
-    //   },
-    // },
     manualPagination: true,
-    pageCount: Math.ceil((data?.length || 0) / (filters.pageLimit || 1)),
+    pageCount: totalPages,
+    state: {
+      pagination: {
+        pageIndex: page - 1, // 0-based interno
+        pageSize: pageLimit,
+      },
+    },
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({
+              pageIndex: page - 1,
+              pageSize: pageLimit,
+            })
+          : updater;
+
+      // converter de volta para 1-based
+      onFiltersChange({
+        ...filters,
+        page: next.pageIndex + 1,
+        pageLimit: next.pageSize,
+      });
+    },
   });
 
   return (
-    <Box>
-      {/* Filters and search bar */}
-      <Grid container spacing={2} mb={3} alignItems="center">
-        <Grid
-          size={{ xs: 12 }}
-          sx={{ display: "flex", justifyContent: "flex-end" }}
-        >
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Iconify icon="solar:add-circle-bold" />}
-          >
-            Novo retiro
-          </Button>
-        </Grid>
-      </Grid>
-
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 0, // importante para permitir o overflow interno
+      }}
+    >
       {/* Card grid */}
-      <Grid container spacing={3}>
-        {table.getRowModel().rows.map((row) => (
-          <Grid
-            key={row.id}
-            size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-            display={"flex"}
-            justifyContent={"center"}
-          >
-            {flexRender(
-              row.getVisibleCells()[0].column.columnDef.cell,
-              row.getVisibleCells()[0].getContext()
-            )}
-          </Grid>
-        ))}
-      </Grid>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0, // importante para permitir o overflow interno
+          overflowY: "auto",
+          pr: 0.5,
+          pb: 2,
+        }}
+      >
+        <Grid container spacing={3}>
+          {table.getRowModel().rows.map((row) => (
+            <Grid
+              key={row.id}
+              size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+              display={"flex"}
+              justifyContent={"center"}
+            >
+              {flexRender(
+                row.getVisibleCells()[0].column.columnDef.cell,
+                row.getVisibleCells()[0].getContext()
+              )}
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
       {/* Pagination controls */}
       <Stack
@@ -309,7 +326,7 @@ export default function RetreatsCardTable({
           onClick={handlePopoverOpen}
           sx={{ minWidth: 120 }}
         >
-          {filters.pageLimit || 8} por linha
+          {filters.pageLimit || 8} por página
         </Button>
 
         <Popover
@@ -327,16 +344,16 @@ export default function RetreatsCardTable({
         >
           <MenuList>
             <MenuItem onClick={() => handlePageLimitChange(4)}>
-              <ListItemText primary="4 por linha" />
+              <ListItemText primary="4 por página" />
             </MenuItem>
             <MenuItem onClick={() => handlePageLimitChange(8)}>
-              <ListItemText primary="8 por linha" />
+              <ListItemText primary="8 por página" />
             </MenuItem>
             <MenuItem onClick={() => handlePageLimitChange(12)}>
-              <ListItemText primary="12 por linha" />
+              <ListItemText primary="12 por página" />
             </MenuItem>
             <MenuItem onClick={() => handlePageLimitChange(16)}>
-              <ListItemText primary="16 por linha" />
+              <ListItemText primary="16 por página" />
             </MenuItem>
           </MenuList>
         </Popover>

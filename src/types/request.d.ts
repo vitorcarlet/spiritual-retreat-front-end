@@ -1,5 +1,5 @@
 type RequestResponse<T> = Promise<{
-  data?: T | T[];
+  data?: T;
   error?: string;
   success: boolean;
 }>;
