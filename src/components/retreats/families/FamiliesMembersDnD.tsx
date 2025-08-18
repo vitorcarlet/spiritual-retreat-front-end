@@ -2,13 +2,13 @@
 
 import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { Box, Paper, Typography, Stack, Divider, Button } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 
 interface FamilyMembersDnDColumnProps {
   family: RetreatFamily;
+  disabled: boolean;
   onAddMember?: (familyId: string | number) => void;
   addButtonLabel?: string;
   renderMemberExtra?: (member: Participant) => React.ReactNode;
@@ -19,14 +19,12 @@ export const MEMBER_PREFIX = "member-";
 
 export function FamilyMembersDnDColumn({
   family,
+  disabled,
   onAddMember,
   addButtonLabel = "+ Membro",
   renderMemberExtra,
 }: FamilyMembersDnDColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: FAMILY_PREFIX + String(family.id),
-  });
-
+  console.log("FamilyMembersDnDColumn", family);
   const members: Participant[] = Array.isArray(family.members)
     ? (family.members as Participant[])
     : [];
@@ -34,7 +32,6 @@ export function FamilyMembersDnDColumn({
 
   return (
     <Paper
-      ref={setNodeRef}
       variant="outlined"
       sx={{
         //width: 300,
@@ -60,7 +57,8 @@ export function FamilyMembersDnDColumn({
               fontSize: 12,
               color: "text.secondary",
               borderStyle: "dashed",
-              backgroundColor: isOver ? "action.hover" : "transparent",
+              //backgroundColor: isOver ? "action.hover" : "transparent",
+              backgroundColor: "transparent",
             }}
           >
             Solte membros aqui
@@ -68,7 +66,7 @@ export function FamilyMembersDnDColumn({
         )}
         {!isEmpty &&
           members.map((m) => (
-            <MemberItem
+            <MemberSortable
               key={m.id}
               member={m}
               familyId={family.id}
@@ -147,14 +145,18 @@ function getParticipantDisplayName(member: Participant): string {
 
 export function MemberItem({
   member,
+  style,
+  color,
   extra,
 }: {
   member: Participant;
+  style?: { zIndex: number | undefined };
+  color?: string;
   extra?: React.ReactNode;
 }) {
   return (
-    <Box sx={{ flex: 1 }}>
-      <Typography variant="body2" fontWeight={500}>
+    <Box sx={{ flex: 1, ...style }}>
+      <Typography variant="body2" fontWeight={500} color={color}>
         {getParticipantDisplayName(member)}
       </Typography>
       {extra}

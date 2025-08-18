@@ -60,10 +60,12 @@ const getRetreatFamilies = async (
 };
 
 interface RetreatFamiliesProps {
-  retreatId: string;
+  id: string;
 }
 
-export default function RetreatFamilies({ retreatId }: RetreatFamiliesProps) {
+export default function RetreatFamilies({
+  id: retreatId,
+}: RetreatFamiliesProps) {
   const t = useTranslations();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({

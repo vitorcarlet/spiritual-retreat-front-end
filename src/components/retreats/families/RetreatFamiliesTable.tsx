@@ -51,6 +51,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import { createPortal } from "react-dom";
 import { dropAnimation } from "./dnd-kit/shared";
+import { FamilyMembersDnDColumn, MemberItem } from "./FamiliesMembersDnD";
 
 interface RetreatsCardTableProps {
   data?: RetreatFamily[];
@@ -144,10 +145,43 @@ export default function RetreatFamiliesTable2({
     setClonedItems(null);
   };
 
-  const getMember = (memberId: UniqueIdentifier) =>
-    state.families
-      .flatMap((f) => f.members || [])
-      .find((m) => m.id === memberId) || ({} as Participant);
+  const isSortingContainer =
+    activeId != null ? state.families[activeId as number] : null;
+
+  const getMember = (memberId: UniqueIdentifier) => {
+    for (const family of state.families) {
+      const members = family.members || [];
+      const index = members.findIndex((m) => m.id === memberId);
+      if (index !== -1) {
+        return { memberId, index, member: members[index] };
+      }
+    }
+    return { memberId, index: -1, member: undefined };
+  };
+
+  const getItemStyles = ({
+    index,
+    overIndex,
+    isDragging,
+    containerId,
+    isDragOverlay,
+  }: {
+    index: number;
+    overIndex: number;
+    isDragging: boolean;
+    containerId: UniqueIdentifier;
+    isDragOverlay: boolean;
+  }) => {
+    const deck = state.families[containerId as number].members || [];
+
+    return {
+      zIndex: isDragOverlay
+        ? undefined
+        : isDragging
+        ? deck.length - overIndex
+        : deck.length - index,
+    };
+  };
 
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const handlePopoverOpen = (e: React.MouseEvent<HTMLButtonElement>) =>
@@ -217,13 +251,19 @@ export default function RetreatFamiliesTable2({
                   }}
                 >
                   <Box sx={{ flex: 1, minHeight: 0, overflow: "auto", p: 1 }}>
-                    {/* <FamiliesMembersDnD
+                    <FamilyMembersDnDColumn
                       family={retreat}
-                      onAddMember={retreat.onAddMember}
-                      onEditMember={retreat.onEditMember}
-                      onRemoveMember={retreat.onRemoveMember}
-                      renderMemberExtra={retreat.renderMemberExtra}
-                    /> */}
+                      disabled={isSortingContainer?.id === retreat.id}
+                      key={retreat.id}
+                      //id={retreat.id as UniqueIdentifier}
+                      //index={index}
+                      //handle={handle}
+                      //style={getItemStyles}
+                      //wrapperStyle={wrapperStyle}
+                      //renderItem={renderItem}
+                      //containerId={containerId}
+                      //getIndex={getIndex}
+                    />
                   </Box>
                   <Typography variant="h6" component="div" gutterBottom>
                     {retreat.name}
@@ -286,58 +326,84 @@ export default function RetreatFamiliesTable2({
   );
 
   function renderSortableItemDragOverlay(id: UniqueIdentifier) {
-    const member = getMember(id);
+    const { member, index } = getMember(id);
+    if (!member) return <div>Not member</div>;
     return (
       <MemberItem
-        value={id}
+        member={member}
         style={getItemStyles({
-          containerId: findContainer(id) as UniqueIdentifier,
+          containerId: state.families[Number(id)].id as UniqueIdentifier,
           overIndex: -1,
-          index: getIndex(id),
-          value: id,
-          isSorting: true,
+          index: index,
+          //value: id,
+          //isSorting: true,
           isDragging: true,
           isDragOverlay: true,
         })}
-        color={getColor(id)}
-        wrapperStyle={wrapperStyle({ index: 0 })}
-        renderItem={renderItem}
-        dragOverlay
+        color={"primary.main"}
+        //wrapperStyle={wrapperStyle({ index: 0 })}
+        //renderItem={renderItem}
+        //dragOverlay
       />
     );
   }
 
   function renderContainerDragOverlay(containerId: UniqueIdentifier) {
+    const family = state.families.find(
+      (f) => String(f.id) === String(containerId)
+    );
+    if (!family) return null;
     return (
-      <Container
-        label={`Column ${containerId}`}
-        columns={columns}
-        style={{
-          height: "100%",
+      <Box
+        sx={{
+          width: 263,
+          borderRadius: 2,
+          border: "2px solid",
+          borderColor: "primary.main",
+          overflow: "hidden",
+          boxShadow: 6,
+          opacity: 0.9,
+          cursor: "grabbing",
+          bgcolor: "background.paper",
+          display: "flex",
+          flexDirection: "column",
         }}
-        shadow
-        unstyled={false}
       >
-        {items[containerId].map((item, index) => (
-          <Item
-            key={item}
-            value={item}
-            handle={handle}
-            style={getItemStyles({
-              containerId,
-              overIndex: -1,
-              index: getIndex(item),
-              value: item,
-              isDragging: false,
-              isSorting: false,
-              isDragOverlay: false,
-            })}
-            color={getColor(item)}
-            wrapperStyle={wrapperStyle({ index })}
-            renderItem={renderItem}
-          />
-        ))}
-      </Container>
+        <Box
+          sx={{
+            height: 140,
+            background:
+              "linear-gradient(135deg,#1976d2 0%, #42a5f5 70%, #90caf9 100%)",
+            position: "relative",
+          }}
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "flex-end",
+              p: 1.5,
+            }}
+          >
+            <Typography
+              variant="subtitle1"
+              fontWeight={600}
+              color="common.white"
+              noWrap
+            >
+              {family.name}
+            </Typography>
+          </Box>
+        </Box>
+        <Box
+          sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 0.5 }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            Membros: {family.members?.length ?? 0}
+          </Typography>
+        </Box>
+      </Box>
     );
   }
 
