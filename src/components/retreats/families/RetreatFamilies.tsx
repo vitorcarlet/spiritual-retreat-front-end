@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Box,
   Stack,
@@ -8,6 +9,8 @@ import {
   Typography,
   TextField,
   CircularProgress,
+  Container,
+  Button,
 } from "@mui/material";
 import {
   handleApiResponse,
@@ -21,21 +24,39 @@ import {
 import getPermission from "@/src/utils/getPermission";
 import { useSession } from "next-auth/react";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
+import { getFilters } from "./getFilters";
+import FilterButton from "../../filters/FilterButton";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+
+interface RetreatFamilyRequest {
+  rows: RetreatFamily[];
+  total: number;
+  page: number;
+  pageLimit: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
 
 const getRetreatFamilies = async (
   filters: TableDefaultFilters<
     RetreatsCardTableFilters & RetreatsCardTableDateFilters
-  >
+  >,
+  retreatId: string
 ) => {
-  const response = await handleApiResponse<RequestResponse<RetreatFamily[]>>(
-    await sendRequestServerVanilla.get("/retreats", { params: filters })
+  const response = await handleApiResponse<
+    RequestResponse<RetreatFamilyRequest>
+  >(
+    await sendRequestServerVanilla.get(`/retreats/${retreatId}/families`, {
+      params: filters,
+    })
   );
 
   if (!response || response.error) {
     throw new Error("Failed to fetch retreats");
   }
   console.log("Fetched reports:", response);
-  return response.data as RequestResponse<RetreatFamily[]>;
+  return response.data as unknown as RetreatFamilyRequest;
 };
 
 interface RetreatFamiliesProps {
@@ -43,6 +64,7 @@ interface RetreatFamiliesProps {
 }
 
 export default function RetreatFamilies({ retreatId }: RetreatFamiliesProps) {
+  const t = useTranslations();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
       defaultFilters: {
@@ -67,61 +89,89 @@ export default function RetreatFamilies({ retreatId }: RetreatFamiliesProps) {
     }
   }, [session.data]);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["retreat-families", retreatId, cityFilter],
-    queryFn: () =>
-      getRetreatFamilies({
-        retreatId,
-        city: cityFilter || undefined,
-      }),
+  const filtersConfig = getFilters();
+  const {
+    data: familiesData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["retreat-families", filters],
+    queryFn: () => getRetreatFamilies(filters, retreatId),
     staleTime: 60_000,
   });
 
-  const families = useMemo(() => data || [], [data]);
+  // const handlePersist = useCallback(
+  //   async (updated: RetreatFamily[]) => {
+  //     // Persistir ordenação / mudanças de membros
+  //     // Ajustar endpoint conforme backend
+  //     try {
+  //       await sendRequestServerVanilla.put(
+  //         `/retreats/${retreatId}/families/reorder`,
+  //         {
+  //           families: updated.map((f) => ({
+  //             id: f.id,
+  //             memberIds: f.members.map((m) => m.id),
+  //             order: updated.findIndex((ff) => ff.id === f.id),
+  //           })),
+  //         }
+  //       );
+  //     } catch (e) {
+  //       console.error("Persist families reorder failed", e);
+  //     }
+  //   },
+  //   [retreatId]
+  // );
 
-  const handlePersist = useCallback(
-    async (updated: Family[]) => {
-      // Persistir ordenação / mudanças de membros
-      // Ajustar endpoint conforme backend
-      try {
-        await sendRequestServerVanilla.put(
-          `/retreats/${retreatId}/families/reorder`,
-          {
-            families: updated.map((f) => ({
-              id: f.id,
-              memberIds: f.members.map((m) => m.id),
-              order: updated.findIndex((ff) => ff.id === f.id),
-            })),
-          }
-        );
-      } catch (e) {
-        console.error("Persist families reorder failed", e);
-      }
-    },
-    [retreatId]
-  );
+  const handleEdit = (retreat: RetreatFamily) => {
+    //router.push(`/retreats/${retreat.id}`);
+  };
+
+  const handleView = (retreat: RetreatFamily) => {
+    //router.push(`/retreats/${retreat.id}`);
+  };
+
+  const handleFiltersChange = (
+    newFilters: TableDefaultFilters<RetreatsCardTableFilters>
+  ) => {
+    updateFilters({ ...filters, ...newFilters });
+  };
+
+  const handleApplyFilters = (
+    newFilters: Partial<TableDefaultFilters<RetreatsCardTableFilters>>
+  ) => {
+    updateFilters({ ...filters, ...newFilters });
+  };
+
+  const familiesDataArray: RetreatFamily[] = Array.isArray(familiesData?.rows)
+    ? familiesData?.rows
+    : ([familiesData?.rows] as unknown as RetreatFamily[]);
+
+  if (isLoading) return <Typography>Loading retreats...</Typography>;
+  if (isError) return <Typography>No data available.</Typography>;
 
   return (
-    <Box
-      sx={{ display: "flex", flexDirection: "column", height: "100%", gap: 2 }}
+    <Container
+      maxWidth="xl"
+      sx={{ py: 4, height: "100%", display: "flex", flexDirection: "column" }}
     >
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Typography variant="h6" fontWeight={600}>
-          Famílias
-        </Typography>
-        <TextField
-          size="small"
-          label="Cidade"
-          value={cityFilter}
-          onChange={(e) => setCityFilter(e.target.value)}
+      <Stack direction="row" spacing={2} alignItems="center" mb={3}>
+        <Typography variant="h5">{t("retreats-families")}</Typography>
+        <FilterButton<
+          TableDefaultFilters<RetreatsCardTableFilters>,
+          RetreatsCardTableDateFilters
+        >
+          filters={filtersConfig}
+          defaultValues={filters}
+          onApplyFilters={handleApplyFilters}
+          onReset={resetFilters}
+          activeFiltersCount={activeFiltersCount}
         />
-        {cityFilter && (
-          <Chip
-            label={`Cidade: ${cityFilter}`}
-            color="warning"
-            onDelete={() => setCityFilter("")}
-            variant="outlined"
-          />
+        {hasCreatePermission && (
+          <Button variant="contained">
+            <Link href={{ pathname: "/dashboard/retreats/new" }}>
+              Criar Novo Usuário
+            </Link>
+          </Button>
         )}
       </Stack>
       <Box sx={{ flex: 1, minHeight: 0 }}>
@@ -139,11 +189,15 @@ export default function RetreatFamilies({ retreatId }: RetreatFamiliesProps) {
         )}
         {!isLoading && !isError && (
           <RetreatFamiliesTable
-            initialFamilies={families}
-            onPersist={handlePersist}
+            total={familiesData?.total || 0}
+            filters={filters}
+            data={familiesDataArray!}
+            onEdit={handleEdit}
+            onView={handleView}
+            onFiltersChange={handleFiltersChange}
           />
         )}
       </Box>
-    </Box>
+    </Container>
   );
 }

@@ -1,500 +1,621 @@
 "use client";
-import React, { useState, useCallback, useRef } from "react";
+import {
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+  createContext,
+  useContext,
+} from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  ColumnDef,
+  flexRender,
+} from "@tanstack/react-table";
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
+  Pagination,
+  Stack,
+  Popover,
+  MenuList,
+  MenuItem,
+  ListItemText,
+  IconButton,
+} from "@mui/material";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import Iconify from "../../Iconify";
+import { RetreatsCardTableFilters } from "../types";
+
 import {
   DndContext,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   DragEndEvent,
-  DragStartEvent,
   DragOverlay,
-  closestCenter,
-  MeasuringStrategy,
-  UniqueIdentifier,
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   useSortable,
-  horizontalListSortingStrategy,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
+  arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Box, Paper, Typography, Stack, Button, Divider } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import { nanoid } from "nanoid";
+import type { UniqueIdentifier } from "@dnd-kit/core";
+import { createPortal } from "react-dom";
+import { dropAnimation } from "./dnd-kit/shared";
 
-// Tipos
-export interface FamilyMember {
-  id: string;
-  name: string;
-  role?: string;
-  gender?: string;
+interface RetreatsCardTableProps {
+  data?: RetreatFamily[];
+  total?: number;
+  filters: TableDefaultFilters<RetreatsCardTableFilters>;
+  onEdit?: (retreat: RetreatFamily) => void;
+  onView?: (retreat: RetreatFamily) => void;
+  onFiltersChange: (
+    filters: TableDefaultFilters<RetreatsCardTableFilters>
+  ) => void;
 }
 
-export interface Family {
-  id: string;
-  name: string;
-  members: FamilyMember[];
-  warning?: string;
-  stats?: {
-    vacanciesLeft?: number;
-    menPercent?: number;
+export default function RetreatFamiliesTable2({
+  data,
+  total,
+  filters,
+  onEdit,
+  onView,
+  onFiltersChange,
+}: RetreatsCardTableProps) {
+  interface FamiliesState {
+    families: RetreatFamily[];
+  }
+  type FamiliesAction =
+    | { type: "INIT"; payload: RetreatFamily[] }
+    | { type: "ADD_FAMILY"; payload: RetreatFamily }
+    | { type: "REORDER_FAMILIES"; fromIndex: number; toIndex: number }
+    | {
+        type: "REORDER_MEMBERS";
+        familyId: string | number;
+        fromIndex: number;
+        toIndex: number;
+      }
+    | { type: "SET_FAMILIES"; payload: RetreatFamily[] };
+
+  function familiesReducer(
+    state: FamiliesState,
+    action: FamiliesAction
+  ): FamiliesState {
+    switch (action.type) {
+      case "INIT":
+        return { families: action.payload };
+      case "ADD_FAMILY":
+        return { families: [...state.families, action.payload] };
+      case "REORDER_FAMILIES": {
+        if (action.fromIndex === action.toIndex) return state;
+        return {
+          families: arrayMove(state.families, action.fromIndex, action.toIndex),
+        };
+      }
+      case "REORDER_MEMBERS": {
+        const { familyId, fromIndex, toIndex } = action;
+        if (fromIndex === toIndex) return state;
+        return {
+          families: state.families.map((family) => {
+            if (family.id !== familyId) return family;
+            return {
+              ...family,
+              members: arrayMove(
+                family.members || ([] as Participant[]),
+                fromIndex,
+                toIndex
+              ),
+            };
+          }),
+        };
+      }
+      default:
+        return state;
+    }
+  }
+  const [state, dispatch] = useReducer(familiesReducer, {
+    families: data ?? [],
+  });
+
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [clonedItems, setClonedItems] = useState<RetreatFamily[] | null>(null);
+
+  useEffect(() => {
+    dispatch({ type: "INIT", payload: data ?? [] });
+  }, [data]);
+
+  const onDragCancel = () => {
+    if (clonedItems) {
+      // Reset items to their original state in case items have been
+      // Dragged across containers
+      dispatch({ type: "SET_FAMILIES", payload: clonedItems });
+    }
+
+    setActiveId(null);
+    setClonedItems(null);
   };
-}
 
-interface RetreatFamiliesTableProps {
-  initialFamilies: Family[];
-  onPersist?: (families: Family[]) => void;
-}
+  const getMember = (memberId: UniqueIdentifier) =>
+    state.families
+      .flatMap((f) => f.members || [])
+      .find((m) => m.id === memberId) || ({} as Participant);
 
-type ActiveDrag =
-  | { type: "column"; id: string; data: Family }
-  | { type: "member"; id: string; member: FamilyMember; fromFamilyId: string };
-
-const measuring = {
-  droppable: {
-    strategy: MeasuringStrategy.Always,
-  },
-};
-
-function ColumnSortable({
-  id,
-  children,
-}: {
-  id: UniqueIdentifier;
-  children: React.ReactNode;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : undefined,
-    cursor: "grab",
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const handlePopoverOpen = (e: React.MouseEvent<HTMLButtonElement>) =>
+    setAnchorEl(e.currentTarget);
+  const handlePopoverClose = () => setAnchorEl(null);
+  const handlePageLimitChange = (newPageLimit: number) => {
+    onFiltersChange({ pageLimit: newPageLimit });
+    handlePopoverClose();
   };
-  return (
-    <Box ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
-    </Box>
+  const open = Boolean(anchorEl);
+
+  const columns: ColumnDef<RetreatFamily>[] = useMemo(
+    () => [
+      {
+        id: "card",
+        cell: (row) => {
+          const { original: retreat } = row.cell.row;
+
+          // 👉 o conteúdo do card fica igual ao seu
+          return (
+            <Box
+              sx={{
+                width: 263,
+                borderRadius: "8px",
+                borderColor: "divider",
+                borderStyle: "solid",
+                borderWidth: 2,
+                overflow: "hidden",
+                cursor: "default",
+                position: "relative",
+              }}
+            >
+              <CardDragHandle />
+              <Box
+                sx={{
+                  height: 304,
+                  position: "relative",
+                  borderColor: "divider",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "flex-end",
+                  backgroundImage: `url(public/images/retreats/retreat-1.jpg)`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    top: 0,
+                    borderRadius: "8px 8px 0 0",
+                    background:
+                      "linear-gradient(to top, rgba(0,0,0,0.55) 5%, rgba(255, 255, 255, 0) 100%)",
+                    zIndex: 1,
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: "relative",
+                    zIndex: 2,
+                    p: 2,
+                    color: "common.white",
+                  }}
+                >
+                  <Box sx={{ flex: 1, minHeight: 0, overflow: "auto", p: 1 }}>
+                    {/* <FamiliesMembersDnD
+                      family={retreat}
+                      onAddMember={retreat.onAddMember}
+                      onEditMember={retreat.onEditMember}
+                      onRemoveMember={retreat.onRemoveMember}
+                      renderMemberExtra={retreat.renderMemberExtra}
+                    /> */}
+                  </Box>
+                  <Typography variant="h6" component="div" gutterBottom>
+                    {retreat.name}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                    <Iconify
+                      icon="solar:map-point-bold"
+                      sx={{ color: "common.white", mr: 0.5 }}
+                    />
+                    <Typography variant="body2" color="common.white">
+                      {retreat.membersCount}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  flex: 1,
+                  p: 2,
+                  pb: 1,
+                  borderRadius: "0 0 8px 8px",
+                  backgroundColor: "background.paper",
+                  display: "flex",
+                  alignContent: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Button
+                  size="medium"
+                  variant="outlined"
+                  sx={{
+                    width: 100,
+                    backgroundColor: "primary.main",
+                    color: "white",
+                    borderColor: "primary.main",
+                    "&:hover": {
+                      backgroundColor: "primary.dark",
+                      borderColor: "primary.dark",
+                    },
+                  }}
+                  onClick={() => onView?.(retreat)}
+                >
+                  <Iconify icon="icomoon-free:plus" />
+                </Button>
+                <Button
+                  sx={{ width: 100 }}
+                  size="medium"
+                  variant="outlined"
+                  onClick={() => onEdit?.(retreat)}
+                >
+                  <Iconify icon="ic:baseline-mode-edit" />
+                </Button>
+              </Box>
+            </Box>
+          );
+        },
+      },
+    ],
+    [onEdit, onView]
   );
-}
 
-function MemberSortable({
-  id,
-  dragHandle,
-  children,
-}: {
-  id: UniqueIdentifier;
-  dragHandle?: boolean;
-  children: React.ReactNode;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : undefined,
-    cursor: "grab",
-  };
-  return (
-    <Box
-      ref={setNodeRef}
-      style={style}
-      {...(dragHandle
-        ? { ...attributes, ...listeners }
-        : { ...attributes, ...listeners })}
-    >
-      {children}
-    </Box>
-  );
-}
+  function renderSortableItemDragOverlay(id: UniqueIdentifier) {
+    const member = getMember(id);
+    return (
+      <MemberItem
+        value={id}
+        style={getItemStyles({
+          containerId: findContainer(id) as UniqueIdentifier,
+          overIndex: -1,
+          index: getIndex(id),
+          value: id,
+          isSorting: true,
+          isDragging: true,
+          isDragOverlay: true,
+        })}
+        color={getColor(id)}
+        wrapperStyle={wrapperStyle({ index: 0 })}
+        renderItem={renderItem}
+        dragOverlay
+      />
+    );
+  }
 
-export default function RetreatFamiliesTable({
-  initialFamilies,
-  onPersist,
-}: RetreatFamiliesTableProps) {
-  const [families, setFamilies] = useState<Family[]>(initialFamilies);
-  const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
-  const persistTimer = useRef<NodeJS.Timeout | null>(null);
+  function renderContainerDragOverlay(containerId: UniqueIdentifier) {
+    return (
+      <Container
+        label={`Column ${containerId}`}
+        columns={columns}
+        style={{
+          height: "100%",
+        }}
+        shadow
+        unstyled={false}
+      >
+        {items[containerId].map((item, index) => (
+          <Item
+            key={item}
+            value={item}
+            handle={handle}
+            style={getItemStyles({
+              containerId,
+              overIndex: -1,
+              index: getIndex(item),
+              value: item,
+              isDragging: false,
+              isSorting: false,
+              isDragOverlay: false,
+            })}
+            color={getColor(item)}
+            wrapperStyle={wrapperStyle({ index })}
+            renderItem={renderItem}
+          />
+        ))}
+      </Container>
+    );
+  }
 
+  const page = filters.page || 1; // 1-based
+  const pageLimit = filters.pageLimit || 8;
+  const totalItems = total ?? state.families.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageLimit));
+
+  const table = useReactTable({
+    data: state.families || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount: totalPages,
+    state: {
+      pagination: {
+        pageIndex: page - 1,
+        pageSize: pageLimit,
+      },
+    },
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function"
+          ? updater({
+              pageIndex: page - 1,
+              pageSize: pageLimit,
+            })
+          : updater;
+
+      onFiltersChange({
+        ...filters,
+        page: next.pageIndex + 1,
+        pageLimit: next.pageSize,
+      });
+    },
+  });
+
+  // Sensores (mouse/touch/teclado)
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
+      activationConstraint: { distance: 4 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-  const schedulePersist = useCallback(
-    (next: Family[]) => {
-      setFamilies(next);
-      if (persistTimer.current) clearTimeout(persistTimer.current);
-      persistTimer.current = setTimeout(() => {
-        onPersist?.(next);
-      }, 500);
-    },
-    [onPersist]
+  // IDs dos itens na ordem atual (usamos algo estável; idealmente um `retreat.id`)
+  const sortableIds = useMemo(
+    () => state.families.map((r) => String(r.id)),
+    [state.families]
   );
 
-  function handleAddMember(familyId: string) {
-    schedulePersist(
-      families.map((f) =>
-        f.id === familyId
-          ? {
-              ...f,
-              members: [
-                ...f.members,
-                { id: nanoid(), name: "Novo Membro", role: "Padrinho" },
-              ],
-            }
-          : f
-      )
-    );
-  }
-
-  function handleDragStart(event: DragStartEvent) {
-    const { active } = event;
-    const column = families.find((f) => f.id === active.id);
-    if (column) {
-      setActiveDrag({ type: "column", id: column.id, data: column });
-      return;
-    }
-    // Could be member
-    for (const fam of families) {
-      const mem = fam.members.find((m) => m.id === active.id);
-      if (mem) {
-        setActiveDrag({
-          type: "member",
-          id: mem.id,
-          member: mem,
-          fromFamilyId: fam.id,
-        });
-        return;
-      }
-    }
-  }
-
-  //   function handleDragOver(event: DragEndEvent) {
-  //     // Optional: custom styling while over; not needed for basic behavior
-  //   }
-
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) {
-      setActiveDrag(null);
-      return;
-    }
-
-    // Column reorder
-    const activeFamilyIndex = families.findIndex((f) => f.id === active.id);
-    const overFamilyIndex = families.findIndex((f) => f.id === over.id);
-    if (
-      activeFamilyIndex !== -1 &&
-      overFamilyIndex !== -1 &&
-      activeFamilyIndex !== overFamilyIndex
-    ) {
-      const reordered = arrayMove(families, activeFamilyIndex, overFamilyIndex);
-      schedulePersist(reordered);
-      setActiveDrag(null);
-      return;
-    }
-
-    // Member reorder / transfer
-    const originFamily = families.find((f) =>
-      f.members.some((m) => m.id === active.id)
+    if (!over || active.id === over.id) return;
+    const fromIndex = state.families.findIndex(
+      (it) => it.id === Number(active.id)
     );
-    const targetFamily = families.find((f) =>
-      f.members.some((m) => m.id === over.id)
-    );
+    const toIndex = state.families.findIndex((it) => it.id === Number(over.id));
+    if (fromIndex === -1 || toIndex === -1) return;
+    dispatch({ type: "REORDER_FAMILIES", fromIndex, toIndex });
+  };
 
-    const overIsColumn = families.some((f) => f.id === over.id);
-
-    if (originFamily) {
-      const member = originFamily.members.find((m) => m.id === active.id);
-      if (!member) {
-        setActiveDrag(null);
-        return;
-      }
-
-      // Reorder inside same family
-      if (originFamily && targetFamily && originFamily.id === targetFamily.id) {
-        const fromIdx = originFamily.members.findIndex(
-          (m) => m.id === active.id
-        );
-        const toIdx = originFamily.members.findIndex((m) => m.id === over.id);
-        if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-          const updatedFamilies = families.map((f) =>
-            f.id === originFamily.id
-              ? {
-                  ...f,
-                  members: arrayMove(f.members, fromIdx, toIdx),
-                }
-              : f
-          );
-          schedulePersist(updatedFamilies);
-        }
-        setActiveDrag(null);
-        return;
-      }
-
-      // Transfer to another family (dropped over member)
-      if (originFamily && targetFamily && originFamily.id !== targetFamily.id) {
-        const updatedFamilies = families.map((f) => {
-          if (f.id === originFamily.id) {
-            return {
-              ...f,
-              members: f.members.filter((m) => m.id !== member.id),
-            };
-          }
-          if (f.id === targetFamily.id) {
-            // insert before target member index
-            const targetIndex = f.members.findIndex((m) => m.id === over.id);
-            const newMembers = [...f.members];
-            if (targetIndex === -1) newMembers.push(member);
-            else newMembers.splice(targetIndex, 0, member);
-            return { ...f, members: newMembers };
-          }
-          return f;
-        });
-        schedulePersist(updatedFamilies);
-        setActiveDrag(null);
-        return;
-      }
-
-      // Transfer dropping over empty column body (over = column id)
-      if (originFamily && overIsColumn) {
-        const destination = families.find((f) => f.id === over.id);
-        if (destination && destination.id !== originFamily.id) {
-          const updatedFamilies = families.map((f) => {
-            if (f.id === originFamily.id) {
-              return {
-                ...f,
-                members: f.members.filter((m) => m.id !== member.id),
-              };
-            }
-            if (f.id === destination.id) {
-              return { ...f, members: [...f.members, member] };
-            }
-            return f;
-          });
-          schedulePersist(updatedFamilies);
-        }
-        setActiveDrag(null);
-        return;
-      }
+  const [familyMemberIds, setFamilyMemberIds] = useState<
+    Record<string | number, UniqueIdentifier[]>
+  >({});
+  useEffect(() => {
+    const map: Record<string | number, UniqueIdentifier[]> = {};
+    for (const f of state.families) {
+      map[f.id] = (f.members || []).map((m) => m.id as UniqueIdentifier);
     }
-
-    setActiveDrag(null);
-  }
-
-  function createColumn() {
-    schedulePersist([
-      ...families,
-      {
-        id: nanoid(),
-        name: "Nova Família",
-        members: [],
-      },
-    ]);
-  }
+    setFamilyMemberIds(map);
+  }, [state.families]);
 
   return (
-    <DndContext
-      sensors={sensors}
-      measuring={measuring}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      //onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 0,
+      }}
     >
-      <SortableContext
-        items={families.map((f) => f.id)}
-        strategy={horizontalListSortingStrategy}
+      {/* GRID DE CARDS + DND */}
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          pr: 0.5,
+          pb: 2,
+        }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            gap: 3,
-            alignItems: "flex-start",
-            overflowX: "auto",
-            pb: 2,
-            pr: 1,
+        <DndContext
+          sensors={sensors}
+          onDragStart={({ active }) => {
+            setActiveId(active.id);
+            setClonedItems(state.families);
           }}
+          onDragEnd={handleDragEnd}
+          onDragCancel={onDragCancel}
         >
-          {families.map((family) => (
-            <ColumnSortable id={family.id} key={family.id}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  width: 320,
-                  minHeight: 360,
-                  p: 1.5,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 1.5,
-                  borderColor: "divider",
-                  position: "relative",
-                }}
-              >
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  sx={{ px: 0.5 }}
-                >
-                  <DragIndicatorIcon fontSize="small" />
-                  <Typography
-                    variant="subtitle1"
-                    fontWeight={600}
-                    sx={{ flex: 1 }}
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => {
-                      const name = e.currentTarget.textContent || "Família";
-                      schedulePersist(
-                        families.map((f) =>
-                          f.id === family.id ? { ...f, name } : f
-                        )
-                      );
-                    }}
+          <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+            <Grid container spacing={3}>
+              {table.getRowModel().rows.map((row) => {
+                const retreat = row.original as RetreatFamily;
+                const id = String(retreat.id ?? row.id);
+
+                return (
+                  <SortableGridItem
+                    key={id}
+                    id={id}
+                    size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                    display="flex"
+                    justifyContent="center"
                   >
-                    {family.name}
-                  </Typography>
-                </Stack>
+                    <SortableContext
+                      items={familyMemberIds[retreat.id] || []}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {flexRender(
+                        row.getVisibleCells()[0].column.columnDef.cell,
+                        row.getVisibleCells()[0].getContext()
+                      )}
+                    </SortableContext>
+                  </SortableGridItem>
+                );
+              })}
+              {createPortal(
+                <DragOverlay adjustScale={true} dropAnimation={dropAnimation}>
+                  {activeId
+                    ? familyMemberIds[activeId]
+                      ? renderSortableItemDragOverlay(activeId)
+                      : renderContainerDragOverlay(activeId)
+                    : null}
+                </DragOverlay>,
+                document.body
+              )}
+            </Grid>
+          </SortableContext>
+        </DndContext>
+      </Box>
 
-                <Divider />
+      {/* PAGINAÇÃO */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        justifyContent="space-between"
+        alignItems="center"
+        mt={4}
+      >
+        <Button
+          variant="outlined"
+          size="small"
+          endIcon={<Iconify icon="solar:alt-arrow-down-linear" />}
+          onClick={handlePopoverOpen}
+          sx={{ minWidth: 120 }}
+        >
+          {filters.pageLimit || 8} por página
+        </Button>
 
-                <SortableContext
-                  items={family.members.map((m) => m.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <Stack spacing={1} sx={{ flex: 1, minHeight: 60 }}>
-                    {family.members.map((member) => (
-                      <MemberSortable id={member.id} key={member.id}>
-                        <Paper
-                          variant="outlined"
-                          sx={{
-                            p: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            borderRadius: 1,
-                          }}
-                        >
-                          <DragIndicatorIcon fontSize="small" />
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" fontWeight={500}>
-                              {member.name}
-                            </Typography>
-                            {member.role && (
-                              <Typography
-                                variant="caption"
-                                color="warning.main"
-                                sx={{ lineHeight: 1 }}
-                              >
-                                {member.role}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Paper>
-                      </MemberSortable>
-                    ))}
-                  </Stack>
-                </SortableContext>
+        <Popover
+          open={open}
+          anchorEl={anchorEl}
+          onClose={handlePopoverClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+        >
+          <MenuList>
+            {[4, 8, 12, 16].map((n) => (
+              <MenuItem key={n} onClick={() => handlePageLimitChange(n)}>
+                <ListItemText primary={`${n} por página`} />
+              </MenuItem>
+            ))}
+          </MenuList>
+        </Popover>
 
-                <Stack direction="row" spacing={1} mt={1}>
-                  <Button
-                    onClick={() => handleAddMember(family.id)}
-                    size="small"
-                    startIcon={<AddIcon />}
-                    variant="contained"
-                    sx={{ flex: 1 }}
-                  >
-                    Membro
-                  </Button>
-                </Stack>
-
-                {family.stats && (
-                  <Box sx={{ mt: 1, px: 0.5 }}>
-                    {family.stats.vacanciesLeft !== undefined && (
-                      <Typography
-                        variant="caption"
-                        color={
-                          family.stats.vacanciesLeft > 0
-                            ? "warning.main"
-                            : "success.main"
-                        }
-                        display="block"
-                      >
-                        Restam {family.stats.vacanciesLeft} vagas.
-                      </Typography>
-                    )}
-                    {family.stats.menPercent !== undefined && (
-                      <Typography variant="caption" color="text.secondary">
-                        {family.stats.menPercent}% homens
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </Paper>
-            </ColumnSortable>
-          ))}
-
-          <Button
-            variant="outlined"
-            onClick={createColumn}
-            sx={{ height: 48, alignSelf: "flex-start", whiteSpace: "nowrap" }}
-          >
-            + Nova Família
-          </Button>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography variant="body2" color="text.secondary" mr={2}>
+            {table.getState().pagination.pageIndex + 1}-
+            {Math.min(
+              table.getState().pagination.pageIndex +
+                table.getState().pagination.pageSize,
+              state.families?.length ?? 0
+            )}{" "}
+            de {state.families?.length ?? 0}
+          </Typography>
+          <Pagination
+            count={table.getPageCount()}
+            page={table.getState().pagination.pageIndex + 1}
+            onChange={(_, page) => onFiltersChange?.({ page: page })}
+            color="primary"
+          />
         </Box>
-      </SortableContext>
+      </Stack>
+    </Box>
+  );
+}
 
-      <DragOverlay>
-        {activeDrag?.type === "column" && (
-          <Paper
-            sx={{
-              width: 320,
-              p: 1.5,
-              opacity: 0.9,
-              cursor: "grabbing",
-            }}
-            variant="outlined"
-          >
-            <Typography fontWeight={600}>{activeDrag.data.name}</Typography>
-          </Paper>
-        )}
-        {activeDrag?.type === "member" && (
-          <Paper
-            sx={{
-              p: 1,
-              minWidth: 160,
-              opacity: 0.85,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-            variant="outlined"
-          >
-            <DragIndicatorIcon fontSize="small" />
-            <Typography variant="body2" fontWeight={500}>
-              {activeDrag.member.name}
-            </Typography>
-          </Paper>
-        )}
-      </DragOverlay>
-    </DndContext>
+/** ---------- Componente sortável que envolve cada card ---------- */
+function SortableGridItem({
+  id,
+  children,
+  ...gridProps
+}: {
+  id: string | number;
+  children: React.ReactNode;
+} & React.ComponentProps<typeof Grid>) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  return (
+    <DragHandleContext.Provider
+      value={{ listeners, setActivatorNodeRef, isDragging }}
+    >
+      <Grid
+        ref={setNodeRef}
+        {...gridProps}
+        // Mantém atributos de acessibilidade mas remove listeners de pointer do container para o  drag icon
+        {...attributes}
+        style={{
+          ...(gridProps.style as React.CSSProperties),
+          transform: CSS.Transform.toString(transform),
+          transition,
+          opacity: isDragging ? 0.9 : 1,
+          zIndex: isDragging ? 2 : "auto",
+          touchAction: "none",
+          position: "relative",
+        }}
+      >
+        {children}
+      </Grid>
+    </DragHandleContext.Provider>
+  );
+}
+
+interface DragHandleContextValue {
+  listeners?: {
+    onPointerDown?: React.PointerEventHandler;
+    onMouseDown?: React.MouseEventHandler;
+    onTouchStart?: React.TouchEventHandler;
+    onKeyDown?: React.KeyboardEventHandler;
+  };
+  setActivatorNodeRef?: (element: HTMLElement | null) => void;
+  isDragging: boolean;
+}
+const DragHandleContext = createContext<DragHandleContextValue | null>(null);
+function CardDragHandle() {
+  const ctx = useContext(DragHandleContext);
+  if (!ctx) return null;
+  return (
+    <IconButton
+      size="small"
+      ref={ctx.setActivatorNodeRef}
+      {...ctx.listeners}
+      sx={{
+        cursor: "grab",
+        bgcolor: "background.paper",
+        boxShadow: 1,
+        "&:hover": { bgcolor: "background.default" },
+        "&:active": { cursor: "grabbing" },
+        width: 28,
+        height: 28,
+        position: "absolute",
+        top: 4,
+        left: 4,
+        zIndex: 10,
+      }}
+    >
+      <DragIndicatorIcon fontSize="small" />
+    </IconButton>
   );
 }

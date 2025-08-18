@@ -35,6 +35,7 @@ function makeParticipant(
   const lastName = `Doe${familyIndex}`;
   return {
     id: globalIndex,
+    name: `${firstName} ${lastName}`,
     firstName,
     lastName,
     email: `${firstName.toLowerCase()}${lastName.toLowerCase()}@example.com`,
