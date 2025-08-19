@@ -154,7 +154,7 @@ export default function RetreatFamilies({
   return (
     <Container
       maxWidth="xl"
-      sx={{ py: 4, height: "100%", display: "flex", flexDirection: "column" }}
+      sx={{ py: 4, pt: 2, height: "100%", display: "flex", flexDirection: "column" }}
     >
       <Stack direction="row" spacing={2} alignItems="center" mb={3}>
         <Typography variant="h5">{t("retreats-families")}</Typography>

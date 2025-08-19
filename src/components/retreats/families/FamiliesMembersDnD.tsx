@@ -31,12 +31,14 @@ export function FamilyMembersDnDColumn({
   const isEmpty = members.length === 0;
 
   return (
-    <Paper
-      variant="outlined"
+    <Box
       sx={{
         //width: 300,
         //minHeight: 340,
+        height: 210,
+        overflowY: "auto",
         p: 1.5,
+        backgroundColor: 'transparent',
         display: "flex",
         flexDirection: "column",
         gap: 1.2,
@@ -83,7 +85,7 @@ export function FamilyMembersDnDColumn({
           {addButtonLabel}
         </Button>
       )}
-    </Paper>
+    </Box>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   createContext,
   useContext,
   useRef,
+  useCallback,
 } from "react";
 import {
   useReactTable,
@@ -55,6 +56,11 @@ import type { UniqueIdentifier } from "@dnd-kit/core";
 import { createPortal } from "react-dom";
 import { dropAnimation } from "./dnd-kit/shared";
 import { FamilyMembersDnDColumn, MemberItem } from "./FamiliesMembersDnD";
+
+// Contexto para expor o id ativo e indicar modo de drag para children
+export const ActiveDragContext = createContext<{ activeId: UniqueIdentifier | null }>({
+  activeId: null,
+});
 
 interface RetreatsCardTableProps {
   data?: RetreatFamily[];
@@ -171,6 +177,9 @@ export default function RetreatFamiliesTable2({
   const [clonedItems, setClonedItems] = useState<RetreatFamily[] | null>(null);
   const lastOverId = useRef<UniqueIdentifier | null>(null); // <--- add
   const recentlyMovedToNewFamily = useRef(false); // <--- add
+  // re-render throttled (uma vez por frame) enquanto arrasta para refletir ordem otimista
+  const [, forceFrame] = useReducer((x) => x + 1, 0);
+  const frameScheduledRef = useRef(false);
 
   // --- helper para obter lista de ids de famílias (string) ---
   const familyIdSet = useMemo(
@@ -208,25 +217,58 @@ export default function RetreatFamiliesTable2({
     return { memberId, index: -1, member: undefined };
   };
 
-  const getItemStyles = ({
-    index,
-    overIndex,
-    isDragging,
-    containerId,
-    isDragOverlay,
-  }: {
-    index: number;
-    overIndex: number;
-    isDragging: boolean;
-    containerId: number | UniqueIdentifier;
-    isDragOverlay: boolean;
-  }) => {
-    console.log(containerId, " containerId", state.families);
-    //const deck = state.families.find((f) => f.id === Number(containerId));
-    return {
-      zIndex: isDragOverlay ? undefined : isDragging ? 10 : 9,
+  // const getItemStyles = ({
+  //   index,
+  //   overIndex,
+  //   isDragging,
+  //   containerId,
+  //   isDragOverlay,
+  // }: {
+  //   index: number;
+  //   overIndex: number;
+  //   isDragging: boolean;
+  //   containerId: number | UniqueIdentifier;
+  //   isDragOverlay: boolean;
+  // }) => {
+  //   console.log(containerId, " containerId", state.families);
+  //   //const deck = state.families.find((f) => f.id === Number(containerId));
+  //   return {
+  //     zIndex: isDragOverlay ? undefined : isDragging ? 10 : 9,
+  //   };
+  // };
+
+  const optimisticOrderRef = useRef<{
+    familiesOrder: string[];
+    membersOrder: Record<string, string[]>;
+  } | null>(null);
+
+  const rebuildOptimisticSnapshot = useCallback(() => {
+    optimisticOrderRef.current = {
+      familiesOrder: state.families.map((f) => String(f.id)),
+      membersOrder: Object.fromEntries(
+        state.families.map((f) => [String(f.id), (f.members || []).map((m) => String(m.id))])
+      ),
     };
-  };
+  }, [state.families]);
+
+  useEffect(() => {
+    rebuildOptimisticSnapshot();
+  }, [rebuildOptimisticSnapshot]);
+
+  const getOptimisticFamilies = useCallback((): RetreatFamily[] => {
+    if (!optimisticOrderRef.current) return state.families;
+    return optimisticOrderRef.current.familiesOrder
+      .map((fid) => {
+        const fam = state.families.find((f) => String(f.id) === fid);
+        if (!fam) return null;
+        const orderedIds = optimisticOrderRef.current!.membersOrder[fid] || [];
+        const members: Participant[] = orderedIds
+          .map((mid) => fam.members?.find((m) => String(m.id) === mid) || null)
+          .filter(Boolean) as Participant[];
+        return { ...fam, members };
+      })
+      .filter(Boolean) as RetreatFamily[];
+  }, [state.families]);
 
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const handlePopoverOpen = (e: React.MouseEvent<HTMLButtonElement>) =>
@@ -310,14 +352,8 @@ export default function RetreatFamiliesTable2({
                       //getIndex={getIndex}
                     />
                   </Box>
-                  <Typography variant="h6" component="div" gutterBottom>
-                    {retreat.name}
-                  </Typography>
+
                   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                    <Iconify
-                      icon="solar:map-point-bold"
-                      sx={{ color: "common.white", mr: 0.5 }}
-                    />
                     <Typography variant="body2" color="common.white">
                       {retreat.membersCount}
                     </Typography>
@@ -374,75 +410,75 @@ export default function RetreatFamiliesTable2({
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
+    if (!optimisticOrderRef.current) rebuildOptimisticSnapshot();
 
-    // Se ativo ou alvo for família (container) ignorar aqui (famílias só ordenam no dragEnd)
-    const activeIsFamily = familyIdSet.has(String(active.id));
-    const overIsFamily = familyIdSet.has(String(over.id));
-    if (activeIsFamily) return; // arrastando família: não fazer nada aqui
+    // Apenas lida com membros (não famílias) aqui
+    if (familyIdSet.has(String(active.id))) return; // dragging container
 
-    const activeMemberPos = findMember(active.id);
-    if (!activeMemberPos) return;
+    const activeInfo = findMember(active.id);
+    const overInfo = findMember(over.id);
 
-    // Identificar destino
+    // Caso over seja família vazia (sem membros): inserir no final
     let targetFamilyId: string | number | null = null;
     let targetIndex: number | null = null;
 
-    if (!overIsFamily) {
-      // over é outro membro
-      const overMemberPos = findMember(over.id);
-      if (overMemberPos) {
-        targetFamilyId = overMemberPos.familyId;
-
-        // Calcular se cursor está abaixo da metade para inserir depois
-        let insertIndex = overMemberPos.index;
-        if (event.over?.rect && event.active.rect.current?.translated) {
-          const activeTop = event.active.rect.current.translated.top;
-          const overMiddle = event.over.rect.top + event.over.rect.height / 2;
-          if (activeTop > overMiddle) {
-            insertIndex = overMemberPos.index + 1;
-          }
-        }
-        targetIndex = insertIndex;
+    if (!overInfo) {
+      // Pode ser card da família
+      const overFam = state.families.find((f) => String(f.id) === String(over.id));
+      if (overFam) {
+        targetFamilyId = overFam.id;
+        targetIndex = (overFam.members || []).length; // final
       }
     } else {
-      // over é família (área vazia)
-      const fam = state.families.find((f) => String(f.id) === String(over.id));
-      if (fam) {
-        targetFamilyId = fam.id;
-        targetIndex = (fam.members || []).length;
-      }
+      targetFamilyId = overInfo.familyId;
+      targetIndex = overInfo.index;
     }
 
+    if (!activeInfo) return; // item não localizado ainda
     if (targetFamilyId == null || targetIndex == null) return;
 
-    // Mesmo family: reorder otimista
-    if (targetFamilyId === activeMemberPos.familyId) {
-      if (
-        activeMemberPos.index === targetIndex ||
-        activeMemberPos.index + 1 === targetIndex
-      ) {
-        // Nada a mudar (ou caso de inserir depois dele mesmo)
-        return;
+    const fromFam = String(activeInfo.familyId);
+    const toFam = String(targetFamilyId);
+    const activeIdStr = String(active.id);
+
+    const membersOrder = optimisticOrderRef.current!.membersOrder;
+    // Remover do array de origem (se ainda presente)
+    membersOrder[fromFam] = (membersOrder[fromFam] || []).filter(
+      (id) => id !== activeIdStr
+    );
+
+    // Garantir array de destino
+    if (!membersOrder[toFam]) membersOrder[toFam] = [];
+
+    // Ajustar índice destino se item veio da mesma família e estava antes
+    let insertIndex = targetIndex;
+    if (fromFam === toFam) {
+      const currentIndex = membersOrder[toFam].indexOf(activeIdStr);
+      if (currentIndex !== -1 && currentIndex < insertIndex) {
+        insertIndex = Math.max(0, insertIndex - 1);
       }
-      dispatch({
-        type: "REORDER_MEMBERS",
-        familyId: targetFamilyId,
-        fromIndex: activeMemberPos.index,
-        toIndex:
-          targetIndex > activeMemberPos.index ? targetIndex - 1 : targetIndex,
-      });
-      return;
     }
 
-    // Outra família: mover otimista
-    recentlyMovedToNewFamily.current = true;
-    dispatch({
-      type: "MOVE_MEMBER",
-      memberId: Number(active.id),
-      fromFamilyId: activeMemberPos.familyId,
-      toFamilyId: targetFamilyId,
-      toIndex: targetIndex,
-    });
+    // Evitar múltiplas inserções consecutivas no mesmo frame
+    const existingIndex = membersOrder[toFam].indexOf(activeIdStr);
+    if (existingIndex !== -1) {
+      // Reposicionar somente se mudou
+      if (existingIndex !== insertIndex) {
+        membersOrder[toFam].splice(existingIndex, 1);
+        membersOrder[toFam].splice(insertIndex, 0, activeIdStr);
+      }
+    } else {
+      membersOrder[toFam].splice(insertIndex, 0, activeIdStr);
+    }
+
+    // Agenda re-render leve (1 por frame) para refletir alteração visual
+    if (!frameScheduledRef.current) {
+      frameScheduledRef.current = true;
+      requestAnimationFrame(() => {
+        frameScheduledRef.current = false;
+        forceFrame();
+      });
+    }
   };
 
   // ---------- Ajuste do overlay de membro (visual consistente) ----------
@@ -608,18 +644,23 @@ export default function RetreatFamiliesTable2({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) {
+      optimisticOrderRef.current = null;
       setActiveId(null);
       return;
     }
 
+    
+
     const activeId = active.id;
     const overId = over.id;
 
+  const familiesSnapshot = activeId ? getOptimisticFamilies(true) : state.families;
+
     // 1. Tentar tratar como reorder de famílias
-    const fromFamilyIndex = state.families.findIndex(
+  const fromFamilyIndex = familiesSnapshot.findIndex(
       (it) => it.id === Number(activeId)
     );
-    const toFamilyIndex = state.families.findIndex(
+  const toFamilyIndex = familiesSnapshot.findIndex(
       (it) => it.id === Number(overId)
     );
 
@@ -634,6 +675,7 @@ export default function RetreatFamiliesTable2({
           toIndex: toFamilyIndex,
         });
       }
+      optimisticOrderRef.current = null;
       setActiveId(null);
       return;
     }
@@ -653,9 +695,10 @@ export default function RetreatFamiliesTable2({
     let dropIndex: number;
     if (!overMemberPos) {
       // tentar identificar se é família
-      const overFam = state.families.find((f) => f.id === Number(overId));
+  const overFam = familiesSnapshot.find((f) => f.id === Number(overId));
       if (!overFam) {
-        setActiveId(null);
+        optimisticOrderRef.current = null;
+    setActiveId(null);
         return;
       }
       dropFamilyId = overFam.id;
@@ -675,7 +718,8 @@ export default function RetreatFamiliesTable2({
           toIndex: dropIndex,
         });
       }
-      setActiveId(null);
+      optimisticOrderRef.current = null;
+    setActiveId(null);
       return;
     }
 
@@ -688,6 +732,7 @@ export default function RetreatFamiliesTable2({
       toIndex: dropIndex,
     });
 
+    optimisticOrderRef.current = null;
     setActiveId(null);
   };
 
@@ -695,12 +740,17 @@ export default function RetreatFamiliesTable2({
     Record<string | number, UniqueIdentifier[]>
   >({});
   useEffect(() => {
+    const sourceFamilies = activeId ? getOptimisticFamilies(true) : state.families;
     const map: Record<string | number, UniqueIdentifier[]> = {};
-    for (const f of state.families) {
-      map[f.id] = (f.members || []).map((m) => m.id as UniqueIdentifier);
+    for (const f of sourceFamilies) {
+      map[f.id] = (f.members || []).map((m) => {
+        const mid = String((m as Participant).id);
+        if (mid.startsWith("__ghost__-")) return mid; // placeholder não sortável real
+        return (m as Participant).id as UniqueIdentifier;
+      });
     }
     setFamilyMemberIds(map);
-  }, [state.families]);
+  }, [state.families, activeId, getOptimisticFamilies]);
 
   return (
     <Box
@@ -721,13 +771,15 @@ export default function RetreatFamiliesTable2({
           pb: 2,
         }}
       >
-        <DndContext
+        <ActiveDragContext.Provider value={{ activeId }}>
+          <DndContext
           sensors={sensors}
           onDragStart={({ active }) => {
             setActiveId(active.id);
             setClonedItems(state.families);
             lastOverId.current = null;
             recentlyMovedToNewFamily.current = false;
+            rebuildOptimisticSnapshot();
           }}
           onDragOver={handleDragOver} // <--- adiciona animação de empurrar
           onDragEnd={handleDragEnd}
@@ -735,9 +787,8 @@ export default function RetreatFamiliesTable2({
         >
           <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
             <Grid container spacing={3}>
-              {table.getRowModel().rows.map((row) => {
-                const retreat = row.original as RetreatFamily;
-                const id = String(retreat.id ?? row.id);
+              { (activeId ? getOptimisticFamilies(true) : state.families).map((retreat) => {
+                const id = String(retreat.id);
 
                 return (
                   <SortableGridItem
@@ -751,10 +802,10 @@ export default function RetreatFamiliesTable2({
                       items={familyMemberIds[retreat.id] || []}
                       strategy={verticalListSortingStrategy}
                     >
-                      {flexRender(
-                        row.getVisibleCells()[0].column.columnDef.cell,
-                        row.getVisibleCells()[0].getContext()
-                      )}
+                      {flexRender(table.getAllColumns()[0].columnDef.cell!, {
+                        row: { original: retreat },
+                        cell: { row: { original: retreat } },
+                      } as any)}
                     </SortableContext>
                   </SortableGridItem>
                 );
@@ -771,7 +822,8 @@ export default function RetreatFamiliesTable2({
               )}
             </Grid>
           </SortableContext>
-        </DndContext>
+          </DndContext>
+        </ActiveDragContext.Provider>
       </Box>
 
       {/* PAGINAÇÃO */}
@@ -918,12 +970,14 @@ function CardDragHandle() {
 // Hoje cada movimento dispara REORDER/MOVE e recria todo o array.
 // Use um ref (optimisticRef) para mutar só a estrutura leve (arrays de ids) durante o drag e faça 1 dispatch final no onDragEnd.
 // Enquanto arrasta, derive a UI dessas estruturas em ref (sem setState). Isso reduz re-render frenético.
+
 // Normalizar estado
 // Armazene: familiesOrder: string[]; familiesById: Record<id, {id,name, members: string[]}>; membersById: Record<memberId, Participant>.
 // Reordenar = trocar posições em familiesOrder ou arrays de ids (O(1) / splice) sem copiar objetos grandes.
 // Índice direto (lookup O(1))
 // Mantenha memberPosMap: Record<memberId, { familyId: string|number; index: number }> atualizado somente quando a ordem muda (dragEnd).
 // Elimina loops findMember.
+
 // Componentização + memo
 // Extraia <FamilyCard/> e use React.memo com props mínimos (id, membersIds).
 // Dentro, renderize membros usando membersIds.map(id => membersById[id]) evitando re-render de todas as famílias quando só uma muda.
