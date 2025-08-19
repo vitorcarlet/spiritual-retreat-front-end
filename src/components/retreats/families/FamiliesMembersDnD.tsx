@@ -14,8 +14,8 @@ interface FamilyMembersDnDColumnProps {
   renderMemberExtra?: (member: Participant) => React.ReactNode;
 }
 
-export const FAMILY_PREFIX = "family-";
-export const MEMBER_PREFIX = "member-";
+//export const FAMILY_PREFIX = "family-";
+//export const MEMBER_PREFIX = "member-";
 
 export function FamilyMembersDnDColumn({
   family,
@@ -104,7 +104,7 @@ export function MemberSortable({
     transition,
     isDragging,
   } = useSortable({
-    id: MEMBER_PREFIX + String(member.id),
+    id: String(member.id),
     data: { type: "member", memberId: member.id, familyId },
   });
   const style: React.CSSProperties = {
