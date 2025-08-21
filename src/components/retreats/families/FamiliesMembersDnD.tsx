@@ -38,17 +38,13 @@ export function FamilyMembersDnDColumn({
         height: 210,
         overflowY: "auto",
         p: 1.5,
-        backgroundColor: 'transparent',
+        backgroundColor: "transparent",
         display: "flex",
         flexDirection: "column",
         gap: 1.2,
         position: "relative",
       }}
     >
-      <Typography variant="subtitle1" fontWeight={600}>
-        {family.name}
-      </Typography>
-      <Divider />
       <Stack spacing={1} sx={{ flex: 1, minHeight: 50 }}>
         {isEmpty && (
           <Paper
@@ -105,6 +101,10 @@ export function MemberSortable({
     transform,
     transition,
     isDragging,
+    setActivatorNodeRef,
+    isSorting,
+    over,
+    overIndex,
   } = useSortable({
     id: String(member.id),
     data: { type: "member", memberId: member.id, familyId },
@@ -128,9 +128,8 @@ export function MemberSortable({
       }}
       style={style}
       {...attributes}
-      {...listeners}
     >
-      <DragIndicatorIcon fontSize="small" />
+      <DragIndicatorIcon {...listeners} fontSize="small" />
       <MemberItem member={member} extra={extra} />
     </Paper>
   );

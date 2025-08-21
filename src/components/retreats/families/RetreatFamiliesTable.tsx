@@ -54,11 +54,13 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import { createPortal } from "react-dom";
-import { dropAnimation } from "./dnd-kit/shared";
+import { dropAnimation } from "@/src/components/dnd-kit/shared";
 import { FamilyMembersDnDColumn, MemberItem } from "./FamiliesMembersDnD";
 
 // Contexto para expor o id ativo e indicar modo de drag para children
-export const ActiveDragContext = createContext<{ activeId: UniqueIdentifier | null }>({
+export const ActiveDragContext = createContext<{
+  activeId: UniqueIdentifier | null;
+}>({
   activeId: null,
 });
 
@@ -246,7 +248,10 @@ export default function RetreatFamiliesTable2({
     optimisticOrderRef.current = {
       familiesOrder: state.families.map((f) => String(f.id)),
       membersOrder: Object.fromEntries(
-        state.families.map((f) => [String(f.id), (f.members || []).map((m) => String(m.id))])
+        state.families.map((f) => [
+          String(f.id),
+          (f.members || []).map((m) => String(m.id)),
+        ])
       ),
     };
   }, [state.families]);
@@ -424,7 +429,9 @@ export default function RetreatFamiliesTable2({
 
     if (!overInfo) {
       // Pode ser card da família
-      const overFam = state.families.find((f) => String(f.id) === String(over.id));
+      const overFam = state.families.find(
+        (f) => String(f.id) === String(over.id)
+      );
       if (overFam) {
         targetFamilyId = overFam.id;
         targetIndex = (overFam.members || []).length; // final
@@ -649,18 +656,18 @@ export default function RetreatFamiliesTable2({
       return;
     }
 
-    
-
     const activeId = active.id;
     const overId = over.id;
 
-  const familiesSnapshot = activeId ? getOptimisticFamilies(true) : state.families;
+    const familiesSnapshot = activeId
+      ? getOptimisticFamilies(true)
+      : state.families;
 
     // 1. Tentar tratar como reorder de famílias
-  const fromFamilyIndex = familiesSnapshot.findIndex(
+    const fromFamilyIndex = familiesSnapshot.findIndex(
       (it) => it.id === Number(activeId)
     );
-  const toFamilyIndex = familiesSnapshot.findIndex(
+    const toFamilyIndex = familiesSnapshot.findIndex(
       (it) => it.id === Number(overId)
     );
 
@@ -695,10 +702,10 @@ export default function RetreatFamiliesTable2({
     let dropIndex: number;
     if (!overMemberPos) {
       // tentar identificar se é família
-  const overFam = familiesSnapshot.find((f) => f.id === Number(overId));
+      const overFam = familiesSnapshot.find((f) => f.id === Number(overId));
       if (!overFam) {
         optimisticOrderRef.current = null;
-    setActiveId(null);
+        setActiveId(null);
         return;
       }
       dropFamilyId = overFam.id;
@@ -719,7 +726,7 @@ export default function RetreatFamiliesTable2({
         });
       }
       optimisticOrderRef.current = null;
-    setActiveId(null);
+      setActiveId(null);
       return;
     }
 
@@ -740,7 +747,9 @@ export default function RetreatFamiliesTable2({
     Record<string | number, UniqueIdentifier[]>
   >({});
   useEffect(() => {
-    const sourceFamilies = activeId ? getOptimisticFamilies(true) : state.families;
+    const sourceFamilies = activeId
+      ? getOptimisticFamilies(true)
+      : state.families;
     const map: Record<string | number, UniqueIdentifier[]> = {};
     for (const f of sourceFamilies) {
       map[f.id] = (f.members || []).map((m) => {
@@ -773,55 +782,60 @@ export default function RetreatFamiliesTable2({
       >
         <ActiveDragContext.Provider value={{ activeId }}>
           <DndContext
-          sensors={sensors}
-          onDragStart={({ active }) => {
-            setActiveId(active.id);
-            setClonedItems(state.families);
-            lastOverId.current = null;
-            recentlyMovedToNewFamily.current = false;
-            rebuildOptimisticSnapshot();
-          }}
-          onDragOver={handleDragOver} // <--- adiciona animação de empurrar
-          onDragEnd={handleDragEnd}
-          onDragCancel={onDragCancel}
-        >
-          <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-            <Grid container spacing={3}>
-              { (activeId ? getOptimisticFamilies(true) : state.families).map((retreat) => {
-                const id = String(retreat.id);
+            sensors={sensors}
+            onDragStart={({ active }) => {
+              setActiveId(active.id);
+              setClonedItems(state.families);
+              lastOverId.current = null;
+              recentlyMovedToNewFamily.current = false;
+              rebuildOptimisticSnapshot();
+            }}
+            onDragOver={handleDragOver} // <--- adiciona animação de empurrar
+            onDragEnd={handleDragEnd}
+            onDragCancel={onDragCancel}
+          >
+            <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+              <Grid container spacing={3}>
+                {(activeId ? getOptimisticFamilies(true) : state.families).map(
+                  (retreat) => {
+                    const id = String(retreat.id);
 
-                return (
-                  <SortableGridItem
-                    key={id}
-                    id={id}
-                    size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-                    display="flex"
-                    justifyContent="center"
-                  >
-                    <SortableContext
-                      items={familyMemberIds[retreat.id] || []}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {flexRender(table.getAllColumns()[0].columnDef.cell!, {
-                        row: { original: retreat },
-                        cell: { row: { original: retreat } },
-                      } as any)}
-                    </SortableContext>
-                  </SortableGridItem>
-                );
-              })}
-              {createPortal(
-                <DragOverlay adjustScale dropAnimation={dropAnimation}>
-                  {activeId
-                    ? familyIdSet.has(String(activeId))
-                      ? renderContainerDragOverlay(activeId)
-                      : renderSortableItemDragOverlay(activeId)
-                    : null}
-                </DragOverlay>,
-                document.body
-              )}
-            </Grid>
-          </SortableContext>
+                    return (
+                      <SortableGridItem
+                        key={id}
+                        id={id}
+                        size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                        display="flex"
+                        justifyContent="center"
+                      >
+                        <SortableContext
+                          items={familyMemberIds[retreat.id] || []}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {flexRender(
+                            table.getAllColumns()[0].columnDef.cell!,
+                            {
+                              row: { original: retreat },
+                              cell: { row: { original: retreat } },
+                            } as any
+                          )}
+                        </SortableContext>
+                      </SortableGridItem>
+                    );
+                  }
+                )}
+                {createPortal(
+                  <DragOverlay adjustScale dropAnimation={dropAnimation}>
+                    {activeId
+                      ? familyIdSet.has(String(activeId))
+                        ? renderContainerDragOverlay(activeId)
+                        : renderSortableItemDragOverlay(activeId)
+                      : null}
+                  </DragOverlay>,
+                  document.body
+                )}
+              </Grid>
+            </SortableContext>
           </DndContext>
         </ActiveDragContext.Provider>
       </Box>
