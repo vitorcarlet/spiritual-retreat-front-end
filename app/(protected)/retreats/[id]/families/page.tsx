@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 const RetreatFamilies = dynamic(
-  () => import("@/src/components/retreats/families/RetreatFamilies"),
+  () => import("@/src/components/retreats/tabs/families/RetreatFamilies"),
   {
     loading: () => <p>Loading...</p>,
   }

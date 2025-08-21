@@ -17,10 +17,11 @@ import {
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
 import { useQuery } from "@tanstack/react-query";
-import { fetchRetreatData } from "../shared";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
-import LocationField from "../../fields/LocalizationFields/LocationField";
-import TextFieldMasked from "../../fields/maskedTextFields/TextFieldMasked";
+import { fetchRetreatData } from "../../shared";
+import LocationField from "@/src/components/fields/LocalizationFields/LocationField";
+import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldMasked";
+
 
 const emptyFormData: Omit<Retreat, "id" | "state"> = {
   title: "",

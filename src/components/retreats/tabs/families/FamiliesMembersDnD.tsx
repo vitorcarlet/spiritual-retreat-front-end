@@ -3,7 +3,7 @@
 import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Box, Paper, Typography, Stack, Divider, Button } from "@mui/material";
+import { Box, Paper, Typography, Stack, Button } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 
 interface FamilyMembersDnDColumnProps {
@@ -24,7 +24,6 @@ export function FamilyMembersDnDColumn({
   addButtonLabel = "+ Membro",
   renderMemberExtra,
 }: FamilyMembersDnDColumnProps) {
-  console.log("FamilyMembersDnDColumn", family);
   const members: Participant[] = Array.isArray(family.members)
     ? (family.members as Participant[])
     : [];
@@ -113,6 +112,9 @@ export function MemberSortable({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.6 : 1,
+    zIndex: isSorting ? 1000 : "auto",
+    touchAction: "none",
+    position: "relative",
     cursor: "grab",
   };
   return (

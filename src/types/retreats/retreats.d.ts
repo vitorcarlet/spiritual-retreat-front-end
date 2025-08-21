@@ -19,7 +19,7 @@ interface Retreat {
   instructor?: string; // Opcional, caso tenha instrutor
 }
 
-interface Participant {
+export interface Participant {
   id: number;
   name: string;
   firstName: string;

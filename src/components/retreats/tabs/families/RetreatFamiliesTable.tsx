@@ -30,8 +30,8 @@ import {
   Paper,
 } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import Iconify from "../../Iconify";
-import { RetreatsCardTableFilters } from "../types";
+import Iconify from "../../../Iconify";
+import { RetreatsCardTableFilters } from "../../types";
 
 import {
   DndContext,
@@ -417,6 +417,11 @@ export default function RetreatFamiliesTable2({
     if (!over) return;
     if (!optimisticOrderRef.current) rebuildOptimisticSnapshot();
 
+    console.log("DragOver", {
+      active: active.id,
+      over: over.id,
+      lastOverId: lastOverId.current,
+    });
     // Apenas lida com membros (não famílias) aqui
     if (familyIdSet.has(String(active.id))) return; // dragging container
 
@@ -478,14 +483,7 @@ export default function RetreatFamiliesTable2({
       membersOrder[toFam].splice(insertIndex, 0, activeIdStr);
     }
 
-    // Agenda re-render leve (1 por frame) para refletir alteração visual
-    if (!frameScheduledRef.current) {
-      frameScheduledRef.current = true;
-      requestAnimationFrame(() => {
-        frameScheduledRef.current = false;
-        forceFrame();
-      });
-    }
+    disp;
   };
 
   // ---------- Ajuste do overlay de membro (visual consistente) ----------
@@ -548,8 +546,7 @@ export default function RetreatFamiliesTable2({
         <Box
           sx={{
             height: 140,
-            background:
-              "linear-gradient(135deg,#1976d2 0%, #42a5f5 70%, #90caf9 100%)",
+            backgroundColor: "background.paper",
             position: "relative",
           }}
         >
@@ -790,7 +787,7 @@ export default function RetreatFamiliesTable2({
               recentlyMovedToNewFamily.current = false;
               rebuildOptimisticSnapshot();
             }}
-            onDragOver={handleDragOver} // <--- adiciona animação de empurrar
+            //onDragOver={handleDragOver} // <--- adiciona animação de empurrar
             onDragEnd={handleDragEnd}
             onDragCancel={onDragCancel}
           >

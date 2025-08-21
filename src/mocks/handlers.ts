@@ -7,8 +7,9 @@ import getUserById from "./handlerData/getUserById";
 import { mockMetrics, mockRetreats } from "./handlerData/dashboard";
 import { mockReports } from "./handlerData/reports";
 import { mockUsers } from "./handlerData/users";
-import { mockContemplatedParticipants } from "./handlerData/contemplated";
-import { mockFamilies } from "./handlerData/families";
+import { mockContemplatedParticipants } from "./handlerData/retreats/contemplated";
+import { mockFamilies } from "./handlerData/retreats/families";
+import { mockTents } from "./handlerData/retreats/tents";
 
 type Request = {
   email?: string;
@@ -193,6 +194,15 @@ export const handlers = [
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
       const payload = paginate(mockContemplatedParticipants, url);
+      return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
+
+  http.get(
+    "http://localhost:3001/api/retreats/:id/tents",
+    ({ request /*, params */ }) => {
+      const url = new URL(request.url);
+      const payload = paginate(mockTents, url);
       return HttpResponse.json(payload, { status: 200 });
     }
   ),

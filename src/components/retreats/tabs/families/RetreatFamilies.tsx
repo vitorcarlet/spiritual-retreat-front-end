@@ -20,12 +20,12 @@ import RetreatFamiliesTable from "./RetreatFamiliesTable";
 import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
-} from "../types";
+} from "../../types";
 import getPermission from "@/src/utils/getPermission";
 import { useSession } from "next-auth/react";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { getFilters } from "./getFilters";
-import FilterButton from "../../filters/FilterButton";
+import FilterButton from "../../../filters/FilterButton";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
@@ -154,7 +154,13 @@ export default function RetreatFamilies({
   return (
     <Container
       maxWidth="xl"
-      sx={{ py: 4, pt: 2, height: "100%", display: "flex", flexDirection: "column" }}
+      sx={{
+        py: 4,
+        pt: 2,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
       <Stack direction="row" spacing={2} alignItems="center" mb={3}>
         <Typography variant="h5">{t("retreats-families")}</Typography>

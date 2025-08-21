@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
-} from "../types";
+} from "../../types";
 
 type DateFilters = FiltersDate<ServiceOrdersReportsFilters>;
 
