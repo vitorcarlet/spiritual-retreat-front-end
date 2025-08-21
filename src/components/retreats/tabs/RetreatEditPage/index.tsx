@@ -22,7 +22,6 @@ import { fetchRetreatData } from "../../shared";
 import LocationField from "@/src/components/fields/LocalizationFields/LocationField";
 import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldMasked";
 
-
 const emptyFormData: Omit<Retreat, "id" | "state"> = {
   title: "",
   description: "",
