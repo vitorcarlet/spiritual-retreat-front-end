@@ -21,6 +21,7 @@ import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import { fetchRetreatData } from "../../shared";
 import LocationField from "@/src/components/fields/LocalizationFields/LocationField";
 import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldMasked";
+import { Retreat } from "@/src/types/retreats";
 
 const emptyFormData: Omit<Retreat, "id" | "state"> = {
   title: "",

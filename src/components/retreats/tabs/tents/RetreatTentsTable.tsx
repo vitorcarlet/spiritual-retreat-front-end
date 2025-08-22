@@ -177,17 +177,17 @@ export default function RetreatTentsTable({
 }: Props) {
   const initialItems: Items | undefined = useMemo(() => {
     const obj = InitialItems?.reduce((acc, item) => {
-      const key = String.fromCharCode(65 + (item.id % 4)); // A, B, C, D
+      const key = String(item.id); // A, B, C, D
       if (!acc[key]) {
         acc[key] = item.members?.map((m) => m.id as UniqueIdentifier) || [];
       }
-      acc[key].push(
-        ...(item.members?.map((m) => m.id as UniqueIdentifier) || [])
-      );
+
       return acc;
     }, {} as Items);
     return obj;
   }, [InitialItems]);
+
+  console.log("Initial Items:", InitialItems, initialItems);
 
   const [items, setItems] = useState<Items>(
     () =>

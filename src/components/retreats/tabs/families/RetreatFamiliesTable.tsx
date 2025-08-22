@@ -75,7 +75,7 @@ interface RetreatsCardTableProps {
   ) => void;
 }
 
-export default function RetreatFamiliesTable2({
+export default function RetreatFamiliesTable({
   data,
   total,
   filters,
