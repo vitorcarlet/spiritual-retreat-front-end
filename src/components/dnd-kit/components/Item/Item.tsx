@@ -26,12 +26,15 @@ const fadeIn = keyframes`
 // Styled Wrapper (equivale a .Wrapper)
 const Wrapper = styled("li", {
   shouldForwardProp: (prop) =>
-    !["dragOverlay", "fadeIn", "sorting"].includes(String(prop)),
+    !["dragOverlay", "fadeIn", "sorting, transform, color, index, wrapperStyle"].includes(String(prop)),
 })<{
   dragOverlay?: boolean;
   fadeIn?: boolean;
   sorting?: boolean;
-}>(({ dragOverlay, fadeIn }) => ({
+  transform?: Transform;
+  color?: string;
+  index?: number;
+}>(({ theme, dragOverlay, fadeIn, transform, color, index }) => ({
   display: "flex",
   boxSizing: "border-box",
   transformOrigin: "0 0",
@@ -39,20 +42,32 @@ const Wrapper = styled("li", {
   listStyle: "none",
   ...(fadeIn && {
     animation: `${fadeIn} 500ms ease`,
-    animationName: fadeIn ? fadeIn : undefined,
+    //animationName: fadeIn ? fadeIn : undefined,
   }),
   ...(dragOverlay && {
-    "--scale": 1.05,
-    "--box-shadow-picked-up":
-      "0 0 0 1px rgba(63,63,68,0.05), -1px 0 15px 0 rgba(34,33,81,0.01), 0 15px 15px 0 rgba(34,33,81,0.25)",
+    // tenho que ajustar a estilização condicional
+    //scale: 1.05,
+    boxShadow: theme.vars?.shadows[3],
     zIndex: 999,
+  }),
+  ...(transform && {
+    translateX: transform ? `${Math.round(transform.x)}px` : undefined,
+    translateY: transform ? `${Math.round(transform.y)}px` : undefined,
+    scaleX: transform?.scaleX ? `${transform.scaleX}` : undefined,
+    scaleY: transform?.scaleY ? `${transform.scaleY}` : undefined,
+  }),
+  ...(color && {
+    color,
+  }),
+  ...(index && {
+    index,
   }),
 }));
 
 // Styled Item (equivale a .Item)
 const ItemRoot = styled("div", {
   shouldForwardProp: (prop) =>
-    !["dragOverlay", "dragging", "disabled", "withHandle", "hasColor"].includes(
+    !["dragOverlay", "wrapperStyle", "dragging", "disabled", "withHandle", "hasColor"].includes(
       String(prop)
     ),
 })<{
@@ -157,6 +172,7 @@ export interface Props {
   transition?: string | null;
   wrapperStyle?: CSSProperties;
   value: ReactNode;
+  children: ReactNode;
   onRemove?(): void;
   renderItem?(args: {
     dragOverlay: boolean;
@@ -191,7 +207,8 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Item(
     transition,
     transform,
     value,
-    wrapperStyle,
+    children,
+   // wrapperStyle,
     ...props
   },
   ref
@@ -227,18 +244,24 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Item(
       dragOverlay={dragOverlay}
       fadeIn={fadeIn}
       sorting={sorting}
-      style={{
-        ...wrapperStyle,
-        transition: [transition, wrapperStyle?.transition]
-          .filter(Boolean)
-          .join(", "),
-        "--translate-x": transform ? `${Math.round(transform.x)}px` : undefined,
-        "--translate-y": transform ? `${Math.round(transform.y)}px` : undefined,
-        "--scale-x": transform?.scaleX ? `${transform.scaleX}` : undefined,
-        "--scale-y": transform?.scaleY ? `${transform.scaleY}` : undefined,
-        "--index": index,
-        "--color": color,
-      }}
+      transform={transform}
+      index={index}
+      color={color}
+      // sx={{
+      //   transform ? `${Math.round(transform.x)}px` : undefined,
+      // }}
+      // style={{
+      //   ...wrapperStyle,
+      //   transition: [transition, wrapperStyle?.transition]
+      //     .filter(Boolean)
+      //     .join(", "),
+      //   "--translate-x": transform ? `${Math.round(transform.x)}px` : undefined,
+      //   "--translate-y": transform ? `${Math.round(transform.y)}px` : undefined,
+      //   "--scale-x": transform?.scaleX ? `${transform.scaleX}` : undefined,
+      //   "--scale-y": transform?.scaleY ? `${transform.scaleY}` : undefined,
+      //   "--index": index,
+      //   "--color": color,
+      // }}
     >
       <ItemRoot
         dragOverlay={dragOverlay}
