@@ -23,13 +23,24 @@ export const fetchRetreatData = async (
   }
 };
 
-// lib/data.js
-import { cache } from "react";
+export const fetchPublicRetreat = async (
+  retreatId: string
+): Promise<Retreat | null> => {
+  try {
+    const result = await handleApiResponse<Retreat>(
+      await sendRequestServerVanilla.get(`/public/retreats/${retreatId}`, {
+        next: { revalidate: 300 },
+        cache: "no-store",
+      })
+    );
 
-export const getPublicRetreat = cache(async (id: string) => {
-  const res = await fetch(`http://localhost:3001/api/public/retreats/${id}`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch post");
+    if (result.success && result.data) {
+      return result.data;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Erro ao buscar dados do retiro:", error);
+    return null;
   }
-  return res.json();
-});
+};
