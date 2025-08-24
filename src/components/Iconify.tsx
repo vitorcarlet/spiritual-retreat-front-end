@@ -1,10 +1,12 @@
 "use client";
 
 import { Icon, IconifyIcon, iconExists } from "@iconify/react";
-import { Box, BoxProps } from "@mui/material";
+import { Box, BoxProps, Typography } from "@mui/material";
+import { IconColorTheme } from "../theme/core/palette";
+import { memo } from "react";
 
 type Props = BoxProps & {
-  color?: string; // editar os outros arquivos um dia
+  color?: IconColorTheme | string; // editar os outros arquivos um dia
   icon: IconifyIcon | string | undefined;
   size?: number;
 };
@@ -17,19 +19,38 @@ const fallbackIcon = (icon: Props["icon"]) => {
   return icon.replace("fa6-solid:", "fa-solid:");
 };
 
-const Iconify = ({ icon, size = 2, sx, ...other }: Props) => {
+const IconifyFn = ({ icon, size = 2, sx, ...other }: Props) => {
   return (
-    <Box
-      component={Icon}
-      icon={fallbackIcon(icon)}
+    <Typography
+      component="span"
+      className="iconify"
       sx={{
+        display: "inline-flex",
+        justifyContent: "center",
+        alignItems: "center",
         minWidth: `${size * 0.625}rem`,
-        fontSize: `${size * 0.625}rem`,
+        minHeight: `${size * 0.625}rem`,
+        // width: '100%',
+        height: "100%",
         ...sx,
       }}
       {...other}
-    />
+    >
+      <Box
+        component={Icon as any}
+        icon={fallbackIcon(icon)}
+        sx={{
+          minWidth: `${size * 0.625}rem`,
+          minHeight: `${size * 0.625}rem`,
+          fontSize: `${size * 0.625}rem`,
+          ...sx,
+        }}
+        // {...other}
+      />
+    </Typography>
   );
 };
+
+const Iconify = memo(IconifyFn);
 
 export default Iconify;

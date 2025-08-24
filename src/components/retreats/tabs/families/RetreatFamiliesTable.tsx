@@ -56,6 +56,7 @@ import type { UniqueIdentifier } from "@dnd-kit/core";
 import { createPortal } from "react-dom";
 import { dropAnimation } from "@/src/components/dnd-kit/shared";
 import { FamilyMembersDnDColumn, MemberItem } from "./FamiliesMembersDnD";
+import { Participant } from "@/src/types/retreats";
 
 // Contexto para expor o id ativo e indicar modo de drag para children
 export const ActiveDragContext = createContext<{
@@ -412,79 +413,79 @@ export default function RetreatFamiliesTable({
   );
 
   // ---------- NOVO: animação (reordenação otimista) enquanto arrasta membros ----------
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    if (!optimisticOrderRef.current) rebuildOptimisticSnapshot();
+  // const handleDragOver = (event: DragOverEvent) => {
+  //   const { active, over } = event;
+  //   if (!over) return;
+  //   if (!optimisticOrderRef.current) rebuildOptimisticSnapshot();
 
-    console.log("DragOver", {
-      active: active.id,
-      over: over.id,
-      lastOverId: lastOverId.current,
-    });
-    // Apenas lida com membros (não famílias) aqui
-    if (familyIdSet.has(String(active.id))) return; // dragging container
+  //   console.log("DragOver", {
+  //     active: active.id,
+  //     over: over.id,
+  //     lastOverId: lastOverId.current,
+  //   });
+  //   // Apenas lida com membros (não famílias) aqui
+  //   if (familyIdSet.has(String(active.id))) return; // dragging container
 
-    const activeInfo = findMember(active.id);
-    const overInfo = findMember(over.id);
+  //   const activeInfo = findMember(active.id);
+  //   const overInfo = findMember(over.id);
 
-    // Caso over seja família vazia (sem membros): inserir no final
-    let targetFamilyId: string | number | null = null;
-    let targetIndex: number | null = null;
+  //   // Caso over seja família vazia (sem membros): inserir no final
+  //   let targetFamilyId: string | number | null = null;
+  //   let targetIndex: number | null = null;
 
-    if (!overInfo) {
-      // Pode ser card da família
-      const overFam = state.families.find(
-        (f) => String(f.id) === String(over.id)
-      );
-      if (overFam) {
-        targetFamilyId = overFam.id;
-        targetIndex = (overFam.members || []).length; // final
-      }
-    } else {
-      targetFamilyId = overInfo.familyId;
-      targetIndex = overInfo.index;
-    }
+  //   if (!overInfo) {
+  //     // Pode ser card da família
+  //     const overFam = state.families.find(
+  //       (f) => String(f.id) === String(over.id)
+  //     );
+  //     if (overFam) {
+  //       targetFamilyId = overFam.id;
+  //       targetIndex = (overFam.members || []).length; // final
+  //     }
+  //   } else {
+  //     targetFamilyId = overInfo.familyId;
+  //     targetIndex = overInfo.index;
+  //   }
 
-    if (!activeInfo) return; // item não localizado ainda
-    if (targetFamilyId == null || targetIndex == null) return;
+  //   if (!activeInfo) return; // item não localizado ainda
+  //   if (targetFamilyId == null || targetIndex == null) return;
 
-    const fromFam = String(activeInfo.familyId);
-    const toFam = String(targetFamilyId);
-    const activeIdStr = String(active.id);
+  //   const fromFam = String(activeInfo.familyId);
+  //   const toFam = String(targetFamilyId);
+  //   const activeIdStr = String(active.id);
 
-    const membersOrder = optimisticOrderRef.current!.membersOrder;
-    // Remover do array de origem (se ainda presente)
-    membersOrder[fromFam] = (membersOrder[fromFam] || []).filter(
-      (id) => id !== activeIdStr
-    );
+  //   const membersOrder = optimisticOrderRef.current!.membersOrder;
+  //   // Remover do array de origem (se ainda presente)
+  //   membersOrder[fromFam] = (membersOrder[fromFam] || []).filter(
+  //     (id) => id !== activeIdStr
+  //   );
 
-    // Garantir array de destino
-    if (!membersOrder[toFam]) membersOrder[toFam] = [];
+  //   // Garantir array de destino
+  //   if (!membersOrder[toFam]) membersOrder[toFam] = [];
 
-    // Ajustar índice destino se item veio da mesma família e estava antes
-    let insertIndex = targetIndex;
-    if (fromFam === toFam) {
-      const currentIndex = membersOrder[toFam].indexOf(activeIdStr);
-      if (currentIndex !== -1 && currentIndex < insertIndex) {
-        insertIndex = Math.max(0, insertIndex - 1);
-      }
-    }
+  //   // Ajustar índice destino se item veio da mesma família e estava antes
+  //   let insertIndex = targetIndex;
+  //   if (fromFam === toFam) {
+  //     const currentIndex = membersOrder[toFam].indexOf(activeIdStr);
+  //     if (currentIndex !== -1 && currentIndex < insertIndex) {
+  //       insertIndex = Math.max(0, insertIndex - 1);
+  //     }
+  //   }
 
-    // Evitar múltiplas inserções consecutivas no mesmo frame
-    const existingIndex = membersOrder[toFam].indexOf(activeIdStr);
-    if (existingIndex !== -1) {
-      // Reposicionar somente se mudou
-      if (existingIndex !== insertIndex) {
-        membersOrder[toFam].splice(existingIndex, 1);
-        membersOrder[toFam].splice(insertIndex, 0, activeIdStr);
-      }
-    } else {
-      membersOrder[toFam].splice(insertIndex, 0, activeIdStr);
-    }
+  //   // Evitar múltiplas inserções consecutivas no mesmo frame
+  //   const existingIndex = membersOrder[toFam].indexOf(activeIdStr);
+  //   if (existingIndex !== -1) {
+  //     // Reposicionar somente se mudou
+  //     if (existingIndex !== insertIndex) {
+  //       membersOrder[toFam].splice(existingIndex, 1);
+  //       membersOrder[toFam].splice(insertIndex, 0, activeIdStr);
+  //     }
+  //   } else {
+  //     membersOrder[toFam].splice(insertIndex, 0, activeIdStr);
+  //   }
 
-    disp;
-  };
+  //   disp;
+  // };
 
   // ---------- Ajuste do overlay de membro (visual consistente) ----------
   function renderSortableItemDragOverlay(id: UniqueIdentifier) {
@@ -657,7 +658,7 @@ export default function RetreatFamiliesTable({
     const overId = over.id;
 
     const familiesSnapshot = activeId
-      ? getOptimisticFamilies(true)
+      ? getOptimisticFamilies()
       : state.families;
 
     // 1. Tentar tratar como reorder de famílias
@@ -744,9 +745,7 @@ export default function RetreatFamiliesTable({
     Record<string | number, UniqueIdentifier[]>
   >({});
   useEffect(() => {
-    const sourceFamilies = activeId
-      ? getOptimisticFamilies(true)
-      : state.families;
+    const sourceFamilies = activeId ? getOptimisticFamilies() : state.families;
     const map: Record<string | number, UniqueIdentifier[]> = {};
     for (const f of sourceFamilies) {
       map[f.id] = (f.members || []).map((m) => {
@@ -793,7 +792,7 @@ export default function RetreatFamiliesTable({
           >
             <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
               <Grid container spacing={3}>
-                {(activeId ? getOptimisticFamilies(true) : state.families).map(
+                {(activeId ? getOptimisticFamilies() : state.families).map(
                   (retreat) => {
                     const id = String(retreat.id);
 

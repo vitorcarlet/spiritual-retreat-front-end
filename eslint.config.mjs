@@ -15,6 +15,7 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
+      "no-console": ["warn", { allow: ["warn", "error"] }],
       "react/jsx-uses-react": "error",
       "react/jsx-uses-vars": "error",
       "@typescript-eslint/no-explicit-any": "warn",

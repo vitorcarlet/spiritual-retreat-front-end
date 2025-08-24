@@ -9,151 +9,125 @@ import {
 } from "react";
 import type { DraggableSyntheticListeners } from "@dnd-kit/core";
 import type { Transform } from "@dnd-kit/utilities";
-import { Box, keyframes, styled } from "@mui/material";
+import { Box, keyframes } from "@mui/material";
 import { Handle, Remove } from "./components";
 
-// Keyframes (mantém uso de CSS vars)
 const pop = keyframes`
   0% { transform: scale(1); box-shadow: var(--box-shadow); }
   100% { transform: scale(var(--scale)); box-shadow: var(--box-shadow-picked-up); }
 `;
 
-const fadeIn = keyframes`
+const fadeInKF = keyframes`
   0% { opacity: 0; }
   100% { opacity: 1; }
 `;
 
-// Styled Wrapper (equivale a .Wrapper)
-const Wrapper = styled("li", {
-  shouldForwardProp: (prop) =>
-    !["dragOverlay", "fadeIn", "sorting, transform, color, index, wrapperStyle"].includes(String(prop)),
-})<{
-  dragOverlay?: boolean;
-  fadeIn?: boolean;
-  sorting?: boolean;
-  transform?: Transform;
-  color?: string;
-  index?: number;
-}>(({ theme, dragOverlay, fadeIn, transform, color, index }) => ({
-  display: "flex",
-  boxSizing: "border-box",
-  transformOrigin: "0 0",
-  touchAction: "manipulation",
-  listStyle: "none",
-  ...(fadeIn && {
-    animation: `${fadeIn} 500ms ease`,
-    //animationName: fadeIn ? fadeIn : undefined,
-  }),
-  ...(dragOverlay && {
-    // tenho que ajustar a estilização condicional
-    //scale: 1.05,
-    boxShadow: theme.vars?.shadows[3],
-    zIndex: 999,
-  }),
-  ...(transform && {
-    translateX: transform ? `${Math.round(transform.x)}px` : undefined,
-    translateY: transform ? `${Math.round(transform.y)}px` : undefined,
-    scaleX: transform?.scaleX ? `${transform.scaleX}` : undefined,
-    scaleY: transform?.scaleY ? `${transform.scaleY}` : undefined,
-  }),
-  ...(color && {
-    color,
-  }),
-  ...(index && {
-    index,
-  }),
-}));
-
-// Styled Item (equivale a .Item)
-const ItemRoot = styled("div", {
-  shouldForwardProp: (prop) =>
-    !["dragOverlay", "wrapperStyle", "dragging", "disabled", "withHandle", "hasColor"].includes(
-      String(prop)
-    ),
-})<{
+// Replaced styled ItemRoot with sx-based component
+interface ItemRootProps {
   dragOverlay?: boolean;
   dragging?: boolean;
   disabled?: boolean;
   withHandle?: boolean;
   hasColor?: boolean;
-}>(({ theme, dragOverlay, dragging, disabled, withHandle, hasColor }) => {
-  const focusColor = theme.vars?.palette.primary.main;
-  return {
-    position: "relative",
-    display: "flex",
-    flexGrow: 1,
-    alignItems: "center",
-    padding: "18px 20px",
-    backgroundColor: theme.vars?.palette.background.default,
-    boxShadow: `0 0 0 calc(1px / var(--scale-x, 1)) rgba(63,63,68,0.05),
-                  0 1px calc(3px / var(--scale-x, 1)) 0 rgba(34,33,81,0.15)`,
-    outline: "none",
-    borderRadius: "calc(4px / var(--scale-x, 1))",
-    boxSizing: "border-box",
-    transformOrigin: "50% 50%",
-    WebkitTapHighlightColor: "transparent",
-    color: theme.vars?.palette.text.primary,
-    fontWeight: 400,
-    fontSize: "1rem",
-    whiteSpace: "nowrap",
-    transform: "scale(var(--scale, 1))",
-    transition:
-      "box-shadow 200ms cubic-bezier(0.18,0.67,0.6,1.22), background-color 160ms",
-    ...(withHandle
-      ? { cursor: "default" }
-      : { cursor: "grab", touchAction: "manipulation" }),
-    "&:focus-visible": {
-      boxShadow: `0 0 0 2px ${focusColor}, 0 1px 4px rgba(0,0,0,0.2)`,
-    },
-    ...(dragging &&
-      !dragOverlay && {
-        opacity: "var(--dragging-opacity, 0.5)",
-      }),
-    ...(disabled && {
-      color: "#999",
-      backgroundColor: "#f1f1f1",
-      cursor: "not-allowed",
-      "&:focus": {
-        boxShadow: `0 0 0 2px ${focusColor}33`,
-      },
-    }),
-    ...(dragOverlay && {
-      cursor: "grabbing",
-      animation: `${pop} 200ms cubic-bezier(0.18,0.67,0.6,1.22)`,
-      "--scale": 1.05,
-      boxShadow:
-        "0 0 0 1px rgba(63,63,68,0.05), -1px 0 15px 0 rgba(34,33,81,0.01), 0 15px 15px 0 rgba(34,33,81,0.25)",
-      opacity: 1,
-    }),
-    ...(hasColor && {
-      "&::before": {
-        content: '""',
-        position: "absolute",
-        top: "50%",
-        transform: "translateY(-50%)",
-        left: 0,
-        height: "100%",
-        width: 3,
-        display: "block",
-        borderTopLeftRadius: 3,
-        borderBottomLeftRadius: 3,
-        backgroundColor: "var(--color)",
-      },
-    }),
-    "&:hover .Remove": {
-      visibility: "visible",
-    },
-  };
-});
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
+  className?: string;
+  tabIndex?: number;
+  [key: string]: unknown;
+}
 
-const ActionsBox = styled(Box)({
-  display: "flex",
-  alignSelf: "flex-start",
-  marginTop: -12,
-  marginLeft: "auto",
-  marginBottom: -15,
-  marginRight: -10,
-});
+const ItemRoot = ({
+  dragOverlay,
+  dragging,
+  disabled,
+  withHandle,
+  hasColor,
+  children,
+  ...rest
+}: ItemRootProps) => {
+  if (rest.value === 2441) {
+    console.log("ITEMDND", { rest }, dragging, dragOverlay);
+  }
+  return (
+    <Box
+      component="div"
+      {...rest}
+      sx={(theme) => {
+        const focusColor =
+          theme.vars?.palette.primary.main || theme.palette.primary.main;
+        return {
+          position: "relative",
+          display: "flex",
+          flexGrow: 1,
+          alignItems: "center",
+          padding: "18px 20px",
+          backgroundColor:
+            theme.vars?.palette.background.default ||
+            theme.palette.background.paper,
+          boxShadow: `0 0 0 calc(1px / var(--scale-x, 1)) rgba(63,63,68,0.05), 0 1px calc(3px / var(--scale-x, 1)) 0 rgba(34,33,81,0.15)`,
+          outline: "none",
+          borderRadius: "calc(4px / var(--scale-x, 1))",
+          boxSizing: "border-box",
+          transformOrigin: "50% 50%",
+          WebkitTapHighlightColor: "transparent",
+          color: theme.vars?.palette.text.primary || theme.palette.text.primary,
+          fontWeight: 400,
+          fontSize: "1rem",
+          whiteSpace: "nowrap",
+          transform: "scale(var(--scale, 1))",
+          transition:
+            "box-shadow 200ms cubic-bezier(0.18,0.67,0.6,1.22), background-color 160ms",
+          ...(withHandle
+            ? { cursor: "default" }
+            : { cursor: "grab", touchAction: "manipulation" }),
+          "&:focus-visible": {
+            boxShadow: `0 0 0 2px ${focusColor}, 0 1px 4px rgba(0,0,0,0.2)`,
+          },
+          ...(dragging &&
+            !dragOverlay && {
+              opacity: "var(--dragging-opacity, 0.5)",
+            }),
+          ...(disabled && {
+            color: "#999",
+            backgroundColor: "#f1f1f1",
+            cursor: "not-allowed",
+            "&:focus": {
+              boxShadow: `0 0 0 2px ${focusColor}33`,
+            },
+          }),
+          ...(dragOverlay && {
+            cursor: "grabbing",
+            animation: `${pop} 200ms cubic-bezier(0.18,0.67,0.6,1.22)`,
+            "--scale": 1.05,
+            boxShadow:
+              "0 0 0 1px rgba(63,63,68,0.05), -1px 0 15px 0 rgba(34,33,81,0.01), 0 15px 15px 0 rgba(34,33,81,0.25)",
+            opacity: 1,
+          }),
+          ...(hasColor && {
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: "50%",
+              transform: "translateY(-50%)",
+              left: 0,
+              height: "100%",
+              width: 3,
+              display: "block",
+              borderTopLeftRadius: 3,
+              borderBottomLeftRadius: 3,
+              backgroundColor: "var(--color)",
+            },
+          }),
+          "&:hover .Remove": {
+            visibility: "visible",
+          },
+        };
+      }}
+    >
+      {children}
+    </Box>
+  );
+};
 
 export interface Props {
   dragOverlay?: boolean;
@@ -161,7 +135,7 @@ export interface Props {
   disabled?: boolean;
   dragging?: boolean;
   handle?: boolean;
-  handleProps?: any;
+  handleProps?: Record<string, unknown>;
   height?: number;
   index?: number;
   fadeIn?: boolean;
@@ -172,7 +146,7 @@ export interface Props {
   transition?: string | null;
   wrapperStyle?: CSSProperties;
   value: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
   onRemove?(): void;
   renderItem?(args: {
     dragOverlay: boolean;
@@ -208,7 +182,7 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Item(
     transform,
     value,
     children,
-   // wrapperStyle,
+    wrapperStyle,
     ...props
   },
   ref
@@ -239,29 +213,37 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Item(
   }
 
   return (
-    <Wrapper
+    <Box
+      component="li"
       ref={ref}
-      dragOverlay={dragOverlay}
-      fadeIn={fadeIn}
-      sorting={sorting}
-      transform={transform}
-      index={index}
-      color={color}
-      // sx={{
-      //   transform ? `${Math.round(transform.x)}px` : undefined,
-      // }}
-      // style={{
-      //   ...wrapperStyle,
-      //   transition: [transition, wrapperStyle?.transition]
-      //     .filter(Boolean)
-      //     .join(", "),
-      //   "--translate-x": transform ? `${Math.round(transform.x)}px` : undefined,
-      //   "--translate-y": transform ? `${Math.round(transform.y)}px` : undefined,
-      //   "--scale-x": transform?.scaleX ? `${transform.scaleX}` : undefined,
-      //   "--scale-y": transform?.scaleY ? `${transform.scaleY}` : undefined,
-      //   "--index": index,
-      //   "--color": color,
-      // }}
+      sx={{
+        display: "flex",
+        boxSizing: "border-box",
+        transformOrigin: "0 0",
+        touchAction: "manipulation",
+        listStyle: "none",
+        position: "relative",
+        ...(fadeIn && {
+          animation: `${fadeInKF} 500ms ease`,
+        }),
+        ...(dragOverlay && {
+          boxShadow: (theme) => theme.shadows[3],
+          zIndex: 999,
+        }),
+        ...(transform && {
+          transform:
+            `translate3d(${Math.round(transform.x)}px, ${Math.round(
+              transform.y
+            )}px,0)` +
+            (transform.scaleX || transform.scaleY
+              ? ` scale(${transform.scaleX || 1}, ${transform.scaleY || 1})`
+              : ""),
+        }),
+        ...(color && { color }),
+        ...(typeof index === "number" &&
+          ({ "--index": index } as Record<string, number>)),
+        ...wrapperStyle,
+      }}
     >
       <ItemRoot
         dragOverlay={dragOverlay}
@@ -276,12 +258,23 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Item(
         tabIndex={!handle ? 0 : undefined}
       >
         {value}
-        <ActionsBox className="Actions">
+        <Box
+          className="Actions"
+          sx={{
+            display: "flex",
+            alignSelf: "flex-start",
+            marginTop: -12,
+            marginLeft: "auto",
+            marginBottom: -15,
+            marginRight: -10,
+          }}
+        >
           {onRemove ? <Remove className="Remove" onClick={onRemove} /> : null}
           {handle ? <Handle {...handleProps} {...listeners} /> : null}
-        </ActionsBox>
+        </Box>
+        {children}
       </ItemRoot>
-    </Wrapper>
+    </Box>
   );
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { alpha } from "@mui/material/styles";
+import { alpha } from "@mui/material";
 
 function createGradient(color1: string, color2: string) {
   return `linear-gradient(to bottom, ${color1}, ${color2})`;
@@ -61,6 +61,27 @@ declare module "@mui/material/LinearProgress" {
 //     chart: ChartPaletteOptions;
 //   }
 // }
+
+type ThemedPalette = typeof COMMON & {
+  text: { primary: string; secondary: string; disabled: string };
+  background: { paper: string; default: string; neutral: string };
+  action: {
+    active: string;
+    hover: string;
+    selected: string;
+    disabled: string;
+    disabledBackground: string;
+    focus: string;
+    hoverOpacity: number;
+    disabledOpacity: number;
+  };
+};
+
+type NestedKeys<T, K extends keyof T = keyof T> = K extends string
+  ? `${K}.${Extract<keyof T[K], string>}`
+  : never;
+
+export type IconColorTheme = NestedKeys<ThemedPalette>;
 
 declare module "@mui/material" {
   interface Color {

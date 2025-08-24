@@ -77,27 +77,15 @@ const BreadcrumbIcon = ({
   const iconToUse = icon || defaultIcon;
 
   return (
-    <Box
+    <Iconify
+      icon={iconToUse}
+      size={size}
       sx={{
-        width: `${size * 16}px`, // ✅ Largura fixa para evitar shift
-        height: `${size * 16}px`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        // ✅ Transição suave para mudanças de cor
-        transition: "color 0.15s ease-in-out",
+        color: isLast ? "primary.main" : "text.secondary",
+        // ✅ Evitar layout shift durante carregamento
+        display: "block",
       }}
-    >
-      <Iconify
-        icon={iconToUse}
-        size={size}
-        sx={{
-          color: isLast ? "primary.main" : "text.secondary",
-          // ✅ Evitar layout shift durante carregamento
-          display: "block",
-        }}
-      />
-    </Box>
+    />
   );
 };
 
@@ -163,24 +151,11 @@ const Breadcrumbs: React.FC = () => {
 
   return (
     <Box display={"flex"} alignItems="center" gap={1}>
-      <Box
-        sx={{
-          width: 60, // ✅ Largura fixa
-          height: 60,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          // ✅ Previnir layout shift
-          flexShrink: 0,
-        }}
-      >
-        <Iconify
-          icon={breadcrumbs[breadcrumbs.length - 1].icon || "lucide:folder"}
-          size={6}
-          sx={{ color: "text.primary" }}
-        />
-      </Box>
-
+      <Iconify
+        icon={breadcrumbs[breadcrumbs.length - 1].icon || "lucide:folder"}
+        size={6}
+        sx={{ color: "text.primary" }}
+      />
       <Box>
         <Typography variant="h4">
           {title ?? breadcrumbs[breadcrumbs.length - 1].label}

@@ -171,12 +171,12 @@ export default function RetreatTents({ id: retreatId }: RetreatTentsProps) {
         )}
         {!isLoading && !isError && (
           <RetreatTentsTable
-            // total={tentsData?.total || 0}
-            // filters={filters}
+            total={tentsData?.total || 0}
+            filters={filters}
             items={tentsDataArray!}
-            // onEdit={handleEdit}
-            // onView={handleView}
-            // onFiltersChange={handleFiltersChange}
+            onEdit={handleEdit}
+            onView={handleView}
+            onFiltersChange={handleFiltersChange}
           />
         )}
       </Box>
