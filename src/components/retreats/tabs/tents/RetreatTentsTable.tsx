@@ -411,127 +411,148 @@ export default function RetreatTentsTable({
   });
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={collisionDetectionStrategy}
-      measuring={{
-        droppable: {
-          strategy: MeasuringStrategy.Always,
-        },
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 0,
       }}
-      onDragStart={({ active }) => {
-        setActiveId(active.id);
-        setClonedItems(items);
-      }}
-      onDragOver={({ active, over }) =>
-        onDragOver({
-          active,
-          over,
-          items,
-          setItems,
-          recentlyMovedToNewContainer,
-        })
-      }
-      onDragEnd={({ active, over }) =>
-        onDragEnd({
-          active,
-          over,
-          items,
-          activeId,
-          setItems,
-          setActiveId,
-          setContainers,
-          getNextContainerId,
-        })
-      }
-      cancelDrop={cancelDrop}
-      onDragCancel={onDragCancel}
-      modifiers={modifiers}
     >
-      <SortableContext
-        items={[...containers, PLACEHOLDER_ID]}
-        strategy={
-          vertical ? verticalListSortingStrategy : horizontalListSortingStrategy
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collisionDetectionStrategy}
+        measuring={{
+          droppable: {
+            strategy: MeasuringStrategy.Always,
+          },
+        }}
+        onDragStart={({ active }) => {
+          setActiveId(active.id);
+          setClonedItems(items);
+        }}
+        onDragOver={({ active, over }) =>
+          onDragOver({
+            active,
+            over,
+            items,
+            setItems,
+            recentlyMovedToNewContainer,
+          })
         }
+        onDragEnd={({ active, over }) =>
+          onDragEnd({
+            active,
+            over,
+            items,
+            activeId,
+            setItems,
+            setActiveId,
+            setContainers,
+            getNextContainerId,
+          })
+        }
+        cancelDrop={cancelDrop}
+        onDragCancel={onDragCancel}
+        modifiers={modifiers}
       >
-        <Grid container spacing={2}>
-          {containers.map((containerId) => (
-            <Grid key={containerId} size={{ xs: 12, md: 6, lg: 4 }}>
-              {flexRender(table.getAllColumns()[0].columnDef.cell!, {
-                row: { original: containerId },
-                cell: { row: { original: containerId } },
-              } as any)}
+        <SortableContext
+          items={[...containers, PLACEHOLDER_ID]}
+          strategy={
+            vertical
+              ? verticalListSortingStrategy
+              : horizontalListSortingStrategy
+          }
+        >
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: "auto",
+              pr: 0.5,
+              pb: 2,
+            }}
+          >
+            <Grid container spacing={2}>
+              {containers.map((containerId) => (
+                <Grid key={containerId} size={{ xs: 12, md: 6, lg: 4 }}>
+                  {flexRender(table.getAllColumns()[0].columnDef.cell!, {
+                    row: { original: containerId },
+                    cell: { row: { original: containerId } },
+                  } as any)}
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      </SortableContext>
-      {/* PAGINAÇÃO */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        justifyContent="space-between"
-        alignItems="center"
-        mt={4}
-      >
-        <Button
-          variant="outlined"
-          size="small"
-          endIcon={<Iconify icon="solar:alt-arrow-down-linear" />}
-          onClick={handlePopoverOpen}
-          sx={{ minWidth: 120 }}
+          </Box>
+        </SortableContext>
+        {/* PAGINAÇÃO */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          justifyContent="space-between"
+          alignItems="center"
+          mt={4}
         >
-          {filters.pageLimit || 8} por página
-        </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            endIcon={<Iconify icon="solar:alt-arrow-down-linear" />}
+            onClick={handlePopoverOpen}
+            sx={{ minWidth: 120 }}
+          >
+            {filters.pageLimit || 8} por página
+          </Button>
 
-        <Popover
-          open={open}
-          anchorEl={anchorEl}
-          onClose={handlePopoverClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-          transformOrigin={{ vertical: "top", horizontal: "left" }}
-        >
-          <MenuList>
-            {[4, 8, 12, 16].map((n) => (
-              <MenuItem key={n} onClick={() => handlePageLimitChange(n)}>
-                <ListItemText primary={`${n} por página`} />
-              </MenuItem>
-            ))}
-          </MenuList>
-        </Popover>
+          <Popover
+            open={open}
+            anchorEl={anchorEl}
+            onClose={handlePopoverClose}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            transformOrigin={{ vertical: "top", horizontal: "left" }}
+          >
+            <MenuList>
+              {[4, 8, 12, 16].map((n) => (
+                <MenuItem key={n} onClick={() => handlePageLimitChange(n)}>
+                  <ListItemText primary={`${n} por página`} />
+                </MenuItem>
+              ))}
+            </MenuList>
+          </Popover>
 
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Typography variant="body2" color="text.secondary" mr={2}>
-            {table.getState().pagination.pageIndex + 1}-
-            {Math.min(
-              table.getState().pagination.pageIndex +
-                table.getState().pagination.pageSize,
-              total ?? 0
-            )}{" "}
-            de {total ?? 0}
-          </Typography>
-          <Pagination
-            count={table.getPageCount()}
-            page={table.getState().pagination.pageIndex + 1}
-            onChange={(_, page) => onFiltersChange?.({ page: page })}
-            color="primary"
-          />
-        </Box>
-      </Stack>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Typography variant="body2" color="text.secondary" mr={2}>
+              {table.getState().pagination.pageIndex + 1}-
+              {Math.min(
+                table.getState().pagination.pageIndex +
+                  table.getState().pagination.pageSize,
+                total ?? 0
+              )}{" "}
+              de {total ?? 0}
+            </Typography>
+            <Pagination
+              count={table.getPageCount()}
+              page={table.getState().pagination.pageIndex + 1}
+              onChange={(_, page) => onFiltersChange?.({ page: page })}
+              color="primary"
+            />
+          </Box>
+        </Stack>
 
-      {createPortal(
-        <DragOverlay adjustScale={adjustScale} dropAnimation={dropAnimation}>
-          {activeId
-            ? containers.includes(activeId)
-              ? renderContainerDragOverlay(activeId)
-              : renderSortableItemDragOverlay(activeId)
-            : null}
-        </DragOverlay>,
-        document.body
-      )}
-      {trashable && activeId && !containers.includes(activeId) ? (
-        <Trash id={TRASH_ID} />
-      ) : null}
-    </DndContext>
+        {createPortal(
+          <DragOverlay adjustScale={adjustScale} dropAnimation={dropAnimation}>
+            {activeId
+              ? containers.includes(activeId)
+                ? renderContainerDragOverlay(activeId)
+                : renderSortableItemDragOverlay(activeId)
+              : null}
+          </DragOverlay>,
+          document.body
+        )}
+        {trashable && activeId && !containers.includes(activeId) ? (
+          <Trash id={TRASH_ID} />
+        ) : null}
+      </DndContext>
+    </Box>
   );
 
   function renderSortableItemDragOverlay(id: UniqueIdentifier) {

@@ -216,6 +216,24 @@ export const handlers = [
     }
   ),
 
+  http.get(
+    "http://localhost:3001/api/public/retreats",
+    ({ request /*, params */ }) => {
+      const url = new URL(request.url);
+      const payload = paginate(mockRetreats, url);
+      return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
+
+  http.get("http://localhost:3001/api/public/retreats/:id", ({ params }) => {
+    const id = params.id as string;
+    const retreat = mockRetreats.find((r) => r.id.toString() === id);
+    if (retreat) {
+      return HttpResponse.json(retreat, { status: 200 });
+    }
+    return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
+  }),
+
   http.get("http://localhost:3001/api/reports", () => {
     return HttpResponse.json(mockReports, { status: 200 });
   }),

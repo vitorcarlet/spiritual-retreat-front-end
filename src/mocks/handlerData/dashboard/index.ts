@@ -1,3 +1,5 @@
+import { Retreat } from "@/src/types/retreats";
+
 export const mockRetreats: Retreat[] = [
   {
     id: 1,

@@ -19,26 +19,24 @@ import {
   MenuItem,
   ListItemText,
 } from "@mui/material";
-import Iconify from "../../Iconify";
 import { RetreatsCardTableFilters } from "../types";
 import { Retreat } from "@/src/types/retreats";
+import Iconify from "@/src/components/Iconify";
 
 interface RetreatsCardTableProps {
   data?: Retreat[];
   total?: number;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
-  onEdit?: (retreat: Retreat) => void;
   onView?: (retreat: Retreat) => void;
   onFiltersChange: (
     filters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => void;
 }
 
-export default function RetreatsCardTable({
+export default function PublicRetreatsCardTable({
   data,
   total,
   filters,
-  onEdit,
   onView,
   onFiltersChange,
 }: RetreatsCardTableProps) {
@@ -209,7 +207,7 @@ export default function RetreatsCardTable({
                 size="medium"
                 variant="outlined"
                 sx={{
-                  width: 100,
+                  width: "100%",
                   backgroundColor: "primary.main",
                   color: "white",
                   borderColor: "primary.main",
@@ -220,15 +218,7 @@ export default function RetreatsCardTable({
                 }}
                 onClick={() => onView?.(retreat)}
               >
-                Ver mais
-              </Button>
-              <Button
-                sx={{ width: 100 }}
-                size="medium"
-                variant="outlined"
-                onClick={() => onEdit?.(retreat)}
-              >
-                Editar
+                Inscrever-se
               </Button>
             </Box>
           </Box>

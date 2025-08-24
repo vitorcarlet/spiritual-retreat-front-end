@@ -11,6 +11,7 @@ type BreadCrumbsContextProps = {
   title: string | null;
   pathname: string;
   setBreadCrumbsTitle: Dispatch<SetStateAction<BreadCrumbsState>>;
+  noBreadCrumbs: boolean;
 };
 
 type BreadCrumbsState = {
@@ -22,15 +23,20 @@ const BreadCrumbsContext = createContext<BreadCrumbsContextProps>({
   title: null,
   pathname: "",
   setBreadCrumbsTitle: () => {},
+  noBreadCrumbs: false,
 });
 
 export const useBreadCrumbs = () => useContext(BreadCrumbsContext);
 
 interface BreadCrumbsProviderProps {
   children: React.ReactNode;
+  noBreadCrumbs?: boolean;
 }
 
-export const BreadCrumbsProvider = ({ children }: BreadCrumbsProviderProps) => {
+export const BreadCrumbsProvider = ({
+  noBreadCrumbs,
+  children,
+}: BreadCrumbsProviderProps) => {
   const [breadCrumbsTitle, setBreadCrumbsTitle] = useState<BreadCrumbsState>({
     title: null,
     pathname: "",
@@ -42,6 +48,7 @@ export const BreadCrumbsProvider = ({ children }: BreadCrumbsProviderProps) => {
         title: breadCrumbsTitle.title,
         pathname: breadCrumbsTitle.pathname,
         setBreadCrumbsTitle,
+        noBreadCrumbs: noBreadCrumbs || false,
       }}
     >
       {children}
