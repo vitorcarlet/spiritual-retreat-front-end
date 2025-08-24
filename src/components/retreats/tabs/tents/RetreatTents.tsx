@@ -53,7 +53,6 @@ const getRetreatTents = async (
   if (!response || response.error) {
     throw new Error("Failed to fetch tents");
   }
-  console.log("Fetched tents:", response);
   return response.data as unknown as RetreatTentRequest;
 };
 
@@ -177,6 +176,8 @@ export default function RetreatTents({ id: retreatId }: RetreatTentsProps) {
             onEdit={handleEdit}
             onView={handleView}
             onFiltersChange={handleFiltersChange}
+            //handle={hasCreatePermission}
+            handle={true}
           />
         )}
       </Box>

@@ -148,7 +148,7 @@ export default function RetreatTentsTable({
   cancelDrop,
   //columns,
   items: InitialItems,
-  handle = false,
+  handle = true,
   containerStyle,
   coordinateGetter = multipleContainersCoordinateGetter,
   getItemStyles = () => ({}),
@@ -324,6 +324,7 @@ export default function RetreatTentsTable({
 
           return (
             <DroppableContainer
+              key={containerId}
               id={containerId}
               label={minimal ? undefined : `Column ${containerId}`}
               columns={columnsCount}
@@ -350,6 +351,11 @@ export default function RetreatTentsTable({
                   );
                 })}
               </SortableContext>
+              <ContainerButtons
+                onEdit={onEdit}
+                onView={onView}
+                tentId={containerId}
+              />
             </DroppableContainer>
           );
         },

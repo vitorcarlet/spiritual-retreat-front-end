@@ -13,8 +13,14 @@ import { Box, keyframes } from "@mui/material";
 import { Handle, Remove } from "./components";
 
 const pop = keyframes`
-  0% { transform: scale(1); box-shadow: var(--box-shadow); }
-  100% { transform: scale(var(--scale)); box-shadow: var(--box-shadow-picked-up); }
+  0% {
+    transform: scale(1);
+    box-shadow: var(--box-shadow);
+  }
+  100% {
+    transform: scale(var(--scale));
+    box-shadow: var(--box-shadow-picked-up);
+  }
 `;
 
 const fadeInKF = keyframes`
@@ -45,16 +51,12 @@ const ItemRoot = ({
   children,
   ...rest
 }: ItemRootProps) => {
-  if (rest.value === 2441) {
-    console.log("ITEMDND", { rest }, dragging, dragOverlay);
-  }
   return (
     <Box
       component="div"
       {...rest}
       sx={(theme) => {
-        const focusColor =
-          theme.vars?.palette.primary.main || theme.palette.primary.main;
+        const focusColor = theme.vars?.palette.primary.main;
         return {
           position: "relative",
           display: "flex",
@@ -63,14 +65,16 @@ const ItemRoot = ({
           padding: "18px 20px",
           backgroundColor:
             theme.vars?.palette.background.default ||
-            theme.palette.background.paper,
+            theme.vars?.palette.background.paper,
           boxShadow: `0 0 0 calc(1px / var(--scale-x, 1)) rgba(63,63,68,0.05), 0 1px calc(3px / var(--scale-x, 1)) 0 rgba(34,33,81,0.15)`,
           outline: "none",
           borderRadius: "calc(4px / var(--scale-x, 1))",
           boxSizing: "border-box",
           transformOrigin: "50% 50%",
           WebkitTapHighlightColor: "transparent",
-          color: theme.vars?.palette.text.primary || theme.palette.text.primary,
+          color:
+            theme.vars?.palette.text.primary ||
+            theme.vars?.palette.text.primary,
           fontWeight: 400,
           fontSize: "1rem",
           whiteSpace: "nowrap",
@@ -166,17 +170,17 @@ export interface Props {
 export const Item = forwardRef<HTMLLIElement, Props>(function Item(
   {
     color,
-    dragOverlay = true,
+    dragOverlay,
     dragging,
     disabled,
-    fadeIn = true,
+    fadeIn,
     handle = true,
     handleProps,
     index,
     listeners,
     onRemove,
     renderItem,
-    sorting = true,
+    sorting,
     style,
     transition,
     transform,
@@ -216,6 +220,21 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Item(
     <Box
       component="li"
       ref={ref}
+      style={
+        {
+          ...wrapperStyle,
+          transition,
+          // ## 2. Definindo as variáveis CSS dinamicamente
+          // Aqui definimos as variáveis com base nas props.
+          // O `sx` abaixo irá consumí-las.
+          "--translate-x": transform ? `${Math.round(transform.x)}px` : "0px",
+          "--translate-y": transform ? `${Math.round(transform.y)}px` : "0px",
+          "--scale-x": transform?.scaleX ? `${transform.scaleX}` : "1",
+          "--scale-y": transform?.scaleY ? `${transform.scaleY}` : "1",
+          "--index": index,
+          "--color": color,
+        } as CSSProperties
+      }
       sx={{
         display: "flex",
         boxSizing: "border-box",
@@ -224,9 +243,10 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Item(
         listStyle: "none",
         position: "relative",
         ...(fadeIn && {
-          animation: `${fadeInKF} 500ms ease`,
+          animation: `${fadeInKF} 200ms cubic-bezier(0.18, 0.67, 0.6, 1.22)`,
         }),
         ...(dragOverlay && {
+          animation: `${pop} 500ms ease`,
           boxShadow: (theme) => theme.shadows[3],
           zIndex: 999,
         }),
@@ -259,14 +279,15 @@ export const Item = forwardRef<HTMLLIElement, Props>(function Item(
       >
         {value}
         <Box
+          component={"span"}
           className="Actions"
           sx={{
             display: "flex",
             alignSelf: "flex-start",
-            marginTop: -12,
+            marginTop: "-12px",
             marginLeft: "auto",
-            marginBottom: -15,
-            marginRight: -10,
+            marginBottom: "-15px",
+            marginRight: "-10px",
           }}
         >
           {onRemove ? <Remove className="Remove" onClick={onRemove} /> : null}
