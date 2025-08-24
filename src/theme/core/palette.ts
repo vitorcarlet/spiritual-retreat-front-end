@@ -123,9 +123,9 @@ const INFO = {
 };
 
 const SUCCESS = {
-  lighter: "#A7F3D0",
-  light: "#4ADE80",
-  main: "#238636", // Verde característico do GitHub
+  lighter: "#D6FBE9",
+  light: "#33EB91",
+  main: "#00E676", // Verde característico do GitHub
   dark: "#196127",
   darker: "#0F3E1E",
 };

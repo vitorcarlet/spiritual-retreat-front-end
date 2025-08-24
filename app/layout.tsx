@@ -14,6 +14,11 @@ import ThemeMuiProvider from "@/src/providers/ThemeMuiProvider";
 import { ModalProvider } from "@/src/contexts/ModalContext";
 import QueryClientProviderWrapper from "@/src/providers/QueryClientProvider";
 import { getLocale } from "next-intl/server";
+import "swiper/css";
+import "swiper/css/free-mode";
+import "swiper/css/navigation";
+import "swiper/css/thumbs";
+import "swiper/css/zoom";
 //import { initMocks } from "@/src/mocks";
 
 if (process.env.NODE_ENV === "development") {

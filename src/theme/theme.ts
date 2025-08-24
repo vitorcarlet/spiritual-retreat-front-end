@@ -35,6 +35,14 @@ const initialTheme = {
     dark: {
       palette: {
         ...COMMON,
+        success: {
+          lighter: "#0F3E1E",
+          light: "#196127",
+          main: "#D6FBE9", // Verde característico do GitHub
+          dark: "#196127",
+          darker: "#0F3E1E",
+          contrastText: GREY[100],
+        },
         text: {
           primary: "#C9D1D9",
           secondary: GREY[0],

@@ -42,7 +42,7 @@ const TopBar = () => {
           </IconButton>
 
           {/* Center - Breadcrumbs */}
-          <Box
+          {/* <Box
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -52,7 +52,7 @@ const TopBar = () => {
             }}
           >
             <Breadcrumbs />
-          </Box>
+          </Box> */}
         </Grid>
         {/* Right side - User actions */}
       </Grid>
