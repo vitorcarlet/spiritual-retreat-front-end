@@ -1,5 +1,6 @@
 import React from "react";
 import "./loading.css";
+import { Box } from "@mui/material";
 
 interface LoadingProps {
   size?: "small" | "medium" | "large";
@@ -9,7 +10,7 @@ interface LoadingProps {
 
 const Loading: React.FC<LoadingProps> = ({
   size = "medium",
-  color = "#3498db",
+  color,
   text = "Loading...",
 }) => {
   const sizeClasses = {
@@ -19,13 +20,26 @@ const Loading: React.FC<LoadingProps> = ({
   };
 
   return (
-    <div className="loading-container">
-      <div
-        className={`loading-spinner ${sizeClasses[size]}`}
-        style={{ borderTopColor: color }}
-      />
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 2,
+      }}
+    >
+      <div className="loading-container">
+        <div
+          className={`loading-spinner ${sizeClasses[size]}`}
+          style={{ borderTopColor: color || "var(--mui-palette-primary-main)" }}
+        />
+      </div>
+
       {text && <p className="loading-text">{text}</p>}
-    </div>
+    </Box>
   );
 };
 

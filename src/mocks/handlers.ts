@@ -76,6 +76,15 @@ export const handlers = [
     return HttpResponse.json({ error: "User not found" }, { status: 404 });
   }),
 
+  http.get("http://localhost:3001/api/user/:id/credentials", ({ params }) => {
+    const userId = params.id as string;
+    const user = getUserById(userId);
+    if (user) {
+      return HttpResponse.json(createCredentialsForUser(user));
+    }
+    return HttpResponse.json({ error: "User not found" }, { status: 404 });
+  }),
+
   http.get("http://localhost:3001/api/logout", () => {
     return HttpResponse.json(
       { message: "Logged out successfully" },
@@ -416,3 +425,12 @@ export const handlers = [
     return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });
   }),
 ];
+function createCredentialsForUser(
+  user: UserObject
+): import("msw").JsonBodyType {
+  return {
+    login: user.email + " login",
+    email: user.email,
+    emailVerified: Math.random() < 0.5, // Randomly true or false
+  };
+}

@@ -1,5 +1,5 @@
 "use client";
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import {
   Box,
   Button,
@@ -9,15 +9,20 @@ import {
   Chip,
   alpha,
 } from "@mui/material";
-
-import ButtonBase from "@mui/material/ButtonBase";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useModal } from "@/src/hooks/useModal";
 import { useUserContent } from "../context";
 import NewLoginForm from "./newLoginForm";
-import { User } from "next-auth";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
+import { useQuery } from "@tanstack/react-query";
+import Loading from "../../loading";
+import { useSession } from "next-auth/react";
+import getPermission from "@/src/utils/getPermission";
 
 function SettingRow({
   icon,
@@ -33,10 +38,10 @@ function SettingRow({
   endAdornment?: React.ReactNode;
 }) {
   return (
-    <ButtonBase
+    <Box
       onClick={onClick}
-      focusRipple
-      TouchRippleProps={{ center: false }}
+      // focusRipple
+      // TouchRippleProps={{ center: false }}
       sx={(theme) => ({
         // Layout
         width: "100%",
@@ -115,53 +120,54 @@ function SettingRow({
           {endAdornment}
         </Box>
       ) : null}
-    </ButtonBase>
+    </Box>
   );
 }
 
+const getUserCredentials = async (id: string) => {
+  const response = await handleApiResponse<UserCredentialsInfo>(
+    await sendRequestServerVanilla.get(`/user/${id}/credentials`)
+  );
+  if (!response || response.error) {
+    throw new Error("Failed to fetch user credentials");
+  }
+  return response.data as UserCredentialsInfo;
+};
+
 const UserCredentialsPage = () => {
-  const { user, setUser } = useUserContent();
   const modal = useModal();
   const [userCredentials, setUserCredentials] =
-    useState<UserCredentialsInfo | null>(user);
+    useState<UserCredentialsInfo | null>();
 
-  const {
-    login,
-    email,
-    emailVerified,
-    canEditLogin = true,
-  } = userCredentials || {};
+  //const { login, email, emailVerified } = userCredentials || {};
+  const session = useSession();
+  const canEditLogin = getPermission({
+    permissions: session?.data?.user.permissions,
+    permission: "users.edit",
+    role: session?.data?.user.role,
+  });
+  const { user } = useUserContent();
+  const id = user?.id as string;
 
-  const [currentEmail, setCurrentEmail] = useState<string | undefined>(email);
-  const [isVerified, setIsVerified] = useState<boolean | undefined>(
-    emailVerified
-  );
+  const { data: credentialsData, isLoading } = useQuery({
+    queryKey: ["credentials"],
+    queryFn: () => getUserCredentials(id),
+    staleTime: 5 * 60 * 1000, // 5 minutes,
+  });
 
-  // useEffect(() => {
-  //   if (!id) return;
-  //   const userCredentialsRequest = async (idParam: ParamValue) => {
-  //     try {
-  //       const { data } = await handleApiResponse<UserCredentialsInfo>(
-  //         await sendRequestServerVanilla.get(`/api/user/${idParam}/credentials`)
-  //       );
-  //       if (data) {
-  //         setUserCredentials(data);
-  //         setCurrentEmail(data.email);
-  //         setIsVerified(data.emailVerified);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching user credentials:", error);
-  //     }
-  //   };
-  //   userCredentialsRequest(id);
-  // }, [id]);
+  const [currentEmail, setCurrentEmail] = useState<string | undefined>();
+  const [isVerified, setIsVerified] = useState<boolean | undefined>();
+
+  useEffect(() => {
+    if (credentialsData) {
+      setUserCredentials(credentialsData);
+      setCurrentEmail(credentialsData.email);
+      setIsVerified(credentialsData.emailVerified);
+    }
+  }, [credentialsData]);
 
   const setUserForModal = (data: UserCredentialsInfo) => {
     setUserCredentials((prev) => ({
-      ...prev!,
-      ...data,
-    }));
-    setUser((prev: User) => ({
       ...prev!,
       ...data,
     }));
@@ -175,7 +181,7 @@ const UserCredentialsPage = () => {
       title: "Alterar Login",
       customRender: () => (
         <NewLoginForm
-          userLogin={login ?? ""}
+          userLogin={userCredentials?.login ?? ""}
           setUserForModal={setUserForModal}
         />
       ),
@@ -206,9 +212,9 @@ const UserCredentialsPage = () => {
     });
   };
 
-  const handleEditPassword = () => {
+  const handleRecoverPassword = () => {
     modal.open({
-      key: "edit-password",
+      key: "recover-password",
       title: "Recuperar Senha",
       customRender: () => (
         <Box p={2}>
@@ -228,6 +234,32 @@ const UserCredentialsPage = () => {
     });
   };
 
+  const handleEditPassword = () => {
+    modal.open({
+      key: "edit-password",
+      title: "Alterar Senha",
+      customRender: () => (
+        <Box p={2}>
+          <Typography>Digite a nova senha:</Typography>
+          <Button
+            sx={{ mt: 2 }}
+            variant="contained"
+            onClick={() => {
+              // TODO: chamada API para atualizar senha
+              modal.close();
+            }}
+          >
+            Confirmar
+          </Button>
+        </Box>
+      ),
+    });
+  };
+
+  if (isLoading) {
+    return <Loading text={"Carregando credenciais do usuário..."} />;
+  }
+
   return (
     <Box>
       <Alert severity="info" sx={{ mb: 2, mt: 2 }}>
@@ -238,7 +270,7 @@ const UserCredentialsPage = () => {
         <SettingRow
           icon={<PersonOutlineIcon fontSize="medium" />}
           title="Login"
-          subtitle={login || "—"}
+          subtitle={userCredentials?.login || "—"}
           onClick={canEditLogin ? handleEditLogin : undefined}
           endAdornment={
             !canEditLogin ? <Chip size="small" label="Somente leitura" /> : null
@@ -272,11 +304,16 @@ const UserCredentialsPage = () => {
           icon={<LockOutlinedIcon fontSize="medium" />}
           title="Senha"
           subtitle="************"
-          onClick={handleEditPassword}
+          onClick={handleRecoverPassword}
           endAdornment={
-            <Button variant="outlined" onClick={handleEditPassword}>
-              Recuperar
-            </Button>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button variant="outlined" onClick={handleRecoverPassword}>
+                Recuperar
+              </Button>
+              <Button variant="contained" onClick={handleEditPassword}>
+                Modificar senha
+              </Button>
+            </Box>
           }
         />
       </Stack>

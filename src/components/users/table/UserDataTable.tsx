@@ -22,6 +22,7 @@ import getPermission from "@/src/utils/getPermission";
 import { useSession } from "next-auth/react";
 import { User } from "../types";
 import { RetreatsCardTableFilters } from "../../retreats/types";
+import Loading from "../../loading";
 
 type UserRequest = {
   rows: User[];
@@ -249,8 +250,9 @@ export default function UserDataTable() {
   console.log("selectedRows:", selectedRows);
 
   if (isLoading || session.status === "loading" || !session.data?.user) {
-    return <div>Carregando usuários...</div>;
+    return <Loading text="Carregando usuários..." />;
   }
+
   return (
     <Box
       sx={{
@@ -314,7 +316,7 @@ export default function UserDataTable() {
           rows={usersDataArray}
           rowCount={usersData?.total || 0}
           columns={columns}
-          loading={isLoading || loading}
+          loading={isLoading || !session.data?.user || loading}
           // Configurações de aparência
           title="Gerenciamento de Usuários"
           subtitle="Lista completa de usuários do sistema"

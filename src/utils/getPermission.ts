@@ -285,9 +285,9 @@ const getPermission = ({
   permission,
   role,
 }: {
-  permissions: UserPermissions;
+  permissions: UserPermissions | null | undefined;
   permission: string;
-  role: UserRoles;
+  role: UserRoles | null | undefined;
 }): boolean => {
   if (!permissions || !permission) return false;
   const [section, action]: string[] = permission.split(".");

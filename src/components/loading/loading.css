@@ -1,0 +1,115 @@
+/* Container */
+.loading-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif;
+  color: var(--mui-palette-text-primary, #222);
+}
+
+/* Spinner base */
+.loading-spinner {
+  box-sizing: border-box;
+  /* Usando vars do MUI para borda neutra e cor primária */
+  border: 4px solid var(--mui-palette-divider, rgba(0,0,0,0.08));
+  /* A parte “ativa” do spinner usa a cor principal */
+  border-top-color: var(--mui-palette-primary-main);
+  border-radius: 50%;
+  animation: loading-spin 0.75s linear infinite;
+  outline: 1px solid transparent;
+  background: var(--mui-palette-background-default, transparent);
+}
+
+/* Variantes de cor */
+.loading-spinner.primary { border-top-color: var(--mui-palette-primary-main); }
+.loading-spinner.secondary { border-top-color: var(--mui-palette-secondary-main, #9c27b0); }
+.loading-spinner.success { border-top-color: var(--mui-palette-success-main, #2e7d32); }
+.loading-spinner.error { border-top-color: var(--mui-palette-error-main, #d32f2f); }
+.loading-spinner.warning { border-top-color: var(--mui-palette-warning-main, #ed6c02); }
+.loading-spinner.info { border-top-color: var(--mui-palette-info-main, #0288d1); }
+
+/* Ajuste dinâmico de espessura via data-attr (opcional) */
+.loading-spinner[data-thickness="thin"] { border-width: 3px; }
+.loading-spinner[data-thickness="thick"] { border-width: 6px; }
+
+/* Sizes */
+.loading-small {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+}
+
+.loading-medium {
+  width: 40px;
+  height: 40px;
+}
+
+.loading-large {
+  width: 64px;
+  height: 64px;
+  border-width: 6px;
+}
+
+/* Text */
+.loading-text {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--mui-palette-text-secondary, #555);
+  letter-spacing: 0.5px;
+  user-select: none;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Texto com variante forte */
+.loading-text.strong {
+  color: var(--mui-palette-text-primary, #222);
+}
+
+/* Suporte a modo “inverso” sobre fundos escuros */
+.loading-inverse .loading-text {
+  color: var(--mui-palette-common-white, #fff);
+}
+.loading-inverse .loading-spinner {
+  border: 4px solid color-mix(in srgb, var(--mui-palette-common-white, #fff) 25%, transparent);
+  border-top-color: var(--mui-palette-primary-contrastText, #fff);
+}
+
+/* Animation */
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner { animation: loading-spin 2.4s linear infinite; }
+}
+
+/* Ajustes automáticos em dark mode usando vars sem media query extra
+   (MUI já troca os tokens). Mantemos fallback para quando vars não existirem */
+:root[data-mui-color-scheme="dark"] .loading-spinner:not(.inverse) {
+  border: 4px solid var(--mui-palette-divider, rgba(255,255,255,0.14));
+}
+/* Fallback caso não esteja usando data attr do color scheme */
+@media (prefers-color-scheme: dark) {
+  .loading-spinner:not(.inverse) {
+    border: 4px solid var(--mui-palette-divider, rgba(255,255,255,0.14));
+  }
+  .loading-text { color: var(--mui-palette-text-secondary, #bbb); }
+}
+
+/* Estado de overlay opcional */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  background: color-mix(in srgb, var(--mui-palette-background-default, #fff) 65%, transparent);
+  z-index: 10;
+}
+.loading-overlay.inverse {
+  background: color-mix(in srgb, var(--mui-palette-common-black, #000) 65%, transparent);
+}

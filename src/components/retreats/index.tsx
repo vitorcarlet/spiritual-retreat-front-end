@@ -21,6 +21,7 @@ import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
 } from "./types";
+import { Retreat } from "@/src/types/retreats";
 
 const getRetreats = async (
   filters: TableDefaultFilters<
@@ -103,7 +104,6 @@ export default function RetreatsTablePage() {
     ? retreatsData?.rows
     : ([retreatsData?.rows] as unknown as Retreat[]);
 
-  if (isLoading) return <Typography>Loading retreats...</Typography>;
   if (isError) return <Typography>No data available.</Typography>;
 
   return (
@@ -139,6 +139,7 @@ export default function RetreatsTablePage() {
         }}
       >
         <RetreatsCardTable
+          loading={isLoading}
           total={retreatsData?.total || 0}
           filters={filters}
           data={retreatsDataArray}

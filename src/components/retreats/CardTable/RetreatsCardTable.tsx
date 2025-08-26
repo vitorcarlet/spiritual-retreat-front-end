@@ -26,6 +26,7 @@ import { Retreat } from "@/src/types/retreats";
 interface RetreatsCardTableProps {
   data?: Retreat[];
   total?: number;
+  loading: boolean;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
   onEdit?: (retreat: Retreat) => void;
   onView?: (retreat: Retreat) => void;
@@ -35,6 +36,7 @@ interface RetreatsCardTableProps {
 }
 
 export default function RetreatsCardTable({
+  loading,
   data,
   total,
   filters,
@@ -296,19 +298,23 @@ export default function RetreatsCardTable({
         }}
       >
         <Grid container spacing={3}>
-          {table.getRowModel().rows.map((row) => (
-            <Grid
-              key={row.id}
-              size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-              display={"flex"}
-              justifyContent={"center"}
-            >
-              {flexRender(
-                row.getVisibleCells()[0].column.columnDef.cell,
-                row.getVisibleCells()[0].getContext()
-              )}
-            </Grid>
-          ))}
+          {loading ? (
+            <Typography>Loading retreats...</Typography>
+          ) : (
+            table.getRowModel().rows.map((row) => (
+              <Grid
+                key={row.id}
+                size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                display={"flex"}
+                justifyContent={"center"}
+              >
+                {flexRender(
+                  row.getVisibleCells()[0].column.columnDef.cell,
+                  row.getVisibleCells()[0].getContext()
+                )}
+              </Grid>
+            ))
+          )}
         </Grid>
       </Box>
 
