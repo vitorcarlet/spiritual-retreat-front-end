@@ -218,7 +218,7 @@ export default function PublicRetreatsCardTable({
                 }}
                 onClick={() => onView?.(retreat)}
               >
-                Inscrever-se
+                Ver Mais
               </Button>
             </Box>
           </Box>

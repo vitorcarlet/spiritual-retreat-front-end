@@ -3,7 +3,7 @@
  * These routes do not require authentication
  * @type {string[]}
  */
-export const publicRoutes = ["/serverTest/mui"];
+export const publicRoutes = ["/serverTest/mui", "/public/*"] as const;
 
 /**
  * An array of routes that are used for authentication
@@ -78,3 +78,17 @@ export const ROUTES = {
     HISTORY: "/profile/history",
   },
 };
+
+export function isPublicPath(pathname: string): boolean {
+  return publicRoutes.some((pattern) => {
+    if (pattern === pathname) return true;
+    if (pattern.includes("*")) {
+      // Simple glob: only '*' supported, matches any remainder (including nested paths)
+      // Ensure pattern like '/public/*' also matches '/public' (without trailing slash)
+      const base = pattern.replace(/\*/g, "");
+      if (pathname === base.slice(0, -1)) return true; // '/public'
+      return pathname.startsWith(base);
+    }
+    return false;
+  });
+}

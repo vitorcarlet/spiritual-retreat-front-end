@@ -13,15 +13,37 @@ const loginSchema = z.object({
   password: z.string().min(3, "A senha deve ter no mínimo 3 caracteres"),
 });
 
-export async function loginServerAction(prevState: any, formData: FormData) {
+const DEFAULT_REDIRECT = "/dashboard";
+
+function sanitizeCallback(raw: string | null): string {
+  if (!raw) return DEFAULT_REDIRECT;
+  try {
+    // Se vier já codificado (?callbackUrl=%2Freports), decode primeiro
+    const decoded = decodeURIComponent(raw);
+    // Só permitir caminhos relativos internos
+    if (
+      decoded.startsWith("/") &&
+      !decoded.startsWith("//") && // evita esquema implícito
+      !decoded.startsWith("/api/") // opcional bloquear APIs
+    ) {
+      return decoded === "/login" ? DEFAULT_REDIRECT : decoded;
+    }
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_REDIRECT;
+}
+
+export async function loginServerAction(
+  prevState: unknown,
+  formData: FormData
+) {
   // Validar dados com Zod
   const validatedFields = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
   });
-  const headersList = headers();
-  const pathname = (await headersList).get("x-pathname") || "/dashboard";
-  //console.log("Login action called with pathname:", pathname, headersList);
+
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
@@ -54,5 +76,26 @@ export async function loginServerAction(prevState: any, formData: FormData) {
   }
 
   // Se chegou aqui, login foi bem-sucedido
-  redirect(pathname);
+  const h = headers();
+  const rawUrl = (await h).get("x-url"); // Ex: http://localhost:3000/login?callbackUrl=%2Freports
+  let callbackUrl: string | null = null;
+
+  if (rawUrl) {
+    try {
+      const u = new URL(rawUrl);
+      callbackUrl = u.searchParams.get("callbackUrl");
+      // Se não há callbackUrl explícito e o usuário acessou /alguma-coisa protegida redirecionado para /login,
+      // você pode capturar o pathname original no middleware e colocar em outro header (ex: x-original-path)
+      if (!callbackUrl) {
+        const original = (await h).get("x-original-path");
+        if (original) callbackUrl = original;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const redirectTo = sanitizeCallback(callbackUrl);
+
+  redirect(redirectTo);
 }

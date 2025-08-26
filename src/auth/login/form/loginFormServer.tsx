@@ -45,7 +45,7 @@ export default function LoginFormServer() {
           <Icon icon="material-symbols:lock-outline" />
         </Avatar>
         <Typography component="h1" variant="h5">
-          Entrar
+          Entrar no Server
         </Typography>
 
         <Box component="form" action={formAction} sx={{ mt: 1 }}>
