@@ -234,6 +234,93 @@ export const handlers = [
     return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
   }),
 
+  http.get(
+    "http://localhost:3001/api/public/retreats/:id/form/participant",
+    ({ params }) => {
+      const id = params.id as string;
+
+      const form = {
+        id: `retreat-${id}-participant-form`,
+        title: "Formulário de Inscrição",
+        subtitle: "Preencha seus dados para participar do retiro",
+        submitLabel: "Enviar inscrição",
+        fields: [
+          { name: "first_name", label: "Nome", type: "text", required: true },
+          {
+            name: "last_name",
+            label: "Sobrenome",
+            type: "text",
+            required: true,
+          },
+          {
+            name: "email",
+            label: "E-mail",
+            type: "email",
+            required: true,
+            placeholder: "voce@exemplo.com",
+          },
+          { name: "phone", label: "Telefone", type: "text", required: true },
+          {
+            name: "birth",
+            label: "Data de Nascimento",
+            type: "date",
+            required: true,
+          },
+          {
+            name: "gender",
+            label: "Gênero",
+            type: "select",
+            required: true,
+            options: [
+              { label: "Masculino", value: "male" },
+              { label: "Feminino", value: "female" },
+              { label: "Outro", value: "other" },
+              { label: "Prefiro não informar", value: "na" },
+            ],
+          },
+          {
+            name: "tshirt_size",
+            label: "Tamanho da Camiseta",
+            type: "select",
+            options: ["PP", "P", "M", "G", "GG", "XG"].map((s) => ({
+              label: s,
+              value: s,
+            })),
+          },
+          {
+            name: "city",
+            label: "Cidade",
+            type: "text",
+            required: true,
+          },
+          {
+            name: "state",
+            label: "Estado",
+            type: "text",
+            required: true,
+            minLength: 2,
+            maxLength: 2,
+            placeholder: "UF",
+          },
+          {
+            name: "medical_restrictions",
+            label: "Restrições médicas / Alimentares",
+            type: "text",
+            placeholder: "Descreva se houver",
+          },
+          {
+            name: "accept_terms",
+            label: "Li e aceito os termos de participação",
+            type: "checkbox",
+            required: true,
+          },
+        ],
+      };
+
+      return HttpResponse.json(form, { status: 200 });
+    }
+  ),
+
   http.get("http://localhost:3001/api/reports", () => {
     return HttpResponse.json(mockReports, { status: 200 });
   }),

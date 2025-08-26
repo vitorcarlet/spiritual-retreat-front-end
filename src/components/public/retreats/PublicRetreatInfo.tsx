@@ -1,10 +1,9 @@
 import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
-//import { use } from "react";
-import { fetchPublicRetreat } from "./shared";
-import { Box, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { Status, StatusChip } from "../../chip/StatusChip";
 import { ImageCarrousel } from "./image-carrousel";
+import { redirect } from "next/navigation"; // <== adicionado
 
 //const retreatCache = new Map<string, Promise<Retreat | null>>();
 
@@ -130,6 +129,27 @@ export default async function PublicRetreatInfo({
             <Typography variant="h5">Descrição</Typography>
             <Typography variant="body1">{retreatLoaded.description}</Typography>
           </Box>
+        </Grid>
+        <Grid
+          size={{ xs: 12 }}
+          sx={{
+            position: "sticky",
+            bottom: 10,
+            zIndex: 1000,
+          }}
+        >
+          <form
+            action={async () => {
+              "use server";
+              redirect(`/public/retreats/${retreatId}/register`); // <== substitui window.*
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+              <Button type="submit" variant="contained" color="primary">
+                Preencher Inscrição.
+              </Button>
+            </Box>
+          </form>
         </Grid>
       </Grid>
     </Box>
