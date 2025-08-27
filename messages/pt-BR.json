@@ -27,5 +27,10 @@
   "period": "Período",
   "users": {
     "title": "Usuários"
+  },
+  "contemplations": {
+    "no-contemplated": {
+      "create-new-participant": "Adicionar Novo Participante"
+    }
   }
 }

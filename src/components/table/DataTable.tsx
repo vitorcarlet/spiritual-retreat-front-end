@@ -36,6 +36,7 @@ import {
 import Iconify from "../Iconify";
 import theme from "@/src/theme/theme";
 import CustomPagination from "./CustomPagination";
+import ActionOptions from "./ActionOptions";
 
 // Tipos para o componente
 export interface DataTableColumn<
@@ -315,27 +316,7 @@ export function DataTable<
         hideable: false,
         disableColumnMenu: true,
         renderCell: (params: GridRenderCellParams<T>) => (
-          <Stack direction="row" spacing={0.5}>
-            {actions.map((action, index) => (
-              <Tooltip key={index} title={action.label}>
-                <span>
-                  <IconButton
-                    size="small"
-                    color={action.color || "default"}
-                    disabled={
-                      action.disabled ? action.disabled(params.row) : false
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      action.onClick(params.row);
-                    }}
-                  >
-                    <Iconify icon={action.icon} size={2} />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            ))}
-          </Stack>
+          <ActionOptions actions={actions} params={params} />
         ),
       });
     }

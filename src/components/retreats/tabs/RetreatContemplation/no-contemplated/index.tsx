@@ -20,6 +20,8 @@ import {
   ContemplatedTableFilters,
   ContemplatedTableFiltersWithDates,
 } from "../types";
+import { useTranslations } from "next-intl";
+import { RetreatsCardTableFilters } from "@/src/components/public/retreats/types";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
@@ -181,6 +183,7 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
 ];
 
 export default function NonContemplatedTable({ id }: { id: string }) {
+  const t = useTranslations();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
       defaultFilters: {
@@ -288,6 +291,16 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   if (isLoading || session.status === "loading" || !session.data?.user) {
     return <div>Carregando usuários...</div>;
   }
+  function handleAddNewParticipant(
+    event: MouseEvent<HTMLButtonElement, MouseEvent>
+  ): void {
+    throw new Error("Function not implemented.");
+  }
+
+  function handleContemplate(row: ContemplatedParticipant): void {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <Box
       sx={{
@@ -339,6 +352,13 @@ export default function NonContemplatedTable({ id }: { id: string }) {
             Ação em Lote ({getSelectedIds().length})
           </Button>
         )}
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAddNewParticipant}
+        >
+          {t("contemplations.no-contemplated.create-new-participant")}
+        </Button>
       </Box>
 
       <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
@@ -377,17 +397,22 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           rowBuffer={500}
           columnBuffer={2}
           // Ações personalizadas
-          actions={
-            [
-              // {
-              //   icon: "lucide:trash-2",
-              //   label: "Deletar",
-              //   onClick: handleDelete,
-              //   color: "error",
-              //   disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
-              // },
-            ]
-          }
+          actions={[
+            {
+              icon: "lucide:trash-2",
+              label: "Ver Mais",
+              onClick: handleAddNewParticipant,
+              color: "error",
+              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+            {
+              icon: "lucide:trash-2",
+              label: "Contemplar",
+              onClick: handleContemplate,
+              color: "error",
+              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+          ]}
           // Eventos
           onRowClick={(params) => {
             console.log("Linha clicada:", params.row);
