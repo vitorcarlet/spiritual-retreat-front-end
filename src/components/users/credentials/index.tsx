@@ -273,7 +273,9 @@ const UserCredentialsPage = () => {
           subtitle={userCredentials?.login || "—"}
           onClick={canEditLogin ? handleEditLogin : undefined}
           endAdornment={
-            !canEditLogin ? <Chip size="small" label="Somente leitura" /> : null
+            !canEditLogin ? (
+              <Chip color="default" size="small" label="Somente leitura" />
+            ) : null
           }
         />
 

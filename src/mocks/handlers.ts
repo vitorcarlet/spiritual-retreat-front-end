@@ -429,7 +429,7 @@ function createCredentialsForUser(
   user: UserObject
 ): import("msw").JsonBodyType {
   return {
-    login: user.email + " login",
+    login: user.name + " login",
     email: user.email,
     emailVerified: Math.random() < 0.5, // Randomly true or false
   };

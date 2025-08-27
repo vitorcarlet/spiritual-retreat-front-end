@@ -1,9 +1,11 @@
 "use client";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   Dispatch,
   SetStateAction,
   useContext,
+  useEffect,
   useState,
 } from "react";
 
@@ -41,6 +43,10 @@ export const BreadCrumbsProvider = ({
     title: null,
     pathname: "",
   });
+  const pathname = usePathname();
+  useEffect(() => {
+    setBreadCrumbsTitle({ title: null, pathname });
+  }, [pathname, setBreadCrumbsTitle]);
 
   return (
     <BreadCrumbsContext.Provider

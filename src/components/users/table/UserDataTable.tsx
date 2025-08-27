@@ -23,6 +23,7 @@ import { useSession } from "next-auth/react";
 import { User } from "../types";
 import { RetreatsCardTableFilters } from "../../retreats/types";
 import Loading from "../../loading";
+import { useTranslations } from "next-intl";
 
 type UserRequest = {
   rows: User[];
@@ -111,6 +112,7 @@ const columns: DataTableColumn<User>[] = [
 ];
 
 export default function UserDataTable() {
+  const t = useTranslations();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<UsersTableFiltersWithDates>>({
       defaultFilters: {
