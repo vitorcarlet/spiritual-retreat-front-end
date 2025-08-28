@@ -167,7 +167,6 @@ const CustomToolbar = React.memo(function CustomToolbar({
 }) {
   return (
     <Toolbar style={{ backgroundColor: "--mui-palette-background-default" }}>
-      <Typography id="textToolbar">ASDASDASDAS</Typography>
       <Box
         sx={{ flex: 1, display: "flex", alignItems: "center", gap: 2, p: 1 }}
       >
@@ -355,7 +354,6 @@ export function DataTable<
     onRowSelectionModelChange?.(emptySelection);
   }, [onRowSelectionModelChange]);
 
-  // ✅ CORREÇÃO 6: Calcular selectedCount corretamente
   const selectedCount = useMemo(() => {
     if (!rowSelectionModel) return 0;
 
