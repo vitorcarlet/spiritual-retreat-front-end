@@ -208,12 +208,20 @@ export default function NonContemplatedTable({ id }: { id: string }) {
 
   // ✅ Helper para obter IDs selecionados
   const getSelectedIds = (): GridRowId[] => {
+    if (
+      typeof selectedRows === "object" &&
+      "type" in selectedRows &&
+      selectedRows.type === "exclude"
+    ) {
+      return contemplatedData?.rows.map((row) => row.id) || [];
+    }
     if (Array.isArray(selectedRows)) {
       return selectedRows;
     }
     if (typeof selectedRows === "object" && "ids" in selectedRows) {
       return Array.from(selectedRows.ids) || [];
     }
+
     return [];
   };
 
@@ -349,7 +357,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
         {/* ✅ CORREÇÃO: Usar helper para contar */}
         {getSelectedIds().length > 0 && (
           <Button variant="outlined" color="primary" onClick={handleBulkAction}>
-            Ação em Lote ({getSelectedIds().length})
+            Contemplar em lote ({getSelectedIds().length})
           </Button>
         )}
         <Button
