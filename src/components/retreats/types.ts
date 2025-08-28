@@ -1,3 +1,5 @@
+import { Retreat } from "@/src/types/retreats";
+
 export type RetreatsCardTableFilters = {
   name?: string;
   state?: string;
@@ -18,5 +20,5 @@ export interface RetreatRequest {
   page: number;
   pageLimit: number;
   hasNextPage: boolean;
-  hasPervPage: boolean;
+  hasPrevPage: boolean;
 }

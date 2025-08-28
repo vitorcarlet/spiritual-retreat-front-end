@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Avatar, Box, Button, Chip, Stack } from "@mui/material";
 import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
-import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
+import { GridRowSelectionModel } from "@mui/x-data-grid";
 //import ContemplatedummaryModal from "../ContemplatedummaryModal";
 import {
   handleApiResponse,
@@ -22,12 +22,15 @@ import {
 } from "../types";
 import { useTranslations } from "next-intl";
 import { RetreatsCardTableFilters } from "@/src/components/public/retreats/types";
+import { getSelectedIds as getSelectedIdsFn } from "@/src/components/table/shared";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
   total: number;
   page: number;
   pageLimit: number;
+  hasPrevPage: boolean;
+  hasNextPage: boolean;
 };
 
 // Helper para iniciais (caso não haja foto)
@@ -207,23 +210,16 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   const filtersConfig = getFilters();
 
   // ✅ Helper para obter IDs selecionados
-  const getSelectedIds = (): GridRowId[] => {
-    if (
-      typeof selectedRows === "object" &&
-      "type" in selectedRows &&
-      selectedRows.type === "exclude"
-    ) {
-      return contemplatedData?.rows.map((row) => row.id) || [];
-    }
-    if (Array.isArray(selectedRows)) {
-      return selectedRows;
-    }
-    if (typeof selectedRows === "object" && "ids" in selectedRows) {
-      return Array.from(selectedRows.ids) || [];
-    }
+  const getSelectedIds = useMemo(
+    () =>
+      getSelectedIdsFn<ContemplatedParticipant>({
+        data: contemplatedData,
+        selectedRows: selectedRows,
+      }),
+    [contemplatedData, selectedRows]
+  );
 
-    return [];
-  };
+  //console.log(getSelectedIds, "getSelectedIds");
 
   // const handleDelete = (user: User) => {
   //   modal.open({
@@ -266,7 +262,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   // };
 
   const handleBulkAction = () => {
-    const selectedIds = getSelectedIds();
+    const selectedIds = getSelectedIds;
     console.log("Ação em lote para:", selectedIds);
   };
 
@@ -355,9 +351,9 @@ export default function NonContemplatedTable({ id }: { id: string }) {
         />
 
         {/* ✅ CORREÇÃO: Usar helper para contar */}
-        {getSelectedIds().length > 0 && (
+        {getSelectedIds.length > 0 && (
           <Button variant="outlined" color="primary" onClick={handleBulkAction}>
-            Contemplar em lote ({getSelectedIds().length})
+            Contemplar em lote ({getSelectedIds.length})
           </Button>
         )}
         <Button
