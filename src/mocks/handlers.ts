@@ -117,6 +117,8 @@ export const handlers = [
       user = createUserMock("consultant");
     } else if (email === "participant@email.com" && password === "123") {
       user = createUserMock("participant");
+    } else if (email === "participant2@email.com" && password === "123") {
+      user = createUserMock("participant");
     } else {
       return HttpResponse.json(
         { error: "Invalid credentials" },
@@ -135,10 +137,42 @@ export const handlers = [
         success: true,
         access_token: mock_data.access_token,
         refresh_token: mock_data.refresh_token,
-        user,
+        isNonCodeConfirmed: user.role === "participant" ? true : false,
+        user: user.role === "participant" ? { id: user.id } : user,
       },
       { status: 200 }
     );
+  }),
+
+  http.post("http://localhost:3001/api/verify-code", async ({ request }) => {
+    const { userId, code } = (await request.json()) as {
+      userId?: string;
+      code?: string;
+    };
+
+    if (!userId || !code) {
+      return HttpResponse.json(
+        { error: "Missing userId or code" },
+        { status: 400 }
+      );
+    }
+    // Simular verificação de código
+    if (code === "123456") {
+      // Código correto
+      // Retornar tokens e dados do usuário
+      const user = getUserById(userId);
+      if (user) {
+        return HttpResponse.json(
+          {
+            message: "Login successful",
+            access_token: create_access_token(user),
+            refresh_token: create_refresh_token(user),
+            user,
+          },
+          { status: 200 }
+        );
+      }
+    }
   }),
   http.post("http://localhost:3001/api/register", async ({ request }) => {
     const { email, password, code } = (await request.json()) as RegisterSchema;

@@ -2,6 +2,7 @@ import NextAuth, {
   AuthValidity,
   BackendAccessJWT,
   BackendJWT,
+  CredentialsSignin,
   DecodedJWT,
   User,
 } from "next-auth";
@@ -21,6 +22,7 @@ import { LoginResponse } from "./src/auth/types";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import * as Sentry from "@sentry/nextjs";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -32,10 +34,40 @@ const storage = createStorage({
     : memoryDriver(),
 });
 
+class UserNotActivatedError extends CredentialsSignin {
+  constructor() {
+    super("CONFIRMATION_CODE_REQUIRED");
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: !!process.env.AUTH_DEBUG,
+  // logger: {
+  //   error(code, metadata) {
+  //     // Envia o erro para o Sentry com mais contexto
+  //     Sentry.captureException(metadata.error, {
+  //       extra: {
+  //         code: code,
+  //         ...metadata
+  //       }
+  //     });
+  //     // Você pode também logar no console se quiser
+  //     console.error(code, metadata);
+  //   },
+  //   warn(code, message) {
+  //     console.warn(code, message)
+  //   },
+  //   debug(code, message) {
+  //     // Evite enviar logs de debug para produção
+  //     if (process.env.NODE_ENV !== "production") {
+  //       console.debug(code, message)
+  //     }
+  //   }
+  // },
   theme: { logo: "https://authjs.dev/img/logo-sm.png" },
-  session: { strategy: "jwt", maxAge: 15 * 60, // 4 minutes
+  session: {
+    strategy: "jwt",
+    maxAge: 15 * 60, // 4 minutes
     updateAge: 30 * 60, // 30 minutes
   },
   pages: {
@@ -82,7 +114,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.debug("❌ Refresh failed - forcing logout");
           return { ...token, error: "RefreshAccessTokenError" };
         }
-        
+
         return refreshedToken;
       }
       // The current access token and refresh token have both expired
@@ -93,16 +125,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return { ...token, error: "RefreshTokenExpired" } as JWT;
     },
     async session({ session, token }) {
-        if (token.error) {
-      console.debug("❌ Token error detected:", token.error);
-      return {
-        ...session,
-        user: undefined,
-        error: token.error,
-        validity: null,
-        expires: "1970-01-01T00:00:00.000Z", // Date in the past forces logout
-      };
-    }
+      if (token.error) {
+        console.debug("❌ Token error detected:", token.error);
+        return {
+          ...session,
+          user: undefined,
+          error: token.error,
+          validity: null,
+          expires: "1970-01-01T00:00:00.000Z", // Date in the past forces logout
+        };
+      }
       session.user = token.data.user;
       session.validity = token.data.validity;
       session.error = token.error;
@@ -115,7 +147,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     //     return false;
     //   }
     //   const { pathname } = request.nextUrl;
-    //   const publicRoutes = [...authRoutes, ...pubRoutes]; 
+    //   const publicRoutes = [...authRoutes, ...pubRoutes];
     //   if (!publicRoutes.includes(pathname)) return !auth?.error && !!auth?.user;
     //   return true;
     // }
@@ -133,11 +165,50 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           placeholder: "john@mail.com",
         },
         password: { label: "Password", type: "password" },
+        code: { label: "Code", type: "text", placeholder: "123456" }, // se usar fluxo de código
       },
       authorize: async (
-        credentials: Partial<Record<"email" | "password", unknown>>
+        credentials: Partial<Record<"email" | "password" | "code", unknown>>
       ) => {
+        // Não envolva tudo em try/catch que retorna null; só capture para re-lançar
         try {
+          // Fluxo de verificação de código direto
+          if (credentials.code) {
+            const data = await sendRequestServer<LoginResponse>({
+              url: "/verify-code",
+              method: "post",
+              payload: {
+                email: credentials.email,
+                code: credentials.code,
+              },
+            });
+
+            if (!data?.access_token) {
+              // Código inválido -> credenciais inválidas
+              return null;
+            }
+
+            const tokens: BackendJWT = {
+              access_token: data.access_token,
+              refresh_token: data.refresh_token,
+            };
+            const access: DecodedJWT = jwtDecode(tokens.access_token!);
+            const refresh: DecodedJWT = jwtDecode(tokens.refresh_token);
+
+            const validity: AuthValidity = {
+              valid_until: access.exp,
+              refresh_until: refresh.exp,
+            };
+
+            return {
+              id: refresh.jti,
+              tokens,
+              user: data.user,
+              validity,
+            } as User;
+          }
+
+          // Login normal
           const data = await sendRequestServer<LoginResponse>({
             url: "/login",
             isSilent: true,
@@ -147,47 +218,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               password: credentials.password,
             },
           });
-          if (data === undefined) return null;
-          if (data.access_token === undefined) return null;
+
+          if (!data) return null;
+
+          if (data.isNonCodeConfirmed) {
+            // Usuário precisa confirmar código -> lançar erro tipado
+            throw new UserNotActivatedError();
+          }
+
+          if (!data.access_token) return null;
+
           const tokens: BackendJWT = {
             access_token: data.access_token,
             refresh_token: data.refresh_token,
           };
-
           const access: DecodedJWT = jwtDecode(tokens.access_token!);
           const refresh: DecodedJWT = jwtDecode(tokens.refresh_token);
+
           const validity: AuthValidity = {
             valid_until: access.exp,
             refresh_until: refresh.exp,
           };
 
           return {
-            id: refresh.jti, // User object is forced to have a string id so use refresh token id
-            tokens: tokens,
+            id: refresh.jti,
+            tokens,
             user: data.user,
-            validity: validity,
+            validity,
           } as User;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error) {
-          console.error("Error during authorization:");
-          return null;
+        } catch (err) {
+          // Se já é CredentialsSignin (ou subclasse) re-lança para NextAuth tratar e preservar cause
+          if (err instanceof CredentialsSignin) throw err;
+
+          // Qualquer outro erro inesperado -> encapsular em CredentialsSignin com identificador
+          throw new CredentialsSignin("INTERNAL_AUTH_ERROR");
         }
       },
     }),
   ],
 });
-
-// declare module "next-auth" {
-//   interface Session {
-//     accessToken?: string;
-//   }
-// }
-
-// declare module "next-auth/jwt" {
-//   interface JWT {
-//     accessToken?: string;
-//   }
-// }
 
 async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
   try {
@@ -196,7 +265,8 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
     const res = await refresh(nextAuthJWT.data.tokens.refresh_token);
     const accessToken: BackendAccessJWT = res?.data;
 
-    if (!res || accessToken.access_token === undefined) return { ...nextAuthJWT, error: "RefreshAccessTokenError" };
+    if (!res || accessToken.access_token === undefined)
+      return { ...nextAuthJWT, error: "RefreshAccessTokenError" };
     const { exp }: DecodedJWT = jwtDecode(accessToken.access_token);
 
     // Update the token and validity in the next-auth object
@@ -204,18 +274,20 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
     // nextAuthJWT.data.tokens.access = accessToken.access_token;
     // Ensure the returned jwt has a new object reference ID
     // (jwt will not be updated otherwise)
-    return { ...nextAuthJWT,
+    return {
+      ...nextAuthJWT,
       data: {
         ...nextAuthJWT.data,
         validity: {
           ...nextAuthJWT.data.validity,
-          valid_until: exp
+          valid_until: exp,
         },
         tokens: {
           ...nextAuthJWT.data.tokens,
-          access_token: accessToken.access_token
-        }
-    } };
+          access_token: accessToken.access_token,
+        },
+      },
+    };
   } catch (error) {
     console.debug(error);
     return {
@@ -224,3 +296,11 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
     };
   }
 }
+
+class InvalidLoginError extends CredentialsSignin {
+  code = "Invalid identifier or password";
+}
+
+// class UserNotActivatedError extends CredentialsSignin {
+//   code = "User not activated"
+// }

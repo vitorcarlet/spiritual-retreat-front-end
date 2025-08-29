@@ -12,6 +12,7 @@ export interface LoginResponse extends DefaultResponse {
   access_token: string;
   refresh_token: string;
   user: UserObject;
+  isNonCodeConfirmed?: boolean;
 }
 
 // export interface UserObject {

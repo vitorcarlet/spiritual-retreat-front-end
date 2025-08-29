@@ -11,9 +11,10 @@ export default auth((req) => {
   requestHeaders.set("x-url", req.url);
 
   const isPublicRoute = isPublicPath(nextUrl.pathname);
-  const isAuthRoute = authRoutes.some((route) =>
-    nextUrl.pathname.startsWith(route)
-  );
+  const isCodeRoute = nextUrl.pathname === "/login/code";
+  const isAuthRoute =
+    !isCodeRoute &&
+    authRoutes.some((route) => nextUrl.pathname.startsWith(route));
   const isLoggedIn = !!req.auth;
 
   if (nextUrl.pathname === "/") {

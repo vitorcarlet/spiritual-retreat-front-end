@@ -1,4 +1,6 @@
 // src/auth/login/form/index.tsx
+"use client";
+
 import React, { useActionState } from "react";
 import {
   Avatar,
@@ -6,30 +8,44 @@ import {
   FormControlLabel,
   Checkbox,
   Link,
-  Grid,
   Box,
   Typography,
   Paper,
 } from "@mui/material";
-import { Icon } from "@iconify/react";
 import { loginServerAction } from "@/src/actions/login-server";
 import { SubmitButton } from "./SubmitButton";
 import { FormError } from "../../FormError";
 
-const initialState = {
+type LoginState = {
+  message?: string;
+  errors?: Record<string, string[] | undefined>;
+};
+
+const initialState: LoginState = {
   message: "",
   errors: {},
 };
 
+// Wrapper para adaptar assinatura (prevState, formData)
+async function loginActionWrapper(prevState: LoginState, formData: FormData) {
+  // Reutiliza a action existente (mantendo compatibilidade)
+  const result = await loginServerAction(formData);
+  // Se loginServerAction fez redirect, execução não continua.
+  if (result && "errors" in result) {
+    return result as LoginState;
+  }
+  return { message: "", errors: {} }; // sucesso (redirect já ocorreu)
+}
+
 export default function LoginFormServer() {
-  const [state, formAction] = useActionState(loginServerAction, initialState);
+  const [state, formAction] = useActionState(loginActionWrapper, initialState);
 
   return (
     <Paper
       elevation={0}
       sx={{
         width: "100%",
-        padding: 4,
+        p: 4,
         borderRadius: 2,
         boxShadow: (theme) => `0px 4px 12px ${theme.palette.primary.main}80`,
       }}
@@ -41,9 +57,7 @@ export default function LoginFormServer() {
           alignItems: "center",
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
-          <Icon icon="material-symbols:lock-outline" />
-        </Avatar>
+        <Avatar sx={{ m: 1, bgcolor: "primary.main" }} />
         <Typography component="h1" variant="h5">
           Entrar no Server
         </Typography>
@@ -76,28 +90,22 @@ export default function LoginFormServer() {
           />
 
           <FormControlLabel
-            control={<Checkbox value="remember" color="primary" />}
+            control={<Checkbox name="remember" value="yes" color="primary" />}
             label="Lembrar-me"
           />
 
-          {/* ✅ Botão com useFormStatus */}
           <SubmitButton />
 
-          <Grid container>
-            <Grid size={{ xs: 12 }}>
-              <Link href="/forgotpassword" variant="body2">
-                Esqueceu a senha?
-              </Link>
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <Link href="/register" variant="body2">
-                {"Não tem conta? Cadastre-se"}
-              </Link>
-            </Grid>
+          <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+            <Link href="/forgotpassword" variant="body2">
+              Esqueceu a senha?
+            </Link>
+            <Link href="/register" variant="body2">
+              Não tem conta? Cadastre-se
+            </Link>
+          </Box>
 
-            {/* ✅ Mostrar mensagens de erro/sucesso */}
-            {state?.message && <FormError message={state.message} />}
-          </Grid>
+          {state?.message && <FormError message={state.message} />}
         </Box>
       </Box>
     </Paper>

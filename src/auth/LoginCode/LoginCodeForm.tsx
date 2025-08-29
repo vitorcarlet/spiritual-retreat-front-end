@@ -1,91 +1,92 @@
 "use client";
-import React, { useState } from "react";
-import {
-  Avatar,
-  Button,
-  TextField,
-  Grid,
-  Box,
-  Typography,
-  Paper,
-} from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Avatar, Box, Paper, Typography, Grid, Button } from "@mui/material";
 import { Icon } from "@iconify/react";
 import { useForm } from "react-hook-form";
-// import { ErrorMessage } from "@hookform/error-message";
-import { useSession } from "next-auth/react";
-// import { useSession } from "next-auth/react";
-// -- ADICIONADO: Imports do Zod e seu Resolver
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 import { FormError } from "../FormError";
 import { FormSuccess } from "../FormSuccess";
 import { OtpInput } from "@/src/components/otp/OtpInput";
 
-// -- ADICIONADO: Definição do schema de validação Zod
 const loginCodeSchema = z.object({
-  code: z
-    .string()
-    .min(6, "O código deve ter no mínimo 6 caracteres")
-    .max(6, "O código deve ter no máximo 6 caracteres"),
+  code: z.string().length(6, "O código deve ter 6 dígitos"),
 });
-type LoginCodeSchema = z.infer<typeof loginCodeSchema>; // Tipo derivado do schema
+type LoginCodeSchema = z.infer<typeof loginCodeSchema>;
 
 export default function LoginCodeForm() {
   const {
-    register,
     handleSubmit,
-    reset,
+    setValue,
     formState: { errors },
+    watch,
+    register,
   } = useForm<LoginCodeSchema>({
     resolver: zodResolver(loginCodeSchema),
+    defaultValues: { code: "" },
+    mode: "onChange",
   });
+
+  // Needed so RHF knows about the field (hidden)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _reg = register("code");
+
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl");
+  const email = searchParams.get("email") || "";
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const { status } = useSession();
 
-  //const { status } = useSession();
-  const session = useSession();
-  const [otp, setOtp] = useState<string>(""); // Estado para o código OTP
-  const [error, setError] = useState<string | undefined>("");
-  const [success, setSuccess] = useState<string | undefined>("");
-  const [loading, setLoading] = useState(false);
-  const onSubmit = async (data: { code: string }) => {
-    setLoading(true);
-    if (session.status === "loading") return null;
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
+  const [successMsg, setSuccessMsg] = useState<string | undefined>();
 
-    // startTransition(() => {
-    //   console.log(callbackUrl, "Callback URL from login form");
-    //   login(data, callbackUrl)
-    //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //     .then((data: any) => {
-    //       console.log(data, "Data from login");
-    //       if (data?.error) {
-    //         reset();
-    //         setError(data.error);
-    //         setLoading(false);
-    //       }
-    //       if (data?.success) {
-    //         setSuccess(data.success);
-    //         setError("");
-    //       }
-    //       setLoading(false);
-    //     })
-    //     .catch(() => setError("Something went wrong"));
-    // });
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace(callbackUrl);
+    }
+  }, [status, callbackUrl, router]);
+
+  const onSubmit = async (data: LoginCodeSchema) => {
+    if (status === "authenticated") return;
+    setSubmitting(true);
+    setErrorMsg(undefined);
+    setSuccessMsg(undefined);
+
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        email,
+        code: data.code,
+      });
+
+      if (res?.error) {
+        // Custom messages based on identifiers if backend sets them
+        if (res.error.includes("INVALID_CODE")) {
+          setErrorMsg("Código inválido.");
+        } else if (res.error.includes("EXPIRED_CODE")) {
+          setErrorMsg("Código expirado. Solicite outro.");
+        } else {
+          setErrorMsg("Não foi possível validar o código.");
+        }
+      } else {
+        setSuccessMsg("Código verificado. Redirecionando...");
+        router.replace(callbackUrl);
+      }
+    } catch {
+      setErrorMsg("Erro inesperado. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // if (session.status === "authenticated") {
-  //   return (
-  //     <Paper elevation={0} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
-  //       <Box sx={{ display: "flex", justifyContent: "center" }}>
-  //         <Typography>Redirecionando...</Typography>
-  //       </Box>
-  //     </Paper>
-  //   );
-  // }
-  console.log(session, "Session from login form");
+  const currentCode = watch("code");
+
   return (
-    <Paper elevation={1} sx={{ width: "100%", padding: 4, borderRadius: 2 }}>
+    <Paper elevation={1} sx={{ width: "100%", p: 4, borderRadius: 2 }}>
       <Box
         sx={{
           display: "flex",
@@ -99,43 +100,51 @@ export default function LoginCodeForm() {
         <Typography component="h1" variant="h5">
           Insira o código de verificação
         </Typography>
-        <Typography variant="body2" sx={{ mt: 1, mb: 2 }}>
-          Um código de verificação foi enviado junto ao seu convite. Por favor,
-          insira o código abaixo para continuar.
+        <Typography variant="body2" sx={{ mt: 1, mb: 2, textAlign: "center" }}>
+          Enviamos (ou foi fornecido) um código de verificação. Digite para
+          continuar.
         </Typography>
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
-          <Typography>{session?.status}</Typography>
+
+        <Box
+          component="form"
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+          sx={{ mt: 1, textAlign: "center" }}
+        >
           <OtpInput
             length={6}
-            onChange={(e) => setOtp(e)}
-            error={!!errors.code}
+            onChange={(val) => setValue("code", val, { shouldValidate: true })}
+            error={errors.code}
+            disabled={submitting}
           />
+
           {errors.code && (
-            <Typography color="error">{errors.code.message}</Typography>
+            <Typography
+              variant="caption"
+              color="error"
+              sx={{ display: "block", mt: 1 }}
+            >
+              {errors.code.message}
+            </Typography>
           )}
 
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            sx={{ mt: 2, mb: 2, padding: 1.5 }}
-            loading={loading}
+            sx={{ mt: 3, mb: 2, py: 1.4 }}
+            loading={submitting}
             loadingPosition="start"
-            startIcon={
-              loading ? (
-                <Icon icon="material-symbols:hourglass-top" />
-              ) : (
-                <Icon icon="material-symbols:lock-outline" />
-              )
-            }
-            disabled={loading}
+            startIcon={<Icon icon="material-symbols:lock-outline" />}
+            disabled={currentCode.length !== 6 || submitting}
           >
-            Entrar
+            Validar código
           </Button>
+
           <Grid container>
-            <Grid size={{ xs: 12 }}>
-              <FormError message={error} />
-              <FormSuccess message={success} />
+            <Grid size={12}>
+              <FormError message={errorMsg} />
+              <FormSuccess message={successMsg} />
             </Grid>
           </Grid>
         </Box>

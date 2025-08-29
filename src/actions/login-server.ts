@@ -35,8 +35,8 @@ function sanitizeCallback(raw: string | null): string {
 }
 
 export async function loginServerAction(
-  prevState: unknown,
-  formData: FormData
+  formData: FormData,
+  prevState?: unknown
 ) {
   // Validar dados com Zod
   const validatedFields = loginSchema.safeParse({
@@ -61,18 +61,44 @@ export async function loginServerAction(
     });
   } catch (error) {
     if (error instanceof AuthError) {
+      // A mensagem de AuthError do NextAuth adiciona “. Read more at …”
+      // e nem sempre preserva cause. Normalizamos.
+      const raw =
+        // tenta pegar cause explícita (quando usamos CredentialsSignin(new Error("CODE")))
+        (error as any)?.cause?.message ||
+        // fallback para message (vem com sufixo doc)
+        error.message ||
+        // último fallback: tipo
+        error.type;
+
+      // Normaliza removendo tudo após o primeiro ponto / quebra de linha
+      const normalized = raw.split(/[\n.]/)[0].trim();
+      console.log(
+        "AuthError during signIn (raw):",
+        raw,
+        "| normalized:",
+        normalized
+      );
+
+      if (normalized === "CONFIRMATION_CODE_REQUIRED") {
+        console.log("Redirecionando para /login/code POR ACTION");
+        redirect(`/login/code?email=${encodeURIComponent(email)}`);
+      }
+
       switch (error.type) {
         case "CredentialsSignin":
           return {
-            message: "Credenciais inválidas. Verifique email e senha.",
+            message:
+              normalized === "INTERNAL_AUTH_ERROR"
+                ? "Erro interno de autenticação. Tente novamente."
+                : "Credenciais inválidas. Verifique email e senha.",
           };
         default:
-          return {
-            message: "Algo deu errado. Tente novamente.",
-          };
+          return { message: "Algo deu errado. Tente novamente." };
       }
     }
-    throw error;
+    console.error("Unexpected error during signIn:", error);
+    return { message: "Erro inesperado. Tente novamente." };
   }
 
   // Se chegou aqui, login foi bem-sucedido

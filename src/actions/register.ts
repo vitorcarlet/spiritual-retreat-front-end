@@ -2,7 +2,10 @@
 
 import { ROUTES } from "@/routes";
 import { RegisterSchema } from "@/src/schemas";
-import { api, handleApiResponse } from "../lib/sendRequestServerVanilla";
+import {
+  sendRequestServerVanilla,
+  handleApiResponse,
+} from "../lib/sendRequestServerVanilla";
 import { redirect } from "next/navigation";
 
 export const registerForm = async (values: RegisterSchema) => {
@@ -10,7 +13,7 @@ export const registerForm = async (values: RegisterSchema) => {
     const { email, password, code } = values;
 
     // ✅ Usar API client configurado
-    const response = await api.post(ROUTES.AUTH.REGISTER, {
+    const response = await sendRequestServerVanilla.post(ROUTES.AUTH.REGISTER, {
       email,
       password,
       code,
@@ -24,7 +27,7 @@ export const registerForm = async (values: RegisterSchema) => {
     }
 
     // ✅ Redirecionar usando rotas centralizadas
-    redirect(ROUTES.DASHBOARD.ROOT);
+    redirect(ROUTES.PROTECTED.DASHBOARD);
   } catch (error) {
     console.error("Registration error:", error);
     return {

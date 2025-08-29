@@ -7,9 +7,15 @@ interface OtpInputProps {
   length: number;
   onChange: (otp: string) => void;
   error?: FieldError;
+  disabled?: boolean;
 }
 
-export const OtpInput = ({ length, onChange, error }: OtpInputProps) => {
+export const OtpInput = ({
+  length,
+  onChange,
+  error,
+  disabled,
+}: OtpInputProps) => {
   const [otp, setOtp] = useState<string[]>(new Array(length).fill(""));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -63,6 +69,7 @@ export const OtpInput = ({ length, onChange, error }: OtpInputProps) => {
           onChange={(e) => handleChange(e.target.value, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}
+          disabled={disabled}
           slotProps={{
             htmlInput: {
               maxLength: 1,

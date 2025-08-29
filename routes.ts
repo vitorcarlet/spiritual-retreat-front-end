@@ -3,7 +3,11 @@
  * These routes do not require authentication
  * @type {string[]}
  */
-export const publicRoutes = ["/serverTest/mui", "/public/*"] as const;
+export const publicRoutes = [
+  "/serverTest/mui",
+  "/public/*",
+  "/login/code",
+] as const;
 
 /**
  * An array of routes that are used for authentication
@@ -16,6 +20,7 @@ export const authRoutes = [
   "/error",
   "/reset",
   "/new-password",
+  "/login/code",
 ];
 
 /**
