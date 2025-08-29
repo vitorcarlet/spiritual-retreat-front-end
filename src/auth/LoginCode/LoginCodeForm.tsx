@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Avatar, Box, Paper, Typography, Grid, Button } from "@mui/material";
 import { Icon } from "@iconify/react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -19,19 +19,14 @@ type LoginCodeSchema = z.infer<typeof loginCodeSchema>;
 export default function LoginCodeForm() {
   const {
     handleSubmit,
-    setValue,
     formState: { errors },
-    watch,
-    register,
+    control,
+    reset,
   } = useForm<LoginCodeSchema>({
     resolver: zodResolver(loginCodeSchema),
     defaultValues: { code: "" },
     mode: "onChange",
   });
-
-  // Needed so RHF knows about the field (hidden)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _reg = register("code");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,7 +45,7 @@ export default function LoginCodeForm() {
     }
   }, [status, callbackUrl, router]);
 
-  const onSubmit = async (data: LoginCodeSchema) => {
+  const onSubmit = async () => {
     if (status === "authenticated") return;
     setSubmitting(true);
     setErrorMsg(undefined);
@@ -60,7 +55,7 @@ export default function LoginCodeForm() {
       const res = await signIn("credentials", {
         redirect: false,
         email,
-        code: data.code,
+        code: otpValueRef.current,
       });
 
       if (res?.error) {
@@ -76,6 +71,7 @@ export default function LoginCodeForm() {
         setSuccessMsg("Código verificado. Redirecionando...");
         router.replace(callbackUrl);
       }
+      reset();
     } catch {
       setErrorMsg("Erro inesperado. Tente novamente.");
     } finally {
@@ -83,7 +79,7 @@ export default function LoginCodeForm() {
     }
   };
 
-  const currentCode = watch("code");
+  const otpValueRef = React.useRef("");
 
   return (
     <Paper elevation={1} sx={{ width: "100%", p: 4, borderRadius: 2 }}>
@@ -111,11 +107,19 @@ export default function LoginCodeForm() {
           onSubmit={handleSubmit(onSubmit)}
           sx={{ mt: 1, textAlign: "center" }}
         >
-          <OtpInput
-            length={6}
-            onChange={(val) => setValue("code", val, { shouldValidate: true })}
-            error={errors.code}
-            disabled={submitting}
+          <Controller
+            name="code"
+            control={control}
+            render={({ field, fieldState }) => (
+              <OtpInput
+                length={6}
+                onChange={field.onChange}
+                value={field.value}
+                error={fieldState.error}
+                disabled={submitting}
+                valueRef={otpValueRef}
+              />
+            )}
           />
 
           {errors.code && (
@@ -136,7 +140,7 @@ export default function LoginCodeForm() {
             loading={submitting}
             loadingPosition="start"
             startIcon={<Icon icon="material-symbols:lock-outline" />}
-            disabled={currentCode.length !== 6 || submitting}
+            disabled={otpValueRef.current.length !== 6 || submitting}
           >
             Validar código
           </Button>

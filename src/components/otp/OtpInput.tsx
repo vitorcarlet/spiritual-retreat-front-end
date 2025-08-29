@@ -8,6 +8,8 @@ interface OtpInputProps {
   onChange: (otp: string) => void;
   error?: FieldError;
   disabled?: boolean;
+  valueRef?: React.RefObject<string>;
+  value?: string;
 }
 
 export const OtpInput = ({
@@ -15,6 +17,8 @@ export const OtpInput = ({
   onChange,
   error,
   disabled,
+  valueRef,
+  value,
 }: OtpInputProps) => {
   const [otp, setOtp] = useState<string[]>(new Array(length).fill(""));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -22,6 +26,23 @@ export const OtpInput = ({
   useEffect(() => {
     onChange(otp.join(""));
   }, [otp, onChange]);
+
+  useEffect(() => {
+    if (value) {
+      const valueArray = value.split("").slice(0, length);
+      const newOtp = [...otp];
+      for (let i = 0; i < length; i++) {
+        newOtp[i] = valueArray[i] || "";
+      }
+      setOtp(newOtp);
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (valueRef) {
+      valueRef.current = otp.join("");
+    }
+  }, [otp]);
 
   const handleChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;

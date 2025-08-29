@@ -145,14 +145,14 @@ export const handlers = [
   }),
 
   http.post("http://localhost:3001/api/verify-code", async ({ request }) => {
-    const { userId, code } = (await request.json()) as {
-      userId?: string;
+    const { email, code } = (await request.json()) as {
+      email?: string;
       code?: string;
     };
 
-    if (!userId || !code) {
+    if (!email || !code) {
       return HttpResponse.json(
-        { error: "Missing userId or code" },
+        { error: "Missing email or code" },
         { status: 400 }
       );
     }
@@ -160,7 +160,7 @@ export const handlers = [
     if (code === "123456") {
       // Código correto
       // Retornar tokens e dados do usuário
-      const user = getUserById(userId);
+      const user = getUserById("4");
       if (user) {
         return HttpResponse.json(
           {
@@ -173,6 +173,10 @@ export const handlers = [
         );
       }
     }
+    return HttpResponse.json(
+      { error: "Wrong E-mail or code." },
+      { status: 400 }
+    );
   }),
   http.post("http://localhost:3001/api/register", async ({ request }) => {
     const { email, password, code } = (await request.json()) as RegisterSchema;

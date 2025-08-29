@@ -22,7 +22,10 @@ import { LoginResponse } from "./src/auth/types";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import * as Sentry from "@sentry/nextjs";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "./src/lib/sendRequestServerVanilla";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -173,17 +176,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Não envolva tudo em try/catch que retorna null; só capture para re-lançar
         try {
           // Fluxo de verificação de código direto
-          if (credentials.code) {
-            const data = await sendRequestServer<LoginResponse>({
-              url: "/verify-code",
-              method: "post",
-              payload: {
+          console.debug("Verifying code for user:", credentials);
+          if (!!credentials.code) {
+            const { data, error } = await handleApiResponse<LoginResponse>(
+              await sendRequestServerVanilla.post("/verify-code", {
                 email: credentials.email,
                 code: credentials.code,
-              },
-            });
+              })
+            );
 
-            if (!data?.access_token) {
+            console.debug(data, error, "VERIFY CODE RESPONSE");
+
+            if (!data?.access_token || error) {
               // Código inválido -> credenciais inválidas
               return null;
             }
