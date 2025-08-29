@@ -1,9 +1,8 @@
-import { IconButton, Paper, useTheme } from "@mui/material";
-import Box from "@mui/material/Box";
+import { IconButton, Paper, Typography, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Iconify from "@/src/components/Iconify";
-import Breadcrumbs from "./Breadcrumbs";
 import { useDrawer } from "@/src/contexts/DrawerContext";
+import Link from "next/link";
 
 const TopBar = () => {
   const { handleDrawerToggle, handleDrawerPersistentToggle } = useDrawer();
@@ -23,9 +22,8 @@ const TopBar = () => {
       }}
     >
       <Grid container sx={{ px: 2, minHeight: 72 }}>
-        {/* Left side - Menu toggle */}
         <Grid
-          size={{ xs: 12, md: 8, lg: 6 }}
+          size={{ xs: 4 }}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -40,21 +38,29 @@ const TopBar = () => {
           >
             <Iconify icon="lucide:menu" size={2.5} />
           </IconButton>
-
-          {/* Center - Breadcrumbs */}
-          {/* <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "start",
-              minHeight: 32,
-            }}
-          >
-            <Breadcrumbs />
-          </Box> */}
         </Grid>
-        {/* Right side - User actions */}
+        <Grid
+          size={{ xs: 8 }}
+          sx={{
+            display: { xs: "none", md: "flex" },
+            alignItems: "center",
+            justifyContent: "end",
+          }}
+        >
+          <Typography component="span" variant="body2" sx={{ marginRight: 2 }}>
+            Já foi contemplado?{" "}
+            <Typography
+              component={Link}
+              variant="body2"
+              color="primary"
+              fontWeight="bold"
+              sx={{ textDecoration: "underline", cursor: "pointer" }}
+              href="/login"
+            >
+              Acesse aqui!
+            </Typography>
+          </Typography>
+        </Grid>
       </Grid>
     </Paper>
   );

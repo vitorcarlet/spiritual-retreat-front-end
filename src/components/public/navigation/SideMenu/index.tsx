@@ -1,5 +1,4 @@
 "use client";
-import { useEffect } from "react";
 import {
   Box,
   List,
@@ -20,7 +19,6 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
-import Loading from "@/app/loading";
 import { BreadCrumbsProvider } from "@/src/contexts/BreadCrumbsContext";
 import Iconify from "@/src/components/Iconify";
 import TopBar from "../TopBar";
