@@ -23,6 +23,10 @@ import {
 import { useTranslations } from "next-intl";
 import { RetreatsCardTableFilters } from "@/src/components/public/retreats/types";
 import { getSelectedIds as getSelectedIdsFn } from "@/src/components/table/shared";
+import DeleteConfirmation from "@/src/components/confirmations/DeleteConfirmation";
+import { Participant } from "@/src/types/retreats";
+import { useModal } from "@/src/hooks/useModal";
+import ParticipantForm from "./ParticipantForm";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
@@ -187,6 +191,7 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
 
 export default function NonContemplatedTable({ id }: { id: string }) {
   const t = useTranslations();
+  const modal = useModal();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
       defaultFilters: {
@@ -221,45 +226,55 @@ export default function NonContemplatedTable({ id }: { id: string }) {
 
   //console.log(getSelectedIds, "getSelectedIds");
 
-  // const handleDelete = (user: User) => {
-  //   modal.open({
-  //     title: "Confirm deletion",
-  //     size: "sm",
-  //     customRender: () => (
-  //       <DeleteConfirmation
-  //         title="Delete user"
-  //         resourceName={user.name}
-  //         description="This action cannot be undone and will permanently remove the user."
-  //         requireCheckboxLabel="I understand the consequences."
-  //         onConfirm={async () => {
-  //           try {
-  //             const res = await sendRequestServerVanilla.delete(
-  //               `/Contemplated/${user.id}`
-  //             );
-  //             const result = await handleApiResponse(res);
-  //             if (result.error) {
-  //               throw new Error(result.error || "Server error");
-  //             }
-  //             // Optionally trigger a refetch outside
-  //             if (typeof window !== "undefined") {
-  //               const { enqueueSnackbar } = await import("notistack");
-  //               enqueueSnackbar("User deleted successfully", {
-  //                 variant: "success",
-  //               });
-  //             }
-  //           } catch (err: any) {
-  //             if (typeof window !== "undefined") {
-  //               const { enqueueSnackbar } = await import("notistack");
-  //               enqueueSnackbar(err.message || "Failed to delete user", {
-  //                 variant: "errorMUI",
-  //               });
-  //             }
-  //           }
-  //         }}
-  //       />
-  //     ),
-  //   });
-  // };
+  const handleOpenParticipantForm = (
+    participant: ContemplatedParticipant | null
+  ) => {
+    modal.open({
+      title: "Participant Details",
+      size: "md",
+      customRender: () => <ParticipantForm participant={participant} />,
+    });
+  };
+
+  const handleDeleteParticipant = (participant: Participant) => {
+    modal.open({
+      title: "Confirm deletion",
+      size: "sm",
+      customRender: () => (
+        <DeleteConfirmation
+          title="Delete participant"
+          resourceName={participant.name}
+          description="This action cannot be undone and will permanently remove the participant."
+          requireCheckboxLabel="I understand the consequences."
+          onConfirm={async () => {
+            try {
+              const res = await sendRequestServerVanilla.delete(
+                `/Contemplated/${participant.id}`
+              );
+              const result = await handleApiResponse(res);
+              if (result.error) {
+                throw new Error(result.error || "Server error");
+              }
+              // Optionally trigger a refetch outside
+              if (typeof window !== "undefined") {
+                const { enqueueSnackbar } = await import("notistack");
+                enqueueSnackbar("User deleted successfully", {
+                  variant: "success",
+                });
+              }
+            } catch (err: any) {
+              if (typeof window !== "undefined") {
+                const { enqueueSnackbar } = await import("notistack");
+                enqueueSnackbar(err.message || "Failed to delete user", {
+                  variant: "errorMUI",
+                });
+              }
+            }
+          }}
+        />
+      ),
+    });
+  };
 
   const handleBulkAction = () => {
     const selectedIds = getSelectedIds;
@@ -294,11 +309,6 @@ export default function NonContemplatedTable({ id }: { id: string }) {
 
   if (isLoading || session.status === "loading" || !session.data?.user) {
     return <div>Carregando usuários...</div>;
-  }
-  function handleAddNewParticipant(
-    event: MouseEvent<HTMLButtonElement, MouseEvent>
-  ): void {
-    throw new Error("Function not implemented.");
   }
 
   function handleContemplate(row: ContemplatedParticipant): void {
@@ -359,7 +369,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
         <Button
           variant="contained"
           color="primary"
-          onClick={handleAddNewParticipant}
+          onClick={() => handleOpenParticipantForm(null)}
         >
           {t("contemplations.no-contemplated.create-new-participant")}
         </Button>
@@ -405,16 +415,22 @@ export default function NonContemplatedTable({ id }: { id: string }) {
             {
               icon: "lucide:trash-2",
               label: "Ver Mais",
-              onClick: handleAddNewParticipant,
-              color: "error",
+              onClick: (participant) => handleOpenParticipantForm(participant),
+              color: "primary",
               //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
             {
               icon: "lucide:trash-2",
               label: "Contemplar",
               onClick: handleContemplate,
-              color: "error",
+              color: "secondary",
               //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+            {
+              icon: "lucide:trash-2",
+              label: "Excluir participante",
+              onClick: handleDeleteParticipant,
+              color: "error",
             },
           ]}
           // Eventos
