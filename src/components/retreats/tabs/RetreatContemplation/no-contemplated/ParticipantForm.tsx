@@ -53,6 +53,7 @@ interface ParticipantFormProps {
   onSubmit?: (data: ParticipantFormValues) => Promise<void> | void;
   loading?: boolean;
   submitLabel?: string;
+  disabled?: boolean;
 }
 
 const defaultEmpty: ParticipantFormValues = {
@@ -71,6 +72,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   onSubmit,
   loading = false,
   submitLabel = "Salvar",
+  disabled = true,
 }) => {
   const {
     control,
@@ -105,9 +107,9 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
       component="form"
       noValidate
       onSubmit={handleSubmit(submit)}
-      sx={{ width: "100%", maxWidth: 640 }}
+      sx={{ width: "100%" }}
     >
-      <Stack spacing={3}>
+      <Stack sx={{ margin: "0 auto" }} spacing={3}>
         <Stack
           direction="row"
           spacing={2}
@@ -147,7 +149,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               label="Nome"
               required
               fullWidth
-              disabled={submitting}
+              disabled={submitting || disabled}
               error={!!errors.name}
               helperText={errors.name?.message}
             />
@@ -165,7 +167,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               label="Email"
               required
               fullWidth
-              disabled={submitting}
+              disabled={submitting || disabled}
               error={!!errors.email}
               helperText={errors.email?.message}
             />
@@ -181,7 +183,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               {...field}
               label="Telefone"
               fullWidth
-              disabled={submitting}
+              disabled={submitting || disabled}
               error={!!errors.phone}
               helperText={errors.phone?.message || "Opcional"}
             />
@@ -198,7 +200,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               label="Atividade"
               required
               fullWidth
-              disabled={submitting}
+              disabled={submitting || disabled}
               error={!!errors.activity}
               helperText={errors.activity?.message}
             />
@@ -214,7 +216,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               <FormControl
                 fullWidth
                 error={!!errors.status}
-                disabled={submitting}
+                disabled={submitting || disabled}
               >
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -238,7 +240,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               <FormControl
                 fullWidth
                 error={!!errors.paymentStatus}
-                disabled={submitting}
+                disabled={submitting || disabled}
               >
                 <InputLabel>Pagamento</InputLabel>
                 <Select
@@ -267,7 +269,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                   color="primary"
                   checked={field.value}
                   onChange={(e) => field.onChange(e.target.checked)}
-                  disabled={submitting}
+                  disabled={submitting || disabled}
                 />
               }
               label="Participação confirmada"
@@ -289,7 +291,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               {...field}
               label="URL da Foto"
               fullWidth
-              disabled={submitting}
+              disabled={submitting || disabled}
               error={!!errors.photoUrl}
               helperText={
                 errors.photoUrl?.message ||
@@ -305,7 +307,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
           <Button
             variant="outlined"
             type="button"
-            disabled={submitting || !isDirty}
+            disabled={submitting || !isDirty || disabled}
             onClick={() =>
               reset(
                 participant
@@ -316,7 +318,11 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
           >
             Resetar
           </Button>
-          <Button variant="contained" type="submit" disabled={submitting}>
+          <Button
+            variant="contained"
+            type="submit"
+            disabled={submitting || disabled}
+          >
             {submitLabel}
           </Button>
         </Stack>

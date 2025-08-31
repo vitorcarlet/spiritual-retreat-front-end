@@ -26,7 +26,10 @@ import { getSelectedIds as getSelectedIdsFn } from "@/src/components/table/share
 import DeleteConfirmation from "@/src/components/confirmations/DeleteConfirmation";
 import { Participant } from "@/src/types/retreats";
 import { useModal } from "@/src/hooks/useModal";
-import ParticipantForm from "./ParticipantForm";
+import ParticipantForm, { ParticipantFormValues } from "./ParticipantForm";
+import requestServer, { requestServerApi } from "@/src/lib/requestServer";
+import { enqueueSnackbar } from "notistack";
+import { DefaultResponse } from "@/src/auth/types";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
@@ -226,13 +229,69 @@ export default function NonContemplatedTable({ id }: { id: string }) {
 
   //console.log(getSelectedIds, "getSelectedIds");
 
+  const submitNewParticipant = async (participant: ParticipantFormValues) => {
+    // Lógica para enviar o novo participante ao servidor
+    try {
+      const data = await requestServer.post<ContemplatedParticipant>(
+        `/no-contemplated`,
+        participant
+      );
+      if (data.success) {
+        enqueueSnackbar((data as DefaultResponse).message, {
+          variant: "success",
+          preventDuplicate: true,
+        });
+      }
+    } catch (error: any) {
+      enqueueSnackbar(error?.message || "ocorreu um erro na requisição", {
+        variant: "error",
+        autoHideDuration: 8000,
+        anchorOrigin: { vertical: "top", horizontal: "center" },
+      });
+    } finally {
+      modal.close();
+    }
+    // Aqui você pode fazer uma chamada API para salvar o participante
+  };
+
+  const editParticipant = async (participant: ParticipantFormValues) => {
+    // Lógica para editar o participante no servidor
+    try {
+      const data = await requestServer.put<ContemplatedParticipant>(
+        `/no-contemplated/${participant.id}`,
+        participant
+      );
+      if (data.success) {
+        enqueueSnackbar((data as DefaultResponse).message, {
+          variant: "success",
+          preventDuplicate: true,
+        });
+      }
+    } catch (error: any) {
+      enqueueSnackbar(error?.message || "ocorreu um erro na requisição", {
+        variant: "error",
+        autoHideDuration: 8000,
+        anchorOrigin: { vertical: "top", horizontal: "center" },
+      });
+    } finally {
+      modal.close();
+    }
+  };
+
   const handleOpenParticipantForm = (
     participant: ContemplatedParticipant | null
   ) => {
     modal.open({
       title: "Participant Details",
       size: "md",
-      customRender: () => <ParticipantForm participant={participant} />,
+      customRender: () => (
+        <ParticipantForm
+          participant={participant}
+          onSubmit={
+            participant == null ? submitNewParticipant : editParticipant
+          }
+        />
+      ),
     });
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Avatar, Box, Button, Chip, Stack } from "@mui/material";
+import { Avatar, Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
 import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 //import ContemplatedummaryModal from "../ContemplatedummaryModal";
@@ -20,6 +20,11 @@ import {
   ContemplatedTableFilters,
   ContemplatedTableFiltersWithDates,
 } from "../types";
+import { useTranslations } from "next-intl";
+import { useModal } from "@/src/hooks/useModal";
+import ParticipantForm from "../no-contemplated/ParticipantForm";
+import { Send } from "@mui/icons-material";
+import { SendMessage } from "./SendMessage";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
@@ -181,6 +186,8 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
 ];
 
 export default function ContemplatedTable({ id }: { id: string }) {
+  const t = useTranslations();
+  const modal = useModal();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
       defaultFilters: {
@@ -213,46 +220,6 @@ export default function ContemplatedTable({ id }: { id: string }) {
     }
     return [];
   };
-
-  // const handleDelete = (user: User) => {
-  //   modal.open({
-  //     title: "Confirm deletion",
-  //     size: "sm",
-  //     customRender: () => (
-  //       <DeleteConfirmation
-  //         title="Delete user"
-  //         resourceName={user.name}
-  //         description="This action cannot be undone and will permanently remove the user."
-  //         requireCheckboxLabel="I understand the consequences."
-  //         onConfirm={async () => {
-  //           try {
-  //             const res = await sendRequestServerVanilla.delete(
-  //               `/Contemplated/${user.id}`
-  //             );
-  //             const result = await handleApiResponse(res);
-  //             if (result.error) {
-  //               throw new Error(result.error || "Server error");
-  //             }
-  //             // Optionally trigger a refetch outside
-  //             if (typeof window !== "undefined") {
-  //               const { enqueueSnackbar } = await import("notistack");
-  //               enqueueSnackbar("User deleted successfully", {
-  //                 variant: "success",
-  //               });
-  //             }
-  //           } catch (err: any) {
-  //             if (typeof window !== "undefined") {
-  //               const { enqueueSnackbar } = await import("notistack");
-  //               enqueueSnackbar(err.message || "Failed to delete user", {
-  //                 variant: "errorMUI",
-  //               });
-  //             }
-  //           }
-  //         }}
-  //       />
-  //     ),
-  //   });
-  // };
 
   const handleBulkAction = () => {
     const selectedIds = getSelectedIds();
@@ -325,6 +292,30 @@ export default function ContemplatedTable({ id }: { id: string }) {
       </Box>
     );
   }
+  function handleOpenMessagesComponent(selectedIds: GridRowId[]): void {
+    const selectedParticipants =
+      contemplatedDataArray
+        ?.filter((participant) => selectedIds.includes(participant.id))
+        .map((p) => ({ name: p.name, id: p.id })) || [];
+
+    modal.open({
+      title: "Enviar Mensagem",
+      size: "xl",
+      customRender: () => <SendMessage participants={selectedParticipants} />,
+    });
+  }
+
+  const handleOpenParticipantForm = (
+    participant: ContemplatedParticipant | null
+  ) => {
+    modal.open({
+      title: "Participant Details",
+      size: "md",
+      customRender: () => (
+        <ParticipantForm participant={participant} disabled />
+      ),
+    });
+  };
   return (
     <Box
       sx={{
@@ -372,8 +363,12 @@ export default function ContemplatedTable({ id }: { id: string }) {
 
         {/* ✅ CORREÇÃO: Usar helper para contar */}
         {getSelectedIds().length > 0 && (
-          <Button variant="outlined" color="primary" onClick={handleBulkAction}>
-            Ação em Lote ({getSelectedIds().length})
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => handleOpenMessagesComponent(getSelectedIds())}
+          >
+            Enviar mensagens para ({getSelectedIds().length} contemplados)
           </Button>
         )}
       </Box>
@@ -414,17 +409,23 @@ export default function ContemplatedTable({ id }: { id: string }) {
           rowBuffer={500}
           columnBuffer={2}
           // Ações personalizadas
-          actions={
-            [
-              // {
-              //   icon: "lucide:trash-2",
-              //   label: "Deletar",
-              //   onClick: handleDelete,
-              //   color: "error",
-              //   disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
-              // },
-            ]
-          }
+          actions={[
+            {
+              icon: "lucide:trash-2",
+              label: "Ver Mais",
+              onClick: (participant) => handleOpenParticipantForm(participant),
+              color: "primary",
+              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+            {
+              icon: "lucide:trash-2",
+              label: "Enviar Mensagem",
+              onClick: (participant) =>
+                handleOpenMessagesComponent([participant.id]),
+              color: "primary",
+              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+          ]}
           // Eventos
           onRowClick={(params) => {
             console.log("Linha clicada:", params.row);
