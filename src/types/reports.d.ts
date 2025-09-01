@@ -1,4 +1,4 @@
-type Report = {
+export interface Report {
   id: string | number;
   name: string;
   sections: string[];
@@ -6,7 +6,7 @@ type Report = {
   period: Period;
   retreatName: string;
   retreatId: string | number;
-};
+}
 
 type Period = {
   from: string; // ISO date string

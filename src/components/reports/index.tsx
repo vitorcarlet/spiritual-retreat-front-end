@@ -1,22 +1,94 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Box, Button, Typography } from "@mui/material";
-import LoadingScreenCircular from "../loading-screen/client/LoadingScreenCircular";
-import dynamic from "next/dynamic";
+import { Box, Button, Chip, Typography } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/src/hooks/useModal";
 import { sendRequestClient } from "@/src/lib/sendRequestClient";
+import requestServer from "@/src/lib/requestServer";
+import { useState } from "react";
+import DataTable, { DataTableColumn } from "../table/DataTable";
+import { getSelectedIds } from "../table/shared";
+import SearchField from "../filters/SearchField";
+import FilterButton from "../filters/FilterButton";
+import { Report } from "@/src/types/reports";
 import {
-  handleApiResponse,
-  sendRequestServerVanilla as sendRequest,
-} from "@/src/lib/sendRequestServerVanilla";
+  ReportsAllFilters,
+  ReportsTableDateFilters,
+  ReportsTableFilters,
+} from "./types";
+import { getFilters } from "./getFilters";
+import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 
-// API service functions
+type ReportDataRequest = {
+  rows: Report[];
+  total: number;
+  page: number;
+  pageLimit: number;
+};
+
+const columns: DataTableColumn<Report>[] = [
+  {
+    field: "id",
+    headerName: "ID",
+    width: 70,
+    type: "number",
+  },
+  {
+    field: "name",
+    headerName: "Nome",
+    flex: 1,
+    minWidth: 180,
+    renderCell: (params) => (
+      <Box
+        component="span"
+        sx={{
+          fontSize: 14,
+          fontWeight: 500,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          maxWidth: 160,
+        }}
+      >
+        {params.value}
+      </Box>
+    ),
+  },
+  {
+    field: "sections",
+    headerName: "Seções",
+    flex: 1,
+    minWidth: 220,
+    renderCell: (params) => (
+      <Box>
+        {Array.isArray(params.value) && params.value.length > 0 ? (
+          params.value.map((section: string, index: number) => (
+            <Chip key={index} label={section} size="small" color="primary" />
+          ))
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            Nenhuma seção disponível
+          </Typography>
+        )}
+      </Box>
+    ),
+  },
+  {
+    field: "dateCreation",
+    headerName: "Data de Criação",
+    width: 140,
+    //valueFormatter: (v) => (v?.value ? String(v.value) : ""),
+  },
+  {
+    field: "retreatName",
+    headerName: "Retiro",
+    flex: 1,
+  },
+];
+
 const fetchReports = async () => {
-  const response = await handleApiResponse<Report[]>(
-    await sendRequest.get("/reports")
-  );
+  const response = await requestServer.get<ReportDataRequest>("/reports");
   if (!response || response.error) {
     throw new Error("Failed to fetch reports");
   }
@@ -37,20 +109,35 @@ const deleteReport = async (id: string | number) => {
   return response;
 };
 
-const DragAndDropSections = dynamic(
-  () => import("@/src/components/reports/DataGrid"),
-  {
-    loading: () => <LoadingScreenCircular />,
-  }
-);
-
 const ReportPage = () => {
   const router = useRouter();
   const modal = useModal();
   const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const filtersConfig = getFilters();
+  const handleRefresh = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+  };
+
+  const { filters, updateFilters, activeFiltersCount, resetFilters } =
+    useUrlFilters<TableDefaultFilters<ReportsAllFilters>>({
+      defaultFilters: {
+        page: 1,
+        pageLimit: 10,
+      },
+      excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
+    });
+  const handleApplyFilters = (
+    newFilters: Partial<TableDefaultFilters<ReportsAllFilters>>
+  ) => {
+    updateFilters({ ...filters, ...newFilters });
+  };
 
   // Fetch reports data
-  const { data: reports = [], isLoading } = useQuery({
+  const { data: reportsData = [], isLoading } = useQuery({
     queryKey: ["reports"],
     queryFn: fetchReports,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -71,10 +158,6 @@ const ReportPage = () => {
   // Handlers for the DataGrid actions
   const handleViewReport = (report: any) => {
     router.push(`/reports/${report.id}`);
-  };
-
-  const handleEditReport = (report: any) => {
-    router.push(`/reports/${report.id}/edit`);
   };
 
   const handleDeleteReport = (
@@ -99,17 +182,127 @@ const ReportPage = () => {
     router.push("/reports/new");
   };
 
+  const reportsArray: Report[] = Array.isArray(reportsData.rows)
+    ? reportsData.rows
+    : [[reportsData.rows] as unknown as Report[]];
   return (
-    <Box padding={2}>
-      <DragAndDropSections
-        reports={reports}
-        isLoading={isLoading || deleteMutation.isPending}
-        onConfirmDelete={onConfirmDelete}
-        onView={handleViewReport}
-        onEdit={handleEditReport}
-        onDelete={handleDeleteReport}
-        onCreate={handleCreateReport}
-      />
+    <Box
+      sx={{
+        p: 2,
+        height: "100%",
+        minWidth: "100%",
+        display: "flex",
+        flexDirection: "column",
+        maxWidth: "100%",
+        overflowY: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
+      <Box
+        sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
+      >
+        <Button variant="contained" onClick={handleRefresh} disabled={loading}>
+          {loading ? "Carregando..." : "Atualizar Dados"}
+        </Button>
+
+        <FilterButton<
+          TableDefaultFilters<ReportsTableFilters>,
+          ReportsTableDateFilters
+        >
+          filters={filtersConfig}
+          defaultValues={filters}
+          onApplyFilters={handleApplyFilters}
+          onReset={resetFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+
+        <SearchField
+          sx={{
+            height: "100%",
+            minWidth: "120px",
+            width: "max-content",
+            flexShrink: 0,
+          }}
+          value={filters.search || ""}
+          onChange={(e) => {
+            updateFilters({ ...filters, search: e });
+          }}
+          placeholder="search-field"
+        />
+
+        {/* ✅ CORREÇÃO: Usar helper para contar */}
+        {getSelectedIds().length > 0 && (
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => handleOpenMessagesComponent(getSelectedIds())}
+          >
+            Enviar mensagens para ({getSelectedIds().length} contemplados)
+          </Button>
+        )}
+      </Box>
+
+      <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
+        <DataTable<Report, ReportsAllFilters>
+          rows={reportsArray}
+          rowCount={reportsData?.total || 0}
+          columns={columns}
+          loading={isLoading || loading}
+          // Configurações de aparência
+          title="Gerenciamento de Relatórios"
+          subtitle="Lista completa de relatórios do sistema"
+          autoWidth={true}
+          autoHeight={true}
+          // Paginação
+          width={1200}
+          height={600}
+          pagination={true}
+          showToolbar={false}
+          paginationMode="server"
+          page={filters.page ? filters.page - 1 : 0}
+          pageSize={filters.pageLimit || 10}
+          pageSizeOptions={[10, 25, 50, 100]}
+          onPaginationModelChange={(newModel) => {
+            updateFilters({
+              ...filters,
+              page: newModel.page + 1,
+              pageLimit: newModel.pageSize,
+            });
+          }}
+          serverFilters={filters}
+          // Seleção
+          //checkboxSelection={true}
+          //rowSelectionModel={selectedRows}
+          //onRowSelectionModelChange={setSelectedRows}
+          // Virtualização otimizada
+          rowBuffer={500}
+          columnBuffer={2}
+          // Ações personalizadas
+          actions={[
+            {
+              icon: "lucide:trash-2",
+              label: "Acessar relatório",
+              onClick: (report) => handleViewReport(report),
+              color: "primary",
+              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+            {
+              icon: "lucide:trash-2",
+              label: "Deletar relatório",
+              onClick: (report) => handleDeleteReport(report, onConfirmDelete),
+              color: "primary",
+              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+          ]}
+          // Eventos
+          onRowClick={(params) => {
+            console.log("Linha clicada:", params.row);
+          }}
+          // onRowDoubleClick={(params) => {
+          //   handleView(params.row);
+          // }}
+        />
+      </Box>
     </Box>
   );
 };
