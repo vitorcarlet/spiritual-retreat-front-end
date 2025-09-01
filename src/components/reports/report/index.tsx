@@ -111,7 +111,7 @@ const deleteReport = async (id: string | number) => {
   return response;
 };
 
-const ReportPage = () => {
+const ReportIdPage = ({ reportId }: { reportId: string }) => {
   const t = useTranslations();
   const router = useRouter();
   const modal = useModal();
@@ -120,7 +120,7 @@ const ReportPage = () => {
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
   >(undefined);
-  const filtersConfig = getFilters();
+  const filtersConfig = getFilters(reportId);
   const handleRefresh = () => {
     setLoading(true);
     setTimeout(() => {
@@ -309,4 +309,4 @@ const ReportPage = () => {
   );
 };
 
-export default ReportPage;
+export default ReportIdPage;

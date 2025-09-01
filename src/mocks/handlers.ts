@@ -368,8 +368,10 @@ export const handlers = [
     }
   ),
 
-  http.get("http://localhost:3001/api/reports", () => {
-    return HttpResponse.json(mockReports, { status: 200 });
+  http.get("http://localhost:3001/api/reports", ({ request }) => {
+    const url = new URL(request.url);
+    const payload = paginate(mockReports, url);
+    return HttpResponse.json(payload, { status: 200 });
   }),
 
   // GET - Obter relatório específico

@@ -40,7 +40,7 @@ import ActionOptions from "./ActionOptions";
 
 // Tipos para o componente
 export interface DataTableColumn<
-  T extends GridValidRowModel = GridValidRowModel
+  T extends GridValidRowModel = GridValidRowModel,
 > extends Omit<GridColDef, "field"> {
   field: keyof T | string;
   headerName: string;
@@ -66,7 +66,7 @@ export interface DataTableColumn<
 
 export interface DataTableProps<
   T extends GridValidRowModel = GridValidRowModel,
-  F = unknown
+  F = unknown,
 > {
   // Dados
   rows: T[];
@@ -231,7 +231,7 @@ const CustomToolbar = React.memo(function CustomToolbar({
 // Componente principal
 export function DataTable<
   T extends GridValidRowModel,
-  F extends TableDefaultFilters
+  F extends TableDefaultFilters,
 >({
   rows,
   columns,

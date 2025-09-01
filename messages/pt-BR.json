@@ -32,5 +32,7 @@
     "no-contemplated": {
       "create-new-participant": "Adicionar Novo Participante"
     }
-  }
+  },
+  "new-report": "Novo Relatório",
+  "report-data": "Dados do Relatório"
 }

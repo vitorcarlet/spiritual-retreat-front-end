@@ -1,4 +1,6 @@
-export const mockReports = [
+import { Report } from "@/src/types/reports";
+
+export const mockReports: Report[] = [
   {
     id: "1",
     name: "Relatório de Inscrições",

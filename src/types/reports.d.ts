@@ -1,11 +1,11 @@
 export interface Report {
-  id: string | number;
+  id: string;
   name: string;
   sections: string[];
   dateCreation: string; // ISO date string
   period: Period;
   retreatName: string;
-  retreatId: string | number;
+  retreatId: string;
 }
 
 type Period = {

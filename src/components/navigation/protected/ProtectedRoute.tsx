@@ -17,14 +17,6 @@ export default function ProtectedRoute({
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
 
   useEffect(() => {
-    console.log("🔄 ProtectedRoute Effect:", {
-      status,
-      isLoading,
-      hasUser: !!user,
-      pathname,
-      menuConfig: menuConfig.map((m) => ({ id: m.id, path: m.path })),
-    });
-
     // ✅ Aguardar a sessão carregar
     if (isLoading || status === "loading") {
       setHasAccess(null);
@@ -71,17 +63,9 @@ export default function ProtectedRoute({
             }
           }
 
-          console.log("🔐 Final Access Check:", {
-            pathname,
-            hasRouteAccess,
-            userRoles: user?.roles,
-            userPermissions: Object.keys(user?.permissions || {}),
-          });
-
           setHasAccess(hasRouteAccess);
 
           if (!hasRouteAccess) {
-            console.log("❌ Redirecting to unauthorized");
             router.push("/unauthorized");
           }
         } catch (error) {
