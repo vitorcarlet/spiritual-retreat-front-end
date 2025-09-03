@@ -7,12 +7,11 @@ import {
 import { SortingStrategy } from "@dnd-kit/sortable";
 import { RetreatsCardTableFilters } from "../../types";
 
-export interface RetreatTentsProps {
+export interface RetreatFamiliesProps {
   adjustScale?: boolean;
   cancelDrop?: CancelDrop;
   columns?: number;
   containerStyle?: React.CSSProperties;
-  ac;
   coordinateGetter?: KeyboardCoordinateGetter;
   getItemStyles?(args: {
     value: UniqueIdentifier;

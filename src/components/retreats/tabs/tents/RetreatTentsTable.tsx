@@ -60,7 +60,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { findContainer, onDragEnd, onDragOver } from "./shared";
+import {
+  findContainer,
+  onDragEnd,
+  onDragOver,
+  PLACEHOLDER_ID,
+  TRASH_ID,
+} from "./shared";
 import { Items, RetreatTentsProps } from "./types";
 import Iconify from "@/src/components/Iconify";
 
@@ -139,8 +145,6 @@ const dropAnimation: DropAnimation = {
   }),
 };
 
-export const TRASH_ID = "void";
-export const PLACEHOLDER_ID = "placeholder";
 //const empty: UniqueIdentifier[] = [];
 
 export default function RetreatTentsTable({
