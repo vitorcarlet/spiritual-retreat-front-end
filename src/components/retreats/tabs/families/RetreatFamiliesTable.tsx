@@ -61,14 +61,15 @@ import {
   Typography,
 } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
-import { Items } from "./types";
+import { Items, RetreatFamiliesProps } from "./types";
 import {
-  findContainer,
+  //findContainer,
   onDragEnd,
   onDragOver,
   PLACEHOLDER_ID,
   TRASH_ID,
-} from "@/src/components/dnd-kit/multiple-containers/shared";
+} from "./shared";
+import { MembersById, MemberToContainer } from "./shared";
 
 // export default {
 //   title: "Presets/Sortable/Multiple Containers",
@@ -170,26 +171,41 @@ export default function RetreatFamiliesTable({
   onEdit,
   total,
 }: RetreatFamiliesProps) {
-  const initialItems: Items | undefined = useMemo(() => {
-    const obj = InitialItems?.reduce((acc, item) => {
-      const key = String(item.id); // A, B, C, D
-      if (!acc[key]) {
-        acc[key] = item.members?.map((m) => m.id as UniqueIdentifier) || [];
-      }
+  // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
+  const initialStructures = useMemo(() => {
+    const items: Items = {};
+    const membersById: MembersById = {};
+    const familiesById: Record<string, string> = {};
+    const memberToContainer: MemberToContainer = {};
 
-      return acc;
-    }, {} as Items);
-    return obj;
+    InitialItems?.forEach((fam) => {
+      const fid = String(fam.id);
+      familiesById[fid] = fam.name; // map family id -> family name
+      items[fid] =
+        fam.members?.map((m) => {
+          const mid = String(m.id);
+          membersById[mid] = { id: mid, name: m.name as string };
+          memberToContainer[mid] = fid;
+          return mid;
+        }) || [];
+    });
+
+    return { items, membersById, memberToContainer, familiesById };
   }, [InitialItems]);
 
-  //console.log("Initial Items:", InitialItems, initialItems);
-  if (!initialItems) {
-    return <div>Loading...</div>;
-  }
-  const [items, setItems] = useState<Items>(() => initialItems);
+  const [items, setItems] = useState<Items>(() => initialStructures.items);
+  const [membersById, setMembersById] = useState<MembersById>(
+    () => initialStructures.membersById
+  );
+  const [familiesById, setFamiliesById] = useState<Record<string, string>>(
+    () => initialStructures.familiesById
+  );
+  const [memberToContainer, setMemberToContainer] = useState<MemberToContainer>(
+    () => initialStructures.memberToContainer
+  );
 
   const [containers, setContainers] = useState(
-    Object.keys(items || {}) as UniqueIdentifier[]
+    Object.keys(items) as UniqueIdentifier[]
   );
   //console.log({ items, containers });
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
@@ -254,7 +270,7 @@ export default function RetreatFamiliesTable({
               droppableContainers: args.droppableContainers.filter(
                 (container) =>
                   container.id !== overId &&
-                  containerItems.includes(container.id)
+                  containerItems.indexOf(container.id) !== -1
               ),
             })[0]?.id;
           }
@@ -287,64 +303,35 @@ export default function RetreatFamiliesTable({
     })
   );
 
-  const getIndex = (id: UniqueIdentifier) => {
-    const container = findContainer(id, items);
-
-    if (!container) {
-      return -1;
-    }
-
-    const index = items[container].indexOf(id);
-
-    return index;
-  };
-
-  const onDragCancel = () => {
-    if (clonedItems) {
-      // Reset items to their original state in case items have been
-      // Dragged across containers
-      setItems(clonedItems);
-    }
-
-    setActiveId(null);
-    setClonedItems(null);
-  };
-
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      recentlyMovedToNewContainer.current = false;
-    });
-  }, [items]);
-
+  // Ajuste: onde antes iterava objetos com {id,name}, agora ids
   const columnDefs: ColumnDef<UniqueIdentifier>[] = useMemo(
     () => [
       {
         id: "card",
         cell: (row) => {
           const { original: containerId } = row.cell.row;
-
-          const members = items[containerId] || [];
-          const columnsCount = members.length > 0 ? 1 : 1; // ajuste se quiser lógica diferente
-
+          const memberIds = items[containerId] || [];
+          const familyName = familiesById[containerId] || containerId;
           return (
             <DroppableContainer
               key={containerId}
               id={containerId}
-              label={minimal ? undefined : `Column ${containerId}`}
-              columns={columnsCount}
-              items={members}
+              label={minimal ? undefined : `Família ${familyName}`}
+              items={memberIds}
               scrollable={scrollable}
               style={containerStyle}
               unstyled={minimal}
               onRemove={() => handleRemove(containerId)}
             >
-              <SortableContext items={members} strategy={strategy}>
-                {members.map((value, index) => {
+              <SortableContext items={memberIds} strategy={strategy}>
+                {memberIds.map((memberId, index) => {
+                  const meta = membersById[memberId];
                   return (
                     <SortableItem
                       disabled={isSortingContainer}
-                      key={value}
-                      id={value}
+                      key={memberId}
+                      id={memberId}
+                      value={meta?.name || String(memberId)}
                       index={index}
                       handle={handle}
                       style={getItemStyles}
@@ -367,6 +354,7 @@ export default function RetreatFamiliesTable({
     ],
     [
       items,
+      membersById,
       minimal,
       scrollable,
       containerStyle,
@@ -379,6 +367,30 @@ export default function RetreatFamiliesTable({
       onView,
     ]
   );
+
+  // getIndex agora trabalha só com IDs
+  const getIndex = (id: UniqueIdentifier) => {
+    const container = memberToContainer[id];
+    if (!container) return -1;
+    return items[container].indexOf(id);
+  };
+
+  const onDragCancel = () => {
+    if (clonedItems) {
+      // Reset items to their original state in case items have been
+      // Dragged across containers
+      setItems(clonedItems);
+    }
+
+    setActiveId(null);
+    setClonedItems(null);
+  };
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      recentlyMovedToNewContainer.current = false;
+    });
+  }, [items]);
 
   const page = filters.page || 1; // 1-based
   const pageLimit = filters.pageLimit || 8;
@@ -442,6 +454,8 @@ export default function RetreatFamiliesTable({
             items,
             setItems,
             recentlyMovedToNewContainer,
+            memberToContainer,
+            setMemberToContainer,
           })
         }
         onDragEnd={({ active, over }) =>
@@ -454,6 +468,8 @@ export default function RetreatFamiliesTable({
             setActiveId,
             setContainers,
             getNextContainerId,
+            memberToContainer,
+            setMemberToContainer,
           })
         }
         cancelDrop={cancelDrop}
@@ -560,22 +576,22 @@ export default function RetreatFamiliesTable({
   );
 
   function renderSortableItemDragOverlay(id: UniqueIdentifier) {
+    const meta = membersById[id];
     return (
       <Item
-        value={id}
+        value={meta?.name || String(id)}
         handle={handle}
         style={getItemStyles({
-          containerId: findContainer(id, items) as UniqueIdentifier,
+          containerId: memberToContainer[id],
           overIndex: -1,
           index: getIndex(id),
-          value: id,
+          value: meta?.name,
           isSorting: true,
           isDragging: true,
           isDragOverlay: true,
         })}
         color={getColor(id)}
         wrapperStyle={wrapperStyle({ index: 0 })}
-        // renderItem={renderItem}
         dragOverlay
       >
         <MoreMenu />
@@ -584,36 +600,43 @@ export default function RetreatFamiliesTable({
   }
 
   function renderContainerDragOverlay(containerId: UniqueIdentifier) {
+    const memberIds = items[containerId] || [];
+    const familyName = familiesById[containerId] || containerId;
     return (
       <Container
-        label={`Column ${containerId}`}
-        columns={items[containerId].length}
-        style={{
-          height: "100%",
-        }}
+        label={`Família ${familyName}`}
+        columns={memberIds.length}
+        style={{ height: "100%" }}
         shadow
         unstyled={false}
+        sx={{}}
       >
-        {items[containerId].map((item, index) => (
-          <Item
-            key={item}
-            value={item}
-            handle={handle}
-            style={getItemStyles({
-              containerId,
-              overIndex: -1,
-              index: getIndex(item),
-              value: item,
-              isDragging: false,
-              isSorting: false,
-              isDragOverlay: false,
-            })}
-            color={getColor(item)}
-            wrapperStyle={wrapperStyle({ index })}
-            //renderItem={renderItem}
-          />
-        ))}
-        <ContainerButtons familyId={containerId} />
+        {memberIds.map((memberId, index) => {
+          const meta = membersById[memberId];
+          return (
+            <Item
+              key={memberId}
+              value={meta?.name || String(memberId)}
+              handle={handle}
+              style={getItemStyles({
+                containerId,
+                overIndex: -1,
+                index: getIndex(memberId),
+                value: meta?.name,
+                isDragging: false,
+                isSorting: false,
+                isDragOverlay: false,
+              })}
+              color={getColor(memberId)}
+              wrapperStyle={wrapperStyle({ index })}
+            />
+          );
+        })}
+        <ContainerButtons
+          onEdit={onEdit}
+          onView={onView}
+          familyId={containerId}
+        />
       </Container>
     );
   }
@@ -678,6 +701,7 @@ function Trash({ id }: { id: UniqueIdentifier }) {
 interface SortableItemProps {
   containerId: UniqueIdentifier;
   id: UniqueIdentifier;
+  value: string;
   index: number;
   handle: boolean;
   disabled?: boolean;
@@ -692,6 +716,7 @@ function SortableItem({
   id,
   index,
   handle,
+  value,
   renderItem,
   style,
   containerId,
@@ -719,7 +744,7 @@ function SortableItem({
   return (
     <Item
       ref={disabled ? undefined : setNodeRef}
-      value={id}
+      value={value}
       dragging={isDragging}
       sorting={isSorting}
       handle={handle}

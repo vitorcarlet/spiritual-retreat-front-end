@@ -24,7 +24,7 @@ export interface RetreatFamiliesProps {
   }): React.CSSProperties;
   wrapperStyle?(args: { index: number }): React.CSSProperties;
   itemCount?: number;
-  items?: RetreatTent[];
+  items?: RetreatFamily[];
   handle?: boolean;
   renderItem?: unknown;
   strategy?: SortingStrategy;
@@ -37,9 +37,9 @@ export interface RetreatFamiliesProps {
     filters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => void;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
-  onEdit?: (tent: RetreatTent) => void;
-  onView?: (retreat: RetreatTent) => void;
+  onEdit: (familyId: UniqueIdentifier) => void;
+  onView: (familyId: UniqueIdentifier) => void;
   total: number;
 }
 
-export type Items = Record<UniqueIdentifier, UniqueIdentifier[]>;
+export type Items = Record<string, UniqueIdentifier[]>;

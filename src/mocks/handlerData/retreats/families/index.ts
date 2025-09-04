@@ -1,3 +1,4 @@
+import { Participant } from "@/src/types/retreats";
 import { makeParticipant } from "../shared";
 
 export const mockFamilies: RetreatFamily[] = (() => {

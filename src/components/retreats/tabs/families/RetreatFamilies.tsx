@@ -28,6 +28,7 @@ import { getFilters } from "./getFilters";
 import FilterButton from "../../../filters/FilterButton";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { UniqueIdentifier } from "@dnd-kit/core";
 
 interface RetreatFamilyRequest {
   rows: RetreatFamily[];
@@ -124,11 +125,11 @@ export default function RetreatFamilies({
   //   [retreatId]
   // );
 
-  const handleEdit = (retreat: RetreatFamily) => {
+  const handleEdit = (familyId: UniqueIdentifier) => {
     //router.push(`/retreats/${retreat.id}`);
   };
 
-  const handleView = (retreat: RetreatFamily) => {
+  const handleView = (familyId: UniqueIdentifier) => {
     //router.push(`/retreats/${retreat.id}`);
   };
 
@@ -199,7 +200,7 @@ export default function RetreatFamilies({
           <RetreatFamiliesTable
             total={familiesData?.total || 0}
             filters={filters}
-            data={familiesDataArray!}
+            items={familiesDataArray!}
             onEdit={handleEdit}
             onView={handleView}
             onFiltersChange={handleFiltersChange}

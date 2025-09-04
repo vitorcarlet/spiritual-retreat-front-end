@@ -3,8 +3,8 @@ import { UniqueIdentifier } from "@dnd-kit/core";
 import { Box, Button } from "@mui/material";
 
 type ContainerButtonsProps = {
-  onView?: (familyId: UniqueIdentifier) => void;
-  onEdit?: (familyId: UniqueIdentifier) => void;
+  onView: (familyId: UniqueIdentifier) => void;
+  onEdit: (familyId: UniqueIdentifier) => void;
   familyId: UniqueIdentifier;
 };
 
