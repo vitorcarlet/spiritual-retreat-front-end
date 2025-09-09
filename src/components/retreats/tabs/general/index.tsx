@@ -22,6 +22,7 @@ import { fetchRetreatData } from "../../shared";
 import LocationField from "@/src/components/fields/LocalizationFields/LocationField";
 import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldMasked";
 import { Retreat } from "@/src/types/retreats";
+import MultiImageUpload from "@/src/components/fields/ImageUpload";
 
 const emptyFormData: Omit<Retreat, "id" | "state"> = {
   title: "",
@@ -85,6 +86,9 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   const [formData, setFormData] =
     useState<Omit<Retreat, "id" | "state">>(emptyFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Novas imagens (a enviar) e imagens existentes marcadas para remoção
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<(string | number)[]>([]);
 
   useEffect(() => {
     if (retreatData) {
@@ -134,9 +138,20 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
 
     setIsSubmitting(true);
     try {
+      // Exemplo: se tiver upload, envie como multipart/form-data
+      const hasUploads = newImages.length > 0 || imagesToDelete.length > 0;
       if (isCreating) {
+        const payload = { ...formData, imagesToDelete };
+        const body = hasUploads ? new FormData() : formData;
+        if (hasUploads) {
+          body.append(
+            "payload",
+            new Blob([JSON.stringify(payload)], { type: "application/json" })
+          );
+          newImages.forEach((f) => body.append("images", f));
+        }
         const res = await handleApiResponse<Retreat>(
-          await sendRequestServerVanilla.post("/api/retreat/create", formData)
+          await sendRequestServerVanilla.post("/api/retreat/create", body)
         );
         if (res.error || !res.data)
           throw new Error(res.error || "Falha ao criar retiro");
@@ -144,11 +159,17 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
         router.push(`/retreats/${result.id}`);
       } else {
         if (!retreat?.id) throw new Error("ID do retiro não encontrado");
+        const payload = { ...formData, imagesToDelete };
+        const body = hasUploads ? new FormData() : payload;
+        if (hasUploads) {
+          body.append(
+            "payload",
+            new Blob([JSON.stringify(payload)], { type: "application/json" })
+          );
+          newImages.forEach((f) => body.append("images", f));
+        }
         const res = await handleApiResponse<Retreat>(
-          await sendRequestServerVanilla.put(
-            `/api/retreat/${retreat.id}`,
-            formData
-          )
+          await sendRequestServerVanilla.put(`/api/retreat/${retreat.id}`, body)
         );
         if (res.error)
           throw new Error(res.error || "Falha ao atualizar retiro");
@@ -259,6 +280,29 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
           />
         </Grid>
 
+        <Grid size={{ xs: 12 }}>
+          <MultiImageUpload
+            label="Imagens do retiro"
+            existing={
+              // Ajuste conforme sua API: tente usar uma galeria (retreatData?.gallery)
+              // ou faça fallback para uma única imagem de capa (formData.image)
+              (retreatData as any)?.gallery?.map((g: any) => ({
+                id: g.id,
+                url: g.url,
+                title: g.title,
+              })) || (formData.image ? [{ url: formData.image }] : [])
+            }
+            onRemoveExisting={(id) =>
+              setImagesToDelete((prev) => [...prev, id])
+            }
+            value={newImages}
+            onChange={setNewImages}
+            maxFiles={12}
+            maxSizeMB={8}
+            disabled={isReadOnly}
+          />
+        </Grid>
+
         <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
@@ -344,8 +388,8 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
               {isSubmitting
                 ? "Salvando..."
                 : isCreating
-                ? "Salvar Retiro"
-                : "Salvar Alterações"}
+                  ? "Salvar Retiro"
+                  : "Salvar Alterações"}
             </Button>
           </Box>
         </Grid>
