@@ -202,11 +202,51 @@ export const handlers = [
     );
   }),
 
-  http.get("http://localhost:3001/api/retreats", ({ request }) => {
-    const url = new URL(request.url);
-    const payload = paginate(mockRetreats, url);
-    return HttpResponse.json(payload, { status: 200 });
-  }),
+  http.get(
+    "http://localhost:3001/api/retreats",
+    ({ request /*, params */ }) => {
+      const url = new URL(request.url);
+
+      console.log(url.searchParams.toString(), "url search params");
+      const isSelectAutocomplete =
+        url.searchParams.get("selectAutocomplete") === "true";
+      //url.searchParams.get("variant") === "selectAutocomplete" ||
+      // url.searchParams.get("type") === "selectAutocomplete";
+
+      if (isSelectAutocomplete) {
+        const search = (url.searchParams.get("search") || "").toLowerCase();
+
+        let list = mockRetreats;
+
+        if (search) {
+          list = list.filter((r) => r.title.toLowerCase().includes(search));
+        }
+
+        // Optional limit for autocomplete (default 20)
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+        const sliced = list.slice(0, isNaN(limit) ? 20 : limit);
+
+        return HttpResponse.json(
+          {
+            options: sliced.map((r) => ({
+              value: r.id,
+              label: r.title,
+              // extra metadata if needed by frontend
+              startDate: r.startDate,
+              endDate: r.endDate,
+              location: r.location,
+            })),
+            total: list.length,
+          },
+          { status: 200 }
+        );
+      }
+
+      // Fallback to normal paginated payload
+      const payload = paginate(mockRetreats, url);
+      return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
 
   http.get("http://localhost:3001/api/retreats/:id", ({ params }) => {
     const id = params.id as string;
@@ -267,10 +307,48 @@ export const handlers = [
     "http://localhost:3001/api/public/retreats",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
+
+      console.log(url.searchParams.toString(), "url search params");
+      const isSelectAutocomplete =
+        url.searchParams.get("selectAutocomplete") === "true";
+      //url.searchParams.get("variant") === "selectAutocomplete" ||
+      // url.searchParams.get("type") === "selectAutocomplete";
+
+      if (isSelectAutocomplete) {
+        const search = (url.searchParams.get("search") || "").toLowerCase();
+
+        let list = mockRetreats;
+
+        if (search) {
+          list = list.filter((r) => r.title.toLowerCase().includes(search));
+        }
+
+        // Optional limit for autocomplete (default 20)
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+        const sliced = list.slice(0, isNaN(limit) ? 20 : limit);
+
+        return HttpResponse.json(
+          {
+            options: sliced.map((r) => ({
+              value: r.id,
+              label: r.title,
+              // extra metadata if needed by frontend
+              startDate: r.startDate,
+              endDate: r.endDate,
+            })),
+            total: list.length,
+          },
+          { status: 200 }
+        );
+      }
+
+      // Fallback to normal paginated payload
       const payload = paginate(mockRetreats, url);
       return HttpResponse.json(payload, { status: 200 });
     }
   ),
+
+  // Public retreats endpoint supporting selectAutocomplete variant
 
   http.get("http://localhost:3001/api/public/retreats/:id", ({ params }) => {
     const id = params.id as string;

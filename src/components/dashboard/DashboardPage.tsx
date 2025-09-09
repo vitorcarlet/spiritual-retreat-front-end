@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Grid,
   Box,
@@ -13,11 +13,12 @@ import {
   Skeleton,
   Chip,
   Divider,
+  LinearProgress,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PieChart } from '@mui/x-charts/PieChart';
+import { PieChart } from "@mui/x-charts/PieChart";
 
 // Tipos
 
@@ -55,7 +56,9 @@ interface RetreatMetrics {
 // Serviços para buscar dados
 const fetchRetreats = async (): Promise<Retreat[]> => {
   // Em produção, substitua por chamada real à API
-  const response = await handleApiResponse<any>(await sendRequestServerVanilla.get("/retreats"));
+  const response = await handleApiResponse<any>(
+    await sendRequestServerVanilla.get("/retreats?selectAutocomplete=true")
+  );
   if (!response.success) {
     throw new Error("Falha ao carregar retiros");
   }
@@ -68,7 +71,9 @@ const fetchRetreatMetrics = async (
   if (!retreatId) return Promise.reject("ID do retiro não fornecido");
 
   // Em produção, substitua por chamada real à API
-  const response = await handleApiResponse<any>(await sendRequestServerVanilla.get(`/retreats/${retreatId}/metrics`));
+  const response = await handleApiResponse<any>(
+    await sendRequestServerVanilla.get(`/retreats/${retreatId}/metrics`)
+  );
   if (!response.success) {
     throw new Error("Falha ao carregar métricas do retiro");
   }
@@ -164,9 +169,27 @@ const MetricCard = ({
 );
 
 // Importação do LinearProgress que faltou
-import { LinearProgress } from "@mui/material";
 import Iconify from "../Iconify";
-import { handleApiResponse, sendRequestServerVanilla } from "@/src/lib/sendRequestServerVanilla";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
+import { Retreat } from "@/src/types/retreats";
+import {
+  AsynchronousAutoComplete,
+  AsyncOption,
+} from "@/src/components/select-auto-complete/AsynchronousAutoComplete";
+// Remova imports não usados do Autocomplete/TextField se não forem necessários
+
+// Tipo auxiliar para o autocomplete assíncrono
+type RetreatOption = { options: AsyncOption[]; total: number };
+
+// Tipo vindo do endpoint (value/label + metadados)
+type RetreatLite = AsyncOption & {
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+};
 
 const CriticalIssuesCard = ({
   issues,
@@ -226,19 +249,19 @@ const CriticalIssuesCard = ({
                   issue.type === "payment"
                     ? "solar:card-bold-duotone"
                     : issue.type === "accommodation"
-                    ? "solar:home-bold-duotone"
-                    : issue.type === "family"
-                    ? "solar:users-group-rounded-bold-duotone"
-                    : "solar:users-group-bold-duotone"
+                      ? "solar:home-bold-duotone"
+                      : issue.type === "family"
+                        ? "solar:users-group-rounded-bold-duotone"
+                        : "solar:users-group-bold-duotone"
                 }
                 color={
                   issue.type === "payment"
                     ? "error.main"
                     : issue.type === "accommodation"
-                    ? "warning.main"
-                    : issue.type === "family"
-                    ? "info.main"
-                    : "secondary.main"
+                      ? "warning.main"
+                      : issue.type === "family"
+                        ? "info.main"
+                        : "secondary.main"
                 }
                 size={18}
                 sx={{ mr: 1 }}
@@ -257,59 +280,100 @@ const CriticalIssuesCard = ({
 );
 
 const DashboardPage = () => {
-  const [selectedRetreat, setSelectedRetreat] = useState<Retreat | null>(null);
-  //const queryClient = useQueryClient();
+  const [selectedRetreat, setSelectedRetreat] = useState<RetreatLite | null>(
+    null
+  );
 
-  // Consulta para obter a lista de retiros
+  // Query original ainda usada para auto-selecionar o retiro ativo ao montar
   const { data: retreats, isLoading: isLoadingRetreats } = useQuery({
     queryKey: ["retreats"],
     queryFn: fetchRetreats,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
   });
+
+  // Função assíncrona para o componente (busca incremental)
+  const fetchRetreatOptions = useCallback(
+    async (q: string): Promise<RetreatLite[]> => {
+      const ep = `/retreats?selectAutocomplete=true${
+        q ? `&search=${encodeURIComponent(q)}` : ""
+      }`;
+      const resp = await handleApiResponse<RetreatOption>(
+        await sendRequestServerVanilla.get(ep)
+      );
+      if (!resp.success) throw new Error("Erro ao buscar retiros");
+      const list = resp.data!.options || [];
+      console.log(list, "lista");
+      return list;
+    },
+    []
+  );
+
+  // Opção derivada controlada
+  // const selectedRetreatOption: AsyncOption | null = selectedRetreat
+  //   ? {
+  //       label: selectedRetreat.label,
+  //       value: selectedRetreat.value,
+  //       raw: selectedRetreat,
+  //     }
+  //   : null;
 
   // Consulta para obter métricas do retiro selecionado
   const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
-    queryKey: ["retreatMetrics", selectedRetreat?.id],
+    // Use o id correto (value) no cache key
+    queryKey: ["retreatMetrics", selectedRetreat?.value],
     queryFn: () =>
       selectedRetreat
-        ? fetchRetreatMetrics(selectedRetreat.id)
+        ? fetchRetreatMetrics(Number(selectedRetreat.value))
         : Promise.reject("Nenhum retiro selecionado"),
-    enabled: !!selectedRetreat,
-    staleTime: 60 * 1000, // 1 minuto
+    enabled: !!selectedRetreat?.value,
+    staleTime: 60 * 1000,
   });
 
   // Seleciona automaticamente o retiro ativo quando os dados são carregados
   useEffect(() => {
-    if (retreats?.length) {
-      const activeRetreat = retreats.find((retreat) => retreat.isActive);
+    if (retreats?.length && !selectedRetreat) {
+      const activeRetreat = retreats.find((r) => r.isActive);
       if (activeRetreat) {
-        setSelectedRetreat(activeRetreat);
+        setSelectedRetreat({
+          label: activeRetreat.title,
+          value: activeRetreat.id,
+          startDate: activeRetreat.startDate,
+          endDate: activeRetreat.endDate,
+          location: activeRetreat.location,
+        });
       } else {
-        // Se não houver retiro ativo, seleciona o mais recente
-        const sortedRetreats = [...retreats].sort(
+        const sorted = [...retreats].sort(
           (a, b) =>
             new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
         );
-        setSelectedRetreat(sortedRetreats[0]);
+        if (sorted[0])
+          setSelectedRetreat({
+            label: sorted[0].title,
+            value: sorted[0].id,
+            startDate: sorted[0].startDate,
+            endDate: sorted[0].endDate,
+            location: sorted[0].location,
+          });
       }
     }
-  }, [retreats]);
+  }, [retreats, selectedRetreat]);
 
   // Formatação da data do retiro
-  const formattedDate = selectedRetreat
-    ? `${format(new Date(selectedRetreat.startDate), "dd 'de' MMMM", {
-        locale: ptBR,
-      })} - ${format(
-        new Date(selectedRetreat.endDate),
-        "dd 'de' MMMM 'de' yyyy",
-        { locale: ptBR }
-      )}`
-    : "";
+  const formattedDate =
+    selectedRetreat?.startDate && selectedRetreat?.endDate
+      ? `${format(new Date(selectedRetreat.startDate), "dd 'de' MMMM", {
+          locale: ptBR,
+        })} - ${format(
+          new Date(selectedRetreat.endDate),
+          "dd 'de' MMMM 'de' yyyy",
+          { locale: ptBR }
+        )}`
+      : "";
 
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
-        {/* Cabeçalho com seletor de retiro */}
+        {/* Cabeçalho */}
         <Grid size={{ xs: 12 }}>
           <Paper
             elevation={0}
@@ -324,69 +388,52 @@ const DashboardPage = () => {
                 {selectedRetreat && (
                   <Box>
                     <Typography variant="subtitle1" fontWeight="bold">
-                      {selectedRetreat.title}
+                      {selectedRetreat.label}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {formattedDate} • {selectedRetreat.location}
+                      {formattedDate}
+                      {selectedRetreat.location
+                        ? ` • ${selectedRetreat.location}`
+                        : ""}
                     </Typography>
                   </Box>
                 )}
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <Autocomplete
-                  options={retreats || []}
-                  loading={isLoadingRetreats}
-                  getOptionLabel={(option) => option.title}
+                {/* Substituição do Autocomplete antigo */}
+                <AsynchronousAutoComplete<RetreatLite>
+                  label="Selecionar Retiro"
+                  placeholder="Buscar retiro..."
                   value={selectedRetreat}
-                  onChange={(_event, newValue) => setSelectedRetreat(newValue)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Selecionar Retiro"
-                      variant="outlined"
-                      fullWidth
-                      InputProps={{
-                        ...params.InputProps,
-                        startAdornment: (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              mr: 1,
-                            }}
-                          >
-                            <Iconify
-                              icon="solar:calendar-mark-bold-duotone"
-                              size={20}
-                            />
-                          </Box>
-                        ),
-                      }}
-                    />
-                  )}
-                  renderOption={(props, option) => (
-                    <li {...props}>
-                      <Box>
-                        <Typography variant="body1">
-                          {option.title}
-                          {option.isActive && (
-                            <Chip
-                              label="Atual"
-                              size="small"
-                              color="success"
-                              sx={{ ml: 1 }}
-                            />
-                          )}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {format(new Date(option.startDate), "dd/MM/yyyy")}
-                          {" - "}
-                          {format(new Date(option.endDate), "dd/MM/yyyy")}
-                        </Typography>
-                      </Box>
-                    </li>
-                  )}
+                  fetchOptions={fetchRetreatOptions}
+                  debounceMs={400}
+                  onChange={(val) => {
+                    setSelectedRetreat((val as RetreatLite) || null);
+                  }}
+                  getOptionLabel={(o) => o.label}
+                  isOptionEqualToValue={(a, b) => a.value === b.value}
+                  showRefresh
+                  textFieldProps={{
+                    InputProps: {
+                      startAdornment: (
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", mr: 1 }}
+                        >
+                          <Iconify
+                            icon="solar:calendar-mark-bold-duotone"
+                            size={20}
+                          />
+                        </Box>
+                      ),
+                    },
+                  }}
                 />
+                {/* Loader visual opcional enquanto ainda buscamos a lista inicial para auto-seleção */}
+                {isLoadingRetreats && !selectedRetreat && (
+                  <Typography variant="caption" color="text.secondary">
+                    Carregando lista inicial...
+                  </Typography>
+                )}
               </Grid>
             </Grid>
           </Paper>
@@ -459,19 +506,19 @@ const DashboardPage = () => {
           />
         </Grid>
 
-        <Grid size={{xs: 12, md:6}}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <PieChart
-  series={[
-    {
-      data: [
-        { id: 0, value: 30, label: 'Homens' },
-        { id: 1, value: 70, label: 'Mulheres' },
-      ],
-    },
-  ]}
-  width={200}
-  height={200}
-/>
+            series={[
+              {
+                data: [
+                  { id: 0, value: 30, label: "Homens" },
+                  { id: 1, value: 70, label: "Mulheres" },
+                ],
+              },
+            ]}
+            width={200}
+            height={200}
+          />
         </Grid>
 
         <Grid size={{ xs: 12, sm: 12, md: 6 }}>

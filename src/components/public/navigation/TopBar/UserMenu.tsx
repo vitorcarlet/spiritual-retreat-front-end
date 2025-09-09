@@ -12,7 +12,7 @@ import {
   Box,
 } from "@mui/material";
 import { Logout, PortableWifiOffOutlined, Settings } from "@mui/icons-material";
-import Iconify from "../../Iconify";
+import Iconify from "@/src/components/Iconify";
 
 export default function UserMenu() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -42,7 +42,7 @@ export default function UserMenu() {
       <Avatar sx={{ bgcolor: "primary.lighter", width: 36, height: 36 }}>
         👨
       </Avatar>
-      <Typography>{session.data?.user.name}</Typography>
+      <Typography>{session.data?.user?.name}</Typography>
       <IconButton
         onClick={handleClick}
         size="small"

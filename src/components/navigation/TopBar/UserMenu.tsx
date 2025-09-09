@@ -42,7 +42,7 @@ export default function UserMenu() {
       <Avatar sx={{ bgcolor: "primary.lighter", width: 36, height: 36 }}>
         👨
       </Avatar>
-      <Typography>{session.data?.user.name}</Typography>
+      <Typography>{session.data?.user?.name}</Typography>
       <IconButton
         onClick={handleClick}
         size="small"
