@@ -232,6 +232,8 @@ export const handlers = [
               value: r.id,
               label: r.title,
               // extra metadata if needed by frontend
+              // isActive: r.status === "running" || r.status === "open",
+              isActive: true,
               startDate: r.startDate,
               endDate: r.endDate,
               location: r.location,
@@ -259,8 +261,8 @@ export const handlers = [
 
   // Mock para /api/retreats/:id/metrics
   http.get("http://localhost:3001/api/retreats/:id/metrics", ({ params }) => {
-    const id = params.id as string;
-    const metrics = mockMetrics[id];
+    //const id = params.id as string;
+    const metrics = mockMetrics[1];
     if (metrics) {
       return HttpResponse.json(metrics, { status: 200 });
     }

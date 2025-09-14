@@ -19,7 +19,6 @@ import {
   Chip,
 } from "@mui/material";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
-import ClearRoundedIcon from "@mui/icons-material/ClearRounded";
 
 export interface AsyncOption {
   label: string;
@@ -158,6 +157,9 @@ export function AsynchronousAutoComplete<
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
+  const [localValue, setLocalValue] = useState<TOption | TOption[] | null>(
+    value ?? (multiple ? ([] as unknown as TOption[]) : null)
+  );
   const [options, setOptions] = useState<TOption[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -172,6 +174,9 @@ export function AsynchronousAutoComplete<
     };
   }, []);
 
+  useEffect(() => {
+    setLocalValue(value ?? (multiple ? ([] as unknown as TOption[]) : null));
+  }, [value, multiple]);
   const effectiveError = errorText || fetchError;
 
   const scheduleFetch = useCallback(
@@ -249,6 +254,8 @@ export function AsynchronousAutoComplete<
     return "Sem opções";
   }, [loading, fetchError, query, options.length]);
 
+  //console.log(options, localValue, value, "hahahahah");
+
   return (
     <Autocomplete
       multiple={multiple}
@@ -256,9 +263,9 @@ export function AsynchronousAutoComplete<
       open={open}
       onOpen={() => setOpen(true)}
       onClose={() => setOpen(false)}
-      value={value as any}
+      value={localValue}
       onChange={(_, val) => {
-        onChange?.(val as any);
+        onChange?.(val);
       }}
       disableCloseOnSelect={multiple}
       options={options}

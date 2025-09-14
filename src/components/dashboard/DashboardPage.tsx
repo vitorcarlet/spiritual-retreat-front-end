@@ -1,68 +1,29 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Grid,
-  Box,
-  Paper,
-  Typography,
-  Autocomplete,
-  TextField,
-  Card,
-  CardContent,
-  Skeleton,
-  Chip,
-  Divider,
-  LinearProgress,
-} from "@mui/material";
+import { Grid, Box, Paper, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PieChart } from "@mui/x-charts/PieChart";
+import Iconify from "../Iconify";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
+import { AsynchronousAutoComplete } from "@/src/components/select-auto-complete/AsynchronousAutoComplete";
+import { RetreatLite, RetreatMetrics, RetreatOption } from "./types";
+import { MetricCard } from "./MetricCard";
+import { CriticalIssuesCard } from "./CriticalIssuesCard";
 
-// Tipos
-
-interface RetreatMetrics {
-  payments: {
-    pending: number;
-    confirmed: number;
-    total: number;
-  };
-  families: {
-    formed: number;
-    total: number;
-  };
-  accommodations: {
-    occupied: number;
-    total: number;
-  };
-  teams: {
-    complete: number;
-    total: number;
-  };
-  messages: {
-    sent: number;
-  };
-  criticalIssues: {
-    count: number;
-    items: Array<{
-      id: string;
-      description: string;
-      type: "payment" | "accommodation" | "family" | "team";
-    }>;
-  };
-}
-
-// Serviços para buscar dados
-const fetchRetreats = async (): Promise<Retreat[]> => {
-  // Em produção, substitua por chamada real à API
-  const response = await handleApiResponse<any>(
+const fetchRetreats = async (): Promise<RetreatLite[]> => {
+  const resp = await handleApiResponse<RetreatOption>(
     await sendRequestServerVanilla.get("/retreats?selectAutocomplete=true")
   );
-  if (!response.success) {
+  if (!resp.success) {
     throw new Error("Falha ao carregar retiros");
   }
-  return response.data;
+  return resp.data?.options ?? [];
 };
 
 const fetchRetreatMetrics = async (
@@ -70,214 +31,14 @@ const fetchRetreatMetrics = async (
 ): Promise<RetreatMetrics> => {
   if (!retreatId) return Promise.reject("ID do retiro não fornecido");
 
-  // Em produção, substitua por chamada real à API
-  const response = await handleApiResponse<any>(
+  const response = await handleApiResponse<RetreatMetrics>(
     await sendRequestServerVanilla.get(`/retreats/${retreatId}/metrics`)
   );
   if (!response.success) {
     throw new Error("Falha ao carregar métricas do retiro");
   }
-  return response.data;
+  return response.data as RetreatMetrics;
 };
-
-// Componentes de métricas
-const MetricCard = ({
-  title,
-  value,
-  total = null,
-  icon,
-  color,
-  isLoading,
-  suffix = "",
-}: {
-  title: string;
-  value: number;
-  total?: number | null;
-  icon: string;
-  color: string;
-  isLoading: boolean;
-  suffix?: string;
-}) => (
-  <Card elevation={0} variant="outlined" sx={{ height: "100%" }}>
-    <CardContent sx={{ position: "relative" }}>
-      <Box
-        sx={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          color: `${color}.main`,
-          backgroundColor: `${color}.lighter`,
-          borderRadius: "50%",
-          width: 40,
-          height: 40,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Iconify icon={icon} size={24} />
-      </Box>
-
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        {title}
-      </Typography>
-
-      {isLoading ? (
-        <Skeleton variant="text" width="60%" height={40} />
-      ) : (
-        <Box sx={{ display: "flex", alignItems: "baseline" }}>
-          <Typography variant="h4" component="span" fontWeight="bold">
-            {value}
-            {suffix && (
-              <Typography component="span" variant="subtitle1">
-                {" "}
-                {suffix}
-              </Typography>
-            )}
-          </Typography>
-
-          {total !== null && (
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              sx={{ ml: 1 }}
-            >
-              / {total}
-            </Typography>
-          )}
-        </Box>
-      )}
-
-      {total !== null && !isLoading && (
-        <Box sx={{ mt: 1 }}>
-          <LinearProgress
-            variant="determinate"
-            value={(value / total) * 100}
-            sx={{
-              height: 6,
-              borderRadius: 1,
-              bgcolor: `${color}.lighter`,
-              "& .MuiLinearProgress-bar": {
-                bgcolor: `${color}.main`,
-              },
-            }}
-          />
-        </Box>
-      )}
-    </CardContent>
-  </Card>
-);
-
-// Importação do LinearProgress que faltou
-import Iconify from "../Iconify";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import { Retreat } from "@/src/types/retreats";
-import {
-  AsynchronousAutoComplete,
-  AsyncOption,
-} from "@/src/components/select-auto-complete/AsynchronousAutoComplete";
-// Remova imports não usados do Autocomplete/TextField se não forem necessários
-
-// Tipo auxiliar para o autocomplete assíncrono
-type RetreatOption = { options: AsyncOption[]; total: number };
-
-// Tipo vindo do endpoint (value/label + metadados)
-type RetreatLite = AsyncOption & {
-  startDate?: string;
-  endDate?: string;
-  location?: string;
-};
-
-const CriticalIssuesCard = ({
-  issues,
-  isLoading,
-}: {
-  issues: RetreatMetrics["criticalIssues"] | undefined;
-  isLoading: boolean;
-}) => (
-  <Card
-    elevation={0}
-    variant="outlined"
-    sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-  >
-    <CardContent sx={{ pb: 1 }}>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <Iconify
-          icon="solar:danger-triangle-bold-duotone"
-          color="warning.main"
-          size={24}
-        />
-        <Typography variant="h6" sx={{ ml: 1 }}>
-          Pendências Críticas
-        </Typography>
-        {!isLoading && issues && (
-          <Chip
-            label={issues.count}
-            size="small"
-            color="warning"
-            sx={{ ml: 1 }}
-          />
-        )}
-      </Box>
-
-      <Divider sx={{ mb: 2 }} />
-
-      {isLoading ? (
-        [...Array(3)].map((_, i) => (
-          <Box key={i} sx={{ mb: 2 }}>
-            <Skeleton variant="text" width="100%" height={24} />
-            <Skeleton variant="text" width="60%" height={20} />
-          </Box>
-        ))
-      ) : issues && issues.items.length > 0 ? (
-        issues.items.map((issue) => (
-          <Box
-            key={issue.id}
-            sx={{
-              mb: 1.5,
-              p: 1,
-              borderRadius: 1,
-              bgcolor: "background.default",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Iconify
-                icon={
-                  issue.type === "payment"
-                    ? "solar:card-bold-duotone"
-                    : issue.type === "accommodation"
-                      ? "solar:home-bold-duotone"
-                      : issue.type === "family"
-                        ? "solar:users-group-rounded-bold-duotone"
-                        : "solar:users-group-bold-duotone"
-                }
-                color={
-                  issue.type === "payment"
-                    ? "error.main"
-                    : issue.type === "accommodation"
-                      ? "warning.main"
-                      : issue.type === "family"
-                        ? "info.main"
-                        : "secondary.main"
-                }
-                size={18}
-                sx={{ mr: 1 }}
-              />
-              <Typography variant="body2">{issue.description}</Typography>
-            </Box>
-          </Box>
-        ))
-      ) : (
-        <Typography variant="body2" color="text.secondary" textAlign="center">
-          Nenhuma pendência crítica encontrada!
-        </Typography>
-      )}
-    </CardContent>
-  </Card>
-);
 
 const DashboardPage = () => {
   const [selectedRetreat, setSelectedRetreat] = useState<RetreatLite | null>(
@@ -302,24 +63,12 @@ const DashboardPage = () => {
       );
       if (!resp.success) throw new Error("Erro ao buscar retiros");
       const list = resp.data!.options || [];
-      console.log(list, "lista");
       return list;
     },
     []
   );
 
-  // Opção derivada controlada
-  // const selectedRetreatOption: AsyncOption | null = selectedRetreat
-  //   ? {
-  //       label: selectedRetreat.label,
-  //       value: selectedRetreat.value,
-  //       raw: selectedRetreat,
-  //     }
-  //   : null;
-
-  // Consulta para obter métricas do retiro selecionado
   const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
-    // Use o id correto (value) no cache key
     queryKey: ["retreatMetrics", selectedRetreat?.value],
     queryFn: () =>
       selectedRetreat
@@ -331,13 +80,14 @@ const DashboardPage = () => {
 
   // Seleciona automaticamente o retiro ativo quando os dados são carregados
   useEffect(() => {
-    if (retreats?.length && !selectedRetreat) {
+    if (retreats && retreats.length > 0 && !selectedRetreat) {
       const activeRetreat = retreats.find((r) => r.isActive);
       if (activeRetreat) {
         setSelectedRetreat({
-          label: activeRetreat.title,
-          value: activeRetreat.id,
+          label: activeRetreat.label,
+          value: activeRetreat.value,
           startDate: activeRetreat.startDate,
+          isActive: activeRetreat.isActive,
           endDate: activeRetreat.endDate,
           location: activeRetreat.location,
         });
@@ -348,8 +98,9 @@ const DashboardPage = () => {
         );
         if (sorted[0])
           setSelectedRetreat({
-            label: sorted[0].title,
-            value: sorted[0].id,
+            label: sorted[0].label,
+            value: sorted[0].value,
+            isActive: sorted[0].isActive,
             startDate: sorted[0].startDate,
             endDate: sorted[0].endDate,
             location: sorted[0].location,
