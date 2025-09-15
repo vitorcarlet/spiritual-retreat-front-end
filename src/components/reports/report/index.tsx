@@ -1,100 +1,41 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Box, Button, Chip, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/src/hooks/useModal";
 import { sendRequestClient } from "@/src/lib/sendRequestClient";
 import requestServer from "@/src/lib/requestServer";
-import { useState } from "react";
-import DataTable, { DataTableColumn } from "../table/DataTable";
-import { getSelectedIds } from "../table/shared";
-import SearchField from "../filters/SearchField";
-import FilterButton from "../filters/FilterButton";
+import { useMemo, useState } from "react";
 import { Report } from "@/src/types/reports";
-import {
-  ReportsAllFilters,
-  ReportsTableDateFilters,
-  ReportsTableFilters,
-} from "./types";
 import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useTranslations } from "next-intl";
 import { GridRowSelectionModel } from "@mui/x-data-grid/models";
+import FilterButton from "../../filters/FilterButton";
+import SearchField from "../../filters/SearchField";
+import { DataTable } from "../../table";
+import {
+  ReportsAllFilters,
+  ReportsTableFilters,
+  ReportsTableDateFilters,
+} from "../types";
+import { buildReportColumns, type ColumnDescriptor } from "./columnsBuilder";
 
 type ReportDataRequest = {
   rows: Report[];
   total: number;
   page: number;
   pageLimit: number;
+  // NOVO: meta de colunas retornada pela API (ou vinda do "modelo" salvo)
+  columns?: ColumnDescriptor[];
 };
-
-const columns: DataTableColumn<Report>[] = [
-  {
-    field: "id",
-    headerName: "ID",
-    width: 70,
-    type: "string",
-  },
-  {
-    field: "name",
-    headerName: "Nome",
-    flex: 1,
-    minWidth: 180,
-    renderCell: (params) => (
-      <Box
-        component="span"
-        sx={{
-          fontSize: 14,
-          fontWeight: 500,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          maxWidth: 160,
-        }}
-      >
-        {params.value}
-      </Box>
-    ),
-  },
-  {
-    field: "sections",
-    headerName: "Seções",
-    flex: 1,
-    minWidth: 220,
-    renderCell: (params) => (
-      <Box>
-        {Array.isArray(params.value) && params.value.length > 0 ? (
-          params.value.map((section: string, index: number) => (
-            <Chip key={index} label={section} size="small" color="primary" />
-          ))
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            Nenhuma seção disponível
-          </Typography>
-        )}
-      </Box>
-    ),
-  },
-  {
-    field: "dateCreation",
-    headerName: "Data de Criação",
-    width: 140,
-    //valueFormatter: (v) => (v?.value ? String(v.value) : ""),
-  },
-  {
-    field: "retreatName",
-    headerName: "Retiro",
-    flex: 1,
-  },
-];
 
 const fetchReports = async () => {
   const response = await requestServer.get<ReportDataRequest>("/reports");
   if (!response || response.error) {
     throw new Error("Failed to fetch reports");
   }
-  console.log("Fetched reports:", response);
   return response.data as ReportDataRequest;
 };
 
@@ -144,10 +85,33 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
 
   // Fetch reports data
   const { data: reportsData, isLoading } = useQuery({
-    queryKey: ["reports"],
+    queryKey: ["reports", reportId],
     queryFn: fetchReports,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
+
+  // Constrói colunas dinamicamente a partir da resposta
+  const dynamicColumns = useMemo(() => {
+    const fromApi = reportsData?.columns;
+    if (fromApi && fromApi.length) {
+      return buildReportColumns({ descriptors: fromApi });
+    }
+    // Fallback (caso API ainda não envie metadados de colunas)
+    const fallback: ColumnDescriptor[] = [
+      { field: "id", type: "string", width: 80 },
+      { field: "name", type: "string", minWidth: 180, flex: 1 },
+      { field: "sections", type: "string", minWidth: 220, flex: 1 },
+      { field: "dateCreation", type: "date", width: 160 },
+      { field: "retreatName", type: "string", minWidth: 160, flex: 1 },
+    ];
+    return buildReportColumns({ descriptors: fallback });
+  }, [reportsData?.columns]);
+
+  const reportsArray: Report[] = Array.isArray(reportsData?.rows)
+    ? (reportsData!.rows as Report[])
+    : reportsData?.rows
+      ? ([reportsData.rows] as Report[])
+      : [];
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -187,12 +151,6 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
   const handleCreateReport = () => {
     router.push("/reports/new");
   };
-
-  const reportsArray: Report[] = Array.isArray(reportsData?.rows)
-    ? (reportsData!.rows as Report[])
-    : reportsData?.rows
-      ? ([reportsData.rows] as Report[])
-      : []; // garante []
 
   return (
     <Box
@@ -248,7 +206,7 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
         <DataTable<Report, ReportsAllFilters>
           rows={reportsArray}
           rowCount={reportsData?.total || 0}
-          columns={columns}
+          columns={dynamicColumns}
           loading={isLoading || loading}
           // Configurações de aparência
           title="Gerenciamento de Relatórios"

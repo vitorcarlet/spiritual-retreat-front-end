@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { ReportsTableDateFilters, ReportsTableFilters } from "./types";
+import { ReportsTableDateFilters, ReportsTableFilters } from "../types";
 
 type DateFilters = FiltersDate<UsersTableDateFilters>;
 

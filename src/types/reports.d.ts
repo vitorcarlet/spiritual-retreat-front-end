@@ -4,6 +4,10 @@ export interface Report {
   sections: string[];
   dateCreation: string; // ISO date string
   period: Period;
+  preFilters?: {
+    reportFilters: number[]; // IDs of standard filters applied
+    customReportFilters: number[]; // IDs of custom filters applied
+  };
   retreatName: string;
   retreatId: string;
 }

@@ -21,6 +21,7 @@ import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useTranslations } from "next-intl";
 import { GridRowSelectionModel } from "@mui/x-data-grid/models";
+import { format } from "date-fns/format";
 
 type ReportDataRequest = {
   rows: Report[];
@@ -80,7 +81,7 @@ const columns: DataTableColumn<Report>[] = [
     field: "dateCreation",
     headerName: "Data de Criação",
     width: 140,
-    //valueFormatter: (v) => (v?.value ? String(v.value) : ""),
+    valueFormatter: (v) => (v ? format(new Date(v), "dd/MM/yyyy - HH:mm") : ""),
   },
   {
     field: "retreatName",
@@ -208,7 +209,7 @@ const ReportPage = () => {
       }}
     >
       <Box
-        sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
+        sx={{ mb: 2, display: "flex", gap: 2, height: "40px", minHeight: 40 }}
       >
         <Button variant="contained" onClick={handleRefresh} disabled={loading}>
           {loading ? "Carregando..." : "Atualizar Dados"}

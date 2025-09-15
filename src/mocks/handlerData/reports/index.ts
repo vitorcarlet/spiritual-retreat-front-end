@@ -6,6 +6,10 @@ export const mockReports: Report[] = [
     name: "Relatório de Inscrições",
     sections: ["Inscrições", "Pagamentos", "Formulários"],
     dateCreation: "2025-01-15T10:30:00Z",
+    preFilters: {
+      reportFilters: [1, 2, 3],
+      customReportFilters: [22],
+    },
     retreatName: "Retiro de Verão 2025",
     retreatId: "1",
     period: {

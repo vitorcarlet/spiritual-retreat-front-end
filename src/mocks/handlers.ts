@@ -10,6 +10,7 @@ import { mockUsers } from "./handlerData/users";
 import { mockContemplatedParticipants } from "./handlerData/retreats/contemplated";
 import { mockFamilies } from "./handlerData/retreats/families";
 import { mockTents } from "./handlerData/retreats/tents";
+import { columnsMock } from "./handlerData/reports/columns";
 
 type Request = {
   email?: string;
@@ -458,9 +459,9 @@ export const handlers = [
   http.get("http://localhost:3001/api/reports/:id", ({ params }) => {
     const id = params.id as string;
     const report = mockReports.find((r) => r.id === id);
-
+    const columns = columnsMock;
     if (report) {
-      return HttpResponse.json(report, { status: 200 });
+      return HttpResponse.json({ report, columns }, { status: 200 });
     }
 
     return HttpResponse.json(
