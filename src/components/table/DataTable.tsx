@@ -52,6 +52,7 @@ export interface DataTableColumn<
   sortable?: boolean;
   filterable?: boolean;
   hideable?: boolean;
+  origin?: string;
   type?:
     | "string"
     | "number"

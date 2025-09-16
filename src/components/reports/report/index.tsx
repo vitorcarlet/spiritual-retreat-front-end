@@ -1,19 +1,19 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Box, Button, Typography } from "@mui/material";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Box, Button } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useModal } from "@/src/hooks/useModal";
-import { sendRequestClient } from "@/src/lib/sendRequestClient";
 import requestServer from "@/src/lib/requestServer";
 import { useMemo, useState } from "react";
-import { Report } from "@/src/types/reports";
+import { ReportData } from "@/src/types/reports";
 import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
-import { useTranslations } from "next-intl";
-import { GridRowSelectionModel } from "@mui/x-data-grid/models";
+//import { useTranslations } from "next-intl";
+import {
+  GridRowSelectionModel,
+  GridValidRowModel,
+} from "@mui/x-data-grid/models";
 import FilterButton from "../../filters/FilterButton";
-import SearchField from "../../filters/SearchField";
 import { DataTable } from "../../table";
 import {
   ReportsAllFilters,
@@ -23,40 +23,24 @@ import {
 import { buildReportColumns, type ColumnDescriptor } from "./columnsBuilder";
 
 type ReportDataRequest = {
-  rows: Report[];
+  report: ReportData;
   total: number;
   page: number;
   pageLimit: number;
-  // NOVO: meta de colunas retornada pela API (ou vinda do "modelo" salvo)
-  columns?: ColumnDescriptor[];
+  columns: ColumnDescriptor[];
 };
 
-const fetchReports = async () => {
-  const response = await requestServer.get<ReportDataRequest>("/reports");
+const fetchReport = async (id: string) => {
+  const response = await requestServer.get<ReportDataRequest>(`/reports/${id}`);
   if (!response || response.error) {
     throw new Error("Failed to fetch reports");
   }
   return response.data as ReportDataRequest;
 };
 
-const deleteReport = async (id: string | number) => {
-  const response = sendRequestClient({
-    url: `/reports/${id}`,
-    method: "DELETE",
-  });
-
-  if (!response) {
-    throw new Error("Failed to delete report");
-  }
-
-  return response;
-};
-
 const ReportIdPage = ({ reportId }: { reportId: string }) => {
-  const t = useTranslations();
+  //const t = useTranslations();
   const router = useRouter();
-  const modal = useModal();
-  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
@@ -75,7 +59,7 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
         page: 1,
         pageLimit: 10,
       },
-      excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
+      excludeFromCount: ["page", "pageLimit", "search"],
     });
   const handleApplyFilters = (
     newFilters: Partial<TableDefaultFilters<ReportsAllFilters>>
@@ -84,15 +68,15 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
   };
 
   // Fetch reports data
-  const { data: reportsData, isLoading } = useQuery({
+  const { data: reportData, isLoading } = useQuery({
     queryKey: ["reports", reportId],
-    queryFn: fetchReports,
+    queryFn: () => fetchReport(reportId),
     staleTime: 5 * 60 * 1000,
   });
 
   // Constrói colunas dinamicamente a partir da resposta
   const dynamicColumns = useMemo(() => {
-    const fromApi = reportsData?.columns;
+    const fromApi = reportData?.columns;
     if (fromApi && fromApi.length) {
       return buildReportColumns({ descriptors: fromApi });
     }
@@ -105,51 +89,19 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
       { field: "retreatName", type: "string", minWidth: 160, flex: 1 },
     ];
     return buildReportColumns({ descriptors: fallback });
-  }, [reportsData?.columns]);
+  }, [reportData?.columns]);
 
-  const reportsArray: Report[] = Array.isArray(reportsData?.rows)
-    ? (reportsData!.rows as Report[])
-    : reportsData?.rows
-      ? ([reportsData.rows] as Report[])
+  const reportsArray: GridValidRowModel[] = Array.isArray(
+    reportData?.report.rows
+  )
+    ? (reportData!.report.rows as GridValidRowModel[])
+    : reportData?.report.rows
+      ? ([reportData.report.rows] as GridValidRowModel[])
       : [];
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: deleteReport,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["reports"] });
-    },
-  });
-
-  const onConfirmDelete = (reportId: string | number) => {
-    return deleteMutation.mutate(reportId);
-  };
 
   // Handlers for the DataGrid actions
   const handleViewReport = (report: any) => {
     router.push(`/reports/${report.id}`);
-  };
-
-  const handleDeleteReport = (
-    report: any,
-    onConfirmDelete: (reportId: number | string) => void
-  ) => {
-    modal.open({
-      title: "Excluir Relatório",
-      size: "sm",
-      customRender: () => (
-        <>
-          <Typography>
-            Tem certeza que deseja excluir o relatório {report.name}?
-          </Typography>
-          <Button onClick={() => onConfirmDelete(report?.id)}>Confirmar</Button>
-        </>
-      ),
-    });
-  };
-
-  const handleCreateReport = () => {
-    router.push("/reports/new");
   };
 
   return (
@@ -166,7 +118,7 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
       }}
     >
       <Box
-        sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
+        sx={{ mb: 2, display: "flex", gap: 2, height: "40px", minHeight: 40 }}
       >
         <Button variant="contained" onClick={handleRefresh} disabled={loading}>
           {loading ? "Carregando..." : "Atualizar Dados"}
@@ -182,42 +134,25 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
           onReset={resetFilters}
           activeFiltersCount={activeFiltersCount}
         />
-
-        <SearchField
-          sx={{
-            height: "100%",
-            minWidth: "120px",
-            width: "max-content",
-            flexShrink: 0,
-          }}
-          value={filters.search || ""}
-          onChange={(e) => {
-            updateFilters({ ...filters, search: e });
-          }}
-          placeholder="search-field"
-        />
-
-        <Button variant="outlined" color="primary" onClick={handleCreateReport}>
-          {t("new-report")}
-        </Button>
       </Box>
 
       <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
-        <DataTable<Report, ReportsAllFilters>
+        <DataTable<GridValidRowModel, ReportsAllFilters>
           rows={reportsArray}
-          rowCount={reportsData?.total || 0}
+          rowCount={reportData?.total || 0}
           columns={dynamicColumns}
           loading={isLoading || loading}
           // Configurações de aparência
           title="Gerenciamento de Relatórios"
           subtitle="Lista completa de relatórios do sistema"
-          autoWidth={true}
-          autoHeight={true}
+          autoWidth
+          autoHeight
+          toolbar
           // Paginação
           width={1200}
           height={600}
-          pagination={true}
-          showToolbar={false}
+          pagination
+          showToolbar
           paginationMode="server"
           page={filters.page ? filters.page - 1 : 0}
           pageSize={filters.pageLimit || 10}
@@ -231,7 +166,7 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
           }}
           serverFilters={filters}
           // Seleção
-          checkboxSelection={true}
+          checkboxSelection
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
           // Virtualização otimizada
@@ -240,17 +175,10 @@ const ReportIdPage = ({ reportId }: { reportId: string }) => {
           // Ações personalizadas
           actions={[
             {
-              icon: "lucide:trash-2",
+              icon: "lucide:eye",
               label: "Acessar relatório",
               onClick: (report) => handleViewReport(report),
-              color: "primary",
-              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
-            },
-            {
-              icon: "lucide:trash-2",
-              label: "Deletar relatório",
-              onClick: (report) => handleDeleteReport(report, onConfirmDelete),
-              color: "primary",
+              color: "info",
               //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
           ]}

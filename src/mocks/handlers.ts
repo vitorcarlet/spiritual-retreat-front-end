@@ -5,7 +5,7 @@ import { RegisterSchema } from "../schemas";
 import { createUserMock } from "./handlerData/login";
 import getUserById from "./handlerData/getUserById";
 import { mockMetrics, mockRetreats } from "./handlerData/dashboard";
-import { mockReports } from "./handlerData/reports";
+import { mockReportDetails, mockReports } from "./handlerData/reports";
 import { mockUsers } from "./handlerData/users";
 import { mockContemplatedParticipants } from "./handlerData/retreats/contemplated";
 import { mockFamilies } from "./handlerData/retreats/families";
@@ -261,6 +261,7 @@ export const handlers = [
   }),
 
   // Mock para /api/retreats/:id/metrics
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   http.get("http://localhost:3001/api/retreats/:id/metrics", ({ params }) => {
     //const id = params.id as string;
     const metrics = mockMetrics[1];
@@ -458,10 +459,13 @@ export const handlers = [
   // GET - Obter relatório específico
   http.get("http://localhost:3001/api/reports/:id", ({ params }) => {
     const id = params.id as string;
-    const report = mockReports.find((r) => r.id === id);
+    const report = mockReportDetails.find((r) => r.id === id);
     const columns = columnsMock;
     if (report) {
-      return HttpResponse.json({ report, columns }, { status: 200 });
+      return HttpResponse.json(
+        { report, columns, total: report.rows.length, page: 1, pageLimit: 0 },
+        { status: 200 }
+      );
     }
 
     return HttpResponse.json(

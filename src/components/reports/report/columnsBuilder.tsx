@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Box, Chip, Typography } from "@mui/material";
 import { DataTableColumn } from "../../table/DataTable";
 import { format } from "date-fns";
-import { Report } from "@/src/types/reports";
+import { GridValidRowModel } from "@mui/x-data-grid/models";
 
 export type ColumnDescriptor = {
   field: string;
@@ -28,7 +29,7 @@ const defaultHeader = (field: string) =>
 // Handlers por campo conhecido
 const handlers: Record<
   string,
-  (d: ColumnDescriptor) => DataTableColumn<Report>
+  (d: ColumnDescriptor) => DataTableColumn<GridValidRowModel>
 > = {
   id: (d) => ({
     field: "id",
@@ -53,7 +54,7 @@ const handlers: Record<
           maxWidth: 200,
         }}
       >
-        {params.value}
+        {String(params.value ?? "")}
       </Box>
     ),
   }),
@@ -64,9 +65,15 @@ const handlers: Record<
     minWidth: d.minWidth ?? 220,
     renderCell: (params) => (
       <Box>
-        {Array.isArray(params.value) && params.value.length > 0 ? (
-          params.value.map((section: string, index: number) => (
-            <Chip key={index} label={section} size="small" color="primary" />
+        {Array.isArray(params.value) &&
+        (params.value as unknown[]).length > 0 ? (
+          (params.value as unknown[]).map((section, index) => (
+            <Chip
+              key={index}
+              label={String(section)}
+              size="small"
+              color="primary"
+            />
           ))
         ) : (
           <Typography variant="body2" color="text.secondary">
@@ -81,7 +88,7 @@ const handlers: Record<
     headerName: d.headerName || "Criado em",
     width: d.width ?? 160,
     valueFormatter: (v: any) =>
-      v?.value ? format(new Date(v.value), "dd/MM/yyyy - HH:mm") : "",
+      v?.value ? format(new Date(v.value as string), "dd/MM/yyyy - HH:mm") : "",
   }),
   retreatName: (d) => ({
     field: "retreatName",
@@ -92,20 +99,22 @@ const handlers: Record<
 };
 
 // Fallback genérico por tipo
-const defaultBuilder = (d: ColumnDescriptor): DataTableColumn<Report> => {
+const defaultBuilder = (
+  d: ColumnDescriptor
+): DataTableColumn<GridValidRowModel> => {
   const header = d.headerName || defaultHeader(d.field);
   if (d.type === "date") {
     return {
-      field: d.field as keyof Report,
+      field: d.field,
       headerName: header,
       width: d.width ?? 160,
       valueFormatter: (v: any) =>
-        v?.value ? format(new Date(v.value), "dd/MM/yyyy") : "",
+        v?.value ? format(new Date(v.value as string), "dd/MM/yyyy") : "",
     };
   }
   if (d.type === "boolean") {
     return {
-      field: d.field as keyof Report,
+      field: d.field,
       headerName: header,
       width: d.width ?? 120,
       valueFormatter: (v: any) => (v?.value ? "Sim" : "Não"),
@@ -113,7 +122,7 @@ const defaultBuilder = (d: ColumnDescriptor): DataTableColumn<Report> => {
   }
   // string/number/custom
   return {
-    field: d.field as keyof Report,
+    field: d.field,
     headerName: header,
     flex: d.flex ?? 1,
     minWidth: d.minWidth ?? 140,

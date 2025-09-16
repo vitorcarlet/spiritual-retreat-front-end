@@ -12,6 +12,17 @@ export interface Report {
   retreatId: string;
 }
 
+export interface ReportData {
+  //columns: ColumnDescriptor[];
+  rows: unknown[];
+  preFilters?: {
+    reportFilters: number[]; // IDs of standard filters applied
+    customReportFilters: number[]; // IDs of custom filters applied
+  };
+  id: string;
+  name: string;
+}
+
 type Period = {
   from: string; // ISO date string
   to: string; // ISO date string

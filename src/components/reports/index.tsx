@@ -8,7 +8,6 @@ import { sendRequestClient } from "@/src/lib/sendRequestClient";
 import requestServer from "@/src/lib/requestServer";
 import { useState } from "react";
 import DataTable, { DataTableColumn } from "../table/DataTable";
-import { getSelectedIds } from "../table/shared";
 import SearchField from "../filters/SearchField";
 import FilterButton from "../filters/FilterButton";
 import { Report } from "@/src/types/reports";

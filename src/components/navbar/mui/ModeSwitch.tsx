@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import Box from "@mui/material/Box";
-import { useColorScheme } from "@mui/material/styles";
+import { useColorScheme } from "@mui/material";
 import { DarkMode, LightMode, SettingsBrightness } from "@mui/icons-material";
 import { IconButton, Tooltip } from "@mui/material";
 
