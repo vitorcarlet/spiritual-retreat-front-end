@@ -11,6 +11,7 @@ import { mockContemplatedParticipants } from "./handlerData/retreats/contemplate
 import { mockFamilies } from "./handlerData/retreats/families";
 import { mockTents } from "./handlerData/retreats/tents";
 import { columnsMock } from "./handlerData/reports/columns";
+import { createByOrigin, MockNotification, mockNotifications } from "./handlerData/notifications";
 
 type Request = {
   email?: string;
@@ -542,6 +543,111 @@ export const handlers = [
       },
       { status: 200 }
     );
+  }),
+
+  // ---- Endpoints de Notificações ----
+  http.get("http://localhost:3001/api/notifications", () => {
+    return HttpResponse.json(mockNotifications, { status: 200 });
+  }),
+
+  http.post("http://localhost:3001/api/notifications/mark-all-read", async ({ request }) => {
+    try {
+      const body = (await request.json()) as { ids?: Array<number | string> };
+      const ids = (body?.ids ?? []).map((v) => Number(v));
+      if (ids.length) {
+        for (const n of mockNotifications) {
+          if (ids.includes(Number(n.id))) n.read = true;
+        }
+      } else {
+        // se não enviar ids, marca todas
+        mockNotifications.forEach((n) => (n.read = true));
+      }
+      return HttpResponse.json({ success: true }, { status: 200 });
+    } catch {
+      return HttpResponse.json({ success: false }, { status: 400 });
+    }
+  }),
+
+  http.post("http://localhost:3001/api/notifications/:id/read", ({ params }) => {
+    const id = Number(params.id as string);
+    const item = mockNotifications.find((n) => n.id === id);
+    if (item) {
+      item.read = true;
+      return HttpResponse.json({ success: true }, { status: 200 });
+    }
+    return HttpResponse.json({ error: "Notification not found" }, { status: 404 });
+  }),
+
+  // ---- SSE: envia 1 notificação/minuto por 3 vezes ----
+  http.get("http://localhost:3001/api/notifications/stream", ({ request }) => {
+    const encoder = new TextEncoder();
+
+    const stream = new ReadableStream({
+      start(controller) {
+        // Dica de reconexão do SSE
+        controller.enqueue(encoder.encode("retry: 10000\n\n"));
+
+        let sent = 0;
+        const origins: MockNotification["origin"][] = [
+          "payment_confirmed",
+          "family_filled",
+          "registration_completed",
+        ];
+
+        // Heartbeat para manter a conexão viva
+        const keepAlive = setInterval(() => {
+          controller.enqueue(encoder.encode(":\n\n"));
+        }, 15000);
+
+        const timer = setInterval(() => {
+          const origin = origins[sent % origins.length];
+          const retreatIds = (mockRetreats || []).map((r) => r.id) as number[];
+          const retreatId =
+            retreatIds.length > 0
+              ? retreatIds[Math.floor(Math.random() * retreatIds.length)]
+              : 1;
+
+          const notif = createByOrigin(origin, retreatId);
+          // adiciona ao topo
+          mockNotifications.unshift(notif);
+
+          // evento SSE
+          controller.enqueue(encoder.encode("event: notification\n"));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(notif)}\n\n`));
+
+          sent += 1;
+          if (sent >= 3) {
+            clearInterval(timer);
+            clearInterval(keepAlive);
+            try {
+              controller.close();
+            } catch {}
+          }
+        }, 60_000); // 1 minuto
+
+        // Abort/cancel
+
+        request?.signal?.addEventListener?.("abort", () => {
+          clearInterval(timer);
+          clearInterval(keepAlive);
+          try {
+            controller.close();
+          } catch {}
+        });
+      },
+      cancel() {
+        // noop (garantido via abort acima)
+      },
+    });
+
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      },
+    });
   }),
 
   //fallback handler for unhandled requests

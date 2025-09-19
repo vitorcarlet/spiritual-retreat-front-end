@@ -6,6 +6,7 @@ import UserMenu from "./UserMenu";
 import Breadcrumbs from "./Breadcrumbs";
 import { useDrawer } from "@/src/contexts/DrawerContext";
 import NotificationsMenu from "./NotificationsMenu";
+import ModeSwitch from "../../navbar/mui/ModeSwitch";
 
 const TopBar = () => {
   const { handleDrawerToggle, handleDrawerPersistentToggle } = useDrawer();
@@ -66,6 +67,7 @@ const TopBar = () => {
           }}
           paddingRight={2}
         >
+          <ModeSwitch />
           <UserMenu />
           <NotificationsMenu />
         </Grid>

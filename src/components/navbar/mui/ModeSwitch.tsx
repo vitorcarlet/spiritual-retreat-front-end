@@ -32,12 +32,6 @@ export default function ModeSwitch() {
   return (
     <Box
       sx={{
-        position: "absolute",
-        right: 0,
-        bottom: 10,
-        display: "flex",
-        justifyContent: "flex-end",
-        mt: 1,
         p: 1,
         zIndex: 1000,
       }}

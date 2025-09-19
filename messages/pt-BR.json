@@ -4,7 +4,14 @@
   },
   "notifications": {
     "configuration": "Configurações",
-    "notifications": "Notificações"
+    "notifications": "Notificações",
+    "unread": "Não Lido",
+    "all": "Todas",
+    "mark_all_as_read": "Marcar todos como lido",
+    "see_more": "Ver Mais",
+    "no_unread": "Sem notificações não lidas",
+    "close": "Fechar",
+    "no_notifications": "Sem notificações"
   },
   "userPage": {
     "info": "userpage.info"

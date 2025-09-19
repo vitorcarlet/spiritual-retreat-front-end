@@ -62,7 +62,7 @@ export default async function RootLayout({
                 <ThemeMuiProvider>
                   <NextIntlClientProvider locale={locale ?? realLocale}>
                     <MSWProvider>
-                      <ModeSwitch />
+                   
                       <ModalProvider>{children}</ModalProvider>
                       {/* <ToastContainer /> */}
                     </MSWProvider>
