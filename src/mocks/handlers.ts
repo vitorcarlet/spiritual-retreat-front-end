@@ -623,7 +623,7 @@ export const handlers = [
               controller.close();
             } catch {}
           }
-        }, 60_000); // 1 minuto
+        }, 10_000); // 1 minuto
 
         // Abort/cancel
 

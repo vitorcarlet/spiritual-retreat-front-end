@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import {
   Drawer,
   IconButton,
@@ -25,6 +31,10 @@ import {
   handleApiResponse,
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
+import NotificationsConfig, {
+  loadNotificationSettings,
+  saveNotificationSettings,
+} from "./NotificationsConfig";
 
 type NotificationItem = {
   id: number | string;
@@ -48,6 +58,10 @@ const NotificationsMenu = () => {
   const modal = useModal();
   const t = useTranslations("notifications");
   const router = useRouter();
+
+  const sseRef = useRef<EventSource | null>(null);
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001/api";
 
   const unreadCount = useMemo(
     () => items.filter((n) => !n.read).length,
@@ -95,17 +109,19 @@ const NotificationsMenu = () => {
   }, [items]);
 
   const handleConfigClick = () => {
+    const initial = loadNotificationSettings();
     modal.open({
       title: t("configuration"),
-      size: "lg",
+      size: "sm",
       customRender() {
         return (
-          <Box sx={{ p: 2 }}>
-            <Typography variant="h6">{t("configuration")}</Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Aqui você pode configurar suas notificações.
-            </Typography>
-          </Box>
+          <NotificationsConfig
+            initial={initial}
+            onSave={(s) => {
+              saveNotificationSettings(s);
+              modal.close?.();
+            }}
+          />
         );
       },
     });
@@ -141,6 +157,37 @@ const NotificationsMenu = () => {
     router.push(href);
     setOpen(false);
   };
+
+  // Conecta no SSE e recebe novas notificações (3 eventos, 1/min)
+  useEffect(() => {
+    const url = `${API_BASE}/notifications/stream`;
+    const es = new EventSource(url);
+    sseRef.current = es;
+
+    const onNotification = (e: MessageEvent) => {
+      try {
+        const n: NotificationItem = JSON.parse(e.data);
+        // prepend otimista
+        setItems((prev) => [n, ...prev]);
+      } catch {
+        // ignore parse error
+      }
+    };
+
+    // O mock envia como "event: notification"
+    es.addEventListener("notification", onNotification);
+
+    es.onerror = () => {
+      // O browser tenta reconectar automaticamente (retry definido no mock)
+      // Opcional: log/telemetria
+    };
+
+    return () => {
+      es.removeEventListener("notification", onNotification);
+      es.close();
+      sseRef.current = null;
+    };
+  }, [API_BASE]);
 
   useEffect(() => {
     if (open) {
@@ -206,6 +253,7 @@ const NotificationsMenu = () => {
             aria-label="notification tabs"
           >
             <Tab
+              sx={{ px: 3 }}
               value="all"
               label={
                 <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
@@ -215,7 +263,7 @@ const NotificationsMenu = () => {
                     badgeContent={items.length || 0}
                     sx={{
                       "& .MuiBadge-badge": {
-                        right: -16,
+                        right: -12,
                         top: 8,
                       },
                     }}
@@ -225,6 +273,7 @@ const NotificationsMenu = () => {
             />
             <Tab
               value="unread"
+              sx={{ px: 3 }}
               label={
                 <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                   {t("unread")}
@@ -233,7 +282,7 @@ const NotificationsMenu = () => {
                     badgeContent={unreadCount || 0}
                     sx={{
                       "& .MuiBadge-badge": {
-                        right: -16,
+                        right: -10,
                         top: 8,
                       },
                     }}
