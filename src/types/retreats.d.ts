@@ -14,7 +14,7 @@ interface Retreat {
   enrolled: number;
   location: string;
   isActive: boolean;
-  image: string; // Substitua pelo caminho correto das imagens
+  images: string[]; // Substitua pelo caminho correto das imagens
   status: "open" | "closed" | "running" | "ended" | "upcoming"; // Status do retiro,
   instructor?: string; // Opcional, caso tenha instrutor
 }

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Box,
@@ -29,6 +29,11 @@ import FilterButton from "../../../filters/FilterButton";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { UniqueIdentifier } from "@dnd-kit/core";
+import { useModal } from "@/src/hooks/useModal";
+import CreateFamilyForm from "./CreateFamilyForm";
+import SendMessageToFamilyForm from "./SendMessageToFamilyForm";
+import AddParticipantToFamilyForm from "./AddParticipantToFamilyForm";
+import ConfigureFamily from "./ConfigureFamily";
 
 interface RetreatFamilyRequest {
   rows: RetreatFamily[];
@@ -56,7 +61,6 @@ const getRetreatFamilies = async (
   if (!response || response.error) {
     throw new Error("Failed to fetch retreats");
   }
-  console.log("Fetched reports:", response);
   return response.data as unknown as RetreatFamilyRequest;
 };
 
@@ -79,6 +83,7 @@ export default function RetreatFamilies({
 
   const session = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
+  const modal = useModal();
 
   useEffect(() => {
     if (session.data && session.data.user) {
@@ -93,6 +98,7 @@ export default function RetreatFamilies({
   }, [session.data]);
 
   const filtersConfig = getFilters();
+  const queryClient = useQueryClient();
   const {
     data: familiesData,
     isLoading,
@@ -133,6 +139,82 @@ export default function RetreatFamilies({
     //router.push(`/retreats/${retreat.id}`);
   };
 
+  const createNewFamily = () => {
+    modal.open({
+      title: t("create-new-family"),
+      size: "md",
+      customRender() {
+        return (
+          <CreateFamilyForm
+            retreatId={retreatId}
+            onSuccess={() => {
+              modal.close?.();
+              // Refetch families data
+              queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+            }}
+          />
+        );
+      },
+    });
+  };
+
+  const sendMessageToFamily = () => {
+    modal.open({
+      title: t("send-message-to-family"),
+      size: "md",
+      customRender() {
+        return (
+          <SendMessageToFamilyForm
+            retreatId={retreatId}
+            families={familiesDataArray}
+            onSuccess={() => {
+              modal.close?.();
+            }}
+          />
+        );
+      },
+    });
+  };
+
+  const addParticipantInFamily = () => {
+    modal.open({
+      title: t("add-participant-in-family"),
+      size: "md",
+      customRender() {
+        return (
+          <AddParticipantToFamilyForm
+            retreatId={retreatId}
+            families={familiesDataArray}
+            onSuccess={() => {
+              modal.close?.();
+              // Refetch families data
+              // queryClient.invalidateQueries(["retreat-families", filters]);
+            }}
+          />
+        );
+      },
+    });
+  };
+
+  const configureFamilies = () => {
+    modal.open({
+      title: t("family-configuration"),
+      size: "md",
+      customRender() {
+        return (
+          <ConfigureFamily
+            retreatId={retreatId}
+            onSuccess={() => {
+              modal.close?.();
+              // Refetch families data
+              queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+            }}
+          />
+        );
+      },
+    });
+  };
+
   const handleFiltersChange = (
     newFilters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => {
@@ -164,7 +246,6 @@ export default function RetreatFamilies({
       }}
     >
       <Stack direction="row" spacing={2} alignItems="center" mb={3}>
-        <Typography variant="h5">{t("retreats-families")}</Typography>
         <FilterButton<
           TableDefaultFilters<RetreatsCardTableFilters>,
           RetreatsCardTableDateFilters
@@ -176,11 +257,20 @@ export default function RetreatFamilies({
           activeFiltersCount={activeFiltersCount}
         />
         {hasCreatePermission && (
-          <Button variant="contained">
-            <Link href={{ pathname: "/dashboard/retreats/new" }}>
-              Criar Novo Usuário
-            </Link>
-          </Button>
+          <>
+            <Button variant="contained" onClick={createNewFamily}>
+              {t("create-new-family")}
+            </Button>
+            <Button variant="contained" onClick={sendMessageToFamily}>
+              {t("send-message-to-family")}
+            </Button>
+            <Button variant="contained" onClick={addParticipantInFamily}>
+              {t("add-participant-in-family")}
+            </Button>
+            <Button variant="contained" onClick={configureFamilies}>
+              {t("family-config")}
+            </Button>
+          </>
         )}
       </Stack>
       <Box sx={{ flex: 1, minHeight: 0 }}>

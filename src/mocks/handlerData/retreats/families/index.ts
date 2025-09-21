@@ -4,7 +4,7 @@ import { makeParticipant } from "../shared";
 export const mockFamilies: RetreatFamily[] = (() => {
   const families: RetreatFamily[] = [];
   let participantGlobalId = 1;
-  for (let f = 1; f <= 20; f++) {
+  for (let f = 1; f <= 8; f++) {
     const members: Participant[] = [];
     for (let m = 0; m < 4; m++) {
       members.push(makeParticipant(participantGlobalId++, f, m));

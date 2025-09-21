@@ -308,6 +308,67 @@ export const handlers = [
     }
   ),
 
+  // Family configuration endpoints
+  http.get(
+    "http://localhost:3001/api/retreats/:id/families/config",
+    () => {
+      return HttpResponse.json({
+        success: true,
+        data: {
+          config: {
+            defaultFamilySize: 6,
+            maxFamilySize: 8,
+            totalFamilies: mockFamilies.length,
+            totalParticipants: 42,
+          }
+        }
+      }, { status: 200 });
+    }
+  ),
+
+  http.put(
+    "http://localhost:3001/api/retreats/:id/families/config",
+    async ({ request }) => {
+      const body = await request.json() as {
+        defaultFamilySize: number;
+        maxFamilySize: number;
+      };
+      
+      console.log("Family config updated:", body);
+      
+      return HttpResponse.json({
+        success: true,
+        message: "Configuração das famílias atualizada com sucesso"
+      }, { status: 200 });
+    }
+  ),
+
+  // Family creation endpoint
+  http.post(
+    "http://localhost:3001/api/retreats/:id/families",
+    async ({ request }) => {
+      const body = await request.json() as {
+        name: string;
+        description?: string;
+        maxMembers: number;
+        tentNumber?: string;
+        sector?: string;
+      };
+      
+      console.log("New family created:", body);
+      
+      return HttpResponse.json({
+        success: true,
+        data: {
+          id: Math.random().toString(36).substr(2, 9),
+          ...body,
+          members: [],
+          createdAt: new Date().toISOString(),
+        }
+      }, { status: 201 });
+    }
+  ),
+
   http.get(
     "http://localhost:3001/api/public/retreats",
     ({ request /*, params */ }) => {
@@ -586,7 +647,6 @@ export const handlers = [
       start(controller) {
         // Dica de reconexão do SSE
         controller.enqueue(encoder.encode("retry: 10000\n\n"));
-
         let sent = 0;
         const origins: MockNotification["origin"][] = [
           "payment_confirmed",
@@ -600,6 +660,16 @@ export const handlers = [
         }, 15000);
 
         const timer = setInterval(() => {
+          // Verifica se já temos 10 notificações no total
+          if (mockNotifications.length >= 10) {
+            clearInterval(timer);
+            clearInterval(keepAlive);
+            try {
+              controller.close();
+            } catch {}
+            return;
+          }
+
           const origin = origins[sent % origins.length];
           const retreatIds = (mockRetreats || []).map((r) => r.id) as number[];
           const retreatId =
@@ -623,7 +693,7 @@ export const handlers = [
               controller.close();
             } catch {}
           }
-        }, 10_000); // 1 minuto
+        }, 10_000); // 10s
 
         // Abort/cancel
 

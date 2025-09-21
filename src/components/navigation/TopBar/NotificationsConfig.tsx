@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -22,10 +22,10 @@ export type NotificationSettings = {
 };
 
 export const NOTIFICATION_SOUNDS = [
+  { id: "none", name: "Sem som", src: "" },
   { id: "ding-1", name: "Ding dong", src: "/sounds/ding-1.mp3" },
   { id: "ding-2", name: "Ding dong", src: "/sounds/ding-2.mp3" },
   { id: "ding-3", name: "Ding dong", src: "/sounds/ding-3.mp3" },
-  { id: "ding-4", name: "Ding dong", src: "/sounds/ding-4.mp3" },
 ] as const;
 
 const STORAGE_KEY = "notifications:settings";
@@ -69,16 +69,13 @@ export default function NotificationsConfig({ initial, onSave }: Props) {
     if (initial) setSettings(initial);
   }, [initial]);
 
-  const selected = useMemo(
-    () =>
-      NOTIFICATION_SOUNDS.find((s) => s.id === settings.sound) ||
-      NOTIFICATION_SOUNDS[0],
-    [settings.sound]
-  );
-
   const play = (id: string) => {
     const sound =
       NOTIFICATION_SOUNDS.find((s) => s.id === id) || NOTIFICATION_SOUNDS[0];
+
+    // Don't play anything if "no sound" is selected
+    if (sound.id === "none" || !sound.src) return;
+
     if (!audioRef.current) audioRef.current = new Audio();
     audioRef.current.pause();
     audioRef.current.currentTime = 0;
@@ -101,7 +98,7 @@ export default function NotificationsConfig({ initial, onSave }: Props) {
   };
 
   return (
-    <Box sx={{ p: 2, width: 380, maxWidth: "100vw" }}>
+    <Box sx={{ p: 2, width: "100%" }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
         Som da notificação
       </Typography>
@@ -127,16 +124,18 @@ export default function NotificationsConfig({ initial, onSave }: Props) {
                 control={<Radio size="small" />}
                 label={s.name}
               />
-              <IconButton
-                size="small"
-                onClick={() => (previewId === s.id ? stop() : play(s.id))}
-              >
-                {previewId === s.id ? (
-                  <StopRoundedIcon />
-                ) : (
-                  <PlayArrowRoundedIcon />
-                )}
-              </IconButton>
+              {s.id !== "none" && (
+                <IconButton
+                  size="small"
+                  onClick={() => (previewId === s.id ? stop() : play(s.id))}
+                >
+                  {previewId === s.id ? (
+                    <StopRoundedIcon />
+                  ) : (
+                    <PlayArrowRoundedIcon />
+                  )}
+                </IconButton>
+              )}
             </Stack>
           ))}
         </RadioGroup>

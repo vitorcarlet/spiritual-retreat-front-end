@@ -15,7 +15,24 @@ export default auth((req) => {
   const isAuthRoute =
     !isCodeRoute &&
     authRoutes.some((route) => nextUrl.pathname.startsWith(route));
-  const isLoggedIn = !!req.auth;
+  const isLoggedIn = !!req.auth && !req.auth.error;
+
+  // Verifica se há erros de token que requerem redirecionamento para login
+  const hasTokenError =
+    req.auth?.error === "RefreshAccessTokenError" ||
+    req.auth?.error === "RefreshTokenExpired";
+
+  // Se há erro de token, redireciona para login
+  if (hasTokenError && !isAuthRoute) {
+    let callbackUrl = nextUrl.pathname;
+    if (nextUrl.search) {
+      callbackUrl += nextUrl.search;
+    }
+    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
+    return NextResponse.redirect(
+      new URL(`/login?callbackUrl=${encodedCallbackUrl}`, nextUrl)
+    );
+  }
 
   if (nextUrl.pathname === "/") {
     if (isLoggedIn) {

@@ -22,6 +22,8 @@ import {
   RetreatsCardTableFilters,
 } from "./types";
 import { Retreat } from "@/src/types/retreats";
+import { useModal } from "@/src/hooks/useModal";
+import RetreatOverview from "./CardTable/RetreatOverview";
 
 const getRetreats = async (
   filters: TableDefaultFilters<
@@ -42,7 +44,7 @@ const getRetreats = async (
 export default function RetreatsTablePage() {
   const t = useTranslations();
   const router = useRouter();
-
+  const modal = useModal();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
       defaultFilters: {
@@ -84,7 +86,13 @@ export default function RetreatsTablePage() {
   };
 
   const handleView = (retreat: Retreat) => {
-    router.push(`/retreats/${retreat.id}`);
+    modal.open({
+      title: t("overview"),
+      size: "lg",
+      customRender() {
+        return <RetreatOverview retreatId={String(retreat.id)} />;
+      },
+    });
   };
 
   const handleFiltersChange = (
@@ -126,7 +134,7 @@ export default function RetreatsTablePage() {
         {hasCreatePermission && (
           <Button variant="contained">
             <Link href={{ pathname: "/dashboard/retreats/new" }}>
-              Criar Novo Usuário
+              Criar Novo Retiro
             </Link>
           </Button>
         )}

@@ -1,6 +1,9 @@
 import ProtectedLayoutContent from "@/src/components/navigation/protected/ProtectedLayoutContext";
 import { DrawerProvider } from "@/src/contexts/DrawerContext";
+import { NotificationsProvider } from "@/src/contexts/NotificationsContext";
 import SnackbarClientProvider from "@/src/providers/SnackbarProvider";
+import NotificationListener from "@/src/components/notifications/NotificationListener";
+import TokenErrorMonitor from "@/src/components/auth/TokenErrorMonitor";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata = {
@@ -14,10 +17,14 @@ export default function ProtectedLayout({
 }) {
   return (
     <SessionProvider>
+      <TokenErrorMonitor />
       <DrawerProvider>
-        <SnackbarClientProvider>
-          <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
-        </SnackbarClientProvider>
+        <NotificationsProvider>
+          <SnackbarClientProvider>
+            <NotificationListener />
+            <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
+          </SnackbarClientProvider>
+        </NotificationsProvider>
       </DrawerProvider>
     </SessionProvider>
   );

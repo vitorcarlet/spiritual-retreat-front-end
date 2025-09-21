@@ -14,6 +14,8 @@ import { createStorage } from "unstorage";
 import memoryDriver from "unstorage/drivers/memory";
 import vercelKVDriver from "unstorage/drivers/vercel-kv";
 import { UnstorageAdapter } from "@auth/unstorage-adapter";
+import { authRoutes } from "./routes";
+import { isPublicPath } from "./routes";
 import { refresh } from "./src/mocks/actions";
 import { jwtDecode } from "jwt-decode";
 import { JWT } from "next-auth/jwt";
@@ -143,6 +145,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.error = token.error;
       //console.log(session, 'SESSION CALLBACK')
       return session;
+    },
+    authorized: ({ auth, request }) => {
+      if (
+        auth?.error === "RefreshAccessTokenError" ||
+        auth?.error === "RefreshTokenExpired"
+      ) {
+        console.warn("❌ Unauthorized due to token error:", auth.error);
+        return false;
+      }
+      const { pathname } = request.nextUrl;
+      const isPublicRoute = isPublicPath(pathname);
+      const isAuthRoute = authRoutes.includes(pathname);
+
+      if (!isPublicRoute && !isAuthRoute) {
+        return !auth?.error && !!auth?.user;
+      }
+      return true;
     },
     // authorized: ({ auth, request }) => {
     //   if (auth?.error) {
@@ -301,9 +320,9 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
   }
 }
 
-class InvalidLoginError extends CredentialsSignin {
-  code = "Invalid identifier or password";
-}
+// class InvalidLoginError extends CredentialsSignin {
+//   code = "Invalid identifier or password";
+// }
 
 // class UserNotActivatedError extends CredentialsSignin {
 //   code = "User not activated"

@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   Drawer,
   IconButton,
@@ -27,86 +21,49 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useModal } from "@/src/hooks/useModal";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import { sendRequestServerVanilla } from "@/src/lib/sendRequestServerVanilla";
 import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+  useNotifications,
+  NotificationItem,
+} from "@/src/contexts/NotificationsContext";
 import NotificationsConfig, {
   loadNotificationSettings,
   saveNotificationSettings,
 } from "./NotificationsConfig";
-
-type NotificationItem = {
-  id: number | string;
-  title: string;
-  description: string;
-  date: string; // já formatado pelo backend (ex.: "2 dias atrás")
-  read: boolean;
-  origin: string; // ex.: "payment_confirmed" | "family_filled" | etc
-  retreatId?: number | string;
-};
 
 type TabKey = "all" | "unread";
 
 const NotificationsMenu = () => {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<TabKey>("all");
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
 
   const modal = useModal();
   const t = useTranslations("notifications");
   const router = useRouter();
 
-  const sseRef = useRef<EventSource | null>(null);
-  const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001/api";
-
-  const unreadCount = useMemo(
-    () => items.filter((n) => !n.read).length,
-    [items]
-  );
+  const {
+    items,
+    unreadCount,
+    loading,
+    markAsRead,
+    markAllAsRead: contextMarkAllAsRead,
+    fetchNotifications,
+  } = useNotifications();
 
   const filtered = useMemo(() => {
     return tab === "unread" ? items.filter((n) => !n.read) : items;
   }, [items, tab]);
 
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true);
-    try {
-      const resp = await handleApiResponse<NotificationItem[]>(
-        await sendRequestServerVanilla.get("/notifications")
-      );
-      if (!resp.success) throw new Error(resp.error || "Falha ao buscar");
-      setItems(resp.data || []);
-    } catch (e) {
-      // fallback (evita drawer vazio se API falhar)
-      console.error(e);
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const markAllAsRead = useCallback(async () => {
     if (!items.length) return;
     setMarkingAll(true);
     try {
-      const ids = items.filter((n) => !n.read).map((n) => n.id);
-      if (ids.length) {
-        await handleApiResponse(
-          await sendRequestServerVanilla.post("/notifications/mark-all-read", {
-            ids,
-          })
-        );
-      }
-      // otimista
-      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+      await contextMarkAllAsRead();
     } finally {
       setMarkingAll(false);
     }
-  }, [items]);
+  }, [items, contextMarkAllAsRead]);
 
   const handleConfigClick = () => {
     const initial = loadNotificationSettings();
@@ -144,9 +101,7 @@ const NotificationsMenu = () => {
 
   const handleViewMore = async (n: NotificationItem) => {
     // otimista: marca como lida
-    setItems((prev) =>
-      prev.map((it) => (it.id === n.id ? { ...it, read: true } : it))
-    );
+    markAsRead(n.id);
     // opcional: avisa backend
     try {
       await sendRequestServerVanilla.post(`/notifications/${n.id}/read`);
@@ -158,37 +113,7 @@ const NotificationsMenu = () => {
     setOpen(false);
   };
 
-  // Conecta no SSE e recebe novas notificações (3 eventos, 1/min)
-  useEffect(() => {
-    const url = `${API_BASE}/notifications/stream`;
-    const es = new EventSource(url);
-    sseRef.current = es;
-
-    const onNotification = (e: MessageEvent) => {
-      try {
-        const n: NotificationItem = JSON.parse(e.data);
-        // prepend otimista
-        setItems((prev) => [n, ...prev]);
-      } catch {
-        // ignore parse error
-      }
-    };
-
-    // O mock envia como "event: notification"
-    es.addEventListener("notification", onNotification);
-
-    es.onerror = () => {
-      // O browser tenta reconectar automaticamente (retry definido no mock)
-      // Opcional: log/telemetria
-    };
-
-    return () => {
-      es.removeEventListener("notification", onNotification);
-      es.close();
-      sseRef.current = null;
-    };
-  }, [API_BASE]);
-
+  // Recarrega notificações quando o drawer é aberto
   useEffect(() => {
     if (open) {
       fetchNotifications();

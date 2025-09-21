@@ -2,6 +2,7 @@
 
 import { SnackbarProvider } from "notistack";
 import ErrorNotification from "../components/notistack/ErrorNotification";
+import FloatingNotification from "../components/notistack/FloatingNotification";
 
 export default function SnackbarClientProvider({
   children,
@@ -12,6 +13,7 @@ export default function SnackbarClientProvider({
     <SnackbarProvider
       Components={{
         errorMUI: ErrorNotification,
+        default: FloatingNotification,
       }}
       maxSnack={3}
     >

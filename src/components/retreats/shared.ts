@@ -2,6 +2,7 @@ import {
   handleApiResponse,
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
+import { Retreat } from "@/src/types/retreats";
 
 export const fetchRetreatData = async (
   retreatId: string

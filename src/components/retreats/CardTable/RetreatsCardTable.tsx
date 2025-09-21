@@ -222,7 +222,7 @@ export default function RetreatsCardTable({
                 }}
                 onClick={() => onView?.(retreat)}
               >
-                Ver mais
+                Visão Geral
               </Button>
               <Button
                 sx={{ width: 100 }}
@@ -230,7 +230,7 @@ export default function RetreatsCardTable({
                 variant="outlined"
                 onClick={() => onEdit?.(retreat)}
               >
-                Editar
+                Ver Mais
               </Button>
             </Box>
           </Box>

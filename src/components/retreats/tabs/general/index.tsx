@@ -38,7 +38,7 @@ const emptyFormData: Omit<Retreat, "id" | "state"> = {
   location: "",
   participationTax: "",
   isActive: false,
-  image: "",
+  images: [""],
   status: "upcoming",
   instructor: "",
 };
@@ -58,7 +58,7 @@ function mapRetreatToFormData(r: Retreat): Omit<Retreat, "id" | "state"> {
     location: r.location ?? "",
     participationTax: r.participationTax ?? "",
     isActive: r.isActive ?? false,
-    image: r.image ?? "",
+    images: r.images ?? "",
     status: r.status ?? "upcoming",
     instructor: r.instructor ?? "",
   };
