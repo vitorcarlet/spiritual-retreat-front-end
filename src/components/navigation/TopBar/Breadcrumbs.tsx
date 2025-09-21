@@ -8,6 +8,8 @@ import {
   Box,
   Chip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
 import NextLink from "next/link";
@@ -91,9 +93,11 @@ const BreadcrumbIcon = ({
 
 const Breadcrumbs: React.FC = () => {
   const pathname = usePathname();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
   const {
     title,
-    pathname: breadCrumbPathName,
+    //pathname: breadCrumbPathName,
     noBreadCrumbs,
   } = useBreadCrumbs();
 
@@ -144,10 +148,10 @@ const Breadcrumbs: React.FC = () => {
   console.log(breadcrumbs, noBreadCrumbs, "Breadcrumbs items:", pathname);
   // Se só tem um item (Home), não mostrar breadcrumbs
 
-  const mainIcon = useMemo(() => {
-    const lastBreadcrumb = breadcrumbs[breadcrumbs.length - 1];
-    return lastBreadcrumb?.icon || "lucide:folder";
-  }, [breadcrumbs]);
+  // const mainIcon = useMemo(() => {
+  //   const lastBreadcrumb = breadcrumbs[breadcrumbs.length - 1];
+  //   return lastBreadcrumb?.icon || "lucide:folder";
+  // }, [breadcrumbs]);
 
   if (breadcrumbs.length <= 1) {
     return null;
@@ -155,11 +159,13 @@ const Breadcrumbs: React.FC = () => {
 
   return (
     <Box display={"flex"} alignItems="center" gap={1}>
-      <Iconify
-        icon={breadcrumbs[breadcrumbs.length - 1].icon || "lucide:folder"}
-        size={6}
-        sx={{ color: "text.primary" }}
-      />
+      {isDesktop && (
+        <Iconify
+          icon={breadcrumbs[breadcrumbs.length - 1].icon || "lucide:folder"}
+          size={6}
+          sx={{ color: "text.primary" }}
+        />
+      )}
       <Box>
         <Typography variant="h4">
           {title ?? breadcrumbs[breadcrumbs.length - 1].label}

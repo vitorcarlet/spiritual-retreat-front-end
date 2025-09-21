@@ -105,20 +105,16 @@ function FieldEditorCard({
           onChange={(e) => onChange({ label: e.target.value })}
           fullWidth
         />
-        <TextField
-          label="Name"
-          value={field.name}
-          size="small"
-          onChange={(e) => onChange({ name: e.target.value })}
-          fullWidth
-        />
-        <TextField
-          label="Placeholder"
-          value={field.placeholder || ""}
-          size="small"
-          onChange={(e) => onChange({ placeholder: e.target.value })}
-          fullWidth
-        />
+        {field.placeholder && (
+          <TextField
+            label="Placeholder"
+            value={field.placeholder || ""}
+            size="small"
+            onChange={(e) => onChange({ placeholder: e.target.value })}
+            fullWidth
+          />
+        )}
+
         <FormControlLabel
           control={
             <Checkbox
@@ -128,13 +124,16 @@ function FieldEditorCard({
           }
           label="Obrigatório"
         />
-        <TextField
-          label="Helper Text"
-          value={field.helperText || ""}
-          size="small"
-          onChange={(e) => onChange({ helperText: e.target.value })}
-          fullWidth
-        />
+        {field.helperText && (
+          <TextField
+            label="Helper Text"
+            value={field.helperText || ""}
+            size="small"
+            onChange={(e) => onChange({ helperText: e.target.value })}
+            fullWidth
+          />
+        )}
+
         {["radio", "select"].includes(field.type) && (
           <Stack spacing={1} sx={{ mt: 1 }}>
             <Typography variant="caption" fontWeight={600}>

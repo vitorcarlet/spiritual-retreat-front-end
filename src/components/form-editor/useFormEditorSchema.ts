@@ -33,6 +33,72 @@ function createEmptySchema(): FormSchemaDefinition {
   };
 }
 
+function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
+  const baseField = {
+    id: nanoid(),
+    name: `${type}_${Date.now()}`,
+    type,
+    required: false,
+    grid: 12,
+  };
+
+  switch (type) {
+    case "text":
+      return {
+        ...baseField,
+        label: "Campo de Texto",
+        helperText: "Digite o texto aqui",
+        placeholder: "Digite aqui...",
+        defaultValue: "",
+      };
+
+    case "radio":
+      return {
+        ...baseField,
+        label: "Opção Única",
+        helperText: "Selecione uma opção",
+        placeholder: "",
+        options: [
+          { id: nanoid(), value: "opcao1" },
+          { id: nanoid(), value: "opcao2" },
+        ],
+        defaultValue: undefined,
+      };
+
+    case "checkbox":
+      return {
+        ...baseField,
+        label: "Lista de Verificação",
+        helperText: "Marque as opções desejadas",
+        placeholder: "",
+        options: [
+          { id: nanoid(), value: "item1" },
+          { id: nanoid(), value: "item2" },
+        ],
+        defaultValue: [],
+      };
+
+    case "switch":
+      return {
+        ...baseField,
+        label: "Interruptor",
+        helperText: null,
+        placeholder: null,
+        defaultValue: false,
+      };
+
+    default:
+      return {
+        ...baseField,
+        label: "Novo Campo",
+        helperText: "",
+        placeholder: "",
+        options: type === "select" ? [] : undefined,
+        defaultValue: undefined,
+      };
+  }
+}
+
 function reducer(
   state: FormEditorState,
   action: FormEditorAction
@@ -194,18 +260,7 @@ export function useFormEditorSchema(initial?: FormSchemaDefinition) {
   }));
 
   const addField = useCallback((type: FieldDefinition["type"]) => {
-    const field: FieldDefinition = {
-      id: nanoid(),
-      name: `${type}_${Date.now()}`,
-      label: "Novo Campo",
-      type,
-      required: false,
-      helperText: "",
-      placeholder: "",
-      options: type === "select" || type === "radio" ? [] : undefined,
-      defaultValue: undefined,
-      grid: 12,
-    };
+    const field = createFieldByType(type);
     dispatch({ type: "ADD_FIELD", field });
   }, []);
 

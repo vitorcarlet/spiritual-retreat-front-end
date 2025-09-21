@@ -17,6 +17,7 @@ import {
 
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
+import ToggleOnIcon from "@mui/icons-material/ToggleOn";
 import Fab from "@mui/material/Fab";
 import Tooltip from "@mui/material/Tooltip";
 import ListAltIcon from "@mui/icons-material/ListAlt";
@@ -24,7 +25,7 @@ import TitleIcon from "@mui/icons-material/Title";
 import RadioButtonCheckedIcon from "@mui/icons-material/RadioButtonChecked";
 import FieldEditorCard from "./FieldEditorCard";
 
-export function FormEditor() {
+export function FormEditor({ id }: { id: string }) {
   const {
     state,
     addField,
@@ -89,6 +90,11 @@ export function FormEditor() {
         <Tooltip title="Lista" placement="right">
           <Fab size="small" color="primary" onClick={() => addField("list")}>
             <ListAltIcon fontSize="small" />
+          </Fab>
+        </Tooltip>
+        <Tooltip title="Switch" placement="right">
+          <Fab size="small" color="primary" onClick={() => addField("switch")}>
+            <ToggleOnIcon fontSize="small" />
           </Fab>
         </Tooltip>
       </Box>

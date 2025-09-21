@@ -12,7 +12,8 @@ export type BaseFieldType =
   | "color"
   | "email"
   | "phone"
-  | "list";
+  | "list"
+  | "switch";
 
 export interface OptionItem {
   id: string;
@@ -25,8 +26,8 @@ export interface BaseFieldDefinition {
   label: string;
   type: BaseFieldType;
   required?: boolean;
-  helperText?: string;
-  placeholder?: string;
+  helperText?: string | null;
+  placeholder?: string | null;
   options?: OptionItem[]; // for select / radio
   defaultValue?: unknown;
   // layout

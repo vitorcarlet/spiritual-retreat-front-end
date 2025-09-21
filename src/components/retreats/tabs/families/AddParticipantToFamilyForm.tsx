@@ -37,6 +37,7 @@ interface Participant {
   email: string;
   phone?: string;
   age?: number;
+  location?: string;
   isAssigned?: boolean;
 }
 
@@ -81,16 +82,13 @@ export default function AddParticipantToFamilyForm({
     const fetchParticipants = async () => {
       setLoadingParticipants(true);
       try {
-        const response = await handleApiResponse<{
-          participants: Participant[];
-        }>(
+        const response = await handleApiResponse<Participant[]>(
           await sendRequestServerVanilla.get(
             `/retreats/${retreatId}/participants/available`
           )
         );
-
         if (response.success && response.data) {
-          setParticipants(response.data.participants || []);
+          setParticipants(response.data || []);
         }
       } catch (error) {
         console.error("Erro ao buscar participantes:", error);
@@ -246,7 +244,9 @@ export default function AddParticipantToFamilyForm({
                         <Typography variant="body2">{option.name}</Typography>
                         <Typography variant="caption" color="text.secondary">
                           {option.email}
-                          {option.age && ` • ${option.age} anos`}
+                          {option.age &&
+                            ` • ${option.age} anos •` &&
+                            option.location}
                         </Typography>
                       </Box>
                     </Box>

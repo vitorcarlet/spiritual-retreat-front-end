@@ -14,6 +14,8 @@ import {
   styled,
   CSSObject,
   Theme,
+  useMediaQuery,
+  Drawer,
 } from "@mui/material";
 import MuiDrawer from "@mui/material/Drawer";
 import Iconify from "../../Iconify";
@@ -27,7 +29,7 @@ import ProtectedRoute from "../protected/ProtectedRoute";
 import Loading from "@/app/loading";
 import { BreadCrumbsProvider } from "@/src/contexts/BreadCrumbsContext";
 
-const drawerWidth: number = 240; // Largura fixa do drawer
+const drawerWidth: number = 240; // Fixed drawer width
 
 const openedMixin = (theme: Theme): CSSObject => ({
   width: drawerWidth,
@@ -121,8 +123,9 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
   const {
     mobileOpen,
     drawerWidth,
-    handleDrawerTransitionEnd,
+    // handleDrawerTransitionEnd,
     handleDrawerClose,
+    // handleDrawerToggle,
     openPersistent,
     handleDrawerPersistentToggle,
   } = useDrawer();
@@ -133,8 +136,16 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
   } = useMenuAccess();
   const router = useRouter();
   const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("sm"));
+
   // ✅ Obter apenas os menus que o usuário tem acesso
   const accessibleMenus = getAccessibleMenus();
+
+  const handleMenuClick = (path: string) => {
+    router.push(path);
+    // Close mobile drawer after navigation
+    if (!isDesktop) handleDrawerClose();
+  };
 
   const drawerContent = (
     <>
@@ -150,7 +161,7 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
               ]}
               component={Link}
               href={menu.path}
-              onClick={() => router.push(menu.path)}
+              onClick={() => handleMenuClick(menu.path)}
             >
               <ListItemIcon sx={[openPersistent ? { mr: 3 } : { mr: "auto" }]}>
                 <Iconify icon={menu.icon} />
@@ -187,50 +198,33 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
     debugUserAccess();
   }, []);
 
-  console.log("SessionMenu:", accessibleMenus);
-
   return (
     <Box id="side-menu-drawer" sx={{ display: "flex", height: "100vh" }}>
       <BreadCrumbsProvider>
-        <AppBar position="fixed" open={openPersistent}>
+        <AppBar position="fixed" open={isDesktop && openPersistent}>
           <Box sx={{ backgroundColor: "background.paper" }}>
             <TopBar />
           </Box>
         </AppBar>
-        <ResponsiveDrawer
+
+        {/* Mobile temporary drawer */}
+        <Drawer
           variant="temporary"
           open={mobileOpen}
-          onTransitionEnd={handleDrawerTransitionEnd}
           onClose={handleDrawerClose}
+          ModalProps={{ keepMounted: true }}
           sx={{
-            backgroundColor: "background.default",
             display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
-          }}
-          slotProps={{
-            root: {
-              keepMounted: true,
-            },
+            "& .MuiDrawer-paper": { width: drawerWidth },
           }}
         >
           {drawerContent}
-        </ResponsiveDrawer>
+        </Drawer>
+
+        {/* Desktop permanent drawer */}
         <ResponsiveDrawer
           variant="permanent"
-          // sx={{
-          //   display: {
-          //     xs: "none",
-          //     sm: "block",
-          //   },
-          //   "& .MuiDrawer-paper": {
-          //     boxSizing: "border-box",
-          //     width: drawerWidth,
-          //   },
-          // }}
-          sx={{ zIndex: 1000 }}
+          sx={{ display: { xs: "none", sm: "block" }, zIndex: 1000 }}
           open={openPersistent}
         >
           <DrawerHeader>
@@ -263,13 +257,17 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
           </DrawerHeader>
           {drawerContent}
         </ResponsiveDrawer>
+
         <Box
           sx={{
             backgroundColor: "background.paper",
-            //p: 2,
-            width: "calc(100% - 240px)", // ✅ Agora funciona perfeitamente
             height: "100%",
             flexGrow: 1,
+            // On desktop, account for drawer width; on mobile, full width
+            // ml: {
+            //   sm: openPersistent ? `${drawerWidth}px` : `calc(64px + 1px)`,
+            //   xs: 0,
+            // },
           }}
         >
           <DrawerHeader />

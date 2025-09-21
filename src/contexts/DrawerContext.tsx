@@ -1,7 +1,8 @@
 // src/contexts/DrawerContext.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useMediaQuery, useTheme } from "@mui/material";
 
 interface DrawerContextType {
   mobileOpen: boolean;
@@ -16,41 +17,48 @@ interface DrawerContextType {
 const DrawerContext = createContext<DrawerContextType | undefined>(undefined);
 
 export function DrawerProvider({ children }: { children: React.ReactNode }) {
-  //const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("sm"));
+
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openPersistent, setOpenPersistent] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
-  const drawerWidth = 240; // Largura fixa do drawer
+  const [openPersistent, setOpenPersistent] = useState<boolean>(isDesktop);
 
-  const handleDrawerPersistentToggle = useCallback(() => {
-    setOpenPersistent((prev) => !prev);
-  }, []);
+  useEffect(() => {
+    // Sync persistent drawer with breakpoint
+    setOpenPersistent(isDesktop);
+    // Always close mobile drawer when entering desktop
+    if (isDesktop) setMobileOpen(false);
+  }, [isDesktop]);
 
-  const handleDrawerClose = useCallback(() => {
-    setIsClosing(true);
+  const drawerWidth = 240;
+
+  // Mobile drawer controls (no isClosing guard)
+  const handleDrawerToggle = () => {
+    setMobileOpen((prev) => !prev);
+  };
+
+  const handleDrawerClose = () => {
     setMobileOpen(false);
-  }, []);
+  };
 
-  const handleDrawerTransitionEnd = useCallback(() => {
-    setIsClosing(false);
-  }, []);
+  // No-op to keep API compatibility
+  const handleDrawerTransitionEnd = () => {};
 
-  const handleDrawerToggle = useCallback(() => {
-    if (!isClosing) {
-      setMobileOpen(!mobileOpen);
-    }
-  }, [isClosing, mobileOpen]);
+  // Desktop drawer (persistent) toggle
+  const handleDrawerPersistentToggle = () => {
+    setOpenPersistent((prev) => !prev);
+  };
 
   return (
     <DrawerContext.Provider
       value={{
-        handleDrawerTransitionEnd,
-        handleDrawerToggle,
-        handleDrawerClose,
         mobileOpen,
         drawerWidth,
-        openPersistent,
+        handleDrawerClose,
+        handleDrawerTransitionEnd,
+        handleDrawerToggle,
         handleDrawerPersistentToggle,
+        openPersistent,
       }}
     >
       {children}
@@ -59,9 +67,7 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useDrawer = () => {
-  const context = useContext(DrawerContext);
-  if (!context) {
-    throw new Error("useDrawer must be used within DrawerProvider");
-  }
-  return context;
+  const ctx = useContext(DrawerContext);
+  if (!ctx) throw new Error("useDrawer must be used within DrawerProvider");
+  return ctx;
 };

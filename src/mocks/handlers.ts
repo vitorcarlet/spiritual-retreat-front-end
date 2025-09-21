@@ -369,6 +369,157 @@ export const handlers = [
     }
   ),
 
+  // Get available participants for a retreat
+  http.get(
+    "http://localhost:3001/api/retreats/:id/participants/available",
+    () => {
+      const mockParticipants = [
+        {
+          id: 1,
+          name: "João Silva",
+          email: "joao.silva@email.com",
+          phone: "(11) 99999-1111",
+          age: 25,
+          isAssigned: false,
+          location: "São Paulo, SP",
+        },
+        {
+          id: 2,
+          name: "Maria Santos",
+          email: "maria.santos@email.com",
+          phone: "(11) 99999-2222",
+          age: 32,
+          isAssigned: false,
+          location: "Rio de Janeiro, RJ",
+        },
+        {
+          id: 3,
+          name: "Pedro Oliveira",
+          email: "pedro.oliveira@email.com",
+          phone: "(11) 99999-3333",
+          age: 28,
+          isAssigned: false,
+          location: "Belo Horizonte, MG",
+        },
+        {
+          id: 4,
+          name: "Ana Costa",
+          email: "ana.costa@email.com",
+          phone: "(11) 99999-4444",
+          age: 29,
+          isAssigned: false,
+          location: "Porto Alegre, RS",
+        },
+        {
+          id: 5,
+          name: "Carlos Pereira",
+          email: "carlos.pereira@email.com",
+          phone: "(11) 99999-5555",
+          age: 35,
+          isAssigned: false,
+          location: "Salvador, BA",
+        },
+        {
+          id: 6,
+          name: "Fernanda Lima",
+          email: "fernanda.lima@email.com",
+          phone: "(11) 99999-6666",
+          age: 27,
+          isAssigned: false,
+          location: "Brasília, DF",
+        },
+        {
+          id: 7,
+          name: "Ricardo Mendes",
+          email: "ricardo.mendes@email.com",
+          phone: "(11) 99999-7777",
+          age: 31,
+          isAssigned: false,
+          location: "Curitiba, PR",
+        },
+        {
+          id: 8,
+          name: "Juliana Ferreira",
+          email: "juliana.ferreira@email.com",
+          phone: "(11) 99999-8888",
+          age: 26,
+          isAssigned: false,
+          location: "Fortaleza, CE",
+        },
+        {
+          id: 9,
+          name: "Rafael Alves",
+          email: "rafael.alves@email.com",
+          phone: "(11) 99999-9999",
+          age: 33,
+          isAssigned: false,
+          location: "Recife, PE",
+        },
+        {
+          id: 10,
+          name: "Luciana Rocha",
+          email: "luciana.rocha@email.com",
+          phone: "(11) 99999-0000",
+          age: 24,
+          isAssigned: false,
+          location: "Goiânia, GO",
+        },
+      ];
+
+      return HttpResponse.json(
+           mockParticipants,
+       { status: 200 });
+    }
+  ),
+
+  // Add participants to family endpoint
+  http.post(
+    "http://localhost:3001/api/retreats/:id/families/add-participants",
+    async ({ request }) => {
+      const body = await request.json() as {
+        familyId: string;
+        participantIds: number[];
+        role: "leader" | "member";
+      };
+      
+      console.log("Participants added to family:", body);
+      
+      return HttpResponse.json({
+        success: true,
+        message: `${body.participantIds.length} participante(s) adicionado(s) à família com sucesso`,
+        data: {
+          familyId: body.familyId,
+          addedParticipants: body.participantIds.length,
+          role: body.role,
+        }
+      }, { status: 200 });
+    }
+  ),
+
+  // Send message to families endpoint
+  http.post(
+    "http://localhost:3001/api/retreats/:id/families/send-message",
+    async ({ request }) => {
+      const body = await request.json() as {
+        subject: string;
+        message: string;
+        familyIds: string[];
+        messageType: "email" | "sms" | "notification";
+      };
+      
+      console.log("Message sent to families:", body);
+      
+      return HttpResponse.json({
+        success: true,
+        message: `Mensagem enviada para ${body.familyIds.length} família(s) com sucesso`,
+        data: {
+          messagesSent: body.familyIds.length,
+          messageType: body.messageType,
+        }
+      }, { status: 200 });
+    }
+  ),
+
   http.get(
     "http://localhost:3001/api/public/retreats",
     ({ request /*, params */ }) => {
