@@ -24,6 +24,7 @@ import TitleIcon from "@mui/icons-material/Title";
 import RadioButtonCheckedIcon from "@mui/icons-material/RadioButtonChecked";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ToggleOnIcon from "@mui/icons-material/ToggleOn";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { SectionDefinition, FieldDefinition } from "./types";
 import FieldEditorCard from "./FieldEditorCard";
 import {
@@ -205,7 +206,7 @@ export default function SectionCard({
         </Box>
       </AccordionSummary>
 
-      <AccordionDetails sx={{ position: "relative" }}>
+      <AccordionDetails sx={{ position: "relative", minHeight: 270 }}>
         {editMode && (
           <TextField
             fullWidth
@@ -266,6 +267,15 @@ export default function SectionCard({
               onClick={() => onAddField("switch")}
             >
               <ToggleOnIcon fontSize="small" />
+            </Fab>
+          </Tooltip>
+          <Tooltip title="Photo" placement="left">
+            <Fab
+              size="small"
+              color="primary"
+              onClick={() => onAddField("switch")}
+            >
+              <PhotoCameraIcon fontSize="small" />
             </Fab>
           </Tooltip>
         </Box>

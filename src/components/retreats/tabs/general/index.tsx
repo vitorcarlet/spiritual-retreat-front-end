@@ -22,7 +22,7 @@ import { fetchRetreatData } from "../../shared";
 import LocationField from "@/src/components/fields/LocalizationFields/LocationField";
 import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldMasked";
 import { Retreat } from "@/src/types/retreats";
-import MultiImageUpload from "@/src/components/fields/ImageUpload";
+import MultiImageUpload from "@/src/components/fields/ImageUpload/MultiImageUpload";
 
 const emptyFormData: Omit<Retreat, "id" | "state"> = {
   title: "",

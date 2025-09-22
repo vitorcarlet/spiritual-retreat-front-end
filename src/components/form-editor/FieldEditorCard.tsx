@@ -124,6 +124,17 @@ function FieldEditorCard({
           }
           label="Obrigatório"
         />
+        {field.type == "photo" && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={!!field.isMultiple}
+                onChange={(e) => onChange({ isMultiple: e.target.checked })}
+              />
+            }
+            label="Obrigatório"
+          />
+        )}
         {field.helperText && (
           <TextField
             label="Helper Text"

@@ -37,7 +37,7 @@ export interface BaseFieldDefinition {
   required?: boolean;
   helperText?: string | null;
   //Fotos multiplas
-  isMultiple?: string | null;
+  isMultiple?: boolean | null;
   placeholder?: string | null;
   options?: OptionItem[]; // for select / radio
   defaultValue?: unknown;
