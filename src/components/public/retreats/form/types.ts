@@ -15,17 +15,18 @@ export type BackendFieldType =
   | "chips";
 
 export interface BackendOption {
-  label: string;
+  id: string;
   value: string | number;
 }
 
 export interface BackendField {
-  id?: string;
+  id: string;
   name: string;
   label?: string;
   type: BackendFieldType;
   required?: boolean;
   placeholder?: string;
+  helperText?: string;
   description?: string;
   min?: number;
   max?: number;
@@ -38,12 +39,24 @@ export interface BackendField {
   multiple?: boolean; // multiselect
   dependsOn?: string; // nome de outro campo
   dependsValue?: unknown; // valor que habilita
+  grid?: number; // grid layout
+}
+
+export interface BackendSection {
+  id: string;
+  title: string;
+  description?: string;
+  collapsed?: boolean;
+  fields: BackendField[];
 }
 
 export interface BackendForm {
   id: string;
   title?: string;
+  description?: string;
   subtitle?: string;
-  fields: BackendField[];
+  sections: BackendSection[];
   submitLabel?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

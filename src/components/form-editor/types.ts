@@ -13,11 +13,20 @@ export type BaseFieldType =
   | "email"
   | "phone"
   | "list"
-  | "switch";
+  | "switch"
+  | "photo";
 
 export interface OptionItem {
   id: string;
   value: string;
+}
+
+export interface SectionDefinition {
+  id: string;
+  title: string;
+  description?: string;
+  collapsed?: boolean;
+  fields: FieldDefinition[];
 }
 
 export interface BaseFieldDefinition {
@@ -27,6 +36,8 @@ export interface BaseFieldDefinition {
   type: BaseFieldType;
   required?: boolean;
   helperText?: string | null;
+  //Fotos multiplas
+  isMultiple?: string | null;
   placeholder?: string | null;
   options?: OptionItem[]; // for select / radio
   defaultValue?: unknown;
@@ -40,7 +51,7 @@ export interface FormSchemaDefinition {
   id: string;
   title: string;
   description?: string;
-  fields: FieldDefinition[];
+  sections: SectionDefinition[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -48,56 +59,105 @@ export interface FormSchemaDefinition {
 export interface FormEditorState {
   schema: FormSchemaDefinition;
   selectedFieldId?: string;
+  selectedSectionId?: string;
   dirty: boolean;
 }
 
 export type FormEditorAction =
   | { type: "SET_SCHEMA"; schema: FormSchemaDefinition }
-  | { type: "ADD_FIELD"; field: FieldDefinition }
-  | { type: "UPDATE_FIELD"; fieldId: string; patch: Partial<FieldDefinition> }
-  | { type: "REMOVE_FIELD"; fieldId: string }
-  | { type: "REORDER_FIELDS"; from: number; to: number }
+  | { type: "ADD_SECTION"; section: SectionDefinition }
+  | {
+      type: "UPDATE_SECTION";
+      sectionId: string;
+      patch: Partial<SectionDefinition>;
+    }
+  | { type: "REMOVE_SECTION"; sectionId: string }
+  | { type: "REORDER_SECTIONS"; from: number; to: number }
+  | { type: "SELECT_SECTION"; sectionId?: string }
+  | { type: "ADD_FIELD"; sectionId: string; field: FieldDefinition }
+  | {
+      type: "UPDATE_FIELD";
+      sectionId: string;
+      fieldId: string;
+      patch: Partial<FieldDefinition>;
+    }
+  | { type: "REMOVE_FIELD"; sectionId: string; fieldId: string }
+  | { type: "REORDER_FIELDS"; sectionId: string; from: number; to: number }
+  | {
+      type: "MOVE_FIELD";
+      fromSectionId: string;
+      toSectionId: string;
+      fieldId: string;
+    }
   | { type: "SELECT_FIELD"; fieldId?: string }
   | {
       type: "UPDATE_SCHEMA_META";
       patch: Partial<Pick<FormSchemaDefinition, "title" | "description">>;
     }
-  | { type: "ADD_OPTION"; fieldId: string; option: OptionItem }
+  | {
+      type: "ADD_OPTION";
+      sectionId: string;
+      fieldId: string;
+      option: OptionItem;
+    }
   | {
       type: "UPDATE_OPTION";
+      sectionId: string;
       fieldId: string;
       optionId: string;
       patch: Partial<OptionItem>;
     }
-  | { type: "REMOVE_OPTION"; fieldId: string; optionId: string }
-  | { type: "REORDER_OPTIONS"; fieldId: string; from: number; to: number }
+  | {
+      type: "REMOVE_OPTION";
+      sectionId: string;
+      fieldId: string;
+      optionId: string;
+    }
+  | {
+      type: "REORDER_OPTIONS";
+      sectionId: string;
+      fieldId: string;
+      from: number;
+      to: number;
+    }
   | { type: "MARK_CLEAN" };
 
 export const formSchemaZod = z.object({
   id: z.string(),
   title: z.string().min(1),
   description: z.string().optional(),
-  fields: z
+  sections: z
     .array(
       z.object({
         id: z.string(),
-        name: z.string().min(1),
-        label: z.string().min(1),
-        type: z.string(),
-        required: z.boolean().optional(),
-        helperText: z.string().optional(),
-        placeholder: z.string().optional(),
-        options: z
+        title: z.string().min(1),
+        description: z.string().optional(),
+        collapsed: z.boolean().optional(),
+        fields: z
           .array(
             z.object({
               id: z.string(),
-              label: z.string(),
-              value: z.string(),
+              name: z.string().min(1),
+              label: z.string().min(1),
+              type: z.string(),
+              required: z.boolean().optional(),
+              helperText: z.string().optional(),
+              placeholder: z.string().optional(),
+              isMultiple: z.string().optional(),
+              options: z
+                .array(
+                  z.object({
+                    id: z.string(),
+                    label: z.string(),
+                    value: z.string(),
+                  })
+                )
+                .optional(),
+              defaultValue: z.any().optional(),
+              grid: z.number().min(1).max(12).optional(),
             })
           )
-          .optional(),
-        defaultValue: z.any().optional(),
-        grid: z.number().min(1).max(12).optional(),
+          .default([]),
       })
     )
     .default([]),

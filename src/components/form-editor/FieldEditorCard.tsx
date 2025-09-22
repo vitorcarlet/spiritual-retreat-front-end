@@ -134,7 +134,7 @@ function FieldEditorCard({
           />
         )}
 
-        {["radio", "select"].includes(field.type) && (
+        {["radio", "list"].includes(field.type) && (
           <Stack spacing={1} sx={{ mt: 1 }}>
             <Typography variant="caption" fontWeight={600}>
               Opções

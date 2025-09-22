@@ -584,79 +584,159 @@ export const handlers = [
       const form = {
         id: `retreat-${id}-participant-form`,
         title: "Formulário de Inscrição",
-        subtitle: "Preencha seus dados para participar do retiro",
-        submitLabel: "Enviar inscrição",
-        fields: [
-          { name: "first_name", label: "Nome", type: "text", required: true },
+        description: "Preencha seus dados para participar do retiro",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        sections: [
           {
-            name: "last_name",
-            label: "Sobrenome",
-            type: "text",
-            required: true,
+            id: "section-basic-info",
+            title: "Informações Pessoais",
+            description: "Dados básicos do participante",
+            collapsed: false,
+            fields: [
+              { 
+                id: "field-first-name",
+                name: "first_name", 
+                label: "Nome", 
+                type: "text", 
+                required: true,
+                helperText: "Digite seu primeiro nome",
+                placeholder: "Ex: João",
+                grid: 6
+              },
+              {
+                id: "field-last-name",
+                name: "last_name",
+                label: "Sobrenome",
+                type: "text",
+                required: true,
+                helperText: "Digite seu sobrenome",
+                placeholder: "Ex: Silva",
+                grid: 6
+              },
+              {
+                id: "field-email",
+                name: "email",
+                label: "E-mail",
+                type: "email",
+                required: true,
+                helperText: "Digite seu e-mail principal",
+                placeholder: "voce@exemplo.com",
+                grid: 6
+              },
+              { 
+                id: "field-phone",
+                name: "phone", 
+                label: "Telefone", 
+                type: "text", 
+                required: true,
+                helperText: "Digite seu telefone com DDD",
+                placeholder: "(11) 99999-9999",
+                grid: 6
+              },
+              {
+                id: "field-birth",
+                name: "birth",
+                label: "Data de Nascimento",
+                type: "date",
+                required: true,
+                helperText: "Selecione sua data de nascimento",
+                grid: 4
+              },
+              {
+                id: "field-gender",
+                name: "gender",
+                label: "Gênero",
+                type: "select",
+                required: true,
+                helperText: "Selecione seu gênero",
+                grid: 4,
+                options: [
+                  { id: "opt-male", value: "male" },
+                  { id: "opt-female", value: "female" },
+                  { id: "opt-other", value: "other" },
+                  { id: "opt-na", value: "na" }
+                ]
+              },
+              {
+                id: "field-tshirt",
+                name: "tshirt_size",
+                label: "Tamanho da Camiseta",
+                type: "select",
+                required: false,
+                helperText: "Selecione o tamanho da sua camiseta",
+                grid: 4,
+                options: ["PP", "P", "M", "G", "GG", "XG"].map((s) => ({
+                  id: `opt-tshirt-${s.toLowerCase()}`,
+                  value: s
+                }))
+              }
+            ]
           },
           {
-            name: "email",
-            label: "E-mail",
-            type: "email",
-            required: true,
-            placeholder: "voce@exemplo.com",
-          },
-          { name: "phone", label: "Telefone", type: "text", required: true },
-          {
-            name: "birth",
-            label: "Data de Nascimento",
-            type: "date",
-            required: true,
-          },
-          {
-            name: "gender",
-            label: "Gênero",
-            type: "select",
-            required: true,
-            options: [
-              { label: "Masculino", value: "male" },
-              { label: "Feminino", value: "female" },
-              { label: "Outro", value: "other" },
-              { label: "Prefiro não informar", value: "na" },
-            ],
-          },
-          {
-            name: "tshirt_size",
-            label: "Tamanho da Camiseta",
-            type: "select",
-            options: ["PP", "P", "M", "G", "GG", "XG"].map((s) => ({
-              label: s,
-              value: s,
-            })),
+            id: "section-location",
+            title: "Localização",
+            description: "Informações de endereço",
+            collapsed: false,
+            fields: [
+              {
+                id: "field-city",
+                name: "city",
+                label: "Cidade",
+                type: "text",
+                required: true,
+                helperText: "Digite sua cidade",
+                placeholder: "Ex: São Paulo",
+                grid: 8
+              },
+              {
+                id: "field-state",
+                name: "state",
+                label: "Estado",
+                type: "text",
+                required: true,
+                helperText: "Digite a sigla do seu estado",
+                placeholder: "UF",
+                grid: 4
+              }
+            ]
           },
           {
-            name: "city",
-            label: "Cidade",
-            type: "text",
-            required: true,
+            id: "section-health",
+            title: "Informações de Saúde",
+            description: "Restrições médicas e alimentares",
+            collapsed: false,
+            fields: [
+              {
+                id: "field-medical",
+                name: "medical_restrictions",
+                label: "Restrições médicas / Alimentares",
+                type: "textarea",
+                required: false,
+                helperText: "Descreva qualquer restrição médica ou alimentar",
+                placeholder: "Descreva se houver alguma restrição",
+                grid: 12
+              }
+            ]
           },
           {
-            name: "state",
-            label: "Estado",
-            type: "text",
-            required: true,
-            minLength: 2,
-            maxLength: 2,
-            placeholder: "UF",
-          },
-          {
-            name: "medical_restrictions",
-            label: "Restrições médicas / Alimentares",
-            type: "text",
-            placeholder: "Descreva se houver",
-          },
-          {
-            name: "accept_terms",
-            label: "Li e aceito os termos de participação",
-            type: "checkbox",
-            required: true,
-          },
-        ],
+            id: "section-terms",
+            title: "Termos e Condições",
+            description: "Aceite dos termos de participação",
+            collapsed: false,
+            fields: [
+              {
+                id: "field-terms",
+                name: "accept_terms",
+                label: "Li e aceito os termos de participação",
+                type: "checkbox",
+                required: true,
+                helperText: "É obrigatório aceitar os termos para prosseguir",
+                grid: 12
+              }
+            ]
+          }
+        ]
       };
 
       return HttpResponse.json(form, { status: 200 });
@@ -873,7 +953,7 @@ export const handlers = [
 
   //fallback handler for unhandled requests
   http.all("http://localhost:3001/*", ({ request }) => {
-    console.log("⚠️ Unhandled request:", request.method, request.url);
+    console.warn("⚠️ Unhandled request:", request.method, request.url);
     return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });
   }),
 ];

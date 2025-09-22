@@ -1,7 +1,17 @@
 "use client";
 
-import React from "react";
-import { Box, Button, Paper, Stack, TextField } from "@mui/material";
+import React, { useState } from "react";
+import {
+  Box,
+  Button,
+  Paper,
+  Stack,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import { useFormEditorSchema } from "./useFormEditorSchema";
 import {
   DndContext,
@@ -17,87 +27,61 @@ import {
 
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
-import ToggleOnIcon from "@mui/icons-material/ToggleOn";
-import Fab from "@mui/material/Fab";
-import Tooltip from "@mui/material/Tooltip";
-import ListAltIcon from "@mui/icons-material/ListAlt";
-import TitleIcon from "@mui/icons-material/Title";
-import RadioButtonCheckedIcon from "@mui/icons-material/RadioButtonChecked";
-import FieldEditorCard from "./FieldEditorCard";
+import SectionCard from "./SectionCard";
 
-export function FormEditor({ id }: { id: string }) {
+export function FormEditor() {
   const {
     state,
+    addSection,
+    updateSection,
+    removeSection,
+    reorderSections,
     addField,
     updateField,
     removeField,
+    reorderFields,
     selectField,
     updateSchemaMeta,
-    reorderFields,
     addOption,
     updateOption,
     removeOption,
     reorderOptions,
   } = useFormEditorSchema();
 
+  const [showAddSectionDialog, setShowAddSectionDialog] = useState(false);
+  const [newSectionTitle, setNewSectionTitle] = useState("");
+
   const { schema, selectedFieldId } = state;
 
   const sensors = useSensors(useSensor(PointerSensor));
 
-  function handleDragEnd(event: DragEndEvent) {
+  function handleSectionDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = schema.fields.findIndex((f) => f.id === active.id);
-      const newIndex = schema.fields.findIndex((f) => f.id === over.id);
+      const oldIndex = schema.sections.findIndex((s) => s.id === active.id);
+      const newIndex = schema.sections.findIndex((s) => s.id === over.id);
       if (oldIndex !== -1 && newIndex !== -1) {
-        // optimistic reorder using local arrayMove then reducer REORDER if desired
-        // We'll dispatch REORDER_FIELDS for consistency
-        // NOTE: we already have reorderFields(from,to)
-        reorderFields(oldIndex, newIndex);
+        reorderSections(oldIndex, newIndex);
       }
     }
   }
 
+  const handleAddSection = () => {
+    if (newSectionTitle.trim()) {
+      addSection(newSectionTitle.trim());
+      setNewSectionTitle("");
+      setShowAddSectionDialog(false);
+    }
+  };
+
   async function handleSave() {
     // TODO integrate backend: POST /api/forms/{id}
-    // For now just log
-    console.log("Saving schema", schema);
+    // For now just warn
+    console.warn("Saving schema", schema);
   }
 
   return (
     <Box sx={{ position: "relative" }}>
-      <Box
-        sx={{
-          position: "fixed",
-          right: 32,
-          top: 160,
-          zIndex: 10,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-        }}
-      >
-        <Tooltip title="Texto" placement="right">
-          <Fab size="small" color="primary" onClick={() => addField("text")}>
-            <TitleIcon fontSize="small" />
-          </Fab>
-        </Tooltip>
-        <Tooltip title="Radio" placement="right">
-          <Fab size="small" color="primary" onClick={() => addField("radio")}>
-            <RadioButtonCheckedIcon fontSize="small" />
-          </Fab>
-        </Tooltip>
-        <Tooltip title="Lista" placement="right">
-          <Fab size="small" color="primary" onClick={() => addField("list")}>
-            <ListAltIcon fontSize="small" />
-          </Fab>
-        </Tooltip>
-        <Tooltip title="Switch" placement="right">
-          <Fab size="small" color="primary" onClick={() => addField("switch")}>
-            <ToggleOnIcon fontSize="small" />
-          </Fab>
-        </Tooltip>
-      </Box>
       {/* main content */}
       <Stack spacing={2} sx={{ width: "100%", maxWidth: 900, mx: "auto" }}>
         <Paper
@@ -124,43 +108,50 @@ export function FormEditor({ id }: { id: string }) {
           />
         </Paper>
 
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} onDragEnd={handleSectionDragEnd}>
           <SortableContext
-            items={schema.fields.map((f) => f.id)}
+            items={schema.sections.map((s) => s.id)}
             strategy={verticalListSortingStrategy}
           >
             <Stack spacing={2}>
-              {schema.fields.map((f, idx) => (
-                <FieldEditorCard
-                  key={f.id}
-                  field={f}
-                  index={idx}
-                  onChange={(patch) => updateField(f.id, patch)}
-                  onDelete={() => removeField(f.id)}
-                  onSelect={() => selectField(f.id)}
-                  selected={selectedFieldId === f.id}
-                  addOption={(opt: { id: string; value: string }) =>
-                    addOption(f.id, opt)
+              {schema.sections.map((section) => (
+                <SectionCard
+                  key={section.id}
+                  section={section}
+                  onUpdateSection={(patch) => updateSection(section.id, patch)}
+                  onRemoveSection={() => removeSection(section.id)}
+                  onAddField={(type) => addField(section.id, type)}
+                  onUpdateField={(fieldId, patch) =>
+                    updateField(section.id, fieldId, patch)
                   }
-                  updateOption={(
-                    optionId: string,
-                    patch: { label?: string; value?: string }
-                  ) => updateOption(f.id, optionId, patch)}
-                  removeOption={(optionId: string) =>
-                    removeOption(f.id, optionId)
+                  onRemoveField={(fieldId) => removeField(section.id, fieldId)}
+                  onReorderFields={(from, to) =>
+                    reorderFields(section.id, from, to)
                   }
-                  reorderOptions={(from: number, to: number) =>
-                    reorderOptions(f.id, from, to)
+                  onAddOption={(fieldId, opt) =>
+                    addOption(section.id, fieldId, opt)
                   }
+                  onUpdateOption={(fieldId, optionId, patch) =>
+                    updateOption(section.id, fieldId, optionId, patch)
+                  }
+                  onRemoveOption={(fieldId, optionId) =>
+                    removeOption(section.id, fieldId, optionId)
+                  }
+                  onReorderOptions={(fieldId, from, to) =>
+                    reorderOptions(section.id, fieldId, from, to)
+                  }
+                  selectedFieldId={selectedFieldId}
+                  onSelectField={selectField}
                 />
               ))}
+
               <Button
                 startIcon={<AddIcon />}
                 variant="outlined"
-                onClick={() => addField("text")}
+                onClick={() => setShowAddSectionDialog(true)}
                 sx={{ alignSelf: "flex-start" }}
               >
-                Novo Campo
+                Adicionar Seção
               </Button>
             </Stack>
           </SortableContext>
@@ -176,6 +167,38 @@ export function FormEditor({ id }: { id: string }) {
           </Button>
         </Box>
       </Stack>
+
+      {/* Add Section Dialog */}
+      <Dialog
+        open={showAddSectionDialog}
+        onClose={() => setShowAddSectionDialog(false)}
+      >
+        <DialogTitle>Adicionar Nova Seção</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Título da Seção"
+            fullWidth
+            variant="outlined"
+            value={newSectionTitle}
+            onChange={(e) => setNewSectionTitle(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                handleAddSection();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAddSectionDialog(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleAddSection} variant="contained">
+            Adicionar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

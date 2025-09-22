@@ -28,16 +28,17 @@ import {
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BackendField, BackendForm } from "./types";
+import { BackendForm, BackendSection } from "./types";
 import { defaultValues, fetchFormData } from "./shared";
 
 /* -------------------- Geração dinâmica do schema Zod -------------------- */
-function buildZodSchema(fields: BackendField[]) {
+function buildZodSchema(sections: BackendSection[]) {
   const shape: Record<string, z.ZodTypeAny> = {};
 
-  fields.forEach((f) => {
-    if (f.type === "section") return; // Não gera campo
+  // Extrai todos os campos de todas as seções
+  const allFields = sections.flatMap((section) => section.fields);
 
+  allFields.forEach((f) => {
     let schema: z.ZodTypeAny;
 
     switch (f.type) {
@@ -154,28 +155,31 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
   const formPromise = getFormData(id);
   const form = use(formPromise);
   if (!form) return <Skeleton />;
-  const schema = useMemo(() => buildZodSchema(form.fields), [form.fields]);
-  // Build steps (max 7 non-section fields per step)
+
+  const schema = useMemo(() => buildZodSchema(form.sections), [form.sections]);
+
+  // Build steps from sections (max 1 section per step or combine small sections)
   const steps = useMemo(() => {
-    const MAX_PER_STEP = 7;
-    const _steps: BackendField[][] = [];
-    let current: BackendField[] = [];
-    let countNonSection = 0;
-    for (const f of form.fields) {
-      const isSection = f.type === "section";
-      const countsTowardLimit = !isSection; // only real input fields count
-      if (countsTowardLimit && countNonSection >= MAX_PER_STEP) {
-        // push current step and reset
-        if (current.length) _steps.push(current);
-        current = [];
-        countNonSection = 0;
+    const _steps: BackendSection[] = [];
+
+    // Each section becomes a step, but we can combine small sections
+    for (const section of form.sections) {
+      const fieldCount = section.fields.length;
+      const lastStep = _steps[_steps.length - 1];
+
+      // If current section has few fields and last step also has few fields, combine them
+      if (fieldCount <= 3 && lastStep && lastStep.fields.length <= 3) {
+        // Combine sections by merging fields
+        lastStep.fields.push(...section.fields);
+        lastStep.title += ` / ${section.title}`;
+      } else {
+        // Add as new step
+        _steps.push(section);
       }
-      current.push(f);
-      if (countsTowardLimit) countNonSection++;
     }
-    if (current.length) _steps.push(current);
+
     return _steps;
-  }, [form.fields]);
+  }, [form.sections]);
 
   const [currentStep, setCurrentStep] = React.useState(0);
   const totalSteps = steps.length;
@@ -188,35 +192,33 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
     formState: { errors, isSubmitting },
   } = useForm<Record<string, unknown>>({
     resolver: zodResolver(schema),
-    defaultValues: useMemo(
-      () =>
-        form.fields.reduce<Record<string, unknown>>((acc, f) => {
-          acc[f.name] =
-            defaultValues?.[f.name] ??
-            f.defaultValue ??
-            (f.type === "checkbox" || f.type === "switch"
-              ? false
-              : f.type === "multiselect" || f.type === "chips"
+    defaultValues: useMemo(() => {
+      const allFields = form.sections.flatMap((section) => section.fields);
+      return allFields.reduce<Record<string, unknown>>((acc, f) => {
+        acc[f.name] =
+          defaultValues?.[f.name] ??
+          f.defaultValue ??
+          (f.type === "checkbox" || f.type === "switch"
+            ? false
+            : f.type === "multiselect" || f.type === "chips"
               ? []
               : "");
-          return acc;
-        }, {}),
-      [form.fields, defaultValues]
-    ),
+        return acc;
+      }, {});
+    }, [form.sections]),
     mode: "onBlur",
   });
 
   const values = watch();
 
   const submit: SubmitHandler<Record<string, unknown>> = async (data) => {
+    console.warn("Form submitted:", data);
     //if (onSubmit) await onSubmit(data);
   };
 
   // Validate current step before moving forward
   const handleNext = async () => {
-    const fieldsToValidate = steps[currentStep]
-      .filter((f) => f.type !== "section")
-      .map((f) => f.name);
+    const fieldsToValidate = steps[currentStep].fields.map((f) => f.name);
     const valid = await trigger(
       fieldsToValidate as (keyof Record<string, unknown>)[]
     );
@@ -229,6 +231,8 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
     return <div>Carregando...</div>;
   }
 
+  console.log(steps, form, "publicForm");
+
   return (
     <Box
       component="form"
@@ -239,9 +243,9 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
       {totalSteps > 1 && (
         <Box sx={{ mb: 3 }}>
           <Stepper activeStep={currentStep} alternativeLabel>
-            {steps.map((_, i) => (
+            {steps.map((step, i) => (
               <Step key={i}>
-                <StepLabel>{`Etapa ${i + 1}`}</StepLabel>
+                <StepLabel>{step.title}</StepLabel>
               </Step>
             ))}
           </Stepper>
@@ -253,40 +257,37 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
         </Box>
       )}
       <Stack spacing={3}>
-        {(form.title || form.subtitle) && (
+        {(form.title || form.description) && (
           <Stack spacing={0.5}>
             {form.title && (
               <Typography variant="h5" fontWeight={600}>
                 {form.title}
               </Typography>
             )}
-            {form.subtitle && (
+            {form.description && (
               <Typography variant="body2" color="text.secondary">
-                {form.subtitle}
+                {form.description}
               </Typography>
             )}
           </Stack>
         )}
 
-        {steps[currentStep].map((field, idx) => {
-          if (field.type === "section") {
-            return (
-              <Stack key={field.name + idx} spacing={1}>
-                {field.label && (
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    {field.label}
-                  </Typography>
-                )}
-                {field.description && (
-                  <Typography variant="body2" color="text.secondary">
-                    {field.description}
-                  </Typography>
-                )}
-                <Divider />
-              </Stack>
-            );
-          }
+        {/* Current section title and description */}
+        {steps[currentStep] && (
+          <Stack spacing={1}>
+            <Typography variant="h6" fontWeight={600}>
+              {steps[currentStep].title}
+            </Typography>
+            {steps[currentStep].description && (
+              <Typography variant="body2" color="text.secondary">
+                {steps[currentStep].description}
+              </Typography>
+            )}
+            <Divider />
+          </Stack>
+        )}
 
+        {steps[currentStep]?.fields.map((field) => {
           // Dependência condicional
           if (
             field.dependsOn &&
@@ -318,17 +319,19 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
                         field.type === "number"
                           ? "number"
                           : field.type === "date"
-                          ? "date"
-                          : field.type === "datetime"
-                          ? "datetime-local"
-                          : "text"
+                            ? "date"
+                            : field.type === "datetime"
+                              ? "datetime-local"
+                              : "text"
                       }
                       label={field.label}
                       required={field.required}
                       placeholder={field.placeholder}
                       disabled={field.disabled || isSubmitting}
                       error={!!commonError}
-                      helperText={commonError || field.description}
+                      helperText={
+                        commonError || field.helperText || field.description
+                      }
                       multiline={field.type === "textarea"}
                       minRows={field.type === "textarea" ? 3 : undefined}
                       fullWidth
@@ -380,7 +383,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
                         </MenuItem>
                         {field.options?.map((o) => (
                           <MenuItem key={o.value} value={o.value}>
-                            {o.label}
+                            {o.value}
                           </MenuItem>
                         ))}
                       </Select>
@@ -426,7 +429,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
                       >
                         {field.options?.map((o) => (
                           <MenuItem key={o.value} value={o.value}>
-                            {o.label}
+                            {o.value}
                           </MenuItem>
                         ))}
                       </Select>
@@ -469,7 +472,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
                             key={o.value}
                             value={o.value}
                             control={<Radio />}
-                            label={o.label}
+                            label={o.value}
                           />
                         ))}
                       </RadioGroup>
@@ -565,7 +568,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
                             return (
                               <Chip
                                 key={o.value}
-                                label={o.label}
+                                label={o.value}
                                 color={active ? "primary" : "default"}
                                 variant={active ? "filled" : "outlined"}
                                 onClick={() => toggle(o.value)}
