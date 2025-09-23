@@ -290,7 +290,7 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
                 id: g.id,
                 url: g.url,
                 title: g.title,
-              })) || (formData.image ? [{ url: formData.image }] : [])
+              })) || (formData.images ? [{ url: formData.images }] : [])
             }
             onRemoveExisting={(id) =>
               setImagesToDelete((prev) => [...prev, id])
@@ -340,11 +340,9 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
 
         <Grid size={{ xs: 12 }}>
           <TextFieldMasked
-            maskType={"currency"}
+            maskType="currency"
             fullWidth
             label="Taxa de Participação"
-            multiline
-            minRows={3}
             value={formData.participationTax}
             onChange={handleInputChange("participationTax")}
             disabled={isReadOnly}

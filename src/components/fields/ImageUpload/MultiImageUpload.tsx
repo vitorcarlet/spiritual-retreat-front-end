@@ -69,7 +69,6 @@ export default function MultiImageUpload({
   cols = 4,
   rowHeight = 140,
 }: MultiImageUploadProps) {
-  const theme = useTheme();
   const [files, setFiles] = useState<File[]>(value ?? []);
   const [previews, setPreviews] = useState<PreviewItem[]>([]);
   const objectUrlsRef = useRef<string[]>([]);
@@ -200,9 +199,10 @@ export default function MultiImageUpload({
             : isDragActive
               ? "primary.main"
               : "divider",
-          bgcolor: isDragActive
-            ? theme.palette.action.hover
-            : theme.palette.background.default,
+          bgcolor: (theme) =>
+            isDragActive
+              ? theme.vars?.palette.action.hover
+              : theme.vars?.palette.background.default,
           borderRadius: 2,
           outline: "none",
           transition: "all .15s ease",
@@ -235,7 +235,6 @@ export default function MultiImageUpload({
           {/* Imagens existentes do servidor */}
           {existing.map((img) => (
             <ImageListItem key={`existing-${img.id ?? img.url}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.url}
                 alt={img.title ?? "Imagem"}
@@ -288,7 +287,6 @@ export default function MultiImageUpload({
           {/* Novas imagens selecionadas (client-side) */}
           {previews.map((p) => (
             <ImageListItem key={p.key}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={p.url}
                 alt={p.file.name}

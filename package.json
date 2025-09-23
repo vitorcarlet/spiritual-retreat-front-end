@@ -71,6 +71,7 @@
     "react-hook-form": "^7.55.0",
     "react-i18next": "^15.4.1",
     "react-imask": "^7.6.1",
+    "react-number-format": "^5.4.4",
     "swiper": "^11.2.10",
     "swr": "^2.3.4",
     "unstorage": "^1.16.0",
