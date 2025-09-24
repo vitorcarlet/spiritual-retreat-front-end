@@ -9,7 +9,7 @@ export default auth((req) => {
   const { nextUrl } = req;
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-url", req.url);
-
+  console.log(req.auth, "aa");
   const isPublicRoute = isPublicPath(nextUrl.pathname);
   const isCodeRoute = nextUrl.pathname === "/login/code";
   const isAuthRoute =

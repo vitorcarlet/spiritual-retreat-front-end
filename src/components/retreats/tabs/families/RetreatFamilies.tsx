@@ -270,6 +270,9 @@ export default function RetreatFamilies({
             <Button variant="contained" onClick={configureFamilies}>
               {t("family-config")}
             </Button>
+            <Button variant="contained" onClick={configureFamilies}>
+              {t("draw-the-families")}
+            </Button>
           </>
         )}
       </Stack>

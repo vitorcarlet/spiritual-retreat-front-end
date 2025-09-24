@@ -92,5 +92,6 @@
   "notification": "Notificação",
   "email": "E-mail",
   "sms": "SMS",
-  "send-message-description": "Envie uma mensagem para as famílias selecionadas."
+  "send-message-description": "Envie uma mensagem para as famílias selecionadas.",
+  "draw-the-families": "Sortear as Famílias"
 }
