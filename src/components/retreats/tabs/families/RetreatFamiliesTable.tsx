@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, {
   useCallback,
   useEffect,
@@ -59,6 +60,8 @@ import {
   Popover,
   Stack,
   Typography,
+  Fab,
+  Fade,
 } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
 import { Items, RetreatFamiliesProps } from "./types";
@@ -151,7 +154,6 @@ const dropAnimation: DropAnimation = {
 export default function RetreatFamiliesTable({
   adjustScale = false,
   cancelDrop,
-  //columns,
   items: InitialItems,
   handle = true,
   containerStyle,
@@ -160,7 +162,6 @@ export default function RetreatFamiliesTable({
   wrapperStyle = () => ({}),
   minimal = false,
   modifiers,
-  //renderItem,
   strategy = verticalListSortingStrategy,
   trashable = false,
   vertical = false,
@@ -170,6 +171,8 @@ export default function RetreatFamiliesTable({
   onView,
   onEdit,
   total,
+  setFamiliesReorderFlag,
+  onSaveReorder,
 }: RetreatFamiliesProps) {
   // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
   const initialStructures = useMemo(() => {
@@ -209,7 +212,19 @@ export default function RetreatFamiliesTable({
   );
   //console.log({ items, containers });
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
+  const handleSaveReorder = useCallback(async () => {
+    if (!onSaveReorder) return;
+    
+    try {
+      await onSaveReorder(items);
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Error saving reorder:', error);
+    }
+  }, [items, onSaveReorder]);
+
   const recentlyMovedToNewContainer = useRef(false);
   const isSortingContainer =
     activeId != null ? containers.includes(activeId) : false;
@@ -433,6 +448,7 @@ export default function RetreatFamiliesTable({
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
+        position: "relative", // For absolute positioned save button
       }}
     >
       <DndContext
@@ -446,6 +462,8 @@ export default function RetreatFamiliesTable({
         onDragStart={({ active }) => {
           setActiveId(active.id);
           setClonedItems(items);
+          // Set reorder flag to true when drag starts
+          setFamiliesReorderFlag?.(true);
         }}
         onDragOver={({ active, over }) =>
           onDragOver({
@@ -458,7 +476,7 @@ export default function RetreatFamiliesTable({
             setMemberToContainer,
           })
         }
-        onDragEnd={({ active, over }) =>
+        onDragEnd={({ active, over }) => {
           onDragEnd({
             active,
             over,
@@ -470,10 +488,17 @@ export default function RetreatFamiliesTable({
             getNextContainerId,
             memberToContainer,
             setMemberToContainer,
-          })
-        }
+          });
+          // Mark changes as unsaved and reset reorder flag
+          setHasUnsavedChanges(true);
+          setFamiliesReorderFlag?.(false);
+        }}
         cancelDrop={cancelDrop}
-        onDragCancel={onDragCancel}
+        onDragCancel={() => {
+          onDragCancel();
+          // Reset reorder flag when drag is cancelled
+          setFamiliesReorderFlag?.(false);
+        }}
         modifiers={modifiers}
       >
         <SortableContext
@@ -572,6 +597,22 @@ export default function RetreatFamiliesTable({
           <Trash id={TRASH_ID} />
         ) : null}
       </DndContext>
+      
+      {/* Floating Save Button */}
+      <Fade in={hasUnsavedChanges}>
+        <Fab
+          color="primary"
+          onClick={handleSaveReorder}
+          sx={{
+            position: 'absolute',
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+          }}
+        >
+          <Iconify icon="solar:diskette-bold" />
+        </Fab>
+      </Fade>
     </Box>
   );
 

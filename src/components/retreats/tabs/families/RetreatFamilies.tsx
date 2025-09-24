@@ -34,6 +34,7 @@ import CreateFamilyForm from "./CreateFamilyForm";
 import SendMessageToFamilyForm from "./SendMessageToFamilyForm";
 import AddParticipantToFamilyForm from "./AddParticipantToFamilyForm";
 import ConfigureFamily from "./ConfigureFamily";
+import { Items } from "./types";
 
 interface RetreatFamilyRequest {
   rows: RetreatFamily[];
@@ -83,6 +84,7 @@ export default function RetreatFamilies({
 
   const session = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
+  const [familiesReorderFlag, setFamiliesReorderFlag] = useState<boolean>(false);
   const modal = useModal();
 
   useEffect(() => {
@@ -196,6 +198,28 @@ export default function RetreatFamilies({
     });
   };
 
+  const handleSaveReorder = useCallback(async (items: Items) => {
+    try {
+      // Transform items to the format expected by the API
+      const reorderData = Object.entries(items).map(([familyId, memberIds]) => ({
+        familyId,
+        memberIds: memberIds.map(id => String(id)),
+      }));
+
+      await handleApiResponse(
+        await sendRequestServerVanilla.put(`/retreats/${retreatId}/families/reorder`, {
+          data: reorderData,
+        })
+      );
+
+      // Refetch families data to get updated order
+      queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+    } catch (error) {
+      console.error('Error saving families reorder:', error);
+      throw error; // Re-throw to handle in the component
+    }
+  }, [retreatId, queryClient]);
+
   const configureFamilies = () => {
     modal.open({
       title: t("family-configuration"),
@@ -258,19 +282,39 @@ export default function RetreatFamilies({
         />
         {hasCreatePermission && (
           <>
-            <Button variant="contained" onClick={createNewFamily}>
+            <Button 
+              variant="contained" 
+              onClick={createNewFamily}
+              disabled={familiesReorderFlag}
+            >
               {t("create-new-family")}
             </Button>
-            <Button variant="contained" onClick={sendMessageToFamily}>
+            <Button 
+              variant="contained" 
+              onClick={sendMessageToFamily}
+              disabled={familiesReorderFlag}
+            >
               {t("send-message-to-family")}
             </Button>
-            <Button variant="contained" onClick={addParticipantInFamily}>
+            <Button 
+              variant="contained" 
+              onClick={addParticipantInFamily}
+              disabled={familiesReorderFlag}
+            >
               {t("add-participant-in-family")}
             </Button>
-            <Button variant="contained" onClick={configureFamilies}>
+            <Button 
+              variant="contained" 
+              onClick={configureFamilies}
+              disabled={familiesReorderFlag}
+            >
               {t("family-config")}
             </Button>
-            <Button variant="contained" onClick={configureFamilies}>
+            <Button 
+              variant="contained" 
+              onClick={configureFamilies}
+              disabled={familiesReorderFlag}
+            >
               {t("draw-the-families")}
             </Button>
           </>
@@ -291,6 +335,8 @@ export default function RetreatFamilies({
         )}
         {!isLoading && !isError && (
           <RetreatFamiliesTable
+            setFamiliesReorderFlag={setFamiliesReorderFlag}
+            onSaveReorder={handleSaveReorder}
             total={familiesData?.total || 0}
             filters={filters}
             items={familiesDataArray!}
