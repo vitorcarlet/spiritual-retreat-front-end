@@ -84,7 +84,8 @@ export default function RetreatFamilies({
 
   const session = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
-  const [familiesReorderFlag, setFamiliesReorderFlag] = useState<boolean>(false);
+  const [familiesReorderFlag, setFamiliesReorderFlag] =
+    useState<boolean>(false);
   const modal = useModal();
 
   useEffect(() => {
@@ -198,27 +199,35 @@ export default function RetreatFamilies({
     });
   };
 
-  const handleSaveReorder = useCallback(async (items: Items) => {
-    try {
-      // Transform items to the format expected by the API
-      const reorderData = Object.entries(items).map(([familyId, memberIds]) => ({
-        familyId,
-        memberIds: memberIds.map(id => String(id)),
-      }));
+  const handleSaveReorder = useCallback(
+    async (items: Items) => {
+      try {
+        // Transform items to the format expected by the API
+        const reorderData = Object.entries(items).map(
+          ([familyId, memberIds]) => ({
+            familyId,
+            memberIds: memberIds.map((id) => String(id)),
+          })
+        );
 
-      await handleApiResponse(
-        await sendRequestServerVanilla.put(`/retreats/${retreatId}/families/reorder`, {
-          data: reorderData,
-        })
-      );
-
-      // Refetch families data to get updated order
-      queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
-    } catch (error) {
-      console.error('Error saving families reorder:', error);
-      throw error; // Re-throw to handle in the component
-    }
-  }, [retreatId, queryClient]);
+        await sendRequestServerVanilla.put(
+          `/retreats/${retreatId}/families/reorder`,
+          {
+            data: reorderData,
+          }
+        );
+        console.log("aaa");
+        setFamiliesReorderFlag?.(false);
+        // Refetch families data to get updated order
+        queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+      } catch (error) {
+        console.error("Error saving families reorder:", error);
+        queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+        throw error; // Re-throw to handle in the component
+      }
+    },
+    [retreatId, queryClient]
+  );
 
   const configureFamilies = () => {
     modal.open({
@@ -255,6 +264,8 @@ export default function RetreatFamilies({
     ? familiesData?.rows
     : ([familiesData?.rows] as unknown as RetreatFamily[]);
 
+  console.log({ familiesDataArray });
+
   if (isLoading) return <Typography>Loading retreats...</Typography>;
   if (isError) return <Typography>No data available.</Typography>;
 
@@ -282,36 +293,36 @@ export default function RetreatFamilies({
         />
         {hasCreatePermission && (
           <>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={createNewFamily}
               disabled={familiesReorderFlag}
             >
               {t("create-new-family")}
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={sendMessageToFamily}
               disabled={familiesReorderFlag}
             >
               {t("send-message-to-family")}
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={addParticipantInFamily}
               disabled={familiesReorderFlag}
             >
               {t("add-participant-in-family")}
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={configureFamilies}
               disabled={familiesReorderFlag}
             >
               {t("family-config")}
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={configureFamilies}
               disabled={familiesReorderFlag}
             >

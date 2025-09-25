@@ -33,6 +33,24 @@ function buildUrlWithParams(
   return url.toString();
 }
 
+export class HttpError extends Error {
+  status: number;
+  statusText: string;
+  url: string;
+  body?: unknown;
+  constructor(
+    message: string,
+    init: { status: number; statusText: string; url: string; body?: unknown }
+  ) {
+    super(message);
+    this.name = "HttpError";
+    this.status = init.status;
+    this.statusText = init.statusText;
+    this.url = init.url;
+    this.body = init.body;
+  }
+}
+
 export async function sendRequestServerVanillaFn(
   endpoint: string,
   options: ApiOptions = {}
@@ -82,6 +100,29 @@ export async function sendRequestServerVanillaFn(
 
   // Log para debug (remover em produção)
   console.log(`API Request: ${fetchOptions.method || "GET"} ${url}`);
+
+  // Lança erro para qualquer status não-2xx (inclui 404)
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type") || "";
+    let body: unknown = undefined;
+
+    try {
+      if (contentType.includes("application/json")) {
+        body = await response.clone().json();
+      } else {
+        body = await response.clone().text();
+      }
+    } catch {
+      // ignore parse errors
+    }
+
+    throw new HttpError(`HTTP ${response.status} ${response.statusText}`, {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url || url,
+      body,
+    });
+  }
 
   return response;
 }

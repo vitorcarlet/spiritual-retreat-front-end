@@ -47,7 +47,7 @@ export default function RetreatPage({
     },
     {
       label: "Famílias",
-      icon: "lucide:user-group",
+      icon: "icon-park-solid:family",
       path: `/retreats/${retreatId}/families`,
       value: 3,
     },

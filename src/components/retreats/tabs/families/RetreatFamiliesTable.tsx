@@ -48,6 +48,7 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  CellContext,
 } from "@tanstack/react-table";
 import {
   Box,
@@ -64,7 +65,12 @@ import {
   Fade,
 } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
-import { Items, RetreatFamiliesProps } from "./types";
+import {
+  Items,
+  RetreatFamiliesProps,
+  MembersById,
+  MemberToContainer,
+} from "./types";
 import {
   //findContainer,
   onDragEnd,
@@ -72,7 +78,7 @@ import {
   PLACEHOLDER_ID,
   TRASH_ID,
 } from "./shared";
-import { MembersById, MemberToContainer } from "./shared";
+import { LoadingScreen } from "@/src/components/loading-screen";
 
 // export default {
 //   title: "Presets/Sortable/Multiple Containers",
@@ -151,6 +157,13 @@ const dropAnimation: DropAnimation = {
 
 //const empty: UniqueIdentifier[] = [];
 
+// Helper para clonar Items profundamente (arrays por container)
+function cloneItems(source: Items): Items {
+  return Object.fromEntries(
+    Object.entries(source).map(([k, v]) => [k, [...v]])
+  );
+}
+
 export default function RetreatFamiliesTable({
   adjustScale = false,
   cancelDrop,
@@ -175,61 +188,109 @@ export default function RetreatFamiliesTable({
   onSaveReorder,
 }: RetreatFamiliesProps) {
   // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
-  const initialStructures = useMemo(() => {
-    const items: Items = {};
-    const membersById: MembersById = {};
-    const familiesById: Record<string, string> = {};
-    const memberToContainer: MemberToContainer = {};
 
-    InitialItems?.forEach((fam) => {
-      const fid = String(fam.id);
-      familiesById[fid] = fam.name; // map family id -> family name
-      items[fid] =
-        fam.members?.map((m) => {
-          const mid = String(m.id);
-          membersById[mid] = { id: mid, name: m.name as string };
-          memberToContainer[mid] = fid;
-          return mid;
-        }) || [];
-    });
+  const [familiesStructure, setFamiliesStructure] = useState<{
+    items: Items;
+    membersById: MembersById;
+    memberToContainer: MemberToContainer;
+    familiesById: Record<string, string>;
+  }>({
+    items: {},
+    membersById: {},
+    memberToContainer: {},
+    familiesById: {},
+  });
 
-    return { items, membersById, memberToContainer, familiesById };
+  const [items, setItems] = useState<Items>({});
+  const [membersById, setMembersById] = useState<MembersById>({});
+  const [familiesById, setFamiliesById] = useState<Record<string, string>>({});
+  const [memberToContainer, setMemberToContainer] = useState<MemberToContainer>(
+    {}
+  );
+
+  useEffect(() => {
+    console.log({ InitialItems });
+    const familiesStructure = () => {
+      const items: Items = {};
+      const membersById: MembersById = {};
+      const familiesById: Record<string, string> = {};
+      const memberToContainer: MemberToContainer = {};
+
+      InitialItems?.forEach((fam) => {
+        const fid = String(fam.id);
+        familiesById[fid] = fam.name;
+        items[fid] =
+          fam.members?.map((m) => {
+            const mid = String(m.id);
+            membersById[mid] = { id: mid, name: m.name as string };
+            memberToContainer[mid] = fid;
+            return mid;
+          }) || [];
+      });
+
+      setFamiliesStructure({
+        items,
+        membersById,
+        memberToContainer,
+        familiesById,
+      });
+      setItems(items);
+      setMembersById(membersById);
+      setFamiliesById(familiesById);
+      setMemberToContainer(memberToContainer);
+      setContainers(Object.keys(items) as UniqueIdentifier[]);
+
+      // Salva snapshot inicial (clonado)
+      setSavedSnapshot({
+        items: cloneItems(items),
+        memberToContainer: { ...memberToContainer },
+      });
+    };
+    familiesStructure();
   }, [InitialItems]);
 
-  const [items, setItems] = useState<Items>(() => initialStructures.items);
-  const [membersById, setMembersById] = useState<MembersById>(
-    () => initialStructures.membersById
-  );
-  const [familiesById, setFamiliesById] = useState<Record<string, string>>(
-    () => initialStructures.familiesById
-  );
-  const [memberToContainer, setMemberToContainer] = useState<MemberToContainer>(
-    () => initialStructures.memberToContainer
-  );
-
-  const [containers, setContainers] = useState(
-    Object.keys(items) as UniqueIdentifier[]
-  );
+  const [containers, setContainers] = useState<UniqueIdentifier[]>([]);
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   //console.log({ items, containers });
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
+
+  // Snapshot do estado "persistido" (inicial ou último sucesso)
+  const [savedSnapshot, setSavedSnapshot] = useState<{
+    items: Items;
+    memberToContainer: MemberToContainer;
+  } | null>(null);
+
   const handleSaveReorder = useCallback(async () => {
     if (!onSaveReorder) return;
-    
+
     try {
       await onSaveReorder(items);
+      // Atualiza snapshot para o estado recém-salvo
+      setSavedSnapshot({
+        items: cloneItems(items),
+        memberToContainer: { ...memberToContainer },
+      });
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error('Error saving reorder:', error);
+      console.error("Error saving reorder:", error);
+
+      // Reverte para o snapshot salvo (inicial ou último sucesso)
+      if (savedSnapshot) {
+        setItems(cloneItems(savedSnapshot.items));
+        setMemberToContainer({ ...savedSnapshot.memberToContainer });
+        setContainers(Object.keys(savedSnapshot.items) as UniqueIdentifier[]);
+        setHasUnsavedChanges(false);
+        setFamiliesReorderFlag(false);
+      }
     }
-  }, [items, onSaveReorder]);
+  }, [items, onSaveReorder, memberToContainer, savedSnapshot]);
 
   const recentlyMovedToNewContainer = useRef(false);
   const isSortingContainer =
     activeId != null ? containers.includes(activeId) : false;
 
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const handlePopoverOpen = (e: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(e.currentTarget);
   const handlePopoverClose = () => setAnchorEl(null);
@@ -441,6 +502,8 @@ export default function RetreatFamiliesTable({
     },
   });
 
+  if (Object.keys(items).length === 0) return <LoadingScreen />;
+
   return (
     <Box
       sx={{
@@ -491,7 +554,6 @@ export default function RetreatFamiliesTable({
           });
           // Mark changes as unsaved and reset reorder flag
           setHasUnsavedChanges(true);
-          setFamiliesReorderFlag?.(false);
         }}
         cancelDrop={cancelDrop}
         onDragCancel={() => {
@@ -524,7 +586,7 @@ export default function RetreatFamiliesTable({
                   {flexRender(table.getAllColumns()[0].columnDef.cell!, {
                     row: { original: containerId },
                     cell: { row: { original: containerId } },
-                  } as any)}
+                  } as CellContext<UniqueIdentifier, unknown>)}
                 </Grid>
               ))}
             </Grid>
@@ -597,14 +659,14 @@ export default function RetreatFamiliesTable({
           <Trash id={TRASH_ID} />
         ) : null}
       </DndContext>
-      
+
       {/* Floating Save Button */}
       <Fade in={hasUnsavedChanges}>
         <Fab
           color="primary"
           onClick={handleSaveReorder}
           sx={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 24,
             right: 24,
             zIndex: 1000,
@@ -746,7 +808,15 @@ interface SortableItemProps {
   index: number;
   handle: boolean;
   disabled?: boolean;
-  style(args: any): React.CSSProperties;
+  style(args: {
+    value: UniqueIdentifier;
+    index: number;
+    overIndex: number;
+    isDragging: boolean;
+    containerId: UniqueIdentifier;
+    isSorting: boolean;
+    isDragOverlay: boolean;
+  }): React.CSSProperties;
   getIndex(id: UniqueIdentifier): number;
   renderItem?(): React.ReactElement;
   wrapperStyle({ index }: { index: number }): React.CSSProperties;
@@ -779,9 +849,6 @@ function SortableItem({
   });
   const mounted = useMountStatus();
   const mountedWhileDragging = isDragging && !mounted;
-  if (id === 2441) {
-    console.log("TABLEE", { id, isDragging, isSorting, overIndex });
-  }
   return (
     <Item
       ref={disabled ? undefined : setNodeRef}

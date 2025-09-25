@@ -40,8 +40,16 @@ export interface RetreatFamiliesProps {
   onEdit: (familyId: UniqueIdentifier) => void;
   onView: (familyId: UniqueIdentifier) => void;
   total: number;
-  setFamiliesReorderFlag?: (flag: boolean) => void; 
+  setFamiliesReorderFlag: (flag: boolean) => void;
   onSaveReorder?: (items: Items) => Promise<void>;
 }
 
 export type Items = Record<string, UniqueIdentifier[]>;
+
+export interface MembersMapEntry {
+  id: UniqueIdentifier;
+  name: string;
+}
+
+export type MembersById = Record<UniqueIdentifier, MembersMapEntry>;
+export type MemberToContainer = Record<UniqueIdentifier, UniqueIdentifier>;

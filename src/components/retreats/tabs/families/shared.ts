@@ -1,18 +1,10 @@
 import { Active, Over, UniqueIdentifier } from "@dnd-kit/core";
-import { Items } from "./types";
+import { Items, MemberToContainer } from "./types";
 import { arrayMove } from "@dnd-kit/sortable";
 import { unstable_batchedUpdates } from "react-dom";
 
 export const TRASH_ID = "void";
 export const PLACEHOLDER_ID = "placeholder";
-
-// NOVOS TIPOS / AJUSTES PARA O(1)
-export interface MembersMapEntry {
-  id: UniqueIdentifier;
-  name: string;
-}
-export type MembersById = Record<UniqueIdentifier, MembersMapEntry>;
-export type MemberToContainer = Record<UniqueIdentifier, UniqueIdentifier>;
 
 // Assinaturas agora aceitam mapas para atualizar em O(1)
 interface onDragOverProps {
