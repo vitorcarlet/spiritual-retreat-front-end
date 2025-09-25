@@ -211,7 +211,7 @@ export default function ConfigureFamily({
             )}
           />
 
-          <Box sx={{ bgcolor: "grey.50", p: 2, borderRadius: 1 }}>
+          <Box sx={{ bgcolor: "background.default", p: 2, borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
               {t("preview-config")}:
             </Typography>
