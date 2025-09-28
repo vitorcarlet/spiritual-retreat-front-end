@@ -42,6 +42,8 @@ export interface RetreatFamiliesProps {
   total: number;
   setFamiliesReorderFlag: (flag: boolean) => void;
   onSaveReorder?: (items: Items) => Promise<void>;
+  retreatId: string;
+  canEditFamily: boolean;
 }
 
 export type Items = Record<string, UniqueIdentifier[]>;
@@ -49,6 +51,9 @@ export type Items = Record<string, UniqueIdentifier[]>;
 export interface MembersMapEntry {
   id: UniqueIdentifier;
   name: string;
+  gender?: string;
+  city?: string;
+  //realFamilyId?: string;
 }
 
 export type MembersById = Record<UniqueIdentifier, MembersMapEntry>;

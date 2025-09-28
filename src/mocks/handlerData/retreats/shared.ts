@@ -1,3 +1,5 @@
+import { Participant } from "@/src/types/retreats";
+
 const cities = [
   { city: "Videira", state: "SC" },
   { city: "Florianópolis", state: "SC" },
@@ -33,6 +35,8 @@ export function makeParticipant(
   const cityInfo = cities[(familyIndex + memberIndex) % cities.length];
   const firstName = `John${familyIndex}${memberIndex}`;
   const lastName = `Doe${familyIndex}`;
+  const gender = memberIndex % 2 === 0 ? "male" : "female";
+  //const realFamilyId = `real-${familyIndex}-${Math.floor(memberIndex / 2)}`;
   return {
     id: Number(`244${globalIndex}`),
     name: `${firstName} ${lastName}`,
@@ -44,6 +48,8 @@ export function makeParticipant(
     cpf: randomCpf(globalIndex),
     city: cityInfo.city,
     state: cityInfo.state,
+    gender,
+    //realFamilyId,
     registrationDate: new Date(
       Date.now() - 1000 * 60 * 60 * 24 * (familyIndex * 5 + memberIndex)
     ).toISOString(),

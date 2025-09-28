@@ -30,6 +30,7 @@ export interface Participant {
   cpf: string;
   city: string;
   state: string;
+  gender?: "male" | "female" | "other" | "na";
   registrationDate: string;
   status: "registered" | "confirmed" | "cancelled" | "attended"; // Status do participante
 }

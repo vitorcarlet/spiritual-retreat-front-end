@@ -2,6 +2,7 @@ export interface Report {
   id: string;
   name: string;
   sections: string[];
+  type: ReportTypes;
   dateCreation: string; // ISO date string
   period: Period;
   preFilters?: {
@@ -27,3 +28,5 @@ type Period = {
   from: string; // ISO date string
   to: string; // ISO date string
 };
+
+ReportTypes = "user" | "participant" | "families" | "tents";

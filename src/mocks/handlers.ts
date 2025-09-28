@@ -209,7 +209,6 @@ export const handlers = [
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
 
-      console.log(url.searchParams.toString(), "url search params");
       const isSelectAutocomplete =
         url.searchParams.get("selectAutocomplete") === "true";
       //url.searchParams.get("variant") === "selectAutocomplete" ||
@@ -308,6 +307,107 @@ export const handlers = [
     }
   ),
 
+  http.get(
+    "http://localhost:3001/api/retreats/:id/families/unassigned",
+    ({ params }) => {
+      const retreatId = params.id;
+      const unassignedParticipants = mockFamilies
+        .flatMap((family) => family.members || [])
+        .filter((member) => !member.familyId)
+        .slice(0, 10)
+        .map((member, index) => ({
+          id: `${retreatId || "retreat"}-unassigned-${index + 1}`,
+          name: member.name ?? `Participante ${index + 1}`,
+          email: member.email ?? undefined,
+          phone: member.phone ?? undefined,
+          group: member.group ?? undefined,
+        }));
+
+      // Provide fallback mock participants if none found in families data
+      const fallbackParticipants = [
+        {
+          id: "unassigned-1",
+          name: "Alice Carvalho",
+          email: "alice.carvalho@email.com",
+          phone: "(11) 98888-1111",
+          group: "Grupo A",
+        },
+        {
+          id: "unassigned-2",
+          name: "Bruno Nascimento",
+          email: "bruno.nascimento@email.com",
+          phone: "(11) 98888-2222",
+          group: "Grupo B",
+        },
+        {
+          id: "unassigned-3",
+          name: "Camila Ribeiro",
+          email: "camila.ribeiro@email.com",
+          phone: "(11) 98888-3333",
+          group: "Grupo C",
+        },
+      ];
+
+      const participants = unassignedParticipants.length
+        ? unassignedParticipants
+        : fallbackParticipants;
+
+      return HttpResponse.json(
+        {
+          success: true,
+          participants,
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  http.post(
+    "http://localhost:3001/api/retreats/:id/families/draw",
+    async ({ params }) => {
+      const retreatId = params.id as string;
+
+      return HttpResponse.json(
+        {
+          success: true,
+          message: `Famílias sorteadas com sucesso para o retiro ${retreatId}`,
+          data: {
+            retreatId,
+            processedParticipants: Math.floor(Math.random() * 10) + 1,
+            createdFamilies: Math.floor(Math.random() * 3) + 1,
+          },
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  http.get(
+    "http://localhost:3001/api/retreats/:id/families/rules",
+    ({ params }) => {
+      const retreatId = params.id as string;
+
+      return HttpResponse.json(
+        {
+          success: true,
+          retreatId,
+          rules: {
+            maxMembersPerFamily: 6,
+            genderBalance: {
+              enabled: true,
+              ratio: 0.5,
+              tolerance: 1,
+              label: "50% homens / 50% mulheres",
+            },
+            preventSameRealFamily: true,
+            preventSameCity: true,
+          },
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
   // Family configuration endpoints
   http.get(
     "http://localhost:3001/api/retreats/:id/families/config",
@@ -334,11 +434,12 @@ export const handlers = [
         maxFamilySize: number;
       };
       
-      console.log("Family config updated:", body);
-      
       return HttpResponse.json({
         success: true,
-        message: "Configuração das famílias atualizada com sucesso"
+        message: "Configuração das famílias atualizada com sucesso",
+        data: {
+          config: body,
+        },
       }, { status: 200 });
     }
   ),
@@ -354,8 +455,6 @@ export const handlers = [
         tentNumber?: string;
         sector?: string;
       };
-      
-      console.log("New family created:", body);
       
       return HttpResponse.json({
         success: true,
@@ -482,8 +581,6 @@ export const handlers = [
         role: "leader" | "member";
       };
       
-      console.log("Participants added to family:", body);
-      
       return HttpResponse.json({
         success: true,
         message: `${body.participantIds.length} participante(s) adicionado(s) à família com sucesso`,
@@ -507,8 +604,6 @@ export const handlers = [
         messageType: "email" | "sms" | "notification";
       };
       
-      console.log("Message sent to families:", body);
-      
       return HttpResponse.json({
         success: true,
         message: `Mensagem enviada para ${body.familyIds.length} família(s) com sucesso`,
@@ -525,7 +620,6 @@ export const handlers = [
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
 
-      console.log(url.searchParams.toString(), "url search params");
       const isSelectAutocomplete =
         url.searchParams.get("selectAutocomplete") === "true";
       //url.searchParams.get("variant") === "selectAutocomplete" ||

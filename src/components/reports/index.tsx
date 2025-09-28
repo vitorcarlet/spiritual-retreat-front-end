@@ -58,6 +58,27 @@ const columns: DataTableColumn<Report>[] = [
     ),
   },
   {
+    field: "type",
+    headerName: "Tipo",
+    flex: 1,
+    minWidth: 180,
+    renderCell: (params) => (
+      <Box
+        component="span"
+        sx={{
+          fontSize: 14,
+          fontWeight: 500,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          maxWidth: 160,
+        }}
+      >
+        {params.value}
+      </Box>
+    ),
+  },
+  {
     field: "sections",
     headerName: "Seções",
     flex: 1,

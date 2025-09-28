@@ -5,9 +5,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Box,
   Stack,
-  Chip,
   Typography,
-  TextField,
   CircularProgress,
   Container,
   Button,
@@ -34,7 +32,9 @@ import CreateFamilyForm from "./CreateFamilyForm";
 import SendMessageToFamilyForm from "./SendMessageToFamilyForm";
 import AddParticipantToFamilyForm from "./AddParticipantToFamilyForm";
 import ConfigureFamily from "./ConfigureFamily";
+import DrawFamilies from "./DrawFamilies";
 import { Items } from "./types";
+import FamilyDetails from "./FamilyDetails";
 
 interface RetreatFamilyRequest {
   rows: RetreatFamily[];
@@ -73,6 +73,7 @@ export default function RetreatFamilies({
   id: retreatId,
 }: RetreatFamiliesProps) {
   const t = useTranslations();
+  const tFamilyDetails = useTranslations("family-details");
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
       defaultFilters: {
@@ -112,6 +113,33 @@ export default function RetreatFamilies({
     staleTime: 60_000,
   });
 
+  const familiesDataArray: RetreatFamily[] = useMemo(() => {
+    if (!familiesData) {
+      return [];
+    }
+
+    const { rows } = familiesData;
+
+    if (Array.isArray(rows)) {
+      return rows;
+    }
+
+    return rows ? [rows] : [];
+  }, [familiesData]);
+
+  const canEditFamily = useMemo(() => {
+    const user = session.data?.user;
+    if (!user) {
+      return false;
+    }
+
+    return getPermission({
+      permissions: user.permissions,
+      permission: "retreats.update",
+      role: user.role,
+    });
+  }, [session.data]);
+
   // const handlePersist = useCallback(
   //   async (updated: RetreatFamily[]) => {
   //     // Persistir ordenação / mudanças de membros
@@ -134,13 +162,83 @@ export default function RetreatFamilies({
   //   [retreatId]
   // );
 
-  const handleEdit = (familyId: UniqueIdentifier) => {
-    //router.push(`/retreats/${retreat.id}`);
-  };
+  const openFamilyDetails = useCallback(
+    (familyId: UniqueIdentifier, startInEdit = false) => {
+      const family = familiesDataArray.find(
+        (item) => String(item.id) === String(familyId)
+      );
 
-  const handleView = (familyId: UniqueIdentifier) => {
-    //router.push(`/retreats/${retreat.id}`);
-  };
+      if (!family) {
+        return;
+      }
+
+      modal.open({
+        title: tFamilyDetails("title", { family: family.name }),
+        size: "md",
+        customRender() {
+          return (
+            <FamilyDetails
+              family={family}
+              retreatId={retreatId}
+              canEdit={canEditFamily}
+              startInEdit={startInEdit && canEditFamily}
+              onClose={modal.close}
+              onUpdated={(updatedFamily) => {
+                queryClient.setQueryData<RetreatFamilyRequest | undefined>(
+                  ["retreat-families", filters],
+                  (previous) => {
+                    if (!previous) {
+                      return previous;
+                    }
+
+                    if (!Array.isArray(previous.rows)) {
+                      return previous;
+                    }
+
+                    return {
+                      ...previous,
+                      rows: previous.rows.map((row) =>
+                        row.id === updatedFamily.id
+                          ? { ...row, ...updatedFamily }
+                          : row
+                      ),
+                    };
+                  }
+                );
+
+                queryClient.invalidateQueries({
+                  queryKey: ["retreat-families"],
+                });
+              }}
+            />
+          );
+        },
+      });
+    },
+    [
+      familiesDataArray,
+      modal,
+      tFamilyDetails,
+      retreatId,
+      canEditFamily,
+      queryClient,
+      filters,
+    ]
+  );
+
+  const handleEdit = useCallback(
+    (familyId: UniqueIdentifier) => {
+      openFamilyDetails(familyId, true);
+    },
+    [openFamilyDetails]
+  );
+
+  const handleView = useCallback(
+    (familyId: UniqueIdentifier) => {
+      openFamilyDetails(familyId, false);
+    },
+    [openFamilyDetails]
+  );
 
   const createNewFamily = () => {
     modal.open({
@@ -216,7 +314,6 @@ export default function RetreatFamilies({
             data: reorderData,
           }
         );
-        console.log("aaa");
         setFamiliesReorderFlag?.(false);
         // Refetch families data to get updated order
         queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
@@ -248,6 +345,25 @@ export default function RetreatFamilies({
     });
   };
 
+  const drawFamilies = () => {
+    modal.open({
+      title: t("family-draw"),
+      size: "md",
+      customRender() {
+        return (
+          <DrawFamilies
+            retreatId={retreatId}
+            onSuccess={() => {
+              modal.close?.();
+              // Refetch families data
+              queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+            }}
+          />
+        );
+      },
+    });
+  };
+
   const handleFiltersChange = (
     newFilters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => {
@@ -259,12 +375,6 @@ export default function RetreatFamilies({
   ) => {
     updateFilters({ ...filters, ...newFilters });
   };
-
-  const familiesDataArray: RetreatFamily[] = Array.isArray(familiesData?.rows)
-    ? familiesData?.rows
-    : ([familiesData?.rows] as unknown as RetreatFamily[]);
-
-  console.log({ familiesDataArray });
 
   if (isLoading) return <Typography>Loading retreats...</Typography>;
   if (isError) return <Typography>No data available.</Typography>;
@@ -323,7 +433,7 @@ export default function RetreatFamilies({
             </Button>
             <Button
               variant="contained"
-              onClick={configureFamilies}
+              onClick={drawFamilies}
               disabled={familiesReorderFlag}
             >
               {t("draw-the-families")}
@@ -350,10 +460,12 @@ export default function RetreatFamilies({
             onSaveReorder={handleSaveReorder}
             total={familiesData?.total || 0}
             filters={filters}
-            items={familiesDataArray!}
+            items={familiesDataArray}
             onEdit={handleEdit}
             onView={handleView}
             onFiltersChange={handleFiltersChange}
+            retreatId={retreatId}
+            canEditFamily={canEditFamily}
           />
         )}
       </Box>

@@ -4,6 +4,7 @@ export const mockReports: Report[] = [
   {
     id: "1",
     name: "Relatório de Inscrições",
+    type: "participant",
     sections: ["Inscrições", "Pagamentos", "Formulários"],
     dateCreation: "2025-01-15T10:30:00Z",
     preFilters: {
@@ -19,6 +20,7 @@ export const mockReports: Report[] = [
   },
   {
     id: "2",
+    type: "participant",
     name: "Análise de Participação",
     sections: ["Presença", "Atividades", "Feedback"],
     dateCreation: "2025-02-20T14:45:00Z",
@@ -31,6 +33,7 @@ export const mockReports: Report[] = [
   },
   {
     id: "3",
+    type: "participant",
     name: "Relatório de Equipes",
     sections: ["Voluntários", "Coordenadores", "Distribuição"],
     dateCreation: "2024-12-10T09:15:00Z",
@@ -43,7 +46,21 @@ export const mockReports: Report[] = [
   },
   {
     id: "4",
+    type: "participant",
     name: "Análise de Custos",
+    sections: ["Alimentação", "Hospedagem", "Materiais"],
+    dateCreation: "2025-03-05T16:20:00Z",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+    period: {
+      from: "2025-03-01T00:00:00Z",
+      to: "2025-03-05T16:20:00Z",
+    },
+  },
+  {
+    id: "5",
+    type: "families",
+    name: "Relatorio de familias",
     sections: ["Alimentação", "Hospedagem", "Materiais"],
     dateCreation: "2025-03-05T16:20:00Z",
     retreatName: "Retiro de Verão 2025",

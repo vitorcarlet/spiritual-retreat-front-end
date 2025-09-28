@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useTranslations } from "next-intl";
 import { createPortal } from "react-dom";
 import {
   closestCenter,
@@ -65,6 +66,10 @@ import {
   Fade,
 } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
 import {
   Items,
   RetreatFamiliesProps,
@@ -157,6 +162,42 @@ const dropAnimation: DropAnimation = {
 
 //const empty: UniqueIdentifier[] = [];
 
+interface GenderBalanceRule {
+  enabled: boolean;
+  ratio: number;
+  tolerance?: number;
+  label?: string;
+}
+
+interface FamilyCompositionRules {
+  maxMembersPerFamily?: number;
+  genderBalance?: GenderBalanceRule;
+  preventSameRealFamily?: boolean;
+  preventSameCity?: boolean;
+}
+
+interface FamilyCompositionRulesResponse {
+  success: boolean;
+  retreatId?: string;
+  rules: FamilyCompositionRules;
+}
+
+function findDuplicateValues(values: Array<string | undefined>): string[] {
+  const counts = new Map<string, number>();
+
+  values.forEach((value) => {
+    if (!value) {
+      return;
+    }
+
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  });
+
+  return Array.from(counts.entries())
+    .filter(([, count]) => count > 1)
+    .map(([value]) => value);
+}
+
 // Helper para clonar Items profundamente (arrays por container)
 function cloneItems(source: Items): Items {
   return Object.fromEntries(
@@ -186,8 +227,72 @@ export default function RetreatFamiliesTable({
   total,
   setFamiliesReorderFlag,
   onSaveReorder,
+  retreatId,
+  canEditFamily,
 }: RetreatFamiliesProps) {
+  const t = useTranslations("family-validation");
+
   // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
+
+  const [compositionRules, setCompositionRules] =
+    useState<FamilyCompositionRules | null>(null);
+  const [rulesLoading, setRulesLoading] = useState(false);
+  const [rulesError, setRulesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!retreatId) {
+      return;
+    }
+
+    let isActive = true;
+
+    const loadRules = async () => {
+      setRulesLoading(true);
+      setRulesError(null);
+
+      try {
+        const response =
+          await handleApiResponse<FamilyCompositionRulesResponse>(
+            await sendRequestServerVanilla.get(
+              `/retreats/${retreatId}/families/rules`
+            )
+          );
+
+        if (!isActive) {
+          return;
+        }
+
+        if (response.success && response.data?.rules) {
+          setCompositionRules(response.data.rules);
+        } else {
+          setCompositionRules(null);
+          setRulesError(response.error || t("fetch-error"));
+        }
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        console.error("Error fetching family composition rules:", error);
+        setCompositionRules(null);
+        setRulesError(
+          error instanceof Error ? error.message : t("fetch-error")
+        );
+      } finally {
+        if (!isActive) {
+          return;
+        }
+
+        setRulesLoading(false);
+      }
+    };
+
+    void loadRules();
+
+    return () => {
+      isActive = false;
+    };
+  }, [retreatId, t]);
 
   const [familiesStructure, setFamiliesStructure] = useState<{
     items: Items;
@@ -209,8 +314,7 @@ export default function RetreatFamiliesTable({
   );
 
   useEffect(() => {
-    console.log({ InitialItems });
-    const familiesStructure = () => {
+    const buildFamiliesStructure = () => {
       const items: Items = {};
       const membersById: MembersById = {};
       const familiesById: Record<string, string> = {};
@@ -222,7 +326,13 @@ export default function RetreatFamiliesTable({
         items[fid] =
           fam.members?.map((m) => {
             const mid = String(m.id);
-            membersById[mid] = { id: mid, name: m.name as string };
+            membersById[mid] = {
+              id: mid,
+              name: m.name as string,
+              gender: m.gender,
+              city: m.city,
+              //realFamilyId: m.realFamilyId,
+            };
             memberToContainer[mid] = fid;
             return mid;
           }) || [];
@@ -246,7 +356,7 @@ export default function RetreatFamiliesTable({
         memberToContainer: { ...memberToContainer },
       });
     };
-    familiesStructure();
+    buildFamiliesStructure();
   }, [InitialItems]);
 
   const [containers, setContainers] = useState<UniqueIdentifier[]>([]);
@@ -261,6 +371,91 @@ export default function RetreatFamiliesTable({
     items: Items;
     memberToContainer: MemberToContainer;
   } | null>(null);
+
+  const familyValidationErrors = useMemo(() => {
+    if (!compositionRules) {
+      return {};
+    }
+
+    const errors: Record<string, string[]> = {};
+    const genderTolerance = compositionRules.genderBalance?.tolerance ?? 0;
+
+    Object.entries(items).forEach(([familyId, memberIds]) => {
+      const messages: string[] = [];
+      const familyName = familiesById[familyId] || familyId;
+
+      if (
+        compositionRules.maxMembersPerFamily &&
+        memberIds.length > compositionRules.maxMembersPerFamily
+      ) {
+        messages.push(
+          t("max-members", {
+            family: familyName,
+            count: memberIds.length,
+            max: compositionRules.maxMembersPerFamily,
+          })
+        );
+      }
+
+      if (compositionRules.genderBalance?.enabled) {
+        const maleCount = memberIds.filter(
+          (id) => membersById[id]?.gender === "male"
+        ).length;
+        const femaleCount = memberIds.filter(
+          (id) => membersById[id]?.gender === "female"
+        ).length;
+        const participantsWithGender = maleCount + femaleCount;
+
+        if (
+          participantsWithGender > 0 &&
+          Math.abs(maleCount - femaleCount) > genderTolerance
+        ) {
+          messages.push(
+            t("gender-balance", {
+              family: familyName,
+              male: maleCount,
+              female: femaleCount,
+            })
+          );
+        }
+      }
+
+      if (compositionRules.preventSameRealFamily) {
+        // const duplicates = findDuplicateValues(
+        //   memberIds.map((id) => membersById[id]?.realFamilyId)
+        // );
+        // if (duplicates.length > 0) {
+        //   messages.push(
+        //     t("same-real-family", {
+        //       family: familyName,
+        //       duplicates: duplicates.join(", "),
+        //     })
+        //   );
+        // }
+      }
+
+      if (compositionRules.preventSameCity) {
+        const duplicates = findDuplicateValues(
+          memberIds.map((id) => membersById[id]?.city)
+        );
+
+        if (duplicates.length > 0) {
+          messages.push(
+            t("same-city", {
+              family: familyName,
+              duplicates: duplicates.join(", "),
+            })
+          );
+        }
+      }
+
+      if (messages.length > 0) {
+        errors[familyId] = messages;
+      }
+    });
+
+    return errors;
+  }, [compositionRules, items, membersById, familiesById, t]);
 
   const handleSaveReorder = useCallback(async () => {
     if (!onSaveReorder) return;
@@ -422,7 +617,22 @@ export default function RetreatFamiliesTable({
                 onEdit={onEdit}
                 onView={onView}
                 familyId={containerId}
+                canEdit={canEditFamily}
               />
+              {familyValidationErrors[containerId]?.length ? (
+                <Stack spacing={0.5} mt={1}>
+                  {familyValidationErrors[containerId].map((message, idx) => (
+                    <Typography
+                      key={`${containerId}-validation-error-${idx}`}
+                      variant="caption"
+                      color="error"
+                      display="block"
+                    >
+                      {message}
+                    </Typography>
+                  ))}
+                </Stack>
+              ) : null}
             </DroppableContainer>
           );
         },
@@ -441,6 +651,8 @@ export default function RetreatFamiliesTable({
       wrapperStyle,
       onEdit,
       onView,
+      canEditFamily,
+      familyValidationErrors,
     ]
   );
 
@@ -514,6 +726,20 @@ export default function RetreatFamiliesTable({
         position: "relative", // For absolute positioned save button
       }}
     >
+      {rulesLoading && !rulesError && (
+        <Box sx={{ mb: 2, flexShrink: 0 }}>
+          <Typography variant="body2" color="text.secondary">
+            {t("loading")}
+          </Typography>
+        </Box>
+      )}
+      {rulesError && (
+        <Box sx={{ mb: 2, flexShrink: 0 }}>
+          <Typography color="error" variant="body2">
+            {rulesError}
+          </Typography>
+        </Box>
+      )}
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetectionStrategy}
@@ -739,6 +965,7 @@ export default function RetreatFamiliesTable({
           onEdit={onEdit}
           onView={onView}
           familyId={containerId}
+          canEdit={canEditFamily}
         />
       </Container>
     );
