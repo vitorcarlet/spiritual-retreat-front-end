@@ -9,23 +9,19 @@ type AllowEditProps = {
 };
 
 const useAllowEdit = ({ permission }: AllowEditProps) => {
-  const user = useSession();
-  if (!user.data || !user.data.user) {
-    return {
-      allowEdit: false,
-    };
-  }
-  const { permissions: userPermissions, role: userRole } = user.data.user;
+  const { data: userData } = useSession();
 
-  const hasPermission = useMemo(
-    () =>
-      getPermission({
-        permissions: userPermissions,
-        permission,
-        role: userRole,
-      }),
-    [userPermissions, permission, userRole]
-  );
+  const hasPermission = useMemo(() => {
+    if (!userData || !userData.user) {
+      return false;
+    }
+    const { permissions: userPermissions, role: userRole } = userData.user;
+    return getPermission({
+      permissions: userPermissions,
+      permission,
+      role: userRole,
+    });
+  }, [userData, permission]);
 
   return {
     allowEdit: hasPermission,

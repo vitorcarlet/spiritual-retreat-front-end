@@ -4,10 +4,12 @@ import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Autocomplete,
   Avatar,
   Box,
   Button,
   CircularProgress,
+  Chip,
   Divider,
   Grid,
   List,
@@ -80,16 +82,6 @@ export default function FamilyDetails({
     if (familyState.contactName) return familyState.contactName;
     return familyState.members?.[0]?.name ?? t("no-leader");
   }, [familyState, t]);
-
-  const leaderEmail = useMemo(() => {
-    if (familyState.contactEmail) return familyState.contactEmail;
-    return familyState.members?.[0]?.email ?? null;
-  }, [familyState]);
-
-  const leaderPhone = useMemo(() => {
-    if (familyState.contactPhone) return familyState.contactPhone;
-    return familyState.members?.[0]?.phone ?? null;
-  }, [familyState]);
 
   const handleToggleEdit = () => {
     if (!canEdit) return;
@@ -173,59 +165,17 @@ export default function FamilyDetails({
 
   return (
     <Box sx={{ width: "100%", minHeight: 300 }}>
-      <Stack spacing={3}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Typography variant="h6">
-            {t("title", { family: familyState.name })}
-          </Typography>
-          {canEdit && (
-            <Stack direction="row" spacing={1}>
-              {isEditing && (
-                <Button
-                  variant="outlined"
-                  onClick={handleToggleEdit}
-                  startIcon={<Iconify icon="solar:close-circle-bold" />}
-                  disabled={isSaving}
-                >
-                  {t("cancel-edit")}
-                </Button>
-              )}
-              <Button
-                variant="contained"
-                color={isEditing ? "info" : "primary"}
-                onClick={() => {
-                  if (isEditing) {
-                    handleSave();
-                  } else {
-                    handleToggleEdit();
-                  }
-                }}
-                startIcon={
-                  isSaving ? (
-                    <CircularProgress color="inherit" size={16} />
-                  ) : isEditing ? (
-                    <Iconify icon="solar:diskette-bold" />
-                  ) : (
-                    <Iconify icon="solar:pen-bold" />
-                  )
-                }
-                disabled={isSaving || !formValues.name?.trim()}
-              >
-                {isEditing ? t("save") : t("edit")}
-              </Button>
-            </Stack>
-          )}
-        </Stack>
-
+      <Stack spacing={1} mt={2}>
         {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
         {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
         <Box>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            gutterBottom
+            marginBottom={2}
+          >
             {t("general-info")}
           </Typography>
           <Grid container spacing={2}>
@@ -244,44 +194,84 @@ export default function FamilyDetails({
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               {isEditing ? (
-                <TextField
-                  label={t("leader-label")}
-                  fullWidth
-                  value={formValues.contactName ?? ""}
-                  onChange={handleChange("contactName")}
+                <Autocomplete
+                  options={familyState.members ?? []}
+                  value={
+                    familyState.members?.find(
+                      (member) =>
+                        member.email === formValues.contactEmail &&
+                        member.name === formValues.contactName
+                    ) ?? null
+                  }
+                  getOptionLabel={(option) =>
+                    option.email
+                      ? `${option.name} (${option.email})`
+                      : option.name
+                  }
+                  onChange={(_, newValue) => {
+                    if (newValue) {
+                      setFormValues((prev) => ({
+                        ...prev,
+                        contactName: newValue.name ?? "",
+                        contactEmail: newValue.email ?? "",
+                        contactPhone: newValue.phone ?? "",
+                      }));
+                    } else {
+                      setFormValues((prev) => ({
+                        ...prev,
+                        contactName: "",
+                        contactEmail: "",
+                        contactPhone: "",
+                      }));
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={t("leader-label")}
+                      placeholder={t("search-participants")}
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props}>
+                      <Avatar sx={{ mr: 2, width: 32, height: 32 }}>
+                        {initialsFromName(option.name)}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2">
+                          {option.name ?? t("unknown-name")}
+                        </Typography>
+                        {option.email && (
+                          <Typography variant="caption" color="text.secondary">
+                            {option.email}
+                          </Typography>
+                        )}
+                        {option.city && (
+                          <Typography variant="caption" color="text.secondary">
+                            {` • ${option.city}`}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+                  renderTags={(tagValue) =>
+                    tagValue.map((option) => (
+                      <Chip
+                        key={option.id}
+                        label={option.name}
+                        avatar={
+                          <Avatar>
+                            {initialsFromName(option.name).charAt(0)}
+                          </Avatar>
+                        }
+                      />
+                    ))
+                  }
+                  disabled={!familyState.members?.length}
+                  noOptionsText={t("no-participants-available")}
                 />
               ) : (
                 <InfoRow label={t("leader-label")} value={leaderName} />
-              )}
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              {isEditing ? (
-                <TextField
-                  label={t("email-label")}
-                  fullWidth
-                  value={formValues.contactEmail ?? ""}
-                  onChange={handleChange("contactEmail")}
-                />
-              ) : (
-                <InfoRow
-                  label={t("email-label")}
-                  value={leaderEmail ?? t("no-email")}
-                />
-              )}
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              {isEditing ? (
-                <TextField
-                  label={t("phone-label")}
-                  fullWidth
-                  value={formValues.contactPhone ?? ""}
-                  onChange={handleChange("contactPhone")}
-                />
-              ) : (
-                <InfoRow
-                  label={t("phone-label")}
-                  value={leaderPhone ?? t("no-phone")}
-                />
               )}
             </Grid>
           </Grid>
@@ -321,14 +311,22 @@ export default function FamilyDetails({
                   <ListItemText
                     primary={member.name}
                     secondary={
-                      <Stack spacing={0.5}>
+                      <>
                         {member.email && (
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display={"block"}
+                          >
                             {member.email}
                           </Typography>
                         )}
                         {member.city && (
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display={"block"}
+                          >
                             {member.city}
                           </Typography>
                         )}
@@ -337,7 +335,7 @@ export default function FamilyDetails({
                             {member.phone}
                           </Typography>
                         )}
-                      </Stack>
+                      </>
                     }
                   />
                 </ListItem>
@@ -348,7 +346,7 @@ export default function FamilyDetails({
 
         <Divider />
 
-        <Stack direction="row" justifyContent="flex-end" spacing={2}>
+        <Stack direction="row" justifyContent="flex-end" spacing={2} mb={2}>
           <Button
             variant="outlined"
             onClick={() => onClose?.()}
@@ -356,6 +354,43 @@ export default function FamilyDetails({
           >
             {t("close")}
           </Button>
+          {canEdit && (
+            <Stack direction="row" spacing={1}>
+              {isEditing && (
+                <Button
+                  variant="outlined"
+                  onClick={handleToggleEdit}
+                  startIcon={<Iconify icon="solar:close-circle-bold" />}
+                  disabled={isSaving}
+                >
+                  {t("cancel-edit")}
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                color={isEditing ? "info" : "primary"}
+                onClick={() => {
+                  if (isEditing) {
+                    handleSave();
+                  } else {
+                    handleToggleEdit();
+                  }
+                }}
+                startIcon={
+                  isSaving ? (
+                    <CircularProgress color="inherit" size={16} />
+                  ) : isEditing ? (
+                    <Iconify icon="solar:diskette-bold" />
+                  ) : (
+                    <Iconify icon="solar:pen-bold" />
+                  )
+                }
+                disabled={isSaving || !formValues.name?.trim()}
+              >
+                {isEditing ? t("save") : t("edit")}
+              </Button>
+            </Stack>
+          )}
         </Stack>
       </Stack>
     </Box>

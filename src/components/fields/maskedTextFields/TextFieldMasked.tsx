@@ -42,10 +42,17 @@ const NumericFormatCustom = React.forwardRef<
   HTMLInputElement,
   NumericFormatAdapterProps
 >(function NumericFormatCustom(props, ref) {
-  const { onChange, name, ...other } = props;
+  const { onChange, name, type: ignoredType, ...other } = props;
+  void ignoredType;
+  const { defaultValue, ...rest } = other;
+  const normalizedDefaultValue =
+    typeof defaultValue === "string" || typeof defaultValue === "number"
+      ? defaultValue
+      : undefined;
   return (
     <NumericFormat
-      {...other}
+      {...rest}
+      defaultValue={normalizedDefaultValue}
       getInputRef={ref}
       onValueChange={(values) => {
         // values.value is numeric string without formatting (e.g., 1234.56)
@@ -76,9 +83,11 @@ const MASK_PATTERNS: MaskConfig = {
   currency: /([0-9.,-])/, // handled via NumericFormat when selected
 };
 
+export type MaskType = keyof typeof MASK_PATTERNS | "custom";
+
 interface TextFieldMaskedProps extends Omit<TextFieldProps, "InputProps"> {
-  maskType: keyof typeof MASK_PATTERNS;
-  customMask?: string;
+  maskType?: MaskType | "" | null;
+  customMask?: string | null;
 }
 
 const TextFieldMasked: React.FC<TextFieldMaskedProps> = ({
@@ -86,45 +95,59 @@ const TextFieldMasked: React.FC<TextFieldMaskedProps> = ({
   customMask,
   ...textFieldProps
 }) => {
+  const { type: providedType, ...restTextFieldProps } = textFieldProps;
+  const normalizedMaskType = maskType && maskType !== "" ? maskType : undefined;
+
   // Special handling for currency: use NumericFormat instead of IMask
-  if (maskType === "currency") {
+  if (normalizedMaskType === "currency") {
     const CurrencyComponent =
       NumericFormatCustom as unknown as React.ElementType;
     return (
       <TextField
-        {...textFieldProps}
-        slotProps={{
-          input: {
-            inputComponent: CurrencyComponent,
-          },
+        {...restTextFieldProps}
+        type="text"
+        InputProps={{
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          inputComponent: CurrencyComponent as any,
         }}
       />
     );
   }
 
-  const mask = customMask || MASK_PATTERNS[maskType];
+  if (!normalizedMaskType) {
+    return <TextField {...restTextFieldProps} type={providedType} />;
+  }
 
-  if (!mask) {
+  const resolvedMask =
+    normalizedMaskType === "custom"
+      ? customMask || ""
+      : MASK_PATTERNS[normalizedMaskType];
+
+  if (normalizedMaskType === "custom" && !resolvedMask) {
+    return <TextField {...textFieldProps} />;
+  }
+
+  if (!resolvedMask) {
     console.warn(
-      `Mask type "${maskType}" not found. Available types: ${Object.keys(
+      `Mask type "${normalizedMaskType}" not found. Available types: ${Object.keys(
         MASK_PATTERNS
       ).join(", ")}`
     );
-    return <TextField {...textFieldProps} />;
+    return <TextField {...restTextFieldProps} type={providedType} />;
   }
 
   const MaskComponent = TextMaskCustom as unknown as React.ElementType;
 
   return (
     <TextField
-      {...textFieldProps}
-      slotProps={{
-        input: {
-          inputComponent: MaskComponent,
-          inputProps: {
-            mask,
-          },
-        },
+      {...restTextFieldProps}
+      type={providedType}
+      InputProps={{
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        inputComponent: MaskComponent as any,
+      }}
+      inputProps={{
+        mask: resolvedMask,
       }}
     />
   );

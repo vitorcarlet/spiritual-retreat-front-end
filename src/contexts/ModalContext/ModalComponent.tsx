@@ -58,7 +58,7 @@ export const ModalComponent = ({
       )}
 
       <DialogContent
-        sx={{ py: 0, minHeight: contentHeight, ...customContentSx }}
+        sx={{ p: 2, minHeight: contentHeight, ...customContentSx }}
       >
         {customRender && <> {customRender()}</>}
       </DialogContent>

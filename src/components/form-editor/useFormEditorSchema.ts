@@ -59,6 +59,9 @@ function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
     type,
     required: false,
     grid: 12,
+    helperText: false,
+    mask: false,
+    helperTextContent: "",
   };
 
   switch (type) {
@@ -66,29 +69,27 @@ function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
       return {
         ...baseField,
         label: "Campo de Texto",
-        helperText: "Digite o texto aqui",
         placeholder: "Digite aqui...",
         defaultValue: "",
+        mask: true,
       };
 
     case "radio":
       return {
         ...baseField,
         label: "Opção Única",
-        helperText: "Selecione uma opção",
         placeholder: "",
         options: [
           { id: nanoid(), value: "opcao1" },
           { id: nanoid(), value: "opcao2" },
         ],
-        defaultValue: undefined,
+        defaultValue: [],
       };
 
     case "checkbox":
       return {
         ...baseField,
-        label: "Lista de Seleção Única",
-        helperText: "Marque as opções desejadas",
+        label: "Lista de Seleção Múltipla",
         placeholder: "",
         options: [
           { id: nanoid(), value: "item1" },
@@ -101,7 +102,6 @@ function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
       return {
         ...baseField,
         label: "Lista de Seleção Múltipla",
-        helperText: "Marque as opções desejadas",
         placeholder: "",
         options: [
           { id: nanoid(), value: "item1" },
@@ -114,7 +114,6 @@ function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
       return {
         ...baseField,
         label: "Interruptor",
-        helperText: null,
         placeholder: null,
         defaultValue: false,
       };
@@ -123,7 +122,6 @@ function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
       return {
         ...baseField,
         label: "Adicione uma foto",
-        helperText: "Adicione uma bela foto",
         isMultiple: false,
       };
 
@@ -131,7 +129,6 @@ function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
       return {
         ...baseField,
         label: "Novo Campo",
-        helperText: "",
         placeholder: "",
         options: type === "select" ? [] : undefined,
         defaultValue: undefined,

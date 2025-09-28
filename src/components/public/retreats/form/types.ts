@@ -12,11 +12,13 @@ export type BackendFieldType =
   | "datetime"
   | "phone"
   | "section"
-  | "chips";
+  | "chips"
+  | "photo";
 
 export interface BackendOption {
   id: string;
   value: string | number;
+  label?: string | number;
 }
 
 export interface BackendField {
@@ -26,12 +28,15 @@ export interface BackendField {
   type: BackendFieldType;
   required?: boolean;
   placeholder?: string;
-  helperText?: string;
+  helperText?: boolean;
+  helperTextContent?: string;
   description?: string;
   min?: number;
   max?: number;
   minLength?: number;
   maxLength?: number;
+  maskType?: string | null;
+  customMask?: string | null;
   pattern?: string;
   options?: BackendOption[]; // select, radio, multiselect, chips
   defaultValue?: unknown;

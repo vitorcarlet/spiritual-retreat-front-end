@@ -8,6 +8,7 @@ import {
   TextField,
   FormControlLabel,
   Checkbox,
+  Box,
 } from "@mui/material";
 import React, { memo } from "react";
 import { FieldDefinition } from "./types";
@@ -24,6 +25,20 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import SmartSelect from "../public/retreats/form/SmartSelect";
+import type { BackendOption } from "../public/retreats/form/types";
+
+const MASK_OPTIONS: BackendOption[] = [
+  { id: "mask-none", value: "", label: "Nenhuma" },
+  { id: "mask-cpf", value: "cpf", label: "CPF" },
+  { id: "mask-cnpj", value: "cnpj", label: "CNPJ" },
+  { id: "mask-phone", value: "phone", label: "Telefone" },
+  { id: "mask-cep", value: "cep", label: "CEP" },
+  { id: "mask-num", value: "num", label: "Numérico" },
+  { id: "mask-city", value: "city", label: "Cidade" },
+  { id: "mask-currency", value: "currency", label: "Moeda" },
+  { id: "mask-custom", value: "custom", label: "Personalizada" },
+];
 
 interface FieldEditorCardProps {
   field: FieldDefinition;
@@ -91,7 +106,7 @@ function FieldEditorCard({
           <DragIndicatorIcon fontSize="small" />
         </IconButton>
         <Typography variant="subtitle2" sx={{ flex: 1 }}>
-          {index + 1}. {field.label || field.name}
+          {index + 1}. {field.label || field.name} - {field.type}
         </Typography>
         <Button size="small" color="error" onClick={onDelete}>
           Remover
@@ -115,6 +130,44 @@ function FieldEditorCard({
           />
         )}
 
+        {field.mask && (
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <Box sx={{ flex: 1 }}>
+              <SmartSelect
+                label="Tipo de máscara"
+                placeholder="Selecionar"
+                options={MASK_OPTIONS}
+                value={(field.maskType ?? "") as string}
+                onChange={(selected) => {
+                  const rawValue = Array.isArray(selected)
+                    ? selected.length > 0
+                      ? String(selected[0])
+                      : ""
+                    : selected === null || selected === undefined
+                      ? ""
+                      : String(selected);
+                  const normalized = rawValue.trim();
+
+                  onChange({
+                    maskType: normalized ? normalized : null,
+                    ...(normalized === "custom" ? {} : { customMask: null }),
+                  });
+                }}
+                noOptionsText="Nenhuma máscara disponível"
+              />
+            </Box>
+            {field.maskType === "custom" && (
+              <TextField
+                size="small"
+                label="Máscara personalizada"
+                value={field.customMask || ""}
+                onChange={(e) => onChange({ customMask: e.target.value })}
+                helperText="Use o formato do IMask, ex: 000-000"
+              />
+            )}
+          </Stack>
+        )}
+
         <FormControlLabel
           control={
             <Checkbox
@@ -132,20 +185,36 @@ function FieldEditorCard({
                 onChange={(e) => onChange({ isMultiple: e.target.checked })}
               />
             }
-            label="Obrigatório"
+            label="Fotos Múltiplas"
           />
         )}
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={!!field.helperText}
+              onChange={(e) =>
+                onChange({
+                  helperText: e.target.checked,
+                  ...(e.target.checked ? {} : { helperTextContent: "" }),
+                })
+              }
+            />
+          }
+          label="Exibir texto de ajuda"
+        />
         {field.helperText && (
           <TextField
             label="Helper Text"
-            value={field.helperText || ""}
+            multiline
+            minRows={2}
+            value={field.helperTextContent || ""}
             size="small"
-            onChange={(e) => onChange({ helperText: e.target.value })}
+            onChange={(e) => onChange({ helperTextContent: e.target.value })}
             fullWidth
           />
         )}
 
-        {["radio", "list"].includes(field.type) && (
+        {["radio", "list", "checkbox"].includes(field.type) && (
           <Stack spacing={1} sx={{ mt: 1 }}>
             <Typography variant="caption" fontWeight={600}>
               Opções

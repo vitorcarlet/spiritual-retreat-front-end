@@ -273,7 +273,7 @@ export default function SectionCard({
             <Fab
               size="small"
               color="primary"
-              onClick={() => onAddField("switch")}
+              onClick={() => onAddField("photo")}
             >
               <PhotoCameraIcon fontSize="small" />
             </Fab>

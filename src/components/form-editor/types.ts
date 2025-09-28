@@ -34,11 +34,15 @@ export interface BaseFieldDefinition {
   name: string; // form field name
   label: string;
   type: BaseFieldType;
+  mask?: boolean;
   required?: boolean;
-  helperText?: string | null;
+  helperText?: boolean | null;
+  helperTextContent?: string | null;
   //Fotos multiplas
   isMultiple?: boolean | null;
   placeholder?: string | null;
+  maskType?: string | null;
+  customMask?: string | null;
   options?: OptionItem[]; // for select / radio
   defaultValue?: unknown;
   // layout
@@ -141,9 +145,12 @@ export const formSchemaZod = z.object({
               label: z.string().min(1),
               type: z.string(),
               required: z.boolean().optional(),
-              helperText: z.string().optional(),
+              helperText: z.boolean().optional(),
+              helperTextContent: z.string().optional(),
               placeholder: z.string().optional(),
               isMultiple: z.string().optional(),
+              maskType: z.string().nullable().optional(),
+              customMask: z.string().nullable().optional(),
               options: z
                 .array(
                   z.object({
