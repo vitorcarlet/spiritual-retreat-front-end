@@ -1,201 +1,22 @@
 "use client";
 
 import React, { use, useMemo } from "react";
-import {
-  Box,
-  Stack,
-  Button,
-  FormControlLabel,
-  Checkbox,
-  FormControl,
-  FormHelperText,
-  RadioGroup,
-  Radio,
-  Typography,
-  Divider,
-  Switch,
-  Chip,
-  Stepper,
-  Step,
-  StepLabel,
-  LinearProgress,
-  Skeleton,
-} from "@mui/material";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { z } from "zod";
+import { Box, Stack, Skeleton } from "@mui/material";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import SmartSelect from "./SmartSelect";
-import SmartDateField from "./SmartDateField";
-import TextFieldMasked, {
-  MaskType,
-} from "@/src/components/fields/maskedTextFields/TextFieldMasked";
-import { fetchFormData, defaultValues as baseDefaultValues } from "./shared";
-import type { BackendForm, BackendSection, BackendOption } from "./types";
-
-const getOptionLabel = (option?: BackendOption) => {
-  if (!option) return "";
-  const withLabel = option as BackendOption & {
-    label?: string | number | undefined | null;
-  };
-  if (withLabel.label !== undefined && withLabel.label !== null) {
-    return String(withLabel.label);
-  }
-  return String(option.value ?? "");
-};
-
-const buildZodSchema = (sections: BackendSection[]) => {
-  const shape: Record<string, z.ZodTypeAny> = {};
-
-  sections.forEach((section) => {
-    section.fields.forEach((field) => {
-      if (field.type === "section") return;
-
-      let schema: z.ZodTypeAny;
-
-      switch (field.type) {
-        case "text":
-        case "textarea":
-        case "email":
-        case "phone": {
-          let stringSchema = z.string();
-          if (typeof field.minLength === "number") {
-            stringSchema = stringSchema.min(
-              field.minLength,
-              `Mínimo de ${field.minLength} caracteres`
-            );
-          }
-          if (typeof field.maxLength === "number") {
-            stringSchema = stringSchema.max(
-              field.maxLength,
-              `Máximo de ${field.maxLength} caracteres`
-            );
-          }
-          if (field.pattern) {
-            stringSchema = stringSchema.regex(
-              new RegExp(field.pattern),
-              "Formato inválido"
-            );
-          }
-          if (field.type === "email") {
-            stringSchema = stringSchema.email("Email inválido");
-          }
-          schema = stringSchema;
-          break;
-        }
-
-        case "date":
-        case "datetime": {
-          schema = z
-            .string()
-            .refine(
-              (value) => !value || !Number.isNaN(Date.parse(value)),
-              "Data inválida"
-            );
-          break;
-        }
-
-        case "number": {
-          let numberSchema = z.number({
-            invalid_type_error: "Número inválido",
-          });
-          if (typeof field.min === "number") {
-            numberSchema = numberSchema.min(
-              field.min,
-              `Valor mínimo ${field.min}`
-            );
-          }
-          if (typeof field.max === "number") {
-            numberSchema = numberSchema.max(
-              field.max,
-              `Valor máximo ${field.max}`
-            );
-          }
-
-          schema = z.preprocess((value) => {
-            if (value === "" || value === null || value === undefined) {
-              return undefined;
-            }
-            if (typeof value === "string") {
-              const parsed = Number(value);
-              return Number.isNaN(parsed) ? value : parsed;
-            }
-            return value;
-          }, numberSchema);
-          break;
-        }
-
-        case "select":
-        case "radio": {
-          schema = z.preprocess(
-            (value) =>
-              value === "" || value === null || value === undefined
-                ? undefined
-                : value,
-            z.union([z.string(), z.number()])
-          );
-          break;
-        }
-
-        case "multiselect":
-        case "chips":
-        case "photo": {
-          let arraySchema = z.array(z.union([z.string(), z.number()]));
-          if (typeof field.min === "number") {
-            arraySchema = arraySchema.min(
-              field.min,
-              `Selecione pelo menos ${field.min}`
-            );
-          }
-          if (typeof field.max === "number") {
-            arraySchema = arraySchema.max(
-              field.max,
-              `Máximo ${field.max} itens`
-            );
-          }
-          schema = arraySchema;
-          break;
-        }
-
-        case "checkbox":
-        case "switch": {
-          schema = z.boolean();
-          break;
-        }
-
-        default: {
-          schema = z.any();
-        }
-      }
-
-      if (!field.required) {
-        schema = schema.optional();
-      } else {
-        const requiredMessage = field.label
-          ? `${field.label} é obrigatório`
-          : "Campo obrigatório";
-        schema = schema.refine(
-          (value) =>
-            !(
-              value === undefined ||
-              value === null ||
-              (typeof value === "string" && value.trim() === "") ||
-              (Array.isArray(value) && value.length === 0)
-            ),
-          requiredMessage
-        );
-      }
-
-      shape[field.name] = schema;
-    });
-  });
-
-  return z.object(shape);
-};
-
-interface PublicRetreatFormProps {
-  id: string;
-}
+import {
+  fetchFormData,
+  defaultValues as baseDefaultValues,
+  buildZodSchema,
+  PublicRetreatFormProps,
+} from "./shared";
+import type { BackendForm, BackendSection } from "./types";
+import FormHeader from "./components/FormHeader";
+import FormStepProgress from "./components/FormStepProgress";
+import StepSectionHeader from "./components/StepSectionHeader";
+import FormNavigation from "./components/FormNavigation";
+import FieldRenderer from "./components/FieldRenderer";
 
 const formCache = new Map<string, Promise<BackendForm>>();
 
@@ -283,6 +104,11 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
             return acc;
           }
 
+          if (field.type === "location") {
+            acc[field.name] = { stateShort: "", city: "" };
+            return acc;
+          }
+
           acc[field.name] = "";
           return acc;
         }, {});
@@ -322,52 +148,15 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
       onSubmit={handleSubmit(onSubmit)}
       sx={{ width: "100%", margin: "0 auto", maxWidth: 720 }}
     >
-      {totalSteps > 1 && (
-        <Box sx={{ mb: 3 }}>
-          <Stepper activeStep={currentStep} alternativeLabel>
-            {steps.map((step, index) => (
-              <Step key={step.id ?? index}>
-                <StepLabel>{step.title}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-          <LinearProgress
-            variant="determinate"
-            value={((currentStep + 1) / totalSteps) * 100}
-            sx={{ mt: 1 }}
-          />
-        </Box>
-      )}
+      <FormStepProgress steps={steps} currentStep={currentStep} />
 
       <Stack spacing={3}>
-        {(form.title || form.description) && (
-          <Stack spacing={0.5}>
-            {form.title && (
-              <Typography variant="h5" fontWeight={600}>
-                {form.title}
-              </Typography>
-            )}
-            {form.description && (
-              <Typography variant="body2" color="text.secondary">
-                {form.description}
-              </Typography>
-            )}
-          </Stack>
-        )}
-
-        {steps[currentStep] && (
-          <Stack spacing={1}>
-            <Typography variant="h6" fontWeight={600}>
-              {steps[currentStep].title}
-            </Typography>
-            {steps[currentStep].description && (
-              <Typography variant="body2" color="text.secondary">
-                {steps[currentStep].description}
-              </Typography>
-            )}
-            <Divider />
-          </Stack>
-        )}
+        <FormHeader
+          title={form.title}
+          subtitle={form.subtitle}
+          description={form.description}
+        />
+        <StepSectionHeader step={steps[currentStep]} />
 
         {steps[currentStep]?.fields.map((field) => {
           if (
@@ -384,405 +173,26 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
             (field.helperText ? field.helperTextContent : undefined) ||
             field.description;
 
-          switch (field.type) {
-            case "text":
-            case "textarea":
-            case "email":
-            case "phone":
-            case "number":
-            case "datetime": {
-              const deriveMask = (): {
-                maskType?: MaskType;
-                customMask?: string;
-              } => {
-                const raw = field.maskType ?? undefined;
-                if (raw && raw !== "") {
-                  if (raw === "custom") {
-                    return field.customMask
-                      ? { maskType: "custom", customMask: field.customMask }
-                      : {};
-                  }
-                  return { maskType: raw as MaskType };
-                }
-
-                if (field.type === "phone") {
-                  return { maskType: "phone" };
-                }
-                if (field.type === "number") {
-                  return { maskType: "num" };
-                }
-                return {};
-              };
-
-              return (
-                <Controller
-                  key={field.name}
-                  name={field.name}
-                  control={control}
-                  render={({ field: rhf }) => {
-                    const { maskType, customMask } = deriveMask();
-                    const hasMask = Boolean(maskType || customMask);
-
-                    return (
-                      <TextFieldMasked
-                        {...rhf}
-                        maskType={maskType}
-                        customMask={customMask}
-                        type={
-                          hasMask
-                            ? "text"
-                            : field.type === "number"
-                              ? "number"
-                              : field.type === "datetime"
-                                ? "datetime-local"
-                                : "text"
-                        }
-                        label={field.label}
-                        required={field.required}
-                        placeholder={field.placeholder}
-                        disabled={field.disabled || isSubmitting}
-                        error={Boolean(error)}
-                        helperText={helperText}
-                        multiline={field.type === "textarea"}
-                        minRows={field.type === "textarea" ? 3 : undefined}
-                        fullWidth
-                        inputProps={{
-                          maxLength: field.maxLength,
-                          min: field.min,
-                          max: field.max,
-                        }}
-                        onChange={(event) => {
-                          const target = event.target as HTMLInputElement;
-                          const nextValue = target.value;
-
-                          if (maskType === "currency") {
-                            if (field.type === "number") {
-                              rhf.onChange(
-                                nextValue === "" ? "" : Number(nextValue)
-                              );
-                            } else {
-                              rhf.onChange(nextValue);
-                            }
-                            return;
-                          }
-
-                          if (field.type === "number") {
-                            rhf.onChange(
-                              nextValue === "" ? "" : Number(nextValue)
-                            );
-                            return;
-                          }
-
-                          rhf.onChange(nextValue);
-                        }}
-                      />
-                    );
-                  }}
-                />
-              );
-            }
-
-            case "date": {
-              return (
-                <Controller
-                  key={field.name}
-                  name={field.name}
-                  control={control}
-                  render={({ field: rhf }) => (
-                    <SmartDateField
-                      label={field.label}
-                      value={rhf.value as string | null | undefined}
-                      onChange={(next) => rhf.onChange(next ?? "")}
-                      placeholder={field.placeholder}
-                      helperText={helperText}
-                      error={Boolean(error)}
-                      disabled={field.disabled || isSubmitting}
-                      required={field.required}
-                      onBlur={rhf.onBlur}
-                    />
-                  )}
-                />
-              );
-            }
-
-            case "select": {
-              return (
-                <Controller
-                  key={field.name}
-                  name={field.name}
-                  control={control}
-                  render={({ field: rhf }) => (
-                    <SmartSelect
-                      label={field.label}
-                      placeholder={field.placeholder || "Selecionar"}
-                      disabled={field.disabled || isSubmitting}
-                      options={field.options}
-                      value={
-                        rhf.value === undefined ||
-                        rhf.value === null ||
-                        rhf.value === ""
-                          ? null
-                          : (rhf.value as string | number)
-                      }
-                      onChange={(value) => {
-                        if (Array.isArray(value)) {
-                          rhf.onChange(value.length ? value[0] : "");
-                          return;
-                        }
-                        rhf.onChange(value ?? "");
-                      }}
-                      error={Boolean(error)}
-                      helperText={helperText}
-                      required={field.required}
-                      onBlur={rhf.onBlur}
-                    />
-                  )}
-                />
-              );
-            }
-
-            case "multiselect": {
-              return (
-                <Controller
-                  key={field.name}
-                  name={field.name}
-                  control={control}
-                  render={({ field: rhf }) => (
-                    <SmartSelect
-                      multiple
-                      label={field.label}
-                      placeholder={field.placeholder || "Selecionar"}
-                      disabled={field.disabled || isSubmitting}
-                      options={field.options}
-                      value={
-                        Array.isArray(rhf.value)
-                          ? (rhf.value as (string | number)[])
-                          : []
-                      }
-                      onChange={(value) => {
-                        if (Array.isArray(value)) {
-                          rhf.onChange(value);
-                          return;
-                        }
-                        if (value === null || value === undefined) {
-                          rhf.onChange([]);
-                          return;
-                        }
-                        rhf.onChange([value]);
-                      }}
-                      error={Boolean(error)}
-                      helperText={helperText}
-                      required={field.required}
-                      onBlur={rhf.onBlur}
-                    />
-                  )}
-                />
-              );
-            }
-
-            case "radio": {
-              return (
-                <Controller
-                  key={field.name}
-                  name={field.name}
-                  control={control}
-                  render={({ field: rhf }) => (
-                    <FormControl
-                      component="fieldset"
-                      error={Boolean(error)}
-                      disabled={field.disabled || isSubmitting}
-                    >
-                      {field.label && (
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={500}
-                          sx={{ mb: 0.5 }}
-                        >
-                          {field.label}
-                          {field.required ? " *" : ""}
-                        </Typography>
-                      )}
-                      <RadioGroup
-                        {...rhf}
-                        row
-                        onChange={(event) => rhf.onChange(event.target.value)}
-                      >
-                        {field.options?.map((option) => (
-                          <FormControlLabel
-                            key={option.id ?? option.value}
-                            value={option.value}
-                            control={<Radio />}
-                            label={getOptionLabel(option)}
-                          />
-                        ))}
-                      </RadioGroup>
-                      <FormHelperText>{helperText}</FormHelperText>
-                    </FormControl>
-                  )}
-                />
-              );
-            }
-
-            case "checkbox": {
-              return (
-                <Controller
-                  key={field.name}
-                  name={field.name}
-                  control={control}
-                  render={({ field: rhf }) => (
-                    <FormControl
-                      component="fieldset"
-                      error={Boolean(error)}
-                      disabled={field.disabled || isSubmitting}
-                      variant="standard"
-                      sx={{ m: 0 }}
-                    >
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            {...rhf}
-                            checked={Boolean(rhf.value)}
-                            onChange={(event) =>
-                              rhf.onChange(event.target.checked)
-                            }
-                          />
-                        }
-                        label={[field.label, field.required ? "*" : null]
-                          .filter(Boolean)
-                          .join(" ")}
-                      />
-                      {helperText && (
-                        <FormHelperText>{helperText}</FormHelperText>
-                      )}
-                    </FormControl>
-                  )}
-                />
-              );
-            }
-
-            case "switch": {
-              return (
-                <Controller
-                  key={field.name}
-                  name={field.name}
-                  control={control}
-                  render={({ field: rhf }) => (
-                    <FormControl
-                      component="fieldset"
-                      error={Boolean(error)}
-                      disabled={field.disabled || isSubmitting}
-                      variant="standard"
-                      sx={{ m: 0 }}
-                    >
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            {...rhf}
-                            checked={Boolean(rhf.value)}
-                            onChange={(event) =>
-                              rhf.onChange(event.target.checked)
-                            }
-                          />
-                        }
-                        label={[field.label, field.required ? "*" : null]
-                          .filter(Boolean)
-                          .join(" ")}
-                      />
-                      {helperText && (
-                        <FormHelperText>{helperText}</FormHelperText>
-                      )}
-                    </FormControl>
-                  )}
-                />
-              );
-            }
-
-            case "chips":
-            case "photo": {
-              return (
-                <Controller
-                  key={field.name}
-                  name={field.name}
-                  control={control}
-                  render={({ field: rhf }) => {
-                    const selected = Array.isArray(rhf.value)
-                      ? (rhf.value as (string | number)[])
-                      : [];
-
-                    const toggle = (value: string | number) => {
-                      if (selected.includes(value)) {
-                        rhf.onChange(selected.filter((item) => item !== value));
-                      } else {
-                        rhf.onChange([...selected, value]);
-                      }
-                    };
-
-                    return (
-                      <Stack spacing={1}>
-                        {field.label && (
-                          <Typography variant="subtitle2" fontWeight={500}>
-                            {field.label}
-                            {field.required ? " *" : ""}
-                          </Typography>
-                        )}
-                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                          {field.options?.map((option) => {
-                            const active = selected.includes(option.value);
-                            return (
-                              <Chip
-                                key={option.id ?? option.value}
-                                label={getOptionLabel(option)}
-                                color={active ? "primary" : "default"}
-                                variant={active ? "filled" : "outlined"}
-                                onClick={() => toggle(option.value)}
-                                disabled={field.disabled || isSubmitting}
-                              />
-                            );
-                          })}
-                        </Box>
-                        <Typography
-                          variant="caption"
-                          color={error ? "error" : "text.secondary"}
-                        >
-                          {helperText}
-                        </Typography>
-                      </Stack>
-                    );
-                  }}
-                />
-              );
-            }
-
-            default:
-              return null;
-          }
+          return (
+            <FieldRenderer
+              key={field.name}
+              field={field}
+              control={control}
+              helperText={helperText}
+              error={error}
+              isSubmitting={isSubmitting}
+            />
+          );
         })}
 
-        <Box display="flex" gap={2} justifyContent="space-between" pt={2}>
-          <Button
-            variant="outlined"
-            color="inherit"
-            disabled={currentStep === 0 || isSubmitting}
-            onClick={handleBack}
-          >
-            Voltar
-          </Button>
-          {currentStep < totalSteps - 1 ? (
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={isSubmitting}
-            >
-              Próximo
-            </Button>
-          ) : (
-            <Button type="submit" variant="contained" disabled={isSubmitting}>
-              {isSubmitting
-                ? "Enviando..."
-                : form.submitLabel || "Enviar inscrição"}
-            </Button>
-          )}
-        </Box>
+        <FormNavigation
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          isSubmitting={isSubmitting}
+          onNext={handleNext}
+          onBack={handleBack}
+          submitLabel={form.submitLabel}
+        />
       </Stack>
     </Box>
   );

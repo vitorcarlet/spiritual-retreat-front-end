@@ -13,7 +13,8 @@ export type BackendFieldType =
   | "phone"
   | "section"
   | "chips"
-  | "photo";
+  | "photo"
+  | "location";
 
 export interface BackendOption {
   id: string;

@@ -14,7 +14,8 @@ export type BaseFieldType =
   | "phone"
   | "list"
   | "switch"
-  | "photo";
+  | "photo"
+  | "location";
 
 export interface OptionItem {
   id: string;

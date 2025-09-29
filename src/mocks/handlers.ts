@@ -712,7 +712,8 @@ export const handlers = [
                 id: "field-email",
                 name: "email",
                 label: "E-mail",
-                type: "email",
+                type: "text",
+                maskType: 'email',
                 required: true,
                 helperText: "Digite seu e-mail principal",
                 placeholder: "voce@exemplo.com",
@@ -723,16 +724,18 @@ export const handlers = [
                 name: "phone", 
                 label: "Telefone", 
                 type: "text", 
+                maskType: 'phone',
                 required: true,
                 helperText: "Digite seu telefone com DDD",
-                placeholder: "(11) 99999-9999",
+                placeholder: "+55 (11) 99999-9999",
                 grid: 6
               },
               {
                 id: "field-birth",
                 name: "birth",
                 label: "Data de Nascimento",
-                type: "date",
+                type: "text",
+                maskType:'date',
                 required: true,
                 helperText: "Selecione sua data de nascimento",
                 grid: 4
@@ -775,24 +778,15 @@ export const handlers = [
             fields: [
               {
                 id: "field-city",
-                name: "city",
-                label: "Cidade",
+                name: "Endereço",
+                label: "Endereço",
                 type: "text",
+                maskType: 'location',
                 required: true,
                 helperText: "Digite sua cidade",
-                placeholder: "Ex: São Paulo",
-                grid: 8
+                placeholder: "Ex: São Paulo - SP",
+                grid: 12
               },
-              {
-                id: "field-state",
-                name: "state",
-                label: "Estado",
-                type: "text",
-                required: true,
-                helperText: "Digite a sigla do seu estado",
-                placeholder: "UF",
-                grid: 4
-              }
             ]
           },
           {
