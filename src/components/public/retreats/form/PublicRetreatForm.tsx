@@ -11,7 +11,7 @@ import {
   buildZodSchema,
   PublicRetreatFormProps,
 } from "./shared";
-import type { BackendForm, BackendSection } from "./types";
+import type { BackendForm, BackendSection, BackendField } from "./types";
 import FormHeader from "./components/FormHeader";
 import FormStepProgress from "./components/FormStepProgress";
 import StepSectionHeader from "./components/StepSectionHeader";
@@ -100,6 +100,15 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
             field.type === "chips" ||
             field.type === "photo"
           ) {
+            if (field.type === "photo") {
+              const photoIsMultiple = Boolean(
+                (field as BackendField & { isMultiple?: boolean }).isMultiple ??
+                  field.multiple
+              );
+              acc[field.name] = photoIsMultiple ? [] : null;
+              return acc;
+            }
+
             acc[field.name] = [];
             return acc;
           }

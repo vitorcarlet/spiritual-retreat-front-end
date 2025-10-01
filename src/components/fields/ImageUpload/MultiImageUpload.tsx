@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Stack,
@@ -17,7 +11,6 @@ import {
   ImageList,
   ImageListItem,
   ImageListItemBar,
-  useTheme,
   Chip,
 } from "@mui/material";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
@@ -150,12 +143,6 @@ export default function MultiImageUpload({
 
   const hasAny = previews.length > 0 || existing.length > 0;
 
-  const hintText = useMemo(() => {
-    if (errorText) return errorText;
-    if (helperText) return helperText;
-    return `PNG/JPG até ${maxSizeMB}MB • Máx ${maxFiles} imagens`;
-  }, [errorText, helperText, maxFiles, maxSizeMB]);
-
   return (
     <Stack spacing={1.25}>
       <Stack
@@ -189,6 +176,12 @@ export default function MultiImageUpload({
         </Stack>
       </Stack>
 
+      {helperText && !errorText && (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+          {helperText}
+        </Typography>
+      )}
+
       <Box
         {...getRootProps()}
         sx={{
@@ -212,13 +205,10 @@ export default function MultiImageUpload({
         <input {...getInputProps()} />
         <Stack spacing={1}>
           <Typography variant="body2" color="text.secondary">
-            Arraste e solte imagens aqui ou clique em “Selecionar”.
+            Arraste e solte imagens aqui ou clique em &quot;Selecionar&quot;.
           </Typography>
-          <Typography
-            variant="caption"
-            color={errorText ? "error" : "text.secondary"}
-          >
-            {hintText}
+          <Typography variant="caption" color="text.secondary">
+            PNG/JPG até {maxSizeMB}MB • Máx {maxFiles} imagens
           </Typography>
           {!hasAny && (
             <Stack direction="row" spacing={1}>
@@ -229,6 +219,12 @@ export default function MultiImageUpload({
           )}
         </Stack>
       </Box>
+
+      {errorText && (
+        <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+          {errorText}
+        </Typography>
+      )}
 
       {hasAny && (
         <ImageList cols={cols} rowHeight={rowHeight} gap={8} sx={{ m: 0 }}>

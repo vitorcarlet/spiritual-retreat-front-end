@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Stack,
@@ -14,7 +8,6 @@ import {
   Button,
   IconButton,
   Tooltip,
-  useTheme,
   Chip,
   Avatar,
 } from "@mui/material";
@@ -59,7 +52,6 @@ export default function SingleImageUpload({
   variant = "standard",
   size = 120,
 }: SingleImageUploadProps) {
-  const theme = useTheme();
   const [file, setFile] = useState<File | null>(value ?? null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -136,17 +128,21 @@ export default function SingleImageUpload({
   const currentImageUrl = previewUrl || existing?.url;
   const hasImage = Boolean(currentImageUrl);
 
-  const hintText = useMemo(() => {
-    if (errorText) return errorText;
-    if (helperText) return helperText;
-    return `PNG/JPG até ${maxSizeMB}MB`;
-  }, [errorText, helperText, maxSizeMB]);
-
   // Variant Avatar
   if (variant === "avatar") {
     return (
       <Stack spacing={1.25} alignItems="center">
         <Typography variant="subtitle2">{label}</Typography>
+
+        {helperText && !errorText && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mt: -0.5 }}
+          >
+            {helperText}
+          </Typography>
+        )}
 
         <Box
           {...getRootProps()}
@@ -167,9 +163,10 @@ export default function SingleImageUpload({
                 : isDragActive
                   ? "primary.main"
                   : "divider",
-              bgcolor: isDragActive
-                ? theme.palette.action.hover
-                : theme.palette.background.default,
+              bgcolor: (theme) =>
+                isDragActive
+                  ? theme.vars?.palette.action.hover
+                  : theme.vars?.palette.background.default,
               transition: "all .15s ease",
             }}
           >
@@ -244,13 +241,21 @@ export default function SingleImageUpload({
           )}
         </Stack>
 
-        <Typography
-          variant="caption"
-          color={errorText ? "error" : "text.secondary"}
-          textAlign="center"
-        >
-          {hintText}
-        </Typography>
+        {helperText && !errorText && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            textAlign="center"
+          >
+            {helperText}
+          </Typography>
+        )}
+
+        {errorText && (
+          <Typography variant="caption" color="error" textAlign="center">
+            {errorText}
+          </Typography>
+        )}
       </Stack>
     );
   }
@@ -291,6 +296,12 @@ export default function SingleImageUpload({
         </Stack>
       </Stack>
 
+      {helperText && !errorText && (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+          {helperText}
+        </Typography>
+      )}
+
       <Box
         {...getRootProps()}
         sx={{
@@ -301,9 +312,10 @@ export default function SingleImageUpload({
             : isDragActive
               ? "primary.main"
               : "divider",
-          bgcolor: isDragActive
-            ? theme.palette.action.hover
-            : theme.palette.background.default,
+          bgcolor: (theme) =>
+            isDragActive
+              ? theme.vars?.palette.action.hover
+              : theme.vars?.palette.background.default,
           borderRadius: 2,
           outline: "none",
           transition: "all .15s ease",
@@ -388,10 +400,10 @@ export default function SingleImageUpload({
             </Typography>
             <Typography
               variant="caption"
-              color={errorText ? "error" : "text.secondary"}
+              color="text.secondary"
               textAlign="center"
             >
-              {hintText}
+              PNG/JPG até {maxSizeMB}MB
             </Typography>
             <Stack direction="row" spacing={1}>
               <Chip size="small" label="image/png" />
@@ -401,6 +413,12 @@ export default function SingleImageUpload({
           </Stack>
         )}
       </Box>
+
+      {errorText && (
+        <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+          {errorText}
+        </Typography>
+      )}
     </Stack>
   );
 }

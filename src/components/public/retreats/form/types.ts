@@ -43,6 +43,7 @@ export interface BackendField {
   defaultValue?: unknown;
   disabled?: boolean;
   multiple?: boolean; // multiselect
+  isMultiple?: boolean; // photo / custom
   dependsOn?: string; // nome de outro campo
   dependsValue?: unknown; // valor que habilita
   grid?: number; // grid layout

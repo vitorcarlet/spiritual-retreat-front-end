@@ -686,7 +686,7 @@ export const handlers = [
             id: "section-basic-info",
             title: "Informações Pessoais",
             description: "Dados básicos do participante",
-            collapsed: false,
+            //collapsed: false,
             fields: [
               { 
                 id: "field-first-name",
@@ -708,6 +708,7 @@ export const handlers = [
                 placeholder: "Ex: Silva",
                 grid: 6
               },
+             
               {
                 id: "field-email",
                 name: "email",
@@ -774,7 +775,7 @@ export const handlers = [
             id: "section-location",
             title: "Localização",
             description: "Informações de endereço",
-            collapsed: false,
+            //collapsed: false,
             fields: [
               {
                 id: "field-city",
@@ -793,7 +794,7 @@ export const handlers = [
             id: "section-health",
             title: "Informações de Saúde",
             description: "Restrições médicas e alimentares",
-            collapsed: false,
+            //collapsed: false,
             fields: [
               {
                 id: "field-medical",
@@ -807,11 +808,48 @@ export const handlers = [
               }
             ]
           },
+           {
+            id: "section-photos",
+            title: "Imagens",
+            description: "Imagens para identificação",
+            //collapsed: false,
+            fields: [
+              {
+                id: "profile-picture",
+                name: "Foto de Perfil",
+                label: "Foto de Perfil",
+                placeholder: `Envie-nos uma foto sua. A foto deve atender as seguintes orientações:
+                -sem óculos de SolarPower-sem chapéu
+                - sem boné
+                - sem lenço na cabeça`,
+                type: "photo",
+                isMultiple:false,
+                required: true,
+                helperText: "Foto de Perfil com boa iluminação",
+                grid: 12
+              },
+              {
+                id: "field-document-photos",
+                name: "Fotos do documento",
+                label: "Fotos do documento",
+                placeholder: `Envie-nos tam´bme um documento(de preferẽncia com foto):
+                - RG;
+                - CNH;
+                - CPF;
+                - outro`,
+                type: "photo",
+                isMultiple:true,
+                required: true,
+                helperText: "Foto Frente e Verso do Documento",
+                grid: 12
+              },
+            ]
+          },
           {
             id: "section-terms",
             title: "Termos e Condições",
-            description: "Aceite dos termos de participação",
-            collapsed: false,
+            description: "Acite edos termos de participação",
+            //collapsed: false,
             fields: [
               {
                 id: "field-terms",

@@ -18,6 +18,7 @@ import { Controller, type Control } from "react-hook-form";
 
 import SmartSelect from "../SmartSelect";
 import SmartDateField from "../SmartDateField";
+import PhotoFieldInput from "./PhotoFieldInput";
 import TextFieldMasked, {
   MaskType,
 } from "@/src/components/fields/maskedTextFields/TextFieldMasked";
@@ -355,8 +356,42 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       );
     }
 
-    case "chips":
     case "photo": {
+      return (
+        <Controller
+          name={field.name}
+          control={control}
+          render={({ field: rhf }) => {
+            const isMultiple = Boolean(
+              (field as BackendField & { isMultiple?: boolean }).isMultiple ??
+                field.multiple
+            );
+
+            return (
+              <PhotoFieldInput
+                label={field.label}
+                placeholder={field.placeholder}
+                multiple={isMultiple}
+                value={rhf.value}
+                onChange={(nextValue) => {
+                  if (isMultiple) {
+                    rhf.onChange(Array.isArray(nextValue) ? nextValue : []);
+                  } else {
+                    rhf.onChange(nextValue instanceof File ? nextValue : null);
+                  }
+                }}
+                disabled={field.disabled || isSubmitting}
+                helperText={helperText}
+                error={hasError}
+                required={field.required}
+              />
+            );
+          }}
+        />
+      );
+    }
+
+    case "chips": {
       return (
         <Controller
           name={field.name}
