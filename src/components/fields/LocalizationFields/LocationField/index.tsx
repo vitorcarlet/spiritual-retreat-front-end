@@ -7,6 +7,7 @@ import {
   Box,
   Autocomplete,
   TextField,
+  Typography,
 } from "@mui/material";
 import Iconify from "../../../Iconify";
 import { Estado, Cidade, StateFieldProps, FALLBACK_STATES } from "../types";
@@ -133,7 +134,6 @@ const LocationField: React.FC<StateFieldProps> = ({
               variant={variant}
               size={size}
               required={required}
-              error={error}
               helperText={helperText}
               slotProps={{
                 input: {
@@ -192,7 +192,6 @@ const LocationField: React.FC<StateFieldProps> = ({
               variant={variant}
               size={size}
               required={required}
-              error={error}
               helperText={
                 !selectedState ? "Selecione um estado primeiro" : helperText
               }
@@ -234,8 +233,8 @@ const LocationField: React.FC<StateFieldProps> = ({
             !selectedState
               ? "Primeiro selecione um estado"
               : loadingCities
-              ? "Carregando cidades..."
-              : "Nenhuma cidade encontrada"
+                ? "Carregando cidades..."
+                : "Nenhuma cidade encontrada"
           }
           loadingText="Carregando cidades..."
           clearOnEscape
@@ -250,6 +249,9 @@ const LocationField: React.FC<StateFieldProps> = ({
           }}
         />
       </Grid>
+      <Typography variant="body2" color="error">
+        {error}
+      </Typography>
     </Grid>
   );
 };

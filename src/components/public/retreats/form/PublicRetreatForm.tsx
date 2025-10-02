@@ -134,6 +134,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
   };
 
   const handleNext = async () => {
+    console.log({ steps, values, errors });
     const fieldsToValidate = steps[currentStep]?.fields ?? [];
     const valid = await trigger(
       fieldsToValidate.map((field) => field.name) as (keyof Record<

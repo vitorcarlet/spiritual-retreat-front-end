@@ -9,14 +9,20 @@ interface CustomProps {
   onChange: (event: { target: { name: string; value: string } }) => void;
   name: string;
   mask: string;
+  value?: string | number | null;
 }
 
 const TextMaskCustom = React.forwardRef<HTMLInputElement, CustomProps>(
   function TextMaskCustom(props, ref) {
-    const { onChange, mask, ...other } = props;
+    const { onChange, mask, value, ...other } = props;
+
+    // Normalizar valor para string (IMaskInput só aceita string)
+    const normalizedValue = value != null ? String(value) : "";
+
     return (
       <IMaskInput
         {...other}
+        value={normalizedValue}
         mask={mask}
         inputRef={ref}
         onAccept={(value) => onChange({ target: { name: props.name, value } })}

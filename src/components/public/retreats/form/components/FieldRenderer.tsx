@@ -24,6 +24,7 @@ import TextFieldMasked, {
 } from "@/src/components/fields/maskedTextFields/TextFieldMasked";
 import type { BackendField } from "../types";
 import { getOptionLabel } from "../shared";
+import LocationField from "@/src/components/fields/LocalizationFields/LocationField";
 
 type FieldRendererProps = {
   field: BackendField;
@@ -81,6 +82,61 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
     case "phone":
     case "number":
     case "datetime": {
+      if (field.maskType === "location") {
+        return (
+          <Controller
+            name={field.name}
+            control={control}
+            render={({ field: rhf }) => {
+              const parsedValue =
+                rhf.value && typeof rhf.value === "object"
+                  ? (rhf.value as {
+                      stateShort?: string | null;
+                      city?: string | null;
+                    })
+                  : undefined;
+
+              const locationValue = {
+                stateShort: parsedValue?.stateShort ?? "",
+                city: parsedValue?.city ?? "",
+              };
+
+              const emitChange = (next: {
+                stateShort: string;
+                city: string;
+              }) => {
+                rhf.onChange(next);
+              };
+
+              return (
+                <LocationField
+                  selectedState={locationValue.stateShort}
+                  selectedCity={locationValue.city}
+                  onStateChange={(state) =>
+                    emitChange({
+                      stateShort: state,
+                      city: state ? locationValue.city : "",
+                    })
+                  }
+                  onCityChange={(city) =>
+                    emitChange({
+                      stateShort: locationValue.stateShort,
+                      city,
+                    })
+                  }
+                  required={field.required}
+                  disabled={field.disabled || isSubmitting}
+                  error={hasError}
+                  helperText={helperText}
+                  size="medium"
+                  variant="outlined"
+                />
+              );
+            }}
+          />
+        );
+      }
+
       return (
         <Controller
           name={field.name}
@@ -140,27 +196,6 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
               />
             );
           }}
-        />
-      );
-    }
-
-    case "location": {
-      return (
-        <Controller
-          name={field.name}
-          control={control}
-          render={({ field: rhf }) => (
-            <TextFieldMasked
-              {...rhf}
-              type="location"
-              label={field.label}
-              required={field.required}
-              disabled={field.disabled || isSubmitting}
-              error={hasError}
-              helperText={helperText}
-              fullWidth
-            />
-          )}
         />
       );
     }
