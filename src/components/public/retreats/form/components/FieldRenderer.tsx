@@ -359,7 +359,8 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
       );
     }
 
-    case "switch": {
+    case "switch":
+    case "switchExpansible": {
       return (
         <Controller
           name={field.name}

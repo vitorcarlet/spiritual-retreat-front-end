@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use server";
 
 import * as z from "zod";

@@ -52,7 +52,9 @@ function createSectionByTitle(title: string): SectionDefinition {
   };
 }
 
-function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
+export function createFieldByType(
+  type: FieldDefinition["type"]
+): FieldDefinition {
   const baseField = {
     id: nanoid(),
     name: `${type}_${Date.now()}`,
@@ -116,6 +118,15 @@ function createFieldByType(type: FieldDefinition["type"]): FieldDefinition {
         label: "Interruptor",
         placeholder: null,
         defaultValue: false,
+      };
+
+    case "switchExpansible":
+      return {
+        ...baseField,
+        label: "Interruptor Expansível",
+        placeholder: null,
+        defaultValue: false,
+        fields: [],
       };
 
     case "photo":

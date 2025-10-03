@@ -9,10 +9,13 @@ import {
   FormControlLabel,
   Checkbox,
   Box,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import React, { memo } from "react";
-import { FieldDefinition } from "./types";
+import { BaseFieldType, FieldDefinition, BASE_FIELD_TYPES } from "./types";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import AddIcon from "@mui/icons-material/Add";
 import { nanoid } from "nanoid";
 import {
   DndContext,
@@ -27,6 +30,7 @@ import {
 } from "@dnd-kit/sortable";
 import SmartSelect from "../public/retreats/form/SmartSelect";
 import type { BackendOption } from "../public/retreats/form/types";
+import { createFieldByType } from "./useFormEditorSchema";
 
 const MASK_OPTIONS: BackendOption[] = [
   { id: "mask-none", value: "", label: "Nenhuma" },
@@ -40,13 +44,35 @@ const MASK_OPTIONS: BackendOption[] = [
   { id: "mask-custom", value: "custom", label: "Personalizada" },
 ];
 
+const FIELD_TYPE_LABELS: Record<BaseFieldType, string> = {
+  text: "Campo de texto",
+  textarea: "Texto longo",
+  number: "Número",
+  select: "Seleção",
+  date: "Data",
+  checkbox: "Caixa de seleção",
+  radio: "Opção única",
+  color: "Cor",
+  email: "Email",
+  phone: "Telefone",
+  list: "Lista",
+  switch: "Interruptor",
+  photo: "Foto",
+  location: "Localização",
+  switchExpansible: "Interruptor expansível",
+};
+
+const CHILD_FIELD_TYPES = BASE_FIELD_TYPES.filter(
+  (type) => type !== "switchExpansible"
+);
+
 interface FieldEditorCardProps {
   field: FieldDefinition;
   index: number;
   onChange: (patch: Partial<FieldDefinition>) => void;
   onDelete: () => void;
-  onSelect: () => void;
-  selected: boolean;
+  selectedFieldId?: string;
+  onSelectField?: (fieldId: string) => void;
   addOption?: (option: { id: string; value: string }) => void;
   updateOption?: (optionId: string, patch: { value?: string }) => void;
   removeOption?: (optionId: string) => void;
@@ -58,8 +84,8 @@ function FieldEditorCard({
   index,
   onChange,
   onDelete,
-  onSelect,
-  selected,
+  selectedFieldId,
+  onSelectField,
   addOption,
   updateOption,
   removeOption,
@@ -73,6 +99,8 @@ function FieldEditorCard({
     transition,
     isDragging,
   } = useSortable({ id: field.id });
+  const isSelected = selectedFieldId === field.id;
+
   const style: React.CSSProperties = {
     transform: transform
       ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
@@ -82,6 +110,66 @@ function FieldEditorCard({
   };
 
   const optionSensors = useSensors(useSensor(PointerSensor));
+  const childSensors = useSensors(useSensor(PointerSensor));
+
+  const childFields = field.fields ?? [];
+  const [childMenuAnchor, setChildMenuAnchor] =
+    React.useState<null | HTMLElement>(null);
+  const childMenuOpen = Boolean(childMenuAnchor);
+
+  const handleChildMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setChildMenuAnchor(event.currentTarget);
+  };
+
+  const handleChildMenuClose = () => {
+    setChildMenuAnchor(null);
+  };
+
+  const handleChildChange = (
+    childId: string,
+    patch: Partial<FieldDefinition>
+  ) => {
+    const updated = childFields.map((child) =>
+      child.id === childId ? { ...child, ...patch } : child
+    );
+    onChange({ fields: updated });
+  };
+
+  const handleChildDelete = (childId: string) => {
+    const updated = childFields.filter((child) => child.id !== childId);
+    onChange({ fields: updated });
+  };
+
+  const handleAddChildField = (type: BaseFieldType) => {
+    handleChildMenuClose();
+    if (type === "switchExpansible") {
+      return;
+    }
+    const newField = createFieldByType(type);
+    const updated = [...childFields, newField];
+    onChange({ fields: updated });
+    onSelectField?.(newField.id);
+  };
+
+  const handleChildDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const fromIndex = childFields.findIndex((child) => child.id === active.id);
+    const toIndex = childFields.findIndex((child) => child.id === over.id);
+
+    if (fromIndex === -1 || toIndex === -1) {
+      return;
+    }
+
+    const reordered = [...childFields];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    onChange({ fields: reordered });
+  };
 
   function handleOptionDragEnd(e: DragEndEvent) {
     if (!reorderOptions || !field.options) return;
@@ -96,8 +184,8 @@ function FieldEditorCard({
   return (
     <Paper
       ref={setNodeRef}
-      variant={selected ? "elevation" : "outlined"}
-      elevation={selected ? 4 : 0}
+      variant={isSelected ? "elevation" : "outlined"}
+      elevation={isSelected ? 4 : 0}
       sx={{ p: 2, position: "relative" }}
       style={style}
     >
@@ -112,7 +200,7 @@ function FieldEditorCard({
           Remover
         </Button>
       </Stack>
-      <Stack spacing={1} onClick={onSelect}>
+      <Stack spacing={1} onClick={() => onSelectField?.(field.id)}>
         <TextField
           label="Label"
           value={field.label}
@@ -304,6 +392,78 @@ function FieldEditorCard({
               Adicionar Opção
             </Button>
           </Stack>
+        )}
+
+        {field.type === "switchExpansible" && (
+          <Box
+            sx={{
+              mt: 2,
+              p: 1.5,
+              border: (theme) => `1px dashed ${theme.palette.divider}`,
+              borderRadius: 1,
+              backgroundColor: "background.default",
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              alignItems={{ xs: "stretch", sm: "center" }}
+              justifyContent="space-between"
+              sx={{ mb: 1 }}
+            >
+              <Typography variant="subtitle2" fontWeight={600}>
+                Campos internos
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={handleChildMenuOpen}
+              >
+                Adicionar campo
+              </Button>
+            </Stack>
+
+            <Menu
+              anchorEl={childMenuAnchor}
+              open={childMenuOpen}
+              onClose={handleChildMenuClose}
+            >
+              {CHILD_FIELD_TYPES.map((type) => (
+                <MenuItem key={type} onClick={() => handleAddChildField(type)}>
+                  {FIELD_TYPE_LABELS[type]}
+                </MenuItem>
+              ))}
+            </Menu>
+
+            {childFields.length === 0 ? (
+              <Typography variant="caption" color="text.secondary">
+                Nenhum campo interno adicionado ainda.
+              </Typography>
+            ) : (
+              <DndContext sensors={childSensors} onDragEnd={handleChildDragEnd}>
+                <SortableContext
+                  items={childFields.map((child) => child.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <Stack spacing={1.5}>
+                    {childFields.map((child, childIndex) => (
+                      <FieldEditorCard
+                        key={child.id}
+                        field={child}
+                        index={childIndex}
+                        onChange={(patch) => handleChildChange(child.id, patch)}
+                        onDelete={() => handleChildDelete(child.id)}
+                        selectedFieldId={selectedFieldId}
+                        onSelectField={onSelectField}
+                      />
+                    ))}
+                  </Stack>
+                </SortableContext>
+              </DndContext>
+            )}
+          </Box>
         )}
       </Stack>
     </Paper>

@@ -1,21 +1,25 @@
 import { z } from "zod";
 
 // Basic field types supported by the editor
-export type BaseFieldType =
-  | "text"
-  | "textarea"
-  | "number"
-  | "select"
-  | "date"
-  | "checkbox"
-  | "radio"
-  | "color"
-  | "email"
-  | "phone"
-  | "list"
-  | "switch"
-  | "photo"
-  | "location";
+export const BASE_FIELD_TYPES = [
+  "text",
+  "textarea",
+  "number",
+  "select",
+  "date",
+  "checkbox",
+  "radio",
+  "color",
+  "email",
+  "phone",
+  "list",
+  "switch",
+  "photo",
+  "location",
+  "switchExpansible",
+] as const;
+
+export type BaseFieldType = typeof BASE_FIELD_TYPES[number];
 
 export interface OptionItem {
   id: string;
@@ -50,7 +54,9 @@ export interface BaseFieldDefinition {
   grid?: number; // 12-grid width
 }
 
-export type FieldDefinition = BaseFieldDefinition;
+export interface FieldDefinition extends BaseFieldDefinition {
+  fields?: FieldDefinition[];
+}
 
 export interface FormSchemaDefinition {
   id: string;
@@ -127,6 +133,34 @@ export type FormEditorAction =
     }
   | { type: "MARK_CLEAN" };
 
+const fieldSchema: z.ZodType<FieldDefinition> = z.lazy(() =>
+  z.object({
+    id: z.string(),
+    name: z.string().min(1),
+    label: z.string().min(1),
+    type: z.enum(BASE_FIELD_TYPES),
+    required: z.boolean().optional(),
+    helperText: z.boolean().optional(),
+    helperTextContent: z.string().optional(),
+    placeholder: z.string().optional(),
+    isMultiple: z.boolean().nullable().optional(),
+    maskType: z.string().nullable().optional(),
+    customMask: z.string().nullable().optional(),
+    options: z
+      .array(
+        z.object({
+          id: z.string(),
+          label: z.string(),
+          value: z.string(),
+        })
+      )
+      .optional(),
+    defaultValue: z.any().optional(),
+    grid: z.number().min(1).max(12).optional(),
+    fields: z.array(fieldSchema).optional(),
+  })
+);
+
 export const formSchemaZod = z.object({
   id: z.string(),
   title: z.string().min(1),
@@ -138,34 +172,7 @@ export const formSchemaZod = z.object({
         title: z.string().min(1),
         description: z.string().optional(),
         collapsed: z.boolean().optional(),
-        fields: z
-          .array(
-            z.object({
-              id: z.string(),
-              name: z.string().min(1),
-              label: z.string().min(1),
-              type: z.string(),
-              required: z.boolean().optional(),
-              helperText: z.boolean().optional(),
-              helperTextContent: z.string().optional(),
-              placeholder: z.string().optional(),
-              isMultiple: z.string().optional(),
-              maskType: z.string().nullable().optional(),
-              customMask: z.string().nullable().optional(),
-              options: z
-                .array(
-                  z.object({
-                    id: z.string(),
-                    label: z.string(),
-                    value: z.string(),
-                  })
-                )
-                .optional(),
-              defaultValue: z.any().optional(),
-              grid: z.number().min(1).max(12).optional(),
-            })
-          )
-          .default([]),
+        fields: z.array(fieldSchema).default([]),
       })
     )
     .default([]),

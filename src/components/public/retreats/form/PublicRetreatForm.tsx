@@ -27,6 +27,59 @@ const getFormPromise = (id: string) => {
   return formCache.get(id)!;
 };
 
+const flattenSectionFields = (sections: BackendSection[]): BackendField[] => {
+  const result: BackendField[] = [];
+
+  const visit = (field?: BackendField) => {
+    if (!field || field.type === "section") return;
+
+    result.push(field);
+
+    if (field.type === "switchExpansible" && Array.isArray(field.fields)) {
+      field.fields.forEach((child) => visit(child));
+    }
+  };
+
+  sections.forEach((section) => {
+    section.fields.forEach((field) => visit(field));
+  });
+
+  return result;
+};
+
+const collectFieldsForValidation = (
+  fields: BackendField[],
+  values: Record<string, unknown>
+): string[] => {
+  const result: string[] = [];
+
+  const visit = (field?: BackendField) => {
+    if (!field || field.type === "section") return;
+
+    if (
+      field.dependsOn &&
+      field.dependsValue !== undefined &&
+      values[field.dependsOn] !== field.dependsValue
+    ) {
+      return;
+    }
+
+    result.push(field.name);
+
+    if (
+      field.type === "switchExpansible" &&
+      Boolean(values[field.name]) &&
+      Array.isArray(field.fields)
+    ) {
+      field.fields.forEach((child) => visit(child));
+    }
+  };
+
+  fields.forEach((field) => visit(field));
+
+  return result;
+};
+
 const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
   const form = use(getFormPromise(id));
 
@@ -71,13 +124,10 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
   } = useForm<Record<string, unknown>>({
     resolver: zodResolver(schema),
     defaultValues: useMemo(() => {
-      const accumulator = form.sections
-        .flatMap((section) => section.fields)
-        .reduce<Record<string, unknown>>((acc, field) => {
-          if (field.type === "section") {
-            return acc;
-          }
+      const allFields = flattenSectionFields(form.sections);
 
+      const accumulator = allFields.reduce<Record<string, unknown>>(
+        (acc, field) => {
           if (
             Object.prototype.hasOwnProperty.call(baseDefaultValues, field.name)
           ) {
@@ -90,7 +140,11 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
             return acc;
           }
 
-          if (field.type === "checkbox" || field.type === "switch") {
+          if (
+            field.type === "checkbox" ||
+            field.type === "switch" ||
+            field.type === "switchExpansible"
+          ) {
             acc[field.name] = false;
             return acc;
           }
@@ -120,7 +174,9 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
 
           acc[field.name] = "";
           return acc;
-        }, {});
+        },
+        {}
+      );
 
       return accumulator;
     }, [form.sections]),
@@ -133,14 +189,73 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
     console.warn("Form submitted:", data);
   };
 
+  const renderField = (field: BackendField): React.ReactNode => {
+    if (!field || field.type === "section") {
+      return null;
+    }
+
+    if (
+      field.dependsOn &&
+      field.dependsValue !== undefined &&
+      values[field.dependsOn] !== field.dependsValue
+    ) {
+      return null;
+    }
+
+    const error = errors[field.name]?.message as string | undefined;
+    const helperText =
+      error ||
+      (field.helperText ? field.helperTextContent : undefined) ||
+      field.description;
+
+    if (field.type === "switchExpansible") {
+      const isActive = Boolean(values[field.name]);
+      const hasChildren =
+        Array.isArray(field.fields) && field.fields.length > 0;
+
+      return (
+        <Stack key={field.name} spacing={1.5}>
+          <FieldRenderer
+            field={field}
+            control={control}
+            helperText={helperText}
+            error={error}
+            isSubmitting={isSubmitting}
+          />
+          {isActive && hasChildren && (
+            <Stack
+              spacing={1.5}
+              sx={{
+                pl: { xs: 2, sm: 3 },
+                borderLeft: (theme) => `2px solid ${theme.palette.divider}`,
+              }}
+            >
+              {field.fields?.map((child) => renderField(child))}
+            </Stack>
+          )}
+        </Stack>
+      );
+    }
+
+    return (
+      <FieldRenderer
+        key={field.name}
+        field={field}
+        control={control}
+        helperText={helperText}
+        error={error}
+        isSubmitting={isSubmitting}
+      />
+    );
+  };
+
   const handleNext = async () => {
-    console.log({ steps, values, errors });
-    const fieldsToValidate = steps[currentStep]?.fields ?? [];
+    const fieldsToValidate = collectFieldsForValidation(
+      steps[currentStep]?.fields ?? [],
+      values
+    );
     const valid = await trigger(
-      fieldsToValidate.map((field) => field.name) as (keyof Record<
-        string,
-        unknown
-      >)[]
+      fieldsToValidate as (keyof Record<string, unknown>)[]
     );
     if (valid) {
       setCurrentStep((step) => Math.min(step + 1, totalSteps - 1));
@@ -168,32 +283,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
         />
         <StepSectionHeader step={steps[currentStep]} />
 
-        {steps[currentStep]?.fields.map((field) => {
-          if (
-            field.dependsOn &&
-            field.dependsValue !== undefined &&
-            values[field.dependsOn] !== field.dependsValue
-          ) {
-            return null;
-          }
-
-          const error = errors[field.name]?.message as string | undefined;
-          const helperText =
-            error ||
-            (field.helperText ? field.helperTextContent : undefined) ||
-            field.description;
-
-          return (
-            <FieldRenderer
-              key={field.name}
-              field={field}
-              control={control}
-              helperText={helperText}
-              error={error}
-              isSubmitting={isSubmitting}
-            />
-          );
-        })}
+        {steps[currentStep]?.fields.map((field) => renderField(field))}
 
         <FormNavigation
           currentStep={currentStep}

@@ -11,8 +11,6 @@ import {
   TextField,
   Button,
   Stack,
-  Fab,
-  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditIcon from "@mui/icons-material/Edit";
@@ -20,11 +18,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import AddIcon from "@mui/icons-material/Add";
-import TitleIcon from "@mui/icons-material/Title";
-import RadioButtonCheckedIcon from "@mui/icons-material/RadioButtonChecked";
-import ListAltIcon from "@mui/icons-material/ListAlt";
-import ToggleOnIcon from "@mui/icons-material/ToggleOn";
-import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { SectionDefinition, FieldDefinition } from "./types";
 import FieldEditorCard from "./FieldEditorCard";
 import {
@@ -38,6 +31,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import FloatingButtons from "./FloatingButtons";
 
 interface SectionCardProps {
   section: SectionDefinition;
@@ -222,63 +216,7 @@ export default function SectionCard({
         )}
 
         {/* Floating action buttons for field types */}
-        <Box
-          sx={{
-            position: "absolute",
-            right: 16,
-            top: 16,
-            zIndex: 10,
-            display: "flex",
-            flexDirection: "column",
-            gap: 1,
-          }}
-        >
-          <Tooltip title="Campo de Texto" placement="left">
-            <Fab
-              size="small"
-              color="primary"
-              onClick={() => onAddField("text")}
-            >
-              <TitleIcon fontSize="small" />
-            </Fab>
-          </Tooltip>
-          <Tooltip title="Opção Única" placement="left">
-            <Fab
-              size="small"
-              color="primary"
-              onClick={() => onAddField("radio")}
-            >
-              <RadioButtonCheckedIcon fontSize="small" />
-            </Fab>
-          </Tooltip>
-          <Tooltip title="Lista de Verificação" placement="left">
-            <Fab
-              size="small"
-              color="primary"
-              onClick={() => onAddField("checkbox")}
-            >
-              <ListAltIcon fontSize="small" />
-            </Fab>
-          </Tooltip>
-          <Tooltip title="Interruptor" placement="left">
-            <Fab
-              size="small"
-              color="primary"
-              onClick={() => onAddField("switch")}
-            >
-              <ToggleOnIcon fontSize="small" />
-            </Fab>
-          </Tooltip>
-          <Tooltip title="Photo" placement="left">
-            <Fab
-              size="small"
-              color="primary"
-              onClick={() => onAddField("photo")}
-            >
-              <PhotoCameraIcon fontSize="small" />
-            </Fab>
-          </Tooltip>
-        </Box>
+        <FloatingButtons onAddField={onAddField} />
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <SortableContext
@@ -293,8 +231,8 @@ export default function SectionCard({
                   index={idx}
                   onChange={(patch) => onUpdateField(field.id, patch)}
                   onDelete={() => onRemoveField(field.id)}
-                  onSelect={() => onSelectField(field.id)}
-                  selected={selectedFieldId === field.id}
+                  onSelectField={onSelectField}
+                  selectedFieldId={selectedFieldId}
                   addOption={(opt) => onAddOption(field.id, opt)}
                   updateOption={(optionId, patch) =>
                     onUpdateOption(field.id, optionId, patch)

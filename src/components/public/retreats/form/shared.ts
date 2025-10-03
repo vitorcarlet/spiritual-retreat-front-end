@@ -251,198 +251,227 @@ function buildCustomMaskRegex(pattern: string): RegExp | null {
   }
 }
 
-export function buildZodSchema(
-  sections: BackendSection[]
-): z.ZodObject<z.ZodRawShape> {
+const buildFieldSchema = (
+  field: BackendField,
+  required: boolean
+): z.ZodTypeAny => {
+  if (field.maskType === "location") {
+    const locationSchema = z.object({
+      stateShort: z.string(),
+      city: z.string(),
+    });
+
+    if (required) {
+      return locationSchema.refine(
+        (data) => {
+          const hasState = data.stateShort && data.stateShort.trim() !== "";
+          const hasCity = data.city && data.city.trim() !== "";
+          return hasState && hasCity;
+        },
+        {
+          message: "Estado e cidade são obrigatórios",
+        }
+      );
+    }
+
+    return locationSchema.optional();
+  }
+
+  if (field.type === "photo") {
+    const isMultiple = Boolean(
+      (field as BackendField & { isMultiple?: boolean }).isMultiple ??
+        field.multiple
+    );
+
+    if (isMultiple) {
+      const arraySchema = z.array(
+        z.instanceof(File, { message: "Arquivo inválido" })
+      );
+      return required
+        ? arraySchema.min(1, "Selecione pelo menos uma imagem")
+        : arraySchema.optional();
+    }
+
+    const fileSchema = z.instanceof(File, {
+      message: "Arquivo inválido",
+    });
+
+    return required ? fileSchema : z.union([fileSchema, z.null()]).optional();
+  }
+
+  if (field.type === "multiselect" || field.type === "chips") {
+    const arraySchema = z.array(z.union([z.string(), z.number()]));
+
+    return required
+      ? arraySchema.min(1, "Selecione pelo menos uma opção")
+      : arraySchema.optional();
+  }
+
+  if (
+    field.type === "checkbox" ||
+    field.type === "switch" ||
+    field.type === "switchExpansible"
+  ) {
+    const boolSchema = z.boolean();
+
+    return required
+      ? boolSchema.refine((val) => val === true, {
+          message: "Este campo é obrigatório",
+        })
+      : boolSchema.optional();
+  }
+
+  const maskType = getEffectiveMask(field);
+  const isNumericField = field.type === "number" || maskType === "numeric";
+
+  let baseSchema: z.ZodTypeAny;
+
+  if (isNumericField) {
+    baseSchema = z.preprocess(
+      (val) => {
+        if (val === null || val === undefined || val === "") {
+          return required ? undefined : "";
+        }
+        return String(val);
+      },
+      required ? z.string().min(1, "Campo obrigatório") : z.string().optional()
+    );
+  } else {
+    if (!required) {
+      baseSchema = z
+        .union([z.string().min(1), z.literal("")])
+        .transform((val) => (val === "" ? undefined : val))
+        .optional();
+    } else {
+      baseSchema = z.string().min(1, "Campo obrigatório");
+    }
+  }
+
+  if (field.minLength !== undefined || field.maxLength !== undefined) {
+    const min = field.minLength;
+    const max = field.maxLength;
+    baseSchema = baseSchema.refine(
+      (val) => {
+        if (!val) return !required;
+        const strVal = String(val);
+        if (min !== undefined && strVal.length < min) return false;
+        if (max !== undefined && strVal.length > max) return false;
+        return true;
+      },
+      {
+        message: `Deve ter entre ${min ?? 0} e ${max ?? "∞"} caracteres`,
+      }
+    );
+  }
+
+  if (maskType && !isNumericField) {
+    baseSchema = baseSchema.refine(
+      (val) => {
+        if (!val) return !required;
+
+        if (maskType === "custom" && field.customMask) {
+          const customRegex = buildCustomMaskRegex(field.customMask);
+          return customRegex ? customRegex.test(String(val)) : true;
+        }
+
+        const regex = MASK_REGEX[maskType];
+        return regex ? regex.test(String(val)) : true;
+      },
+      {
+        message:
+          maskType === "custom" && field.customMask
+            ? `Formato inválido: ${field.customMask}`
+            : MASK_REGEX[maskType]
+            ? `Formato inválido para ${maskType}`
+            : "Formato inválido",
+      }
+    );
+  }
+
+  if (isNumericField && (field.min !== undefined || field.max !== undefined)) {
+    const min = field.min;
+    const max = field.max;
+    baseSchema = baseSchema.refine(
+      (val) => {
+        if (val === undefined || val === "") return !required;
+        const num = toNumber(String(val));
+        if (num === undefined) return false;
+        if (min !== undefined && num < min) return false;
+        if (max !== undefined && num > max) return false;
+        return true;
+      },
+      {
+        message: `Valor deve estar entre ${min ?? "-∞"} e ${max ?? "∞"}`,
+      }
+    );
+  }
+
+  return baseSchema;
+};
+
+export function buildZodSchema(sections: BackendSection[]): z.ZodTypeAny {
   const shape: z.ZodRawShape = {};
+  const conditionalRequirements: Array<{
+    parentName: string;
+    fieldName: string;
+    schema: z.ZodTypeAny;
+  }> = [];
+
+  const processField = (
+    field?: BackendField,
+    controllingSwitchName?: string
+  ) => {
+    if (!field || field.type === "section") {
+      return;
+    }
+
+    const hasControllingSwitch = Boolean(controllingSwitchName);
+    const effectiveRequired = Boolean(field.required && !hasControllingSwitch);
+
+    shape[field.name] = buildFieldSchema(field, effectiveRequired);
+
+    if (hasControllingSwitch && field.required) {
+      conditionalRequirements.push({
+        parentName: controllingSwitchName!,
+        fieldName: field.name,
+        schema: buildFieldSchema(field, true),
+      });
+    }
+
+    if (field.type === "switchExpansible" && Array.isArray(field.fields)) {
+      field.fields.forEach((child) => processField(child, field.name));
+    }
+  };
 
   sections.forEach((section) => {
-    section.fields.forEach((field) => {
-      if (field.type === "section") return;
-
-      // Handle location type
-      if (field.maskType === "location") {
-        const locationSchema = z.object({
-          stateShort: z.string(),
-          city: z.string(),
-        });
-
-        if (field.required) {
-          shape[field.name] = locationSchema.refine(
-            (data) => {
-              const hasState = data.stateShort && data.stateShort.trim() !== "";
-              const hasCity = data.city && data.city.trim() !== "";
-              return hasState && hasCity;
-            },
-            {
-              message: "Estado e cidade são obrigatórios",
-            }
-          );
-        } else {
-          shape[field.name] = locationSchema.optional();
-        }
-        return;
-      }
-
-      // Handle photo type
-      if (field.type === "photo") {
-        const isMultiple = Boolean(
-          (field as BackendField & { isMultiple?: boolean }).isMultiple ??
-            field.multiple
-        );
-
-        if (isMultiple) {
-          const arraySchema = z.array(
-            z.instanceof(File, { message: "Arquivo inválido" })
-          );
-          shape[field.name] = field.required
-            ? arraySchema.min(1, "Selecione pelo menos uma imagem")
-            : arraySchema.optional();
-        } else {
-          const fileSchema = z.instanceof(File, {
-            message: "Arquivo inválido",
-          });
-          shape[field.name] = field.required
-            ? fileSchema
-            : z.union([fileSchema, z.null()]).optional();
-        }
-        return;
-      }
-
-      // Handle multiselect/chips
-      if (field.type === "multiselect" || field.type === "chips") {
-        const arraySchema = z.array(z.union([z.string(), z.number()]));
-
-        shape[field.name] = field.required
-          ? arraySchema.min(1, "Selecione pelo menos uma opção")
-          : arraySchema.optional();
-        return;
-      }
-
-      // Handle checkbox/switch
-      if (field.type === "checkbox" || field.type === "switch") {
-        const boolSchema = z.boolean();
-
-        shape[field.name] = field.required
-          ? boolSchema.refine((val) => val === true, {
-              message: "Este campo é obrigatório",
-            })
-          : boolSchema.optional();
-        return;
-      }
-
-      // Handle string-like inputs (text, email, phone, date, number, etc.)
-      const maskType = getEffectiveMask(field);
-      const isNumericField = field.type === "number" || maskType === "numeric";
-
-      // Para campos numéricos, aceitar tanto string quanto number
-      let baseSchema: z.ZodTypeAny;
-
-      if (isNumericField) {
-        // Campos numéricos: aceitar string ou number, converter para string internamente
-        baseSchema = z.preprocess(
-          (val) => {
-            if (val === null || val === undefined || val === "") {
-              return field.required ? undefined : "";
-            }
-            return String(val); // Converter para string sempre
-          },
-          field.required
-            ? z.string().min(1, "Campo obrigatório")
-            : z.string().optional()
-        );
-      } else {
-        // Campos de texto normais
-        if (!field.required) {
-          baseSchema = z
-            .union([z.string().min(1), z.literal("")])
-            .transform((val) => (val === "" ? undefined : val))
-            .optional();
-        } else {
-          baseSchema = z.string().min(1, "Campo obrigatório");
-        }
-      }
-
-      // Apply length constraints
-      if (field.minLength !== undefined || field.maxLength !== undefined) {
-        const originalSchema = baseSchema;
-        baseSchema = originalSchema.refine(
-          (val) => {
-            if (!val) return !field.required; // Se vazio, ok apenas se não obrigatório
-            const strVal = String(val);
-            if (
-              field.minLength !== undefined &&
-              strVal.length < field.minLength
-            )
-              return false;
-            if (
-              field.maxLength !== undefined &&
-              strVal.length > field.maxLength
-            )
-              return false;
-            return true;
-          },
-          {
-            message: `Deve ter entre ${field.minLength ?? 0} e ${
-              field.maxLength ?? "∞"
-            } caracteres`,
-          }
-        );
-      }
-
-      // Apply mask validation (apenas para campos não-numéricos)
-      if (maskType && !isNumericField) {
-        const originalSchema = baseSchema;
-        baseSchema = originalSchema.refine(
-          (val) => {
-            if (!val) return !field.required; // Se vazio, ok apenas se não obrigatório
-
-            if (maskType === "custom" && field.customMask) {
-              const customRegex = buildCustomMaskRegex(field.customMask);
-              return customRegex ? customRegex.test(String(val)) : true;
-            }
-
-            const regex = MASK_REGEX[maskType];
-            return regex ? regex.test(String(val)) : true;
-          },
-          {
-            message:
-              maskType === "custom" && field.customMask
-                ? `Formato inválido: ${field.customMask}`
-                : MASK_REGEX[maskType]
-                ? `Formato inválido para ${maskType}`
-                : "Formato inválido",
-          }
-        );
-      }
-
-      // Para campos numéricos, validar apenas os ranges (já está em formato string)
-      if (isNumericField) {
-        // Apply numeric constraints
-        if (field.min !== undefined || field.max !== undefined) {
-          baseSchema = baseSchema.refine(
-            (val) => {
-              if (val === undefined || val === "") return !field.required;
-              const num = toNumber(String(val));
-              if (num === undefined) return false;
-              if (field.min !== undefined && num < field.min) return false;
-              if (field.max !== undefined && num > field.max) return false;
-              return true;
-            },
-            {
-              message: `Valor deve estar entre ${field.min ?? "-∞"} e ${
-                field.max ?? "∞"
-              }`,
-            }
-          );
-        }
-      }
-
-      shape[field.name] = baseSchema;
-    });
+    section.fields.forEach((field) => processField(field));
   });
 
-  return z.object(shape);
+  const baseSchema = z.object(shape);
+
+  if (!conditionalRequirements.length) {
+    return baseSchema;
+  }
+
+  return baseSchema.superRefine((data, ctx) => {
+    conditionalRequirements.forEach(({ parentName, fieldName, schema }) => {
+      if (data[parentName] !== true) {
+        return;
+      }
+
+      const parsed = schema.safeParse(data[fieldName]);
+
+      if (!parsed.success) {
+        parsed.error.issues.forEach((issue) => {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: issue.message,
+            path: [fieldName, ...issue.path],
+          });
+        });
+      }
+    });
+  });
 }
 export interface PublicRetreatFormProps {
   id: string;

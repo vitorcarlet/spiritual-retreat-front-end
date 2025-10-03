@@ -4,7 +4,6 @@ import { Poppins } from "next/font/google";
 import { InitColorSchemeScript } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { NextIntlClientProvider } from "next-intl";
-import ModeSwitch from "../src/components/navbar/mui/ModeSwitch";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { initMocks } from "@/src/mocks";
@@ -62,7 +61,6 @@ export default async function RootLayout({
                 <ThemeMuiProvider>
                   <NextIntlClientProvider locale={locale ?? realLocale}>
                     <MSWProvider>
-                   
                       <ModalProvider>{children}</ModalProvider>
                       {/* <ToastContainer /> */}
                     </MSWProvider>

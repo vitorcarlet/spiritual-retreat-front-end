@@ -7,6 +7,7 @@ export type BackendFieldType =
   | "radio"
   | "checkbox"
   | "switch"
+  | "switchExpansible"
   | "textarea"
   | "date"
   | "datetime"
@@ -47,6 +48,7 @@ export interface BackendField {
   dependsOn?: string; // nome de outro campo
   dependsValue?: unknown; // valor que habilita
   grid?: number; // grid layout
+  fields?: BackendField[]; // utilizado em campos compostos
 }
 
 export interface BackendSection {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/actions/login-server.ts
 "use server";
 
@@ -36,7 +37,6 @@ function sanitizeCallback(raw: string | null): string {
 
 export async function loginServerAction(
   formData: FormData,
-  prevState?: unknown
 ) {
   // Validar dados com Zod
   const validatedFields = loginSchema.safeParse({
