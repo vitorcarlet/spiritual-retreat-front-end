@@ -81,7 +81,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
     case "email":
     case "phone":
     case "number":
-    case "datetime": {
+    case "date": {
       if (field.maskType === "location") {
         return (
           <Controller

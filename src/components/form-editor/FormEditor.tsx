@@ -28,6 +28,14 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
 import SectionCard from "./SectionCard";
+import { sections } from "@/src/mocks/handlerData/formData";
+
+const MOCK_FORM_SCHEMA = {
+  id: "mock-form-editor",
+  title: "Formulário de Exemplo",
+  description: "Estrutura carregada do mock local",
+  sections,
+};
 
 export function FormEditor() {
   const {
@@ -46,7 +54,7 @@ export function FormEditor() {
     updateOption,
     removeOption,
     reorderOptions,
-  } = useFormEditorSchema();
+  } = useFormEditorSchema(MOCK_FORM_SCHEMA);
 
   const [showAddSectionDialog, setShowAddSectionDialog] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");

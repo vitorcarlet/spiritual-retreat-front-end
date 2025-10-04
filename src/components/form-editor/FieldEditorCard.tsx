@@ -30,7 +30,7 @@ import {
 } from "@dnd-kit/sortable";
 import SmartSelect from "../public/retreats/form/SmartSelect";
 import type { BackendOption } from "../public/retreats/form/types";
-import { createFieldByType } from "./useFormEditorSchema";
+import { createFieldByType } from "./shared";
 
 const MASK_OPTIONS: BackendOption[] = [
   { id: "mask-none", value: "", label: "Nenhuma" },
@@ -39,8 +39,10 @@ const MASK_OPTIONS: BackendOption[] = [
   { id: "mask-phone", value: "phone", label: "Telefone" },
   { id: "mask-cep", value: "cep", label: "CEP" },
   { id: "mask-num", value: "num", label: "Numérico" },
-  { id: "mask-city", value: "city", label: "Cidade" },
+  { id: "mask-location", value: "location", label: "Localidade" },
   { id: "mask-currency", value: "currency", label: "Moeda" },
+  { id: "mask-date", value: "date", label: "Data" },
+  { id: "mask-email", value: "email", label: "E-mail" },
   { id: "mask-custom", value: "custom", label: "Personalizada" },
 ];
 
@@ -56,6 +58,7 @@ const FIELD_TYPE_LABELS: Record<BaseFieldType, string> = {
   email: "Email",
   phone: "Telefone",
   list: "Lista",
+  chips: "Lista (chips)",
   switch: "Interruptor",
   photo: "Foto",
   location: "Localização",
@@ -218,7 +221,7 @@ function FieldEditorCard({
           />
         )}
 
-        {field.mask && (
+        {(field.mask || field.type === "text" || field.type === "textarea") && (
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <Box sx={{ flex: 1 }}>
               <SmartSelect
@@ -302,7 +305,9 @@ function FieldEditorCard({
           />
         )}
 
-        {["radio", "list", "checkbox"].includes(field.type) && (
+        {["radio", "list", "checkbox", "chips", "select"].includes(
+          field.type
+        ) && (
           <Stack spacing={1} sx={{ mt: 1 }}>
             <Typography variant="caption" fontWeight={600}>
               Opções

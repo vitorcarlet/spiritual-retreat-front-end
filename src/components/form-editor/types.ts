@@ -13,6 +13,7 @@ export const BASE_FIELD_TYPES = [
   "email",
   "phone",
   "list",
+  "chips",
   "switch",
   "photo",
   "location",
@@ -52,6 +53,9 @@ export interface BaseFieldDefinition {
   defaultValue?: unknown;
   // layout
   grid?: number; // 12-grid width
+  multiple?: boolean | null;
+  min?: number | null;
+  max?: number | null;
 }
 
 export interface FieldDefinition extends BaseFieldDefinition {
@@ -144,19 +148,22 @@ const fieldSchema: z.ZodType<FieldDefinition> = z.lazy(() =>
     helperTextContent: z.string().optional(),
     placeholder: z.string().optional(),
     isMultiple: z.boolean().nullable().optional(),
+    multiple: z.boolean().nullable().optional(),
     maskType: z.string().nullable().optional(),
     customMask: z.string().nullable().optional(),
     options: z
       .array(
         z.object({
           id: z.string(),
-          label: z.string(),
           value: z.string(),
+          label: z.string().optional(),
         })
       )
       .optional(),
     defaultValue: z.any().optional(),
     grid: z.number().min(1).max(12).optional(),
+    min: z.number().nullable().optional(),
+    max: z.number().nullable().optional(),
     fields: z.array(fieldSchema).optional(),
   })
 );

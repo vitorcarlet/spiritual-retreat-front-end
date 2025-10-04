@@ -32,6 +32,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import FloatingButtons from "./FloatingButtons";
+import CloseIcon from "@mui/icons-material/Close";
 
 interface SectionCardProps {
   section: SectionDefinition;
@@ -75,6 +76,7 @@ export default function SectionCard({
   );
 
   const sensors = useSensors(useSensor(PointerSensor));
+  const isExpanded = !section.collapsed;
 
   const handleSaveEdit = () => {
     onUpdateSection({
@@ -90,8 +92,11 @@ export default function SectionCard({
     setEditMode(false);
   };
 
-  const handleToggleCollapse = () => {
-    onUpdateSection({ collapsed: !section.collapsed });
+  const handleToggleCollapse = (
+    _event: React.SyntheticEvent,
+    expanded: boolean
+  ) => {
+    onUpdateSection({ collapsed: !expanded });
   };
 
   function handleDragEnd(event: DragEndEvent) {
@@ -107,8 +112,9 @@ export default function SectionCard({
 
   return (
     <Accordion
-      expanded={!section.collapsed}
+      expanded={isExpanded}
       onChange={handleToggleCollapse}
+      TransitionProps={{ mountOnEnter: true, unmountOnExit: true }}
       sx={{
         "&.MuiAccordion-root": {
           boxShadow: 2,
@@ -218,59 +224,71 @@ export default function SectionCard({
         {/* Floating action buttons for field types */}
         <FloatingButtons onAddField={onAddField} />
 
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <SortableContext
-            items={section.fields.map((f) => f.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <Stack spacing={2} sx={{ mr: 8 }}>
-              {section.fields.map((field, idx) => (
-                <FieldEditorCard
-                  key={field.id}
-                  field={field}
-                  index={idx}
-                  onChange={(patch) => onUpdateField(field.id, patch)}
-                  onDelete={() => onRemoveField(field.id)}
-                  onSelectField={onSelectField}
-                  selectedFieldId={selectedFieldId}
-                  addOption={(opt) => onAddOption(field.id, opt)}
-                  updateOption={(optionId, patch) =>
-                    onUpdateOption(field.id, optionId, patch)
-                  }
-                  removeOption={(optionId) =>
-                    onRemoveOption(field.id, optionId)
-                  }
-                  reorderOptions={(from, to) =>
-                    onReorderOptions(field.id, from, to)
-                  }
-                />
-              ))}
+        {isExpanded && (
+          <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+            <SortableContext
+              items={section.fields.map((f) => f.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <Stack spacing={2} sx={{ mr: 8 }}>
+                {section.fields.map((field, idx) => (
+                  <FieldEditorCard
+                    key={field.id}
+                    field={field}
+                    index={idx}
+                    onChange={(patch) => onUpdateField(field.id, patch)}
+                    onDelete={() => onRemoveField(field.id)}
+                    onSelectField={onSelectField}
+                    selectedFieldId={selectedFieldId}
+                    addOption={(opt) => onAddOption(field.id, opt)}
+                    updateOption={(optionId, patch) =>
+                      onUpdateOption(field.id, optionId, patch)
+                    }
+                    removeOption={(optionId) =>
+                      onRemoveOption(field.id, optionId)
+                    }
+                    reorderOptions={(from, to) =>
+                      onReorderOptions(field.id, from, to)
+                    }
+                  />
+                ))}
 
-              {section.fields.length === 0 && (
-                <Box
-                  sx={{
-                    textAlign: "center",
-                    py: 4,
-                    color: "text.secondary",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Nenhum campo nesta seção. Use os botões ao lado para adicionar
-                  campos.
+                {section.fields.length === 0 && (
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      py: 4,
+                      color: "text.secondary",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Nenhum campo nesta seção. Use os botões ao lado para
+                    adicionar campos.
+                  </Box>
+                )}
+
+                <Box sx={{ display: "flex" }}>
+                  <Button
+                    startIcon={<AddIcon />}
+                    variant="outlined"
+                    onClick={() => onAddField("text")}
+                    sx={{ alignSelf: "flex-start", mt: 2 }}
+                  >
+                    Adicionar Campo
+                  </Button>
+                  <Button
+                    startIcon={<CloseIcon />}
+                    variant="outlined"
+                    onClick={() => onUpdateSection({ collapsed: true })}
+                    sx={{ alignSelf: "flex-start", mt: 2, ml: 1 }}
+                  >
+                    Fechar Seção
+                  </Button>
                 </Box>
-              )}
-
-              <Button
-                startIcon={<AddIcon />}
-                variant="outlined"
-                onClick={() => onAddField("text")}
-                sx={{ alignSelf: "flex-start", mt: 2 }}
-              >
-                Adicionar Campo
-              </Button>
-            </Stack>
-          </SortableContext>
-        </DndContext>
+              </Stack>
+            </SortableContext>
+          </DndContext>
+        )}
       </AccordionDetails>
     </Accordion>
   );

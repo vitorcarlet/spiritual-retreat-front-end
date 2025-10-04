@@ -6,8 +6,11 @@ import {
   FormSchemaDefinition,
   OptionItem,
   SectionDefinition,
+  BaseFieldType,
+  BASE_FIELD_TYPES,
 } from "./types";
 import { nanoid } from "nanoid";
+import { createFieldByType } from "./shared";
 
 function makeUniqueValue(
   options: OptionItem[],
@@ -33,7 +36,7 @@ function createEmptySchema(): FormSchemaDefinition {
         id: nanoid(),
         title: "Seção Principal",
         description: "Informações básicas",
-        collapsed: false,
+        collapsed: true,
         fields: [],
       },
     ],
@@ -52,100 +55,186 @@ function createSectionByTitle(title: string): SectionDefinition {
   };
 }
 
-export function createFieldByType(
-  type: FieldDefinition["type"]
-): FieldDefinition {
-  const baseField = {
+const FIELD_TYPE_SET = new Set<BaseFieldType>(BASE_FIELD_TYPES);
+
+type InitialSchemaInput =
+  | FormSchemaDefinition
+  | { id?: string; title?: string; description?: string; sections?: unknown[]; createdAt?: string; updatedAt?: string }
+  | unknown[]
+  | undefined;
+
+function normalizeOption(option: unknown, fallbackIndex: number): OptionItem {
+  if (option && typeof option === "object") {
+    const candidate = option as Partial<OptionItem> & { value?: unknown };
+    return {
+      id: candidate.id ?? nanoid(),
+      value: String(candidate.value ?? `opcao_${fallbackIndex + 1}`),
+    };
+  }
+
+  return {
     id: nanoid(),
-    name: `${type}_${Date.now()}`,
-    type,
-    required: false,
-    grid: 12,
-    helperText: false,
-    mask: false,
-    helperTextContent: "",
+    value: String(option ?? `opcao_${fallbackIndex + 1}`),
+  };
+}
+
+function normalizeField(field: unknown): FieldDefinition {
+  if (!field || typeof field !== "object") {
+    return createFieldByType("text");
+  }
+
+  const raw = field as Record<string, unknown>;
+  const rawFields = Array.isArray(raw.fields) ? raw.fields : undefined;
+  const rawOptions = Array.isArray(raw.options) ? raw.options : undefined;
+  const rawType = typeof raw.type === "string" ? raw.type : "text";
+  const normalizedType: BaseFieldType = FIELD_TYPE_SET.has(
+    rawType as BaseFieldType
+  )
+    ? (rawType as BaseFieldType)
+    : "text";
+
+  const helperTextValue =
+    typeof raw.helperText === "string"
+      ? raw.helperText
+      : typeof raw.helperTextContent === "string"
+        ? raw.helperTextContent
+        : "";
+
+  const helperFlag =
+    typeof raw.helperText === "string"
+      ? true
+      : raw.helperText === true || helperTextValue.trim().length > 0;
+
+  const normalized: FieldDefinition = {
+    id: typeof raw.id === "string" ? raw.id : nanoid(),
+    name:
+      typeof raw.name === "string"
+        ? raw.name
+        : `${normalizedType}_${nanoid(6)}`,
+    label: typeof raw.label === "string" ? raw.label : "Novo Campo",
+    type: normalizedType,
+    required: typeof raw.required === "boolean" ? raw.required : false,
+    helperText: helperFlag,
+    helperTextContent: helperFlag ? helperTextValue : "",
+    placeholder:
+      typeof raw.placeholder === "string" || raw.placeholder === null
+        ? (raw.placeholder as string | null)
+        : "",
+    mask: typeof raw.mask === "boolean" ? raw.mask : false,
+    maskType:
+      typeof raw.maskType === "string" || raw.maskType === null
+        ? (raw.maskType as string | null)
+        : null,
+    customMask:
+      typeof raw.customMask === "string" || raw.customMask === null
+        ? (raw.customMask as string | null)
+        : null,
+    defaultValue: raw.defaultValue,
+    grid:
+      typeof raw.grid === "number" && !Number.isNaN(raw.grid)
+        ? raw.grid
+        : 12,
+    options: rawOptions
+      ? rawOptions.map((opt, index) => normalizeOption(opt, index))
+      : undefined,
+    fields: rawFields
+      ? rawFields.map((child) => normalizeField(child))
+      : undefined,
+    isMultiple:
+      typeof raw.isMultiple === "boolean" || raw.isMultiple === null
+        ? (raw.isMultiple as boolean | null)
+        : undefined,
+    multiple:
+      typeof raw.multiple === "boolean" || raw.multiple === null
+        ? (raw.multiple as boolean | null)
+        : undefined,
+    min:
+      typeof raw.min === "number" || raw.min === null
+        ? (raw.min as number | null)
+        : undefined,
+    max:
+      typeof raw.max === "number" || raw.max === null
+        ? (raw.max as number | null)
+        : undefined,
   };
 
-  switch (type) {
-    case "text":
-      return {
-        ...baseField,
-        label: "Campo de Texto",
-        placeholder: "Digite aqui...",
-        defaultValue: "",
-        mask: true,
-      };
-
-    case "radio":
-      return {
-        ...baseField,
-        label: "Opção Única",
-        placeholder: "",
-        options: [
-          { id: nanoid(), value: "opcao1" },
-          { id: nanoid(), value: "opcao2" },
-        ],
-        defaultValue: [],
-      };
-
-    case "checkbox":
-      return {
-        ...baseField,
-        label: "Lista de Seleção Múltipla",
-        placeholder: "",
-        options: [
-          { id: nanoid(), value: "item1" },
-          { id: nanoid(), value: "item2" },
-        ],
-        defaultValue: [],
-      };
-
-    case "list":
-      return {
-        ...baseField,
-        label: "Lista de Seleção Múltipla",
-        placeholder: "",
-        options: [
-          { id: nanoid(), value: "item1" },
-          { id: nanoid(), value: "item2" },
-        ],
-        defaultValue: [],
-      };
-
-    case "switch":
-      return {
-        ...baseField,
-        label: "Interruptor",
-        placeholder: null,
-        defaultValue: false,
-      };
-
-    case "switchExpansible":
-      return {
-        ...baseField,
-        label: "Interruptor Expansível",
-        placeholder: null,
-        defaultValue: false,
-        fields: [],
-      };
-
-    case "photo":
-      return {
-        ...baseField,
-        label: "Adicione uma foto",
-        isMultiple: false,
-      };
-
-    default:
-      return {
-        ...baseField,
-        label: "Novo Campo",
-        placeholder: "",
-        options: type === "select" ? [] : undefined,
-        defaultValue: undefined,
-      };
-  }
+  return normalized;
 }
+
+function normalizeSection(
+  section: unknown,
+  index: number
+): SectionDefinition {
+  if (!section || typeof section !== "object") {
+    return {
+      id: nanoid(),
+      title: `Seção ${index + 1}`,
+      description: "",
+      collapsed: false,
+      fields: [],
+    };
+  }
+
+  const raw = section as Record<string, unknown>;
+  const rawFields = Array.isArray(raw.fields) ? raw.fields : [];
+
+  return {
+    id: typeof raw.id === "string" ? raw.id : nanoid(),
+    title: typeof raw.title === "string" ? raw.title : `Seção ${index + 1}`,
+    description:
+      typeof raw.description === "string" ? raw.description : undefined,
+  collapsed: typeof raw.collapsed === "boolean" ? raw.collapsed : true,
+    fields: rawFields.map((field) => normalizeField(field)),
+  };
+}
+
+function normalizeInitialSchema(initial: InitialSchemaInput) {
+  const fallback = createEmptySchema();
+
+  if (!initial) {
+    return fallback;
+  }
+
+  if (Array.isArray(initial)) {
+    return {
+      ...fallback,
+      sections: initial.map((section, index) =>
+        normalizeSection(section, index)
+      ),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  if (typeof initial === "object" && initial !== null) {
+    const candidate = initial as {
+      id?: string;
+      title?: string;
+      description?: string;
+      sections?: unknown[];
+      createdAt?: string;
+      updatedAt?: string;
+    };
+
+    const normalizedSections = Array.isArray(candidate.sections)
+      ? candidate.sections.map((section, index) =>
+          normalizeSection(section, index)
+        )
+      : fallback.sections;
+
+    return {
+      id: candidate.id ?? fallback.id,
+      title: candidate.title ?? fallback.title,
+      description: candidate.description ?? fallback.description,
+      sections: normalizedSections,
+      createdAt: candidate.createdAt ?? fallback.createdAt,
+      updatedAt: candidate.updatedAt ?? new Date().toISOString(),
+    } satisfies FormSchemaDefinition;
+  }
+
+  return fallback;
+}
+
+
 
 function reducer(
   state: FormEditorState,
@@ -451,9 +540,9 @@ function reducer(
   }
 }
 
-export function useFormEditorSchema(initial?: FormSchemaDefinition) {
+export function useFormEditorSchema(initial?: InitialSchemaInput) {
   const [state, dispatch] = useReducer(reducer, undefined, () => ({
-    schema: initial ?? createEmptySchema(),
+    schema: normalizeInitialSchema(initial),
     selectedFieldId: undefined,
     selectedSectionId: undefined,
     dirty: false,
