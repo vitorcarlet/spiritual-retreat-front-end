@@ -40,12 +40,12 @@ export default function Chip(theme: Theme) {
 
         // DEFAULT (color=default, variant=filled)
         filled: {
-          backgroundColor: "var(--mui-palette-background-paper)",
+          backgroundColor: useMix("var(--mui-palette-primary-main)", 85),
           color: "var(--mui-palette-text-secondary)",
           border: "1px solid var(--mui-palette-divider)",
-          "&.MuiChip-clickable:hover": {
-            backgroundColor: useMix("var(--mui-palette-primary-main)", 85),
-          },
+          // "&.MuiChip-clickable:hover": {
+          //   backgroundColor: useMix("var(--mui-palette-primary-main)", 85),
+          // },
           "& .MuiChip-deleteIcon": {
             color: "var(--mui-palette-text-disabled)",
             "&:hover": { color: "var(--mui-palette-text-primary)" },
