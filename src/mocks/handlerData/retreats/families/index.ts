@@ -1,6 +1,8 @@
 import { Participant } from "@/src/types/retreats";
 import { makeParticipant } from "../shared";
 
+const colors = ["#1976d2", "#19d24d", "#ced219", "#29a0b0"];
+
 export const mockFamilies: RetreatFamily[] = (() => {
   const families: RetreatFamily[] = [];
   let participantGlobalId = 1;
@@ -15,6 +17,7 @@ export const mockFamilies: RetreatFamily[] = (() => {
     families.push({
       id: Number(`157${f}`),
       name: `Family ${f}`,
+      color: colors[Math.floor(Math.random() * colors.length)],
       contactName: `${members[0].firstName} ${members[0].lastName}`,
       contactEmail: members[0].email,
       contactPhone: members[0].phone,

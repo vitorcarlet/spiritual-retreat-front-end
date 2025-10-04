@@ -99,6 +99,7 @@ function DroppableContainer({
   id,
   items,
   style,
+  color,
   ...props
 }: ContainerProps & {
   disabled?: boolean;
@@ -143,6 +144,7 @@ function DroppableContainer({
         ...listeners,
       }}
       columns={columns}
+      color={color}
       {...props}
     >
       {children}
@@ -298,7 +300,7 @@ export default function RetreatFamiliesTable({
     items: Items;
     membersById: MembersById;
     memberToContainer: MemberToContainer;
-    familiesById: Record<string, string>;
+    familiesById: Record<string, { name: string; color: string }>;
   }>({
     items: {},
     membersById: {},
@@ -308,7 +310,9 @@ export default function RetreatFamiliesTable({
 
   const [items, setItems] = useState<Items>({});
   const [membersById, setMembersById] = useState<MembersById>({});
-  const [familiesById, setFamiliesById] = useState<Record<string, string>>({});
+  const [familiesById, setFamiliesById] = useState<
+    Record<string, { name: string; color: string }>
+  >({});
   const [memberToContainer, setMemberToContainer] = useState<MemberToContainer>(
     {}
   );
@@ -317,12 +321,12 @@ export default function RetreatFamiliesTable({
     const buildFamiliesStructure = () => {
       const items: Items = {};
       const membersById: MembersById = {};
-      const familiesById: Record<string, string> = {};
+      const familiesById: Record<string, { name: string; color: string }> = {};
       const memberToContainer: MemberToContainer = {};
 
       InitialItems?.forEach((fam) => {
         const fid = String(fam.id);
-        familiesById[fid] = fam.name;
+        familiesById[fid] = { name: fam.name, color: fam.color };
         items[fid] =
           fam.members?.map((m) => {
             const mid = String(m.id);
@@ -390,7 +394,7 @@ export default function RetreatFamiliesTable({
       ) {
         messages.push(
           t("max-members", {
-            family: familyName,
+            family: familyName.name,
             count: memberIds.length,
             max: compositionRules.maxMembersPerFamily,
           })
@@ -412,7 +416,7 @@ export default function RetreatFamiliesTable({
         ) {
           messages.push(
             t("gender-balance", {
-              family: familyName,
+              family: familyName.name,
               male: maleCount,
               female: femaleCount,
             })
@@ -442,7 +446,7 @@ export default function RetreatFamiliesTable({
         if (duplicates.length > 0) {
           messages.push(
             t("same-city", {
-              family: familyName,
+              family: familyName.name,
               duplicates: duplicates.join(", "),
             })
           );
@@ -583,11 +587,13 @@ export default function RetreatFamiliesTable({
           const { original: containerId } = row.cell.row;
           const memberIds = items[containerId] || [];
           const familyName = familiesById[containerId] || containerId;
+          console.log({ familyName });
           return (
             <DroppableContainer
               key={containerId}
               id={containerId}
-              label={minimal ? undefined : `Família ${familyName}`}
+              label={minimal ? undefined : `Família ${familyName.name}`}
+              color={familyName.color}
               items={memberIds}
               scrollable={scrollable}
               style={containerStyle}

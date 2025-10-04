@@ -28,6 +28,7 @@
   "drawing": "Sorteando...",
   "failed-to-draw-families": "Hubo un problema al realizar el sorteo de familias.",
   "families-draw-success": "¡Las familias fueron sorteadas con éxito!",
+  "family-color": "Color de la familia",
   "draw-the-families": "Sortear las familias",
   "family-draw": "Sorteo de familias",
   "family-validation": {

@@ -9,14 +9,20 @@ import {
   handleApiResponse,
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
+import { MuiColorInput } from "mui-color-input";
 
 interface CreateFamilyFormProps {
   retreatId: string;
   onSuccess: () => void;
 }
 
+const HEX_REGEX = /^#(?:[0-9a-fA-F]{3}){1,2}$/;
+
 const createFamilySchema = z.object({
   name: z.string().min(1, "Nome da família é obrigatório"),
+  color: z
+    .string()
+    .regex(HEX_REGEX, "Cor inválida"),
 });
 
 type CreateFamilyData = z.infer<typeof createFamilySchema>;
@@ -36,6 +42,7 @@ export default function CreateFamilyForm({
     resolver: zodResolver(createFamilySchema),
     defaultValues: {
       name: "",
+      color: "#1976d2",
     },
   });
 
@@ -68,6 +75,26 @@ export default function CreateFamilyForm({
     >
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 1 }}>
         <Stack spacing={3}>
+          <Controller
+            name="color"
+            control={control}
+            render={({ field }) => (
+              <MuiColorInput
+                {...field}
+                format="hex"
+                label={t("family-color")}
+                disableAlpha
+                value={field.value ?? ""}
+                onChange={(value: string) => field.onChange(value)}
+                TextFieldProps={{
+                  fullWidth: true,
+                  required: true,
+                  error: !!errors.color,
+                  helperText: errors.color?.message,
+                }}
+              />
+            )}
+          />
           <Controller
             name="name"
             control={control}

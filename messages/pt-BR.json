@@ -50,6 +50,7 @@
   "creating": "Criando",
   "create-family": "Criar Família",
   "family-name": "Nome da família",
+  "family-color": "Cor da família",
   "cancel": "Cancelar",
   "family-configuration": "Configuração das Famílias",
   "family-config-description": "Configure o tamanho padrão e máximo das famílias do retiro.",

@@ -78,7 +78,7 @@ export default function RetreatFamilies({
     useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
       defaultFilters: {
         page: 1,
-        pageLimit: 4,
+        pageLimit: 12,
       },
       excludeFromCount: ["page", "pageLimit"], // Don't count pagination in active filters
     });

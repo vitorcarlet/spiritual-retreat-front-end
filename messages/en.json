@@ -36,6 +36,7 @@
   "drawing": "Drawing...",
   "failed-to-draw-families": "Something went wrong while drawing the families.",
   "families-draw-success": "Families drawn successfully!",
+  "family-color": "Family color",
   "draw-the-families": "Draw the families",
   "family-draw": "Family draw",
   "family-validation": {

@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
 import { Box, ButtonBase, BoxProps, styled } from "@mui/material";
 import { Handle, Remove } from "../Item";
+import { getContrastTextColor, useMix } from "@/src/utils/useMix";
 
 export interface ContainerProps extends Omit<BoxProps, "onClick"> {
   children: React.ReactNode;
@@ -209,6 +210,7 @@ export const Container = forwardRef<HTMLElement, ContainerProps>(
       shadow = false,
       placeholder = false,
       unstyled = false,
+      color = "var(--mui-palette-background-default)",
       ...rest
     },
     ref
@@ -223,21 +225,31 @@ export const Container = forwardRef<HTMLElement, ContainerProps>(
       unstyled,
     };
 
+    //@ts-expect-error color will always be a hexadecimal value
+    const bgColor = useMix(color, 50);
+
     const Content = (
       <>
         {label && !placeholder && (
           <Header>
             <Box
               sx={{
+                backgroundColor: bgColor,
                 fontWeight: 600,
                 flex: 1,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
               }}
-              title={label}
             >
-              {label}
+              <p
+                style={{
+                  paddingInlineStart: "0.25rem",
+                  color: getContrastTextColor(bgColor),
+                }}
+              >
+                {label}
+              </p>
             </Box>
             <Actions className="Actions">
               {onRemove && <Remove onClick={onRemove} />}

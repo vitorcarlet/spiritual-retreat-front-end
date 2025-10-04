@@ -239,6 +239,11 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
+"@ctrl/tinycolor@^4.1.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@ctrl/tinycolor/-/tinycolor-4.2.0.tgz#ba5d0b917303c0b3d3c14c4865cdc6ded25ac05f"
+  integrity sha512-kzyuwOAQnXJNLS9PSyrk0CWk35nWJW/zl/6KvnTBMFK65gm7U1/Z5BqjxeapjZCIhQcM/DsrEmcbRwDyXyXK4A==
+
 "@dnd-kit/accessibility@^3.1.1":
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/@dnd-kit/accessibility/-/accessibility-3.1.1.tgz#3b4202bd6bb370a0730f6734867785919beac6af"
@@ -5545,6 +5550,13 @@ msw@^2.10.2:
     strict-event-emitter "^0.5.1"
     type-fest "^4.26.1"
     yargs "^17.7.2"
+
+mui-color-input@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/mui-color-input/-/mui-color-input-7.0.0.tgz#631ea4f69575bf67f3e386ed8907e84dcaf1c1f0"
+  integrity sha512-b9pHCCoRjD9CDTaw2b5S+UbBhJjAsB1NzdEqjF/9NzRFD0lD8zrlMxMwvI/NqsHkNxj2PteIFh/mzo2gBqnG9g==
+  dependencies:
+    "@ctrl/tinycolor" "^4.1.0"
 
 mui-tiptap@^1.23.0:
   version "1.23.0"

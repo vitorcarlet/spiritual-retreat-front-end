@@ -1,9 +1,7 @@
+import { useMix } from "@/src/utils/useMix";
 import { Theme } from "@mui/material";
 
 export default function Chip(theme: Theme) {
-  const useMix = (baseVar: string, pct: number) =>
-    `color-mix(in srgb, ${baseVar} ${pct}%, transparent)`;
-
   return {
     MuiChip: {
       styleOverrides: {
