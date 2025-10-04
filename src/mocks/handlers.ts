@@ -683,6 +683,73 @@ export const handlers = [
         updatedAt: new Date().toISOString(),
         sections: [
           {
+            id: 'section-all-values',
+            title:'Todos os tipo de campos',
+            description: 'preciso testar todos os tipos de campos',
+            fields: [
+                {
+                id: "field-nome-completo",
+                name: "nome_completo",
+                label: "Nome Completo",
+                type: "text",
+                required: true,
+                helperText: "Digite seu nome completo",
+                placeholder: "Ex: João Silva Santos",
+                grid: 12
+              },
+               {
+                id: "field-sexo",
+                name: "sexo",
+                label: "Sexo",
+                type: "select",
+                required: true,
+                helperText: "Selecione seu sexo",
+                grid: 6,
+                options: [
+                  { id: "opt-masculino", value: "Masculino" },
+                  { id: "opt-feminino", value: "Feminino" }
+                ]
+              },
+               {
+                id: "field-pai-esta-vivo",
+                name: "Pai está vivo?",
+                label:"Pai está vivo?",
+                type: "switchExpansible",
+               required: false,
+                grid: 4,
+                fields: [
+                   {
+                id: "field-nome-pai",
+                name: "nome_pai",
+                label: "Nome do Pai",
+                type: "text",
+                required: true,
+                helperText: "Digite o nome completo do pai",
+                grid: 4
+              },
+                {
+                id: "field-grau-parentesco",
+                name: "grau_parentesco_preencheu",
+                label: "Qual o grau de parentesco da(s) pessoa(s) que fez(eram) a inscrição(s)?",
+                type: "chips",
+                required: false,
+                helperText: "Selecione todos que se aplicam",
+                grid: 12,
+                options: [
+                  { id: "opt-namorado", value: "Namorado(a)" },
+                  { id: "opt-esposo", value: "Esposo(a)" },
+                  { id: "opt-pai", value: "Pai" },
+                  { id: "opt-mae", value: "Mãe" },
+                  { id: "opt-amigo", value: "Amigo(a)" },
+                  { id: "opt-primo", value: "Primo(a)" },
+                  { id: "opt-tios", value: "Tios" },
+                  { id: "opt-nenhum", value: "Nenhum" }
+                ]
+              },
+            ]
+               }
+        ]},
+          {
             id: "section-personal-data",
             title: "Dados Pessoais",
             description: "Informações pessoais básicas",
@@ -940,20 +1007,14 @@ export const handlers = [
             description: "Informações sobre seus pais e família",
             fields: [
               {
-                id: "field-pai-esta",
-                name: "pai_esta",
-                label: "Pai está:",
-                type: "select",
-                required: true,
-                helperText: "Situação atual do pai",
+                id: "field-pai-esta-vivo",
+                name: "Pai está vivo?",
+                label:"Pai está vivo?",
+                type: "switchExpansible",
+               required: false,
                 grid: 4,
-                options: [
-                  { id: "opt-vivo", value: "Vivo" },
-                  { id: "opt-falecido", value: "Falecido" },
-                  { id: "opt-nao-sei", value: "Não sei" }
-                ]
-              },
-              {
+                fields: [
+                   {
                 id: "field-nome-pai",
                 name: "nome_pai",
                 label: "Nome do Pai",
@@ -973,21 +1034,18 @@ export const handlers = [
                 placeholder: "+55 (49) 98877-6633",
                 grid: 4
               },
+                ]
+              },
+             
               {
                 id: "field-mae-esta",
                 name: "mae_esta",
-                label: "Mãe está:",
-                type: "select",
-                required: true,
-                helperText: "Situação atual da mãe",
+                label: "Mãe está viva?",
+                type: "switchExpansible",
+               required: false,
                 grid: 4,
-                options: [
-                  { id: "opt-viva", value: "Viva" },
-                  { id: "opt-falecida", value: "Falecida" },
-                  { id: "opt-nao-sei", value: "Não sei" }
-                ]
-              },
-              {
+                fields: [
+                   {
                 id: "field-nome-mae",
                 name: "nome_mae",
                 label: "Nome da Mãe",
@@ -1007,20 +1065,18 @@ export const handlers = [
                 placeholder: "+55 (49) 97766-5544",
                 grid: 4
               },
+                ]
+              },
+             
               {
                 id: "field-sofreu-perda",
                 name: "sofreu_perda_familiar",
                 label: "Sofreu perda familiar nos últimos 6 meses?",
-                type: "radio",
-                required: true,
-                helperText: "Selecione se sofreu alguma perda recente",
+                type: "switchExpansible",
+                required: false,
                 grid: 6,
-                options: [
-                  { id: "opt-sim", value: "Sim" },
-                  { id: "opt-nao", value: "Não" }
-                ]
-              },
-              {
+                fields: [
+                   {
                 id: "field-qual-perda",
                 name: "quem_qual_perda_familiar",
                 label: "Quem/qual perda familiar",
@@ -1030,20 +1086,18 @@ export const handlers = [
                 placeholder: "Ex: Avô falecido em março",
                 grid: 6
               },
+                ]
+              },
+             
               {
                 id: "field-alguem-inscreveu",
                 name: "alguem_preencheu_ficha",
                 label: "Algum parente ou amigo(a) preencheu a ficha de inscrição para esse RahaminVida?",
-                type: "radio",
-                required: true,
-                helperText: "Alguém que você conhece se inscreveu?",
+                type: "switchExpansible",
+                required: false,
                 grid: 12,
-                options: [
-                  { id: "opt-sim", value: "Sim" },
-                  { id: "opt-nao", value: "Não" }
-                ]
-              },
-              {
+                fields: [
+                  {
                 id: "field-grau-parentesco",
                 name: "grau_parentesco_preencheu",
                 label: "Qual o grau de parentesco da(s) pessoa(s) que fez(eram) a inscrição(s)?",
@@ -1072,6 +1126,9 @@ export const handlers = [
                 placeholder: "Ex: Maria Silva, João Santos",
                 grid: 12
               }
+                ]
+              },
+              
             ]
           },
           {

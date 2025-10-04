@@ -19,6 +19,14 @@ export default function Chip(theme: Theme) {
           "&.MuiChip-clickable:hover": {
             boxShadow: "var(--mui-customShadows-z2)",
           },
+          variants: [
+            {
+              props: { variant: "filled" },
+              style: {
+                backgroundColor: "var(--mui-palette-primary-main)",
+              },
+            },
+          ],
         },
 
         sizeSmall: {
@@ -36,7 +44,7 @@ export default function Chip(theme: Theme) {
           color: "var(--mui-palette-text-secondary)",
           border: "1px solid var(--mui-palette-divider)",
           "&.MuiChip-clickable:hover": {
-            backgroundColor: useMix("var(--mui-palette-background-paper)", 85),
+            backgroundColor: useMix("var(--mui-palette-primary-main)", 85),
           },
           "& .MuiChip-deleteIcon": {
             color: "var(--mui-palette-text-disabled)",
@@ -53,6 +61,14 @@ export default function Chip(theme: Theme) {
               "var(--mui-palette-background-default)",
               75
             ),
+          },
+        },
+        primary: {
+          backgroundColor: useMix("var(--mui-palette-primary-main)", 18),
+          color: "var(--mui-palette-primary-main)",
+          border: "1px solid use-mix(primary)",
+          "&.MuiChip-clickable:hover": {
+            backgroundColor: useMix("var(--mui-palette-primary-main)", 28),
           },
         },
 
@@ -168,7 +184,7 @@ export default function Chip(theme: Theme) {
       },
       variants: [
         {
-          props: { variant: "soft" as any },
+          props: { variant: "soft" },
           style: {
             backgroundColor: useMix("var(--mui-palette-neutral-contrast)", 8),
             color: "var(--mui-palette-text-primary)",
