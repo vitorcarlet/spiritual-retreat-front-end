@@ -9,6 +9,16 @@ import { mockReportDetails, mockReports } from "./handlerData/reports";
 import { mockUsers } from "./handlerData/users";
 import { mockContemplatedParticipants } from "./handlerData/retreats/contemplated";
 import { mockFamilies } from "./handlerData/retreats/families";
+import type {
+  MockServiceSpace,
+  MockServiceSpaceMember,
+} from "./handlerData/retreats/serviceSpaces";
+import {
+  mockServiceSpaces,
+  addServiceSpace,
+  updateServiceSpace,
+  deleteServiceSpace,
+} from "./handlerData/retreats/serviceSpaces";
 import { mockTents } from "./handlerData/retreats/tents";
 import { columnsMock } from "./handlerData/reports/columns";
 import { createByOrigin, MockNotification, mockNotifications } from "./handlerData/notifications";
@@ -41,6 +51,47 @@ function paginate<T>(items: T[], urlObj: URL) {
     hasNextPage: pageLimitAll ? false : end < items.length,
     hasPrevPage: page > 1,
   };
+}
+
+type ServiceSpaceMemberInput = Partial<{
+  id: string;
+  name: string;
+  role: "member" | "support";
+}>;
+
+const createRandomId = (prefix: string) =>
+  `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+
+function normalizeServiceSpaceMember(
+  input: ServiceSpaceMemberInput | undefined,
+  fallbackIndex: number,
+  fallbackLabel: string
+): MockServiceSpaceMember {
+  const label =
+    typeof input?.name === "string" && input.name.trim()
+      ? input.name.trim()
+      : fallbackLabel;
+
+  return {
+    id:
+      typeof input?.id === "string" && input.id.trim()
+        ? input.id
+        : createRandomId(`space-member-${fallbackIndex}`),
+    name: label,
+    role: input?.role === "support" ? "support" : "member",
+  };
+}
+
+function normalizeOptionalServiceSpaceMember(
+  input: ServiceSpaceMemberInput | null | undefined,
+  fallbackIndex: number,
+  fallbackLabel: string
+) {
+  if (!input) {
+    return null;
+  }
+
+  return normalizeServiceSpaceMember(input, fallbackIndex, fallbackLabel);
 }
 
 export const handlers = [
@@ -305,6 +356,179 @@ export const handlers = [
       const url = new URL(request.url);
       const payload = paginate(mockFamilies, url);
       return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
+
+  http.get(
+    "http://localhost:3001/api/retreats/:id/service-spaces",
+    ({ request, params }) => {
+      const url = new URL(request.url);
+      const retreatId = params.id as string;
+      const filtered = mockServiceSpaces.filter(
+        (space) => space.retreatId === retreatId
+      );
+      const payload = paginate(filtered, url);
+      return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
+
+  http.get(
+    "http://localhost:3001/api/retreats/:id/service-spaces/:spaceId",
+    ({ params }) => {
+      const retreatId = params.id as string;
+      const spaceId = params.spaceId as string;
+      const space = mockServiceSpaces.find(
+        (item) => item.id === spaceId && item.retreatId === retreatId
+      );
+
+      if (!space) {
+        return HttpResponse.json(
+          { error: "Service space not found" },
+          { status: 404 }
+        );
+      }
+
+      return HttpResponse.json({ success: true, data: space }, { status: 200 });
+    }
+  ),
+
+  http.post(
+    "http://localhost:3001/api/retreats/:id/service-spaces",
+    async ({ params, request }) => {
+      const retreatId = params.id as string;
+      const body = (await request.json()) as Partial<MockServiceSpace> & {
+        members?: ServiceSpaceMemberInput[];
+      };
+
+      if (!body?.name || typeof body.name !== "string") {
+        return HttpResponse.json(
+          { error: "Nome do espaço é obrigatório" },
+          { status: 400 }
+        );
+      }
+
+      const minMembersValue = Math.max(
+        1,
+        Math.floor(
+          typeof body.minMembers === "number" ? body.minMembers : 1
+        )
+      );
+
+      const newSpace: MockServiceSpace = {
+        id: createRandomId("service-space"),
+        retreatId,
+        name: body.name,
+        description: typeof body.description === "string" ? body.description : "",
+        minMembers: minMembersValue,
+        coordinator: normalizeOptionalServiceSpaceMember(
+          body.coordinator as ServiceSpaceMemberInput | null | undefined,
+          0,
+          "Coordenador"
+        ),
+        viceCoordinator: normalizeOptionalServiceSpaceMember(
+          body.viceCoordinator as ServiceSpaceMemberInput | null | undefined,
+          1,
+          "Vice responsável"
+        ),
+        members: Array.isArray(body.members)
+          ? body.members.map((member, index) =>
+              normalizeServiceSpaceMember(
+                member,
+                index,
+                `Membro ${index + 1}`
+              )
+            )
+          : [],
+      };
+
+      addServiceSpace(newSpace);
+
+      return HttpResponse.json({ success: true, data: newSpace }, { status: 201 });
+    }
+  ),
+
+  http.put(
+    "http://localhost:3001/api/retreats/:id/service-spaces/:spaceId",
+    async ({ params, request }) => {
+      const retreatId = params.id as string;
+      const spaceId = params.spaceId as string;
+      const current = mockServiceSpaces.find(
+        (item) => item.id === spaceId && item.retreatId === retreatId
+      );
+
+      if (!current) {
+        return HttpResponse.json(
+          { error: "Service space não encontrado" },
+          { status: 404 }
+        );
+      }
+
+      const body = (await request.json()) as Partial<MockServiceSpace> & {
+        members?: ServiceSpaceMemberInput[];
+      };
+
+      const patch: Partial<MockServiceSpace> = {};
+
+      if (typeof body.name === "string") {
+        patch.name = body.name;
+      }
+
+      if (typeof body.description === "string") {
+        patch.description = body.description;
+      }
+
+      if (typeof body.minMembers === "number" && !Number.isNaN(body.minMembers)) {
+        patch.minMembers = Math.max(1, Math.floor(body.minMembers));
+      }
+
+      if (body.coordinator !== undefined) {
+        patch.coordinator = normalizeOptionalServiceSpaceMember(
+          body.coordinator as ServiceSpaceMemberInput | null | undefined,
+          0,
+          current.coordinator?.name ?? "Coordenador"
+        );
+      }
+
+      if (body.viceCoordinator !== undefined) {
+        patch.viceCoordinator = normalizeOptionalServiceSpaceMember(
+          body.viceCoordinator as ServiceSpaceMemberInput | null | undefined,
+          1,
+          current.viceCoordinator?.name ?? "Vice responsável"
+        );
+      }
+
+      if (Array.isArray(body.members)) {
+        patch.members = body.members.map((member, index) =>
+          normalizeServiceSpaceMember(member, index, `Membro ${index + 1}`)
+        );
+      }
+
+      const updated = updateServiceSpace(spaceId, patch);
+
+      return HttpResponse.json({ success: true, data: updated }, { status: 200 });
+    }
+  ),
+
+  http.delete(
+    "http://localhost:3001/api/retreats/:id/service-spaces/:spaceId",
+    ({ params }) => {
+      const retreatId = params.id as string;
+      const spaceId = params.spaceId as string;
+
+      const existingIndex = mockServiceSpaces.findIndex(
+        (item) => item.id === spaceId && item.retreatId === retreatId
+      );
+
+      if (existingIndex === -1) {
+        return HttpResponse.json(
+          { error: "Service space não encontrado" },
+          { status: 404 }
+        );
+      }
+
+      deleteServiceSpace(spaceId);
+
+      return HttpResponse.json({ success: true }, { status: 200 });
     }
   ),
 

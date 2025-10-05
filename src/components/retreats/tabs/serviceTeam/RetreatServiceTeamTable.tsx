@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, {
   useCallback,
   useEffect,
@@ -5,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useTranslations } from "next-intl";
 import { createPortal } from "react-dom";
 import {
   closestCenter,
@@ -47,6 +49,7 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  CellContext,
 } from "@tanstack/react-table";
 import {
   Box,
@@ -59,16 +62,28 @@ import {
   Popover,
   Stack,
   Typography,
+  Fab,
+  Fade,
 } from "@mui/material";
+import Iconify from "@/src/components/Iconify";
 import {
-  findContainer,
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
+import {
+  Items,
+  ServiceSpaceTableProps,
+  MembersById,
+  MemberToContainer,
+} from "./types";
+import {
+  //findContainer,
   onDragEnd,
   onDragOver,
   PLACEHOLDER_ID,
   TRASH_ID,
 } from "./shared";
-import { Items, RetreatTentsProps } from "./types";
-import Iconify from "@/src/components/Iconify";
+import { LoadingScreen } from "@/src/components/loading-screen";
 
 // export default {
 //   title: "Presets/Sortable/Multiple Containers",
@@ -84,6 +99,7 @@ function DroppableContainer({
   id,
   items,
   style,
+  color,
   ...props
 }: ContainerProps & {
   disabled?: boolean;
@@ -128,6 +144,7 @@ function DroppableContainer({
         ...listeners,
       }}
       columns={columns}
+      color={color}
       {...props}
     >
       {children}
@@ -145,12 +162,32 @@ const dropAnimation: DropAnimation = {
   }),
 };
 
-//const empty: UniqueIdentifier[] = [];
+function findDuplicateValues(values: Array<string | undefined>): string[] {
+  const counts = new Map<string, number>();
 
-export default function RetreatTentsTable({
+  values.forEach((value) => {
+    if (!value) {
+      return;
+    }
+
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  });
+
+  return Array.from(counts.entries())
+    .filter(([, count]) => count > 1)
+    .map(([value]) => value);
+}
+
+// Helper para clonar Items profundamente (arrays por container)
+function cloneItems(source: Items): Items {
+  return Object.fromEntries(
+    Object.entries(source).map(([k, v]) => [k, [...v]])
+  );
+}
+
+export default function RetreatServiceTeamTable({
   adjustScale = false,
   cancelDrop,
-  //columns,
   items: InitialItems,
   handle = true,
   containerStyle,
@@ -159,7 +196,6 @@ export default function RetreatTentsTable({
   wrapperStyle = () => ({}),
   minimal = false,
   modifiers,
-  //renderItem,
   strategy = verticalListSortingStrategy,
   trashable = false,
   vertical = false,
@@ -169,36 +205,136 @@ export default function RetreatTentsTable({
   onView,
   onEdit,
   total,
-}: RetreatTentsProps) {
-  const initialItems: Items | undefined = useMemo(() => {
-    const obj = InitialItems?.reduce((acc, item) => {
-      const key = String(item.id); // A, B, C, D
-      if (!acc[key]) {
-        acc[key] = item.members?.map((m) => m.id as UniqueIdentifier) || [];
-      }
+  setServiceTeamReorderFlag,
+  onSaveReorder,
+  retreatId,
+  canEditServiceTeam,
+}: ServiceSpaceTableProps) {
+  const t = useTranslations("stily-validation");
 
-      return acc;
-    }, {} as Items);
-    return obj;
+  // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
+
+  useEffect(() => {
+    if (!retreatId) {
+      return;
+    }
+
+    let isActive = true;
+
+    return () => {
+      isActive = false;
+    };
+  }, [retreatId, t]);
+
+  const [stiliesStructure, setServiceTeamStructure] = useState<{
+    items: Items;
+    membersById: MembersById;
+    memberToContainer: MemberToContainer;
+    stiliesById: Record<string, { name: string; color: string }>;
+  }>({
+    items: {},
+    membersById: {},
+    memberToContainer: {},
+    stiliesById: {},
+  });
+
+  const [items, setItems] = useState<Items>({});
+  const [membersById, setMembersById] = useState<MembersById>({});
+  const [stiliesById, setServiceTeamById] = useState<
+    Record<string, { name: string; color: string }>
+  >({});
+  const [memberToContainer, setMemberToContainer] = useState<MemberToContainer>(
+    {}
+  );
+
+  useEffect(() => {
+    const buildServiceTeamStructure = () => {
+      const items: Items = {};
+      const membersById: MembersById = {};
+      const stiliesById: Record<string, { name: string; color: string }> = {};
+      const memberToContainer: MemberToContainer = {};
+
+      InitialItems?.forEach((st) => {
+        const fid = String(st.id);
+        stiliesById[fid] = { name: st.name, color: st.color };
+        items[fid] =
+          st.members?.map((m) => {
+            const mid = String(m.id);
+            membersById[mid] = {
+              id: mid,
+              name: m.name as string,
+              gender: m.gender,
+              //city: m.city,
+              //realFamilyId: m.realFamilyId,
+            };
+            memberToContainer[mid] = fid;
+            return mid;
+          }) || [];
+      });
+
+      setServiceTeamStructure({
+        items,
+        membersById,
+        memberToContainer,
+        stiliesById,
+      });
+      setItems(items);
+      setMembersById(membersById);
+      setServiceTeamById(stiliesById);
+      setMemberToContainer(memberToContainer);
+      setContainers(Object.keys(items) as UniqueIdentifier[]);
+
+      // Salva snapshot inicial (clonado)
+      setSavedSnapshot({
+        items: cloneItems(items),
+        memberToContainer: { ...memberToContainer },
+      });
+    };
+    buildServiceTeamStructure();
   }, [InitialItems]);
 
-  //console.log("Initial Items:", InitialItems, initialItems);
-  if (!initialItems) {
-    return <div>Loading...</div>;
-  }
-  const [items, setItems] = useState<Items>(() => initialItems);
-
-  const [containers, setContainers] = useState(
-    Object.keys(items || {}) as UniqueIdentifier[]
-  );
+  const [containers, setContainers] = useState<UniqueIdentifier[]>([]);
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   //console.log({ items, containers });
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
+
+  // Snapshot do estado "persistido" (inicial ou último sucesso)
+  const [savedSnapshot, setSavedSnapshot] = useState<{
+    items: Items;
+    memberToContainer: MemberToContainer;
+  } | null>(null);
+
+  const handleSaveReorder = useCallback(async () => {
+    if (!onSaveReorder) return;
+
+    try {
+      await onSaveReorder(items);
+      // Atualiza snapshot para o estado recém-salvo
+      setSavedSnapshot({
+        items: cloneItems(items),
+        memberToContainer: { ...memberToContainer },
+      });
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("Error saving reorder:", error);
+
+      // Reverte para o snapshot salvo (inicial ou último sucesso)
+      if (savedSnapshot) {
+        setItems(cloneItems(savedSnapshot.items));
+        setMemberToContainer({ ...savedSnapshot.memberToContainer });
+        setContainers(Object.keys(savedSnapshot.items) as UniqueIdentifier[]);
+        setHasUnsavedChanges(false);
+        setServiceTeamReorderFlag(false);
+      }
+    }
+  }, [items, onSaveReorder, memberToContainer, savedSnapshot]);
+
   const recentlyMovedToNewContainer = useRef(false);
   const isSortingContainer =
     activeId != null ? containers.includes(activeId) : false;
 
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const handlePopoverOpen = (e: React.MouseEvent<HTMLButtonElement>) =>
     setAnchorEl(e.currentTarget);
   const handlePopoverClose = () => setAnchorEl(null);
@@ -254,7 +390,7 @@ export default function RetreatTentsTable({
               droppableContainers: args.droppableContainers.filter(
                 (container) =>
                   container.id !== overId &&
-                  containerItems.includes(container.id)
+                  containerItems.indexOf(container.id) !== -1
               ),
             })[0]?.id;
           }
@@ -287,16 +423,80 @@ export default function RetreatTentsTable({
     })
   );
 
+  // Ajuste: onde antes iterava objetos com {id,name}, agora ids
+  const columnDefs: ColumnDef<UniqueIdentifier>[] = useMemo(
+    () => [
+      {
+        id: "card",
+        cell: (row) => {
+          const { original: containerId } = row.cell.row;
+          const memberIds = items[containerId] || [];
+          const stilyName = stiliesById[containerId] || containerId;
+          console.log({ stilyName });
+          return (
+            <DroppableContainer
+              key={containerId}
+              id={containerId}
+              label={minimal ? undefined : `Família ${stilyName.name}`}
+              color={stilyName.color}
+              items={memberIds}
+              scrollable={scrollable}
+              style={containerStyle}
+              unstyled={minimal}
+              onRemove={() => handleRemove(containerId)}
+            >
+              <SortableContext items={memberIds} strategy={strategy}>
+                {memberIds.map((memberId, index) => {
+                  const meta = membersById[memberId];
+                  return (
+                    <SortableItem
+                      disabled={isSortingContainer}
+                      key={memberId}
+                      id={memberId}
+                      value={meta?.name || String(memberId)}
+                      index={index}
+                      handle={handle}
+                      style={getItemStyles}
+                      wrapperStyle={wrapperStyle}
+                      containerId={containerId}
+                      getIndex={getIndex}
+                    />
+                  );
+                })}
+              </SortableContext>
+              <ContainerButtons
+                onEdit={onEdit}
+                onView={onView}
+                familyId={containerId}
+                canEdit={canEditServiceTeam}
+              />
+            </DroppableContainer>
+          );
+        },
+      },
+    ],
+    [
+      items,
+      membersById,
+      minimal,
+      scrollable,
+      containerStyle,
+      handle,
+      strategy,
+      isSortingContainer,
+      getItemStyles,
+      wrapperStyle,
+      onEdit,
+      onView,
+      canEditServiceTeam,
+    ]
+  );
+
+  // getIndex agora trabalha só com IDs
   const getIndex = (id: UniqueIdentifier) => {
-    const container = findContainer(id, items);
-
-    if (!container) {
-      return -1;
-    }
-
-    const index = items[container].indexOf(id);
-
-    return index;
+    const container = memberToContainer[id];
+    if (!container) return -1;
+    return items[container].indexOf(id);
   };
 
   const onDragCancel = () => {
@@ -315,70 +515,6 @@ export default function RetreatTentsTable({
       recentlyMovedToNewContainer.current = false;
     });
   }, [items]);
-
-  const columnDefs: ColumnDef<UniqueIdentifier>[] = useMemo(
-    () => [
-      {
-        id: "card",
-        cell: (row) => {
-          const { original: containerId } = row.cell.row;
-
-          const members = items[containerId] || [];
-          const columnsCount = members.length > 0 ? 1 : 1; // ajuste se quiser lógica diferente
-
-          return (
-            <DroppableContainer
-              key={containerId}
-              id={containerId}
-              label={minimal ? undefined : `Column ${containerId}`}
-              columns={columnsCount}
-              items={members}
-              scrollable={scrollable}
-              style={containerStyle}
-              unstyled={minimal}
-              onRemove={() => handleRemove(containerId)}
-            >
-              <SortableContext items={members} strategy={strategy}>
-                {members.map((value, index) => {
-                  return (
-                    <SortableItem
-                      disabled={isSortingContainer}
-                      key={value}
-                      id={value}
-                      index={index}
-                      handle={handle}
-                      style={getItemStyles}
-                      wrapperStyle={wrapperStyle}
-                      containerId={containerId}
-                      getIndex={getIndex}
-                    />
-                  );
-                })}
-              </SortableContext>
-              <ContainerButtons
-                onEdit={onEdit}
-                onView={onView}
-                tentId={containerId}
-              />
-            </DroppableContainer>
-          );
-        },
-      },
-    ],
-    [
-      items,
-      minimal,
-      scrollable,
-      containerStyle,
-      handle,
-      strategy,
-      isSortingContainer,
-      getItemStyles,
-      wrapperStyle,
-      onEdit,
-      onView,
-    ]
-  );
 
   const page = filters.page || 1; // 1-based
   const pageLimit = filters.pageLimit || 8;
@@ -414,6 +550,8 @@ export default function RetreatTentsTable({
     },
   });
 
+  if (Object.keys(items).length === 0) return <LoadingScreen />;
+
   return (
     <Box
       sx={{
@@ -421,6 +559,7 @@ export default function RetreatTentsTable({
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
+        position: "relative", // For absolute positioned save button
       }}
     >
       <DndContext
@@ -434,6 +573,8 @@ export default function RetreatTentsTable({
         onDragStart={({ active }) => {
           setActiveId(active.id);
           setClonedItems(items);
+          // Set reorder flag to true when drag starts
+          setServiceTeamReorderFlag?.(true);
         }}
         onDragOver={({ active, over }) =>
           onDragOver({
@@ -442,9 +583,11 @@ export default function RetreatTentsTable({
             items,
             setItems,
             recentlyMovedToNewContainer,
+            memberToContainer,
+            setMemberToContainer,
           })
         }
-        onDragEnd={({ active, over }) =>
+        onDragEnd={({ active, over }) => {
           onDragEnd({
             active,
             over,
@@ -454,10 +597,18 @@ export default function RetreatTentsTable({
             setActiveId,
             setContainers,
             getNextContainerId,
-          })
-        }
+            memberToContainer,
+            setMemberToContainer,
+          });
+          // Mark changes as unsaved and reset reorder flag
+          setHasUnsavedChanges(true);
+        }}
         cancelDrop={cancelDrop}
-        onDragCancel={onDragCancel}
+        onDragCancel={() => {
+          onDragCancel();
+          // Reset reorder flag when drag is cancelled
+          setServiceTeamReorderFlag?.(false);
+        }}
         modifiers={modifiers}
       >
         <SortableContext
@@ -483,7 +634,7 @@ export default function RetreatTentsTable({
                   {flexRender(table.getAllColumns()[0].columnDef.cell!, {
                     row: { original: containerId },
                     cell: { row: { original: containerId } },
-                  } as any)}
+                  } as CellContext<UniqueIdentifier, unknown>)}
                 </Grid>
               ))}
             </Grid>
@@ -556,26 +707,42 @@ export default function RetreatTentsTable({
           <Trash id={TRASH_ID} />
         ) : null}
       </DndContext>
+
+      {/* Floating Save Button */}
+      <Fade in={hasUnsavedChanges}>
+        <Fab
+          color="primary"
+          onClick={handleSaveReorder}
+          sx={{
+            position: "absolute",
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
+          }}
+        >
+          <Iconify icon="solar:diskette-bold" />
+        </Fab>
+      </Fade>
     </Box>
   );
 
   function renderSortableItemDragOverlay(id: UniqueIdentifier) {
+    const meta = membersById[id];
     return (
       <Item
-        value={id}
+        value={meta?.name || String(id)}
         handle={handle}
         style={getItemStyles({
-          containerId: findContainer(id, items) as UniqueIdentifier,
+          containerId: memberToContainer[id],
           overIndex: -1,
           index: getIndex(id),
-          value: id,
+          value: meta?.name,
           isSorting: true,
           isDragging: true,
           isDragOverlay: true,
         })}
         color={getColor(id)}
         wrapperStyle={wrapperStyle({ index: 0 })}
-        // renderItem={renderItem}
         dragOverlay
       >
         <MoreMenu />
@@ -584,36 +751,44 @@ export default function RetreatTentsTable({
   }
 
   function renderContainerDragOverlay(containerId: UniqueIdentifier) {
+    const memberIds = items[containerId] || [];
+    const stilyName = stiliesById[containerId] || containerId;
     return (
       <Container
-        label={`Column ${containerId}`}
-        columns={items[containerId].length}
-        style={{
-          height: "100%",
-        }}
+        label={`Família ${stilyName}`}
+        columns={memberIds.length}
+        style={{ height: "100%" }}
         shadow
         unstyled={false}
+        sx={{}}
       >
-        {items[containerId].map((item, index) => (
-          <Item
-            key={item}
-            value={item}
-            handle={handle}
-            style={getItemStyles({
-              containerId,
-              overIndex: -1,
-              index: getIndex(item),
-              value: item,
-              isDragging: false,
-              isSorting: false,
-              isDragOverlay: false,
-            })}
-            color={getColor(item)}
-            wrapperStyle={wrapperStyle({ index })}
-            //renderItem={renderItem}
-          />
-        ))}
-        <ContainerButtons />
+        {memberIds.map((memberId, index) => {
+          const meta = membersById[memberId];
+          return (
+            <Item
+              key={memberId}
+              value={meta?.name || String(memberId)}
+              handle={handle}
+              style={getItemStyles({
+                containerId,
+                overIndex: -1,
+                index: getIndex(memberId),
+                value: meta?.name,
+                isDragging: false,
+                isSorting: false,
+                isDragOverlay: false,
+              })}
+              color={getColor(memberId)}
+              wrapperStyle={wrapperStyle({ index })}
+            />
+          );
+        })}
+        <ContainerButtons
+          onEdit={onEdit}
+          onView={onView}
+          familyId={containerId}
+          canEdit={canEditServiceTeam}
+        />
       </Container>
     );
   }
@@ -678,10 +853,19 @@ function Trash({ id }: { id: UniqueIdentifier }) {
 interface SortableItemProps {
   containerId: UniqueIdentifier;
   id: UniqueIdentifier;
+  value: string;
   index: number;
   handle: boolean;
   disabled?: boolean;
-  style(args: any): React.CSSProperties;
+  style(args: {
+    value: UniqueIdentifier;
+    index: number;
+    overIndex: number;
+    isDragging: boolean;
+    containerId: UniqueIdentifier;
+    isSorting: boolean;
+    isDragOverlay: boolean;
+  }): React.CSSProperties;
   getIndex(id: UniqueIdentifier): number;
   renderItem?(): React.ReactElement;
   wrapperStyle({ index }: { index: number }): React.CSSProperties;
@@ -692,6 +876,7 @@ function SortableItem({
   id,
   index,
   handle,
+  value,
   renderItem,
   style,
   containerId,
@@ -713,13 +898,10 @@ function SortableItem({
   });
   const mounted = useMountStatus();
   const mountedWhileDragging = isDragging && !mounted;
-  if (id === 2441) {
-    console.log("TABLEE", { id, isDragging, isSorting, overIndex });
-  }
   return (
     <Item
       ref={disabled ? undefined : setNodeRef}
-      value={id}
+      value={value}
       dragging={isDragging}
       sorting={isSorting}
       handle={handle}

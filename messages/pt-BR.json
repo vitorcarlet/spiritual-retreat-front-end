@@ -134,6 +134,20 @@
     "member-count": "{count, plural, one {# integrante} other {# integrantes}}",
     "no-members": "Esta família ainda não possui integrantes.",
     "close": "Fechar",
-    "no-leader": "Nenhum líder definido"
+    "no-leader": "Nenhum líder definido",
+    "family-color": "Cor da Família"
+  },
+  "service-team-details": {
+    "confirmDelete": "Confirmar Remoção",
+    "createSpace": {
+      "title": "Criar Nova Equipe",
+      "cta": "Criar Nova Equipe"
+    },
+    "loading": "Carregando",
+    "error": "Erro"
+  },
+  "service-team": {
+    "minMembers": "Número Mínimo de Membros",
+    "coordinator": "Coordenador"
   }
 }

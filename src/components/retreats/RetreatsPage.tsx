@@ -52,10 +52,16 @@ export default function RetreatPage({
       value: 3,
     },
     {
+      label: "Equipe de serviço",
+      icon: "fluent:people-team-toolbox-20-filled",
+      path: `/retreats/${retreatId}/service-team`,
+      value: 4,
+    },
+    {
       label: "Barracas",
       icon: "lucide:tent",
       path: `/retreats/${retreatId}/tents`,
-      value: 4,
+      value: 5,
     },
   ];
 

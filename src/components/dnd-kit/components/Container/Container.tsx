@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { forwardRef } from "react";
 import { Box, ButtonBase, BoxProps, styled } from "@mui/material";
 import { Handle, Remove } from "../Item";
@@ -165,13 +166,13 @@ const RootButton = styled(ButtonBase, {
   ...applyVariants(p, theme),
 }));
 
-const Header = styled("div")(({ theme }) => ({
+const Header = styled("div")(({ theme, color }) => ({
   display: "flex",
   padding: `${theme.spacing(0.625)} ${theme.spacing(2.5)}`,
   paddingRight: theme.spacing(1),
   alignItems: "center",
   justifyContent: "space-between",
-  backgroundColor: theme.vars?.palette.background.paper,
+  backgroundColor: color ?? theme.vars?.palette.background.paper,
   borderTopLeftRadius: theme.vars?.shape.borderRadius,
   borderTopRightRadius: theme.vars?.shape.borderRadius,
   borderBottom: `1px solid ${theme.vars?.palette.divider}`,
@@ -231,10 +232,10 @@ export const Container = forwardRef<HTMLElement, ContainerProps>(
     const Content = (
       <>
         {label && !placeholder && (
-          <Header>
+          <Header color={bgColor}>
             <Box
               sx={{
-                backgroundColor: bgColor,
+                //backgroundColor: bgColor,
                 fontWeight: 600,
                 flex: 1,
                 overflow: "hidden",

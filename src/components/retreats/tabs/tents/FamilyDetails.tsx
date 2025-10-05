@@ -27,7 +27,6 @@ import {
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
 import type { RequestResponse } from "@/src/lib/requestServer";
-import { MuiColorInput } from "mui-color-input";
 
 interface FamilyDetailsProps {
   family: RetreatFamily;
@@ -43,7 +42,6 @@ interface UpdateFamilyPayload {
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
-  color?: string;
 }
 
 export default function FamilyDetails({
@@ -65,7 +63,6 @@ export default function FamilyDetails({
     contactName: family.contactName ?? "",
     contactEmail: family.contactEmail ?? "",
     contactPhone: family.contactPhone ?? "",
-    color: family.color ?? "",
   });
 
   useEffect(() => {
@@ -75,7 +72,6 @@ export default function FamilyDetails({
       contactName: family.contactName ?? "",
       contactEmail: family.contactEmail ?? "",
       contactPhone: family.contactPhone ?? "",
-      color: family.color ?? "",
     });
     setIsEditing(startInEdit && canEdit);
     setErrorMessage(null);
@@ -97,7 +93,6 @@ export default function FamilyDetails({
       contactName: familyState.contactName ?? "",
       contactEmail: familyState.contactEmail ?? "",
       contactPhone: familyState.contactPhone ?? "",
-      color: familyState.color ?? "",
     });
   };
 
@@ -197,24 +192,6 @@ export default function FamilyDetails({
                 <InfoRow label={t("name-label")} value={familyState.name} />
               )}
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <MuiColorInput
-                format="hex"
-                label={t("family-color")}
-                disableAlpha
-                value={formValues.color ?? ""}
-                onChange={(value) =>
-                  setFormValues((prev) => ({ ...prev, ["color"]: value }))
-                }
-                TextFieldProps={{
-                  fullWidth: true,
-                  required: true,
-                  // error: !!errors.color,
-                  // helperText: errors.color?.message,
-                }}
-              />
-            </Grid>
-
             <Grid size={{ xs: 12, md: 6 }}>
               {isEditing ? (
                 <Autocomplete

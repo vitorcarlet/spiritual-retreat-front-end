@@ -3,12 +3,16 @@ import { UniqueIdentifier } from "@dnd-kit/core";
 import { Box, Button } from "@mui/material";
 
 type ContainerButtonsProps = {
-  onView: (familyId: UniqueIdentifier) => void;
-  onEdit: (familyId: UniqueIdentifier) => void;
-  familyId: UniqueIdentifier;
+  onView: (serviceTeamId: UniqueIdentifier) => void;
+  onEdit: (serviceTeamId: UniqueIdentifier) => void;
+  serviceTeamId: UniqueIdentifier;
 };
 
-function ContainerButtons({ onView, onEdit, familyId }: ContainerButtonsProps) {
+function ContainerButtons({
+  onView,
+  onEdit,
+  serviceTeamId,
+}: ContainerButtonsProps) {
   return (
     <Box
       sx={{
@@ -35,7 +39,7 @@ function ContainerButtons({ onView, onEdit, familyId }: ContainerButtonsProps) {
             borderColor: "primary.dark",
           },
         }}
-        onClick={() => onView?.(familyId)}
+        onClick={() => onView?.(serviceTeamId)}
       >
         <Iconify icon="icomoon-free:plus" />
       </Button>
@@ -43,7 +47,7 @@ function ContainerButtons({ onView, onEdit, familyId }: ContainerButtonsProps) {
         sx={{ width: 100 }}
         size="medium"
         variant="outlined"
-        onClick={() => onEdit?.(familyId)}
+        onClick={() => onEdit?.(serviceTeamId)}
       >
         <Iconify icon="ic:baseline-mode-edit" />
       </Button>

@@ -7,12 +7,11 @@ import {
 import { SortingStrategy } from "@dnd-kit/sortable";
 import { RetreatsCardTableFilters } from "../../types";
 
-export interface RetreatTentsProps {
+export interface RetreatFamiliesProps {
   adjustScale?: boolean;
   cancelDrop?: CancelDrop;
   columns?: number;
   containerStyle?: React.CSSProperties;
-  ac;
   coordinateGetter?: KeyboardCoordinateGetter;
   getItemStyles?(args: {
     value: UniqueIdentifier;
@@ -25,7 +24,7 @@ export interface RetreatTentsProps {
   }): React.CSSProperties;
   wrapperStyle?(args: { index: number }): React.CSSProperties;
   itemCount?: number;
-  items?: RetreatTent[];
+  items?: RetreatFamily[];
   handle?: boolean;
   renderItem?: unknown;
   strategy?: SortingStrategy;
@@ -38,9 +37,24 @@ export interface RetreatTentsProps {
     filters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => void;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
-  onEdit?: (tent: RetreatTent) => void;
-  onView?: (retreat: RetreatTent) => void;
+  onEdit: (familyId: UniqueIdentifier) => void;
+  onView: (familyId: UniqueIdentifier) => void;
   total: number;
+  setFamiliesReorderFlag: (flag: boolean) => void;
+  onSaveReorder?: (items: Items) => Promise<void>;
+  retreatId: string;
+  canEditFamily: boolean;
 }
 
-export type Items = Record<UniqueIdentifier, UniqueIdentifier[]>;
+export type Items = Record<string, UniqueIdentifier[]>;
+
+export interface MembersMapEntry {
+  id: UniqueIdentifier;
+  name: string;
+  gender?: string;
+  city?: string;
+  //realFamilyId?: string;
+}
+
+export type MembersById = Record<UniqueIdentifier, MembersMapEntry>;
+export type MemberToContainer = Record<UniqueIdentifier, UniqueIdentifier>;
