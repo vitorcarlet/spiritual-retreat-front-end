@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useCallback, useEffect } from "react";
@@ -14,7 +13,7 @@ import {
   handleApiResponse,
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
-import RetreatFamiliesTable from "./RetreatFamiliesTable";
+import RetreatTentsTable from "./RetreatTentsTable";
 import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
@@ -25,19 +24,16 @@ import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { getFilters } from "./getFilters";
 import FilterButton from "../../../filters/FilterButton";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import { UniqueIdentifier } from "@dnd-kit/core";
 import { useModal } from "@/src/hooks/useModal";
-import CreateFamilyForm from "./CreateFamilyForm";
-import SendMessageToFamilyForm from "./SendMessageToFamilyForm";
-import AddParticipantToFamilyForm from "./AddParticipantToFamilyForm";
-import ConfigureFamily from "./ConfigureFamily";
-import DrawFamilies from "./DrawFamilies";
+import CreateTentForm from "./CreateTentForm";
+import CreateTentBulkForm from "./CreateTentBulkForm";
 import { Items } from "./types";
-import FamilyDetails from "./FamilyDetails";
+import TentDetails from "./TentDetails";
+import type { RequestResponse } from "@/src/lib/requestServer";
 
-interface RetreatFamilyRequest {
-  rows: RetreatFamily[];
+interface RetreatTentRequest {
+  rows: RetreatTent[];
   total: number;
   page: number;
   pageLimit: number;
@@ -45,16 +41,14 @@ interface RetreatFamilyRequest {
   hasPrevPage: boolean;
 }
 
-const getRetreatFamilies = async (
+const getRetreatTents = async (
   filters: TableDefaultFilters<
     RetreatsCardTableFilters & RetreatsCardTableDateFilters
   >,
   retreatId: string
 ) => {
-  const response = await handleApiResponse<
-    RequestResponse<RetreatFamilyRequest>
-  >(
-    await sendRequestServerVanilla.get(`/retreats/${retreatId}/families`, {
+  const response = await handleApiResponse<RequestResponse<RetreatTentRequest>>(
+    await sendRequestServerVanilla.get(`/retreats/${retreatId}/tents`, {
       params: filters,
     })
   );
@@ -62,18 +56,16 @@ const getRetreatFamilies = async (
   if (!response || response.error) {
     throw new Error("Failed to fetch retreats");
   }
-  return response.data as unknown as RetreatFamilyRequest;
+  return response.data as unknown as RetreatTentRequest;
 };
 
-interface RetreatFamiliesProps {
+interface RetreatTentsProps {
   id: string;
 }
 
-export default function RetreatFamilies({
-  id: retreatId,
-}: RetreatFamiliesProps) {
-  const t = useTranslations();
-  const tFamilyDetails = useTranslations("family-details");
+export default function RetreatTents({ id: retreatId }: RetreatTentsProps) {
+  const tTent = useTranslations("tents");
+  const tTentDetails = useTranslations("tent-details");
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
       defaultFilters: {
@@ -85,8 +77,7 @@ export default function RetreatFamilies({
 
   const session = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
-  const [familiesReorderFlag, setFamiliesReorderFlag] =
-    useState<boolean>(false);
+  const [tentsReorderFlag, setTentsReorderFlag] = useState<boolean>(false);
   const modal = useModal();
 
   useEffect(() => {
@@ -104,30 +95,30 @@ export default function RetreatFamilies({
   const filtersConfig = getFilters();
   const queryClient = useQueryClient();
   const {
-    data: familiesData,
+    data: tentsData,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["retreat-families", filters],
-    queryFn: () => getRetreatFamilies(filters, retreatId),
+    queryKey: ["retreat-tents", filters],
+    queryFn: () => getRetreatTents(filters, retreatId),
     staleTime: 60_000,
   });
 
-  const familiesDataArray: RetreatFamily[] = useMemo(() => {
-    if (!familiesData) {
+  const tentsDataArray: RetreatTent[] = useMemo(() => {
+    if (!tentsData) {
       return [];
     }
 
-    const { rows } = familiesData;
+    const { rows } = tentsData;
 
     if (Array.isArray(rows)) {
       return rows;
     }
 
     return rows ? [rows] : [];
-  }, [familiesData]);
+  }, [tentsData]);
 
-  const canEditFamily = useMemo(() => {
+  const canEditTent = useMemo(() => {
     const user = session.data?.user;
     if (!user) {
       return false;
@@ -162,52 +153,52 @@ export default function RetreatFamilies({
   //   [retreatId]
   // );
 
-  const openFamilyDetails = useCallback(
-    (familyId: UniqueIdentifier, startInEdit = false) => {
-      const family = familiesDataArray.find(
-        (item) => String(item.id) === String(familyId)
+  const openTentDetails = useCallback(
+    (tentId: UniqueIdentifier, startInEdit = false) => {
+      const tent = tentsDataArray.find(
+        (item) => String(item.id) === String(tentId)
       );
 
-      if (!family) {
+      if (!tent) {
         return;
       }
 
       modal.open({
-        title: tFamilyDetails("title", { family: family.name }),
+        title: tTentDetails("title", { number: tent.number }),
         size: "md",
         customRender() {
           return (
-            <FamilyDetails
-              family={family}
+            <TentDetails
+              tent={tent}
               retreatId={retreatId}
-              canEdit={canEditFamily}
-              startInEdit={startInEdit && canEditFamily}
+              canEdit={canEditTent}
+              startInEdit={startInEdit && canEditTent}
               onClose={modal.close}
-              onUpdated={(updatedFamily) => {
-                queryClient.setQueryData<RetreatFamilyRequest | undefined>(
-                  ["retreat-families", filters],
+              onUpdated={(updatedTent) => {
+                queryClient.setQueryData<RetreatTentRequest | undefined>(
+                  ["retreat-tents", filters],
                   (previous) => {
                     if (!previous) {
                       return previous;
                     }
 
-                    if (!Array.isArray(previous.rows)) {
-                      return previous;
+                    if (Array.isArray(previous.rows)) {
+                      return {
+                        ...previous,
+                        rows: previous.rows.map((row) =>
+                          row.id === updatedTent.id
+                            ? { ...row, ...updatedTent }
+                            : row
+                        ),
+                      };
                     }
 
-                    return {
-                      ...previous,
-                      rows: previous.rows.map((row) =>
-                        row.id === updatedFamily.id
-                          ? { ...row, ...updatedFamily }
-                          : row
-                      ),
-                    };
+                    return previous;
                   }
                 );
 
                 queryClient.invalidateQueries({
-                  queryKey: ["retreat-families"],
+                  queryKey: ["retreat-tents"],
                 });
               }}
             />
@@ -216,42 +207,41 @@ export default function RetreatFamilies({
       });
     },
     [
-      familiesDataArray,
+      tentsDataArray,
       modal,
-      tFamilyDetails,
+      tTentDetails,
       retreatId,
-      canEditFamily,
+      canEditTent,
       queryClient,
       filters,
     ]
   );
 
   const handleEdit = useCallback(
-    (familyId: UniqueIdentifier) => {
-      openFamilyDetails(familyId, true);
+    (tentId: UniqueIdentifier) => {
+      openTentDetails(tentId, true);
     },
-    [openFamilyDetails]
+    [openTentDetails]
   );
 
   const handleView = useCallback(
-    (familyId: UniqueIdentifier) => {
-      openFamilyDetails(familyId, false);
+    (tentId: UniqueIdentifier) => {
+      openTentDetails(tentId, false);
     },
-    [openFamilyDetails]
+    [openTentDetails]
   );
 
-  const createNewFamily = () => {
+  const createIndividualTent = () => {
     modal.open({
-      title: t("create-new-family"),
+      title: tTent("createIndividual"),
       size: "md",
       customRender() {
         return (
-          <CreateFamilyForm
+          <CreateTentForm
             retreatId={retreatId}
             onSuccess={() => {
               modal.close?.();
-              // Refetch families data
-              queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+              queryClient.invalidateQueries({ queryKey: ["retreat-tents"] });
             }}
           />
         );
@@ -259,37 +249,17 @@ export default function RetreatFamilies({
     });
   };
 
-  const sendMessageToFamily = () => {
+  const createTentBulk = () => {
     modal.open({
-      title: t("send-message-to-family"),
+      title: tTent("createBulk"),
       size: "md",
       customRender() {
         return (
-          <SendMessageToFamilyForm
+          <CreateTentBulkForm
             retreatId={retreatId}
-            families={familiesDataArray}
             onSuccess={() => {
               modal.close?.();
-            }}
-          />
-        );
-      },
-    });
-  };
-
-  const addParticipantInFamily = () => {
-    modal.open({
-      title: t("add-participant-in-family"),
-      size: "md",
-      customRender() {
-        return (
-          <AddParticipantToFamilyForm
-            retreatId={retreatId}
-            families={familiesDataArray}
-            onSuccess={() => {
-              modal.close?.();
-              // Refetch families data
-              // queryClient.invalidateQueries(["retreat-families", filters]);
+              queryClient.invalidateQueries({ queryKey: ["retreat-tents"] });
             }}
           />
         );
@@ -302,67 +272,29 @@ export default function RetreatFamilies({
       try {
         // Transform items to the format expected by the API
         const reorderData = Object.entries(items).map(
-          ([familyId, memberIds]) => ({
-            familyId,
-            memberIds: memberIds.map((id) => String(id)),
+          ([tentId, participantIds]) => ({
+            tentId,
+            participantIds: participantIds.map((id) => String(id)),
           })
         );
 
         await sendRequestServerVanilla.put(
-          `/retreats/${retreatId}/families/reorder`,
+          `/retreats/${retreatId}/tents/reorder`,
           {
             data: reorderData,
           }
         );
-        setFamiliesReorderFlag?.(false);
+        setTentsReorderFlag?.(false);
         // Refetch families data to get updated order
-        queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+        queryClient.invalidateQueries({ queryKey: ["retreat-tents"] });
       } catch (error) {
-        console.error("Error saving families reorder:", error);
-        queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+        console.error("Error saving tents reorder:", error);
+        queryClient.invalidateQueries({ queryKey: ["retreat-tents"] });
         throw error; // Re-throw to handle in the component
       }
     },
     [retreatId, queryClient]
   );
-
-  const configureFamilies = () => {
-    modal.open({
-      title: t("family-configuration"),
-      size: "md",
-      customRender() {
-        return (
-          <ConfigureFamily
-            retreatId={retreatId}
-            onSuccess={() => {
-              modal.close?.();
-              // Refetch families data
-              queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
-            }}
-          />
-        );
-      },
-    });
-  };
-
-  const drawFamilies = () => {
-    modal.open({
-      title: t("family-draw"),
-      size: "md",
-      customRender() {
-        return (
-          <DrawFamilies
-            retreatId={retreatId}
-            onSuccess={() => {
-              modal.close?.();
-              // Refetch families data
-              queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
-            }}
-          />
-        );
-      },
-    });
-  };
 
   const handleFiltersChange = (
     newFilters: TableDefaultFilters<RetreatsCardTableFilters>
@@ -405,38 +337,17 @@ export default function RetreatFamilies({
           <>
             <Button
               variant="contained"
-              onClick={createNewFamily}
-              disabled={familiesReorderFlag}
+              onClick={createIndividualTent}
+              disabled={tentsReorderFlag}
             >
-              {t("create-new-family")}
+              {tTent("createIndividual")}
             </Button>
             <Button
               variant="contained"
-              onClick={sendMessageToFamily}
-              disabled={familiesReorderFlag}
+              onClick={createTentBulk}
+              disabled={tentsReorderFlag}
             >
-              {t("send-message-to-family")}
-            </Button>
-            <Button
-              variant="contained"
-              onClick={addParticipantInFamily}
-              disabled={familiesReorderFlag}
-            >
-              {t("add-participant-in-family")}
-            </Button>
-            <Button
-              variant="contained"
-              onClick={configureFamilies}
-              disabled={familiesReorderFlag}
-            >
-              {t("family-config")}
-            </Button>
-            <Button
-              variant="contained"
-              onClick={drawFamilies}
-              disabled={familiesReorderFlag}
-            >
-              {t("draw-the-families")}
+              {tTent("createBulk")}
             </Button>
           </>
         )}
@@ -452,20 +363,20 @@ export default function RetreatFamilies({
           </Stack>
         )}
         {isError && (
-          <Typography color="error">Erro ao carregar famílias.</Typography>
+          <Typography color="error">Erro ao carregar barracas.</Typography>
         )}
         {!isLoading && !isError && (
-          <RetreatFamiliesTable
-            setFamiliesReorderFlag={setFamiliesReorderFlag}
+          <RetreatTentsTable
+            setTentsReorderFlag={setTentsReorderFlag}
             onSaveReorder={handleSaveReorder}
-            total={familiesData?.total || 0}
+            total={tentsData?.total || 0}
             filters={filters}
-            items={familiesDataArray}
+            items={tentsDataArray}
             onEdit={handleEdit}
             onView={handleView}
             onFiltersChange={handleFiltersChange}
             retreatId={retreatId}
-            canEditFamily={canEditFamily}
+            canEditTent={canEditTent}
           />
         )}
       </Box>

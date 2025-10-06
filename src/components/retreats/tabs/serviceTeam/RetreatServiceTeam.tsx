@@ -32,6 +32,7 @@ import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
 } from "../../types";
+import AddParticipantToServiceTeamForm from "./AddParticipantToServiceTeamForm";
 
 interface ServiceSpacesResponse {
   rows: ServiceSpace[] | ServiceSpace;
@@ -71,7 +72,7 @@ interface RetreatServiceTeamProps {
 export default function RetreatServiceTeam({
   id: retreatId,
 }: RetreatServiceTeamProps) {
-  const t = useTranslations("service-team");
+  const t = useTranslations();
   const tDetails = useTranslations("service-team-details");
   const modal = useModal();
   const session = useSession();
@@ -133,13 +134,15 @@ export default function RetreatServiceTeam({
     if (!user) {
       return false;
     }
-
+    console.log("canEditSerce", user);
     return getPermission({
       permissions: user.permissions,
       permission: "retreats.update",
       role: user.role,
     });
   }, [session.data]);
+
+  console.log("canEditSerce", canEditServiceSpace);
 
   const openServiceSpaceDetails = useCallback(
     (spaceId: string, startInEdit = false) => {
@@ -298,6 +301,26 @@ export default function RetreatServiceTeam({
     [t, retreatId, queryClient, filters]
   );
 
+  const handleAddNewParticipant = () => {
+    modal.open({
+      title: t("add-participant-in-service-team"),
+      size: "md",
+      customRender() {
+        return (
+          <AddParticipantToServiceTeamForm
+            retreatId={retreatId}
+            serviceSpaces={serviceSpaces}
+            onSuccess={() => {
+              modal.close?.();
+              // Refetch families data
+              // queryClient.invalidateQueries(["retreat-families", filters]);
+            }}
+          />
+        );
+      },
+    });
+  };
+
   const handleCreate = useCallback(() => {
     modal.open({
       title: t("createSpace.title", {
@@ -374,22 +397,32 @@ export default function RetreatServiceTeam({
         />
 
         {hasCreatePermission && (
-          <Button
-            variant="contained"
-            onClick={handleCreate}
-            disabled={isFetching || spacesReorderFlag}
-          >
-            {t("createSpace.cta", {
-              defaultMessage: "Create service space",
-            })}
-          </Button>
+          <>
+            <Button
+              variant="contained"
+              onClick={handleCreate}
+              disabled={isFetching || spacesReorderFlag}
+            >
+              {tDetails("create-new-team")}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleAddNewParticipant}
+              disabled={isFetching || spacesReorderFlag}
+            >
+              {tDetails("add-new-participant")}
+            </Button>
+          </>
         )}
       </Stack>
 
       <Box sx={{ flex: 1, minHeight: 0, position: "relative" }}>
         {serviceSpacesResponse && (
           <RetreatServiceTeamTable
-            spaces={serviceSpaces}
+            items={serviceSpaces}
+            retreatId={retreatId}
+            canEditServiceTeam={canEditServiceSpace}
+            setServiceTeamReorderFlag={setSpacesReorderFlag}
             total={serviceSpacesResponse.total}
             filters={filters}
             onFiltersChange={handleFiltersChange}

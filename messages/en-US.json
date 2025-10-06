@@ -31,6 +31,64 @@
   "families-draw-success": "Families drawn successfully!",
   "family-color": "Family color",
   "family-draw": "Family draw",
+  "tents": {
+    "createIndividual": "Create tent",
+    "createBulk": "Create in bulk",
+    "per-page": "per page",
+    "of-total": "of {total}",
+    "card-label": "Tent {number}",
+    "unknown-participant": "Unknown participant",
+    "tent-info": "{gender} • {current}/{capacity}",
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "mixed": "Mixed"
+    },
+    "form": {
+      "number": "Tent number",
+      "gender": "Tent type",
+      "capacity": "Max capacity",
+      "notes": "Notes",
+      "notesPlaceholder": "Add important details about this tent",
+      "cancel": "Cancel",
+      "submit": "Create tent",
+      "submitting": "Creating..."
+    },
+    "bulkForm": {
+      "startingNumber": "Starting number",
+      "quantity": "Number of tents",
+      "capacity": "Capacity per tent",
+      "gender": "Tent type",
+      "notes": "Notes",
+      "notesPlaceholder": "e.g., Backup tents for late arrivals",
+      "cancel": "Cancel",
+      "submit": "Create tents",
+      "submitting": "Creating..."
+    }
+  },
+  "tent-details": {
+    "title": "Tent {number}",
+    "general-info": "General information",
+    "number-label": "Number",
+    "gender-label": "Type",
+    "capacity-label": "Max capacity",
+    "notes-label": "Notes",
+    "no-notes": "No notes added yet.",
+    "participants-title": "Participants",
+    "participant-count": "{count, plural, one {# participant} other {# participants}}",
+    "no-participants": "No participants assigned to this tent.",
+    "close": "Close",
+    "cancel-edit": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "update-success": "Tent updated successfully!",
+    "update-error": "Couldn't update the tent. Please try again.",
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "mixed": "Mixed"
+    }
+  },
   "draw-the-families": "Draw the families",
   "family-validation": {
     "loading": "Validating family composition rules...",
@@ -60,5 +118,10 @@
     "no-members": "This family doesn't have members yet.",
     "close": "Close",
     "no-leader": "No leader assigned"
+  },
+  "service-team-details": {
+    "createSpace": {
+      "cta": "Create new Team"
+    }
   }
 }

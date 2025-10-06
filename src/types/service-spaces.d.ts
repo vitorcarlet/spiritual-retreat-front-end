@@ -12,10 +12,13 @@ interface ServiceSpace {
   retreatId: string;
   name: string;
   description: string;
+  color: string;
   minMembers: number;
   coordinator: ServiceSpaceMember | null;
   viceCoordinator: ServiceSpaceMember | null;
   members: ServiceSpaceMember[];
+  maxMembers: number;
+  minMember: number;
   createdAt?: string;
   updatedAt?: string;
 }

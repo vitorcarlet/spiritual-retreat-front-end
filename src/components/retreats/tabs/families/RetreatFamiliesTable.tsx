@@ -587,7 +587,6 @@ export default function RetreatFamiliesTable({
           const { original: containerId } = row.cell.row;
           const memberIds = items[containerId] || [];
           const familyName = familiesById[containerId] || containerId;
-          console.log({ familyName });
           return (
             <DroppableContainer
               key={containerId}

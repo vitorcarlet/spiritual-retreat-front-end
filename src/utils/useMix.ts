@@ -3,11 +3,11 @@ export const useMix = (baseVar: string, pct: number) =>
 
 export const getContrastTextColor = (
   backgroundColor: string
-): "white" | "black" => {
+): "#FFF" | "#21262D" => {
   const hex = backgroundColor.trim().replace(/^#/, "");
 
   if (!/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(hex)) {
-    return "black";
+    return "#21262D";
   }
 
   const normalizedHex =
@@ -24,5 +24,5 @@ export const getContrastTextColor = (
 
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-  return luminance > 0.5 ? "black" : "white";
+  return luminance > 0.5 ? "#21262D" : "#FFF";
 };

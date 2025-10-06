@@ -4,6 +4,7 @@
 import React from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import theme from "@/src/theme/theme";
+import { DarkModeProvider } from "@/src/theme/DarkModeContext";
 
 export default function ThemeMuiProvider({
   children,
@@ -11,13 +12,11 @@ export default function ThemeMuiProvider({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider
-      theme={theme}
-      defaultMode="system"
-      modeStorageKey="mui-mode"
-    >
-      <CssBaseline />
-      {children}
-    </ThemeProvider>
+    <DarkModeProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
+    </DarkModeProvider>
   );
 }

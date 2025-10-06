@@ -314,7 +314,7 @@ export default function RetreatFamilies({
             data: reorderData,
           }
         );
-        setFamiliesReorderFlag?.(false);
+        setFamiliesReorderFlag(false);
         // Refetch families data to get updated order
         queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
       } catch (error) {

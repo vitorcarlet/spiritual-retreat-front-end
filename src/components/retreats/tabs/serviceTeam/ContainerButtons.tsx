@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 interface ContainerButtonsProps {
   familyId: UniqueIdentifier;
+  reorderFlag: boolean;
   onEdit: (familyId: UniqueIdentifier) => void;
   onView: (familyId: UniqueIdentifier) => void;
   canEdit: boolean;
@@ -16,6 +17,7 @@ export default function ContainerButtons({
   onEdit,
   onView,
   canEdit,
+  reorderFlag,
 }: ContainerButtonsProps) {
   const t = useTranslations("family-details");
   return (
@@ -26,6 +28,7 @@ export default function ContainerButtons({
         startIcon={<Iconify icon="solar:eye-bold" />}
         onClick={() => onView(familyId)}
         sx={{ minWidth: "auto" }}
+        disabled={canEdit || reorderFlag}
       >
         {t("view")}
       </Button>
@@ -36,6 +39,7 @@ export default function ContainerButtons({
           startIcon={<Iconify icon="solar:pen-bold" />}
           onClick={() => onEdit(familyId)}
           sx={{ minWidth: "auto" }}
+          disabled={canEdit || reorderFlag}
         >
           {t("edit")}
         </Button>

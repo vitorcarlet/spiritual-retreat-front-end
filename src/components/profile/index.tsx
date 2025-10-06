@@ -1,113 +1,85 @@
 "use client";
 import {
   Box,
+  Button,
+  ButtonBase,
   FormControl,
   Grid,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
-  TextField,
-  Button,
-  Typography,
   Skeleton,
-  ButtonBase,
+  TextField,
+  Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import TextFieldMasked from "../../fields/maskedTextFields/TextFieldMasked";
-import { useUserContent } from "../context";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldMasked";
 import { UserObject, UserRoles } from "next-auth";
-import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
 import {
   handleApiResponse,
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
-import { UserObjectWithId } from "./types";
-import LocationField from "../../fields/LocalizationFields/LocationField";
-import { useModal } from "@/src/hooks/useModal";
-import ProfilePictureModal from "../../profile/ProfilePictureModal";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import LocationField from "../fields/LocalizationFields/LocationField";
+import { useModal } from "@/src/hooks/useModal";
+import ProfilePictureModal from "./ProfilePictureModal";
+
+type FormDataShape = Pick<
+  UserObject,
+  "name" | "cpf" | "birth" | "city" | "stateShort" | "role"
+>;
+
+const mapUserToFormData = (user?: UserObject | null): FormDataShape => ({
+  name: user?.name ?? "",
+  cpf: user?.cpf ?? "",
+  birth: user?.birth ?? "",
+  city: user?.city ?? "",
+  stateShort: user?.stateShort ?? "",
+  role: user?.role ?? "participant",
+});
 
 const FALLBACK_PROFILE_IMAGE =
   "https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU";
 
 const UserEditPage = () => {
-  const { user, setUser } = useUserContent();
-  const { menuMode } = useMenuMode();
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
-  const isReadOnly = menuMode === "view";
-  const isLoading = false;
-  // Modo de criação quando não há usuário carregado
-  const isCreating = !user;
-  // Estado do formulário
-  const [formData, setFormData] = useState<
-    Omit<
-      UserObject,
-      | "id"
-      | "createdAt"
-      | "updatedAt"
-      | "state"
-      | "email"
-      | "permissions"
-      | "first_name"
-      | "last_name"
-      | "profile_picture"
-    >
-  >({
-    name: "",
-    cpf: "",
-    birth: "",
-    city: "",
-    stateShort: "",
-    role: "participant",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: session, status, update } = useSession();
+  const user = session?.user ?? null;
+  const modal = useModal();
+
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(
     user?.profile_picture ?? null
   );
-  const modal = useModal();
+
+  const [formData, setFormData] = useState<FormDataShape>(() =>
+    mapUserToFormData()
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFormData(mapUserToFormData(user));
+    }
+  }, [user]);
 
   useEffect(() => {
     setProfileImageUrl(user?.profile_picture ?? null);
   }, [user?.profile_picture]);
 
-  const displayedProfileImage = useMemo(
-    () => profileImageUrl ?? FALLBACK_PROFILE_IMAGE,
-    [profileImageUrl]
-  );
-
-  const handleProfilePictureUpdated = useCallback(
-    async (nextUrl: string | null) => {
-      setProfileImageUrl(nextUrl);
-      if (user) {
-        setUser({
-          ...user,
-          profile_picture: nextUrl ?? null,
-        } as UserObject);
-      }
-    },
-    [setUser, user]
-  );
-
   useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        cpf: user.cpf || "",
-        birth: user.birth || "",
-        city: user.city || "",
-        stateShort: user.stateShort || "",
-        role: user.role || "",
-      });
+    if (status === "unauthenticated") {
+      router.replace("/auth/login");
     }
-  }, [user]);
+  }, [status, router]);
 
   const handleInputChange =
-    (field: keyof UserObject) =>
+    (field: keyof FormDataShape) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setFormData((prev) => ({
         ...prev,
@@ -124,42 +96,29 @@ const UserEditPage = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || !user?.id) return;
 
     setIsSubmitting(true);
     try {
-      if (isCreating) {
-        // CREATE
-        const res = await handleApiResponse<UserObjectWithId>(
-          await sendRequestServerVanilla.post("/users/create", formData)
-        );
+      const res = await handleApiResponse<UserObject>(
+        await sendRequestServerVanilla.put(`/api/user/${user.id}`, formData)
+      );
 
-        if (res.error || !res.data)
-          throw new Error(res.error || "Falha ao criar usuário");
-        const data = res.data as unknown as UserObject;
-        router.push(`/users/${data.id}`);
-      } else {
-        // UPDATE
-        if (!user?.id) throw new Error("ID do usuário não encontrado");
-        const res = await handleApiResponse<UserObjectWithId>(
-          await sendRequestServerVanilla.put(`/api/user/${user.id}`, formData)
-        );
-
-        if (res.error)
-          throw new Error(res.error || "Falha ao atualizar usuário");
-
-        const updatedUser = (res.data as unknown as UserObject) ?? null;
-        if (updatedUser) {
-          setUser(updatedUser);
-        }
-
-        enqueueSnackbar("Usuário atualizado com sucesso!", {
-          variant: "success",
-        });
-
-        // Replace para manter rota atual e garantir sincronização
-        //router.replace(`/users/${updatedUser?.id ?? user.id}`);
+      if (res.error) {
+        throw new Error(res.error || "Falha ao atualizar usuário");
       }
+
+      const updatedUser = res.data ?? null;
+      if (updatedUser) {
+        setFormData(mapUserToFormData(updatedUser));
+        if (update) {
+          await update();
+        }
+      }
+
+      enqueueSnackbar("Usuário atualizado com sucesso!", {
+        variant: "success",
+      });
     } catch (error: unknown) {
       const message =
         error instanceof Error
@@ -179,19 +138,33 @@ const UserEditPage = () => {
     setFormData((prev) => ({
       ...prev,
       stateShort: state,
-      city: "", // Limpar cidade quando estado mudar
+      city: "",
     }));
   };
 
   const handleCityChange = (city: string) => {
     setFormData((prev) => ({
       ...prev,
-      city: city,
+      city,
     }));
   };
 
+  const handleProfilePictureUpdated = useCallback(
+    async (nextUrl: string | null) => {
+      setProfileImageUrl(nextUrl);
+      try {
+        if (update) {
+          await update();
+        }
+      } catch (error) {
+        console.error("Erro ao atualizar a sessão após trocar a foto:", error);
+      }
+    },
+    [update]
+  );
+
   const handleOpenProfilePictureModal = useCallback(() => {
-    if (!user?.id) return;
+    if (!user) return;
 
     modal.open({
       key: "profile-picture",
@@ -209,7 +182,14 @@ const UserEditPage = () => {
     });
   }, [modal, profileImageUrl, handleProfilePictureUpdated, user]);
 
-  if (isLoading) {
+  const emailValue = user?.email ?? "";
+  const phoneValue = useMemo(() => {
+    const asAny = user as unknown as { number?: string; phone?: string };
+    return asAny?.number ?? asAny?.phone ?? "";
+  }, [user]);
+  const displayedProfileImage = profileImageUrl || FALLBACK_PROFILE_IMAGE;
+
+  if (status === "loading") {
     return (
       <Box sx={{ width: "100%", height: "100%", p: 3 }}>
         <Skeleton variant="rectangular" height={200} sx={{ mb: 2 }} />
@@ -225,6 +205,10 @@ const UserEditPage = () => {
     );
   }
 
+  if (status === "unauthenticated" || !user) {
+    return null;
+  }
+
   return (
     <Box
       component="form"
@@ -236,7 +220,6 @@ const UserEditPage = () => {
         pt: 0,
       }}
     >
-      {/* Header com imagem de fundo */}
       <Box sx={{ position: "relative" }}>
         <Box
           sx={{
@@ -256,7 +239,7 @@ const UserEditPage = () => {
 
         <ButtonBase
           onClick={handleOpenProfilePictureModal}
-          disabled={isSubmitting || !user?.id}
+          disabled={isSubmitting}
           sx={{
             position: "relative",
             transform: "translate(25%, -50%)",
@@ -330,14 +313,12 @@ const UserEditPage = () => {
         </Typography>
       </Box>
 
-      {/* Formulário */}
       <Box sx={{ padding: 3, paddingTop: 3 }}>
         <Typography variant="h5" component="h1" gutterBottom sx={{ mb: 3 }}>
-          {isCreating ? "Criar Usuário" : `Editar Usuário: ${user?.name ?? ""}`}
+          Informações do seu Usuário
         </Typography>
 
         <Grid container spacing={3}>
-          {/* Nome */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
@@ -347,11 +328,21 @@ const UserEditPage = () => {
               value={formData.name}
               onChange={handleInputChange("name")}
               required
-              disabled={isReadOnly && !isCreating}
+              disabled={isSubmitting}
             />
           </Grid>
 
-          {/* CPF */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
+              label="E-mail"
+              variant="outlined"
+              value={emailValue}
+              disabled
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <TextFieldMasked
               fullWidth
@@ -366,11 +357,21 @@ const UserEditPage = () => {
                   cpf: event.target.value,
                 }));
               }}
-              disabled={isReadOnly && !isCreating}
+              disabled={isSubmitting}
             />
           </Grid>
 
-          {/* Data de Nascimento */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
+              label="Número"
+              variant="outlined"
+              value={phoneValue}
+              disabled
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
@@ -384,11 +385,10 @@ const UserEditPage = () => {
                   shrink: true,
                 },
               }}
-              disabled={isReadOnly && !isCreating}
+              disabled={isSubmitting}
             />
           </Grid>
 
-          {/* Cidade */}
           <Grid size={{ xs: 12, md: 6 }}>
             <LocationField
               selectedState={formData.stateShort}
@@ -397,13 +397,12 @@ const UserEditPage = () => {
               onCityChange={handleCityChange}
               required
               size="medium"
-              disabled={isReadOnly && !isCreating}
+              disabled={isSubmitting}
             />
           </Grid>
 
-          {/* Role/Função */}
           <Grid size={12} sx={{ mb: 5 }}>
-            <FormControl variant="outlined" fullWidth>
+            <FormControl variant="outlined" fullWidth disabled={isSubmitting}>
               <InputLabel id="select-role-label">Função</InputLabel>
               <Select
                 labelId="select-role-label"
@@ -411,11 +410,7 @@ const UserEditPage = () => {
                 onChange={handleRoleChange}
                 label="Função"
                 required
-                disabled={isReadOnly && !isCreating}
               >
-                <MenuItem value="">
-                  <em>Selecione uma função</em>
-                </MenuItem>
                 <MenuItem value="admin">Administrador</MenuItem>
                 <MenuItem value="manager">Gestor</MenuItem>
                 <MenuItem value="consultant">Consultor</MenuItem>
@@ -424,56 +419,35 @@ const UserEditPage = () => {
             </FormControl>
           </Grid>
 
-          {/* Botões de ação */}
-          {(isCreating || !isReadOnly) && (
-            <Grid size={12}>
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 2,
-                  justifyContent: "flex-end",
-                  mt: 2,
-                }}
+          <Grid size={12}>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                justifyContent: "flex-end",
+                mt: 2,
+              }}
+            >
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="large"
+                onClick={() => setFormData(mapUserToFormData(user))}
+                disabled={isSubmitting}
               >
-                {!isCreating && (
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    size="large"
-                    onClick={() => {
-                      // Reset para dados originais do usuário
-                      if (user) {
-                        setFormData({
-                          name: user.name || "",
-                          cpf: user.cpf || "",
-                          birth: user.birth || "",
-                          city: user.city || "",
-                          stateShort: user.stateShort || "",
-                          role: user.role || "",
-                        });
-                      }
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    Cancelar
-                  </Button>
-                )}
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting
-                    ? "Salvando..."
-                    : isCreating
-                      ? "Salvar Usuário"
-                      : "Salvar Alterações"}
-                </Button>
-              </Box>
-            </Grid>
-          )}
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                size="large"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </Box>
+          </Grid>
         </Grid>
       </Box>
     </Box>

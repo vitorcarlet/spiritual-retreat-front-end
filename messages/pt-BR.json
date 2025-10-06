@@ -137,17 +137,147 @@
     "no-leader": "Nenhum líder definido",
     "family-color": "Cor da Família"
   },
+  "tents": {
+    "createIndividual": "Cadastro individual",
+    "createBulk": "Cadastro em lote",
+    "per-page": "por página",
+    "of-total": "de {total}",
+    "card-label": "Barraca {number}",
+    "unknown-participant": "Participante desconhecido",
+    "tent-info": "{gender} • {current}/{capacity}",
+    "gender": {
+      "male": "Masculina",
+      "female": "Feminina",
+      "mixed": "Mista"
+    },
+    "form": {
+      "number": "Número da barraca",
+      "gender": "Tipo da barraca",
+      "capacity": "Capacidade máxima",
+      "notes": "Observações",
+      "notesPlaceholder": "Anote detalhes importantes sobre essa barraca",
+      "cancel": "Cancelar",
+      "submit": "Cadastrar",
+      "submitting": "Cadastrando..."
+    },
+    "bulkForm": {
+      "startingNumber": "Número inicial",
+      "quantity": "Quantidade de barracas",
+      "capacity": "Capacidade por barraca",
+      "gender": "Tipo das barracas",
+      "notes": "Observações",
+      "notesPlaceholder": "Ex.: Barracas extras para participantes atrasados",
+      "cancel": "Cancelar",
+      "submit": "Cadastrar em lote",
+      "submitting": "Cadastrando..."
+    }
+  },
+  "tent-details": {
+    "title": "Barraca {number}",
+    "general-info": "Informações gerais",
+    "number-label": "Número",
+    "gender-label": "Tipo",
+    "capacity-label": "Capacidade máxima",
+    "notes-label": "Observações",
+    "no-notes": "Nenhuma observação registrada.",
+    "participants-title": "Participantes",
+    "participant-count": "{count, plural, one {# participante} other {# participantes}}",
+    "no-participants": "Nenhum participante alocado nesta barraca.",
+    "close": "Fechar",
+    "cancel-edit": "Cancelar",
+    "save": "Salvar",
+    "edit": "Editar",
+    "update-success": "Barraca atualizada com sucesso!",
+    "update-error": "Não foi possível atualizar a barraca. Tente novamente.",
+    "gender": {
+      "male": "Masculina",
+      "female": "Feminina",
+      "mixed": "Mista"
+    }
+  },
   "service-team-details": {
     "confirmDelete": "Confirmar Remoção",
     "createSpace": {
       "title": "Criar Nova Equipe",
       "cta": "Criar Nova Equipe"
     },
+    "fields": {
+      "minMembers": "Número Mínimo de Membros",
+      "name": "Nome da Equipe de Serviço",
+      "description": "Descrição",
+      "coordinator": "Coordenador",
+      "viceCoordinator": "Vice-Coordenador"
+    },
+    "sections": {
+      "coordinator": "Coordenador Da Equipe de Serviço",
+      "vice-coordinator": "Vice-Coordenador da Equipe de Serviço",
+      "members": "Membros da Equipe de Servio",
+      "viceCoordinator": "Vice-Coordenador da Equipe de Serviço",
+      "general": "Informações Gerais"
+    },
     "loading": "Carregando",
-    "error": "Erro"
+    "error": "Erro",
+    "labels": {
+      "memberCount": "{count, plural, one {# membro} other {# membros}}"
+    },
+    "placeholders": {
+      "selectMember": "Selecionar Membros"
+    },
+    "messages": {
+      "noMembers": "Sem Membros",
+      "noDescription": "Sem Descrição",
+      "updateSuccess": "Atualização do espaço de serviço realizada com sucesso!"
+    },
+    "actions": {
+      "close": "Fechar",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "edit": "Editar"
+    },
+    "errors": {
+      "update": "Erro ao atualizar o espaço de serviço"
+    },
+    "viceCoordinator": {
+      "unassigned": "Não Alocado"
+    },
+    "coordinator": {
+      "unassigned": "Coordenador não alocado"
+    },
+    "create-new-team": "Criar Nova Equipe",
+    "add-new-participant": "Adicionar Novo Participante",
+    "add-participant-in-service-team": "Adicionar Participante à Equipe de Serviço"
   },
-  "service-team": {
+  "service-team-a": {
     "minMembers": "Número Mínimo de Membros",
     "coordinator": "Coordenador"
+  },
+  "create-new-team": "Criar Novo Time",
+  "service-team": {
+    "label": "Equipe de Serviço",
+    "actions": {
+      "cancel": "Cancelar"
+    },
+    "roles": {
+      "member": "Membro",
+      "support": "Apoio",
+      "coordinator": "Coordenador",
+      "viceCoordinator": "Vice-coordenador"
+    },
+    "addParticipant": {
+      "formTitle": "Adicionar participantes a uma equipe de serviço",
+      "selectServiceSpace": "Selecionar equipe de serviço",
+      "currentTeamSize": "Membros atuais: {count}",
+      "memberRole": "Função do participante",
+      "selectParticipants": "Selecionar participantes",
+      "loadingParticipants": "Carregando participantes",
+      "searchPlaceholder": "Buscar participantes",
+      "helperText": "Você pode selecionar vários participantes para adicionar",
+      "noParticipants": "Nenhum participante disponível",
+      "minMembersWarning": "Esta equipe ainda precisa de pelo menos {remaining} membro(s) para atingir o mínimo",
+      "maxMembersWarning": "Esta equipe atingiu a capacidade máxima",
+      "selectTeamHint": "Selecione uma equipe para ver os integrantes atuais e limites",
+      "submit": "Adicionar participantes",
+      "submitting": "Adicionando..."
+    }
   }
 }

@@ -59,5 +59,63 @@
     "no-members": "Esta familia aún no tiene miembros.",
     "close": "Cerrar",
     "no-leader": "Sin líder asignado"
+  },
+  "tents": {
+    "createIndividual": "Registrar individual",
+    "createBulk": "Registrar en lote",
+    "per-page": "por página",
+    "of-total": "de {total}",
+    "card-label": "Carpa {number}",
+    "unknown-participant": "Participante desconocido",
+    "tent-info": "{gender} • {current}/{capacity}",
+    "gender": {
+      "male": "Masculina",
+      "female": "Femenina",
+      "mixed": "Mixta"
+    },
+    "form": {
+      "number": "Número de la carpa",
+      "gender": "Tipo de la carpa",
+      "capacity": "Capacidad máxima",
+      "notes": "Notas",
+      "notesPlaceholder": "Agrega detalles importantes sobre esta carpa",
+      "cancel": "Cancelar",
+      "submit": "Registrar carpa",
+      "submitting": "Registrando..."
+    },
+    "bulkForm": {
+      "startingNumber": "Número inicial",
+      "quantity": "Cantidad de carpas",
+      "capacity": "Capacidad por carpa",
+      "gender": "Tipo de las carpas",
+      "notes": "Notas",
+      "notesPlaceholder": "Ej.: Carpas extra para llegadas tardías",
+      "cancel": "Cancelar",
+      "submit": "Registrar en lote",
+      "submitting": "Registrando..."
+    }
+  },
+  "tent-details": {
+    "title": "Carpa {number}",
+    "general-info": "Información general",
+    "number-label": "Número",
+    "gender-label": "Tipo",
+    "capacity-label": "Capacidad máxima",
+    "notes-label": "Notas",
+    "no-notes": "Sin notas registradas.",
+    "participants-title": "Participantes",
+    "participant-count": "{count, plural, one {# participante} other {# participantes}}",
+    "no-participants": "No hay participantes asignados a esta carpa.",
+    "close": "Cerrar",
+    "cancel-edit": "Cancelar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "update-success": "¡Carpa actualizada con éxito!",
+    "update-error": "No se pudo actualizar la carpa. Inténtalo de nuevo.",
+    "gender": {
+      "male": "Masculina",
+      "female": "Femenina",
+      "mixed": "Mixta"
+    }
   }
 }

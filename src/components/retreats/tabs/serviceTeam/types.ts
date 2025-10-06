@@ -44,6 +44,7 @@ export interface ServiceSpaceTableProps {
   canEdit: boolean;
   onSaveReorder?: (items: Items) => Promise<void>;
   setReorderFlag?: (flag: boolean) => void;
+  reorderFlag?: boolean;
 }
 
 export type Items = Record<string, UniqueIdentifier[]>;

@@ -5,26 +5,26 @@ import Iconify from "@/src/components/Iconify";
 import { useTranslations } from "next-intl";
 
 interface ContainerButtonsProps {
-  familyId: UniqueIdentifier;
-  onEdit: (familyId: UniqueIdentifier) => void;
-  onView: (familyId: UniqueIdentifier) => void;
+  tentId: UniqueIdentifier;
+  onEdit: (tentId: UniqueIdentifier) => void;
+  onView: (tentId: UniqueIdentifier) => void;
   canEdit: boolean;
 }
 
 export default function ContainerButtons({
-  familyId,
+  tentId,
   onEdit,
   onView,
   canEdit,
 }: ContainerButtonsProps) {
-  const t = useTranslations("family-details");
+  const t = useTranslations("tent-details");
   return (
     <Stack direction="row" spacing={1} sx={{ mt: 2, justifyContent: "center" }}>
       <Button
         size="small"
         variant="outlined"
         startIcon={<Iconify icon="solar:eye-bold" />}
-        onClick={() => onView(familyId)}
+        onClick={() => onView(tentId)}
         sx={{ minWidth: "auto" }}
       >
         {t("view")}
@@ -34,7 +34,7 @@ export default function ContainerButtons({
           size="small"
           variant="outlined"
           startIcon={<Iconify icon="solar:pen-bold" />}
-          onClick={() => onEdit(familyId)}
+          onClick={() => onEdit(tentId)}
           sx={{ minWidth: "auto" }}
         >
           {t("edit")}

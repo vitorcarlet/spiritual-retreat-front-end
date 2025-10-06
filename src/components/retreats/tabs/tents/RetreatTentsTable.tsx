@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client";
+
 import React, {
   useCallback,
   useEffect,
@@ -67,27 +68,13 @@ import {
 } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
 import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import {
   Items,
-  RetreatFamiliesProps,
+  RetreatTentsTableProps,
   MembersById,
   MemberToContainer,
 } from "./types";
-import {
-  //findContainer,
-  onDragEnd,
-  onDragOver,
-  PLACEHOLDER_ID,
-  TRASH_ID,
-} from "./shared";
+import { onDragEnd, onDragOver, PLACEHOLDER_ID, TRASH_ID } from "./shared";
 import { LoadingScreen } from "@/src/components/loading-screen";
-
-// export default {
-//   title: "Presets/Sortable/Multiple Containers",
-// };
 
 const animateLayoutChanges: AnimateLayoutChanges = (args) =>
   defaultAnimateLayoutChanges({ ...args, wasDragging: true });
@@ -162,55 +149,21 @@ const dropAnimation: DropAnimation = {
   }),
 };
 
-//const empty: UniqueIdentifier[] = [];
-
-interface GenderBalanceRule {
-  enabled: boolean;
-  ratio: number;
-  tolerance?: number;
-  label?: string;
-}
-
-interface FamilyCompositionRules {
-  maxMembersPerFamily?: number;
-  genderBalance?: GenderBalanceRule;
-  preventSameRealFamily?: boolean;
-  preventSameCity?: boolean;
-}
-
-interface FamilyCompositionRulesResponse {
-  success: boolean;
-  retreatId?: string;
-  rules: FamilyCompositionRules;
-}
-
-function findDuplicateValues(values: Array<string | undefined>): string[] {
-  const counts = new Map<string, number>();
-
-  values.forEach((value) => {
-    if (!value) {
-      return;
-    }
-
-    counts.set(value, (counts.get(value) ?? 0) + 1);
-  });
-
-  return Array.from(counts.entries())
-    .filter(([, count]) => count > 1)
-    .map(([value]) => value);
-}
-
-// Helper para clonar Items profundamente (arrays por container)
 function cloneItems(source: Items): Items {
   return Object.fromEntries(
     Object.entries(source).map(([k, v]) => [k, [...v]])
   );
 }
 
-export default function RetreatFamiliesTable({
+const genderColorMap: Record<string, string> = {
+  male: "#1976d2",
+  female: "#d81b60",
+};
+
+export default function RetreatTentsTable({
   adjustScale = false,
   cancelDrop,
-  items: InitialItems,
+  items: initialItems,
   handle = true,
   containerStyle,
   coordinateGetter = multipleContainersCoordinateGetter,
@@ -227,266 +180,84 @@ export default function RetreatFamiliesTable({
   onView,
   onEdit,
   total,
-  setFamiliesReorderFlag,
+  setTentsReorderFlag,
   onSaveReorder,
-  retreatId,
-  canEditFamily,
-}: RetreatFamiliesProps) {
-  const t = useTranslations("family-validation");
-
-  // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
-
-  const [compositionRules, setCompositionRules] =
-    useState<FamilyCompositionRules | null>(null);
-  const [rulesLoading, setRulesLoading] = useState(false);
-  const [rulesError, setRulesError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!retreatId) {
-      return;
-    }
-
-    let isActive = true;
-
-    const loadRules = async () => {
-      setRulesLoading(true);
-      setRulesError(null);
-
-      try {
-        const response =
-          await handleApiResponse<FamilyCompositionRulesResponse>(
-            await sendRequestServerVanilla.get(
-              `/retreats/${retreatId}/families/rules`
-            )
-          );
-
-        if (!isActive) {
-          return;
-        }
-
-        if (response.success && response.data?.rules) {
-          setCompositionRules(response.data.rules);
-        } else {
-          setCompositionRules(null);
-          setRulesError(response.error || t("fetch-error"));
-        }
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        console.error("Error fetching family composition rules:", error);
-        setCompositionRules(null);
-        setRulesError(
-          error instanceof Error ? error.message : t("fetch-error")
-        );
-      } finally {
-        if (!isActive) {
-          return;
-        }
-
-        setRulesLoading(false);
-      }
-    };
-
-    void loadRules();
-
-    return () => {
-      isActive = false;
-    };
-  }, [retreatId, t]);
-
-  const [familiesStructure, setFamiliesStructure] = useState<{
-    items: Items;
-    membersById: MembersById;
-    memberToContainer: MemberToContainer;
-    familiesById: Record<string, { name: string; color: string }>;
-  }>({
-    items: {},
-    membersById: {},
-    memberToContainer: {},
-    familiesById: {},
-  });
+  canEditTent,
+}: RetreatTentsTableProps) {
+  const t = useTranslations("tents");
 
   const [items, setItems] = useState<Items>({});
   const [membersById, setMembersById] = useState<MembersById>({});
-  const [familiesById, setFamiliesById] = useState<
-    Record<string, { name: string; color: string }>
+  const [tentsById, setTentsById] = useState<
+    Record<
+      string,
+      { number: string; gender: string; capacity: number; color: string }
+    >
   >({});
   const [memberToContainer, setMemberToContainer] = useState<MemberToContainer>(
     {}
   );
 
   useEffect(() => {
-    const buildFamiliesStructure = () => {
-      const items: Items = {};
-      const membersById: MembersById = {};
-      const familiesById: Record<string, { name: string; color: string }> = {};
-      const memberToContainer: MemberToContainer = {};
+    const buildTentsStructure = () => {
+      const nextItems: Items = {};
+      const nextMembersById: MembersById = {};
+      const nextTentsById: Record<
+        string,
+        { number: string; gender: string; capacity: number; color: string }
+      > = {};
+      const nextMemberToContainer: MemberToContainer = {};
 
-      InitialItems?.forEach((fam) => {
-        const fid = String(fam.id);
-        familiesById[fid] = { name: fam.name, color: fam.color };
-        items[fid] =
-          fam.members?.map((m) => {
-            const mid = String(m.id);
-            membersById[mid] = {
-              id: mid,
-              name: m.name as string,
-              gender: m.gender,
-              city: m.city,
-              //realFamilyId: m.realFamilyId,
+      initialItems?.forEach((tent) => {
+        const tentId = String(tent.id);
+        const color = genderColorMap[tent.gender] ?? genderColorMap.male;
+        nextTentsById[tentId] = {
+          number: tent.number,
+          gender: tent.gender,
+          capacity: tent.capacity,
+          color,
+        };
+
+        nextItems[tentId] =
+          tent.participants?.map((participant) => {
+            const participantId = String(participant.id);
+            nextMembersById[participantId] = {
+              id: participantId,
+              name: participant.name ?? t("unknown-participant"),
+              gender: participant.gender,
+              city: participant.city,
             };
-            memberToContainer[mid] = fid;
-            return mid;
-          }) || [];
+            nextMemberToContainer[participantId] = tentId;
+            return participantId;
+          }) ?? [];
       });
 
-      setFamiliesStructure({
-        items,
-        membersById,
-        memberToContainer,
-        familiesById,
-      });
-      setItems(items);
-      setMembersById(membersById);
-      setFamiliesById(familiesById);
-      setMemberToContainer(memberToContainer);
-      setContainers(Object.keys(items) as UniqueIdentifier[]);
-
-      // Salva snapshot inicial (clonado)
+      setItems(nextItems);
+      setMembersById(nextMembersById);
+      setTentsById(nextTentsById);
+      setMemberToContainer(nextMemberToContainer);
+      setContainers(Object.keys(nextItems) as UniqueIdentifier[]);
       setSavedSnapshot({
-        items: cloneItems(items),
-        memberToContainer: { ...memberToContainer },
+        items: cloneItems(nextItems),
+        memberToContainer: { ...nextMemberToContainer },
       });
     };
-    buildFamiliesStructure();
-  }, [InitialItems]);
+
+    buildTentsStructure();
+  }, [initialItems, t]);
 
   const [containers, setContainers] = useState<UniqueIdentifier[]>([]);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  //console.log({ items, containers });
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
-
-  // Snapshot do estado "persistido" (inicial ou último sucesso)
+  const recentlyMovedToNewContainer = useRef(false);
   const [savedSnapshot, setSavedSnapshot] = useState<{
     items: Items;
     memberToContainer: MemberToContainer;
   } | null>(null);
+  const [clonedItems, setClonedItems] = useState<Items | null>(null);
 
-  const familyValidationErrors = useMemo(() => {
-    if (!compositionRules) {
-      return {};
-    }
-
-    const errors: Record<string, string[]> = {};
-    const genderTolerance = compositionRules.genderBalance?.tolerance ?? 0;
-
-    Object.entries(items).forEach(([familyId, memberIds]) => {
-      const messages: string[] = [];
-      const familyName = familiesById[familyId] || familyId;
-
-      if (
-        compositionRules.maxMembersPerFamily &&
-        memberIds.length > compositionRules.maxMembersPerFamily
-      ) {
-        messages.push(
-          t("max-members", {
-            family: familyName.name,
-            count: memberIds.length,
-            max: compositionRules.maxMembersPerFamily,
-          })
-        );
-      }
-
-      if (compositionRules.genderBalance?.enabled) {
-        const maleCount = memberIds.filter(
-          (id) => membersById[id]?.gender === "male"
-        ).length;
-        const femaleCount = memberIds.filter(
-          (id) => membersById[id]?.gender === "female"
-        ).length;
-        const participantsWithGender = maleCount + femaleCount;
-
-        if (
-          participantsWithGender > 0 &&
-          Math.abs(maleCount - femaleCount) > genderTolerance
-        ) {
-          messages.push(
-            t("gender-balance", {
-              family: familyName.name,
-              male: maleCount,
-              female: femaleCount,
-            })
-          );
-        }
-      }
-
-      if (compositionRules.preventSameRealFamily) {
-        // const duplicates = findDuplicateValues(
-        //   memberIds.map((id) => membersById[id]?.realFamilyId)
-        // );
-        // if (duplicates.length > 0) {
-        //   messages.push(
-        //     t("same-real-family", {
-        //       family: familyName,
-        //       duplicates: duplicates.join(", "),
-        //     })
-        //   );
-        // }
-      }
-
-      if (compositionRules.preventSameCity) {
-        const duplicates = findDuplicateValues(
-          memberIds.map((id) => membersById[id]?.city)
-        );
-
-        if (duplicates.length > 0) {
-          messages.push(
-            t("same-city", {
-              family: familyName.name,
-              duplicates: duplicates.join(", "),
-            })
-          );
-        }
-      }
-
-      if (messages.length > 0) {
-        errors[familyId] = messages;
-      }
-    });
-
-    return errors;
-  }, [compositionRules, items, membersById, familiesById, t]);
-
-  const handleSaveReorder = useCallback(async () => {
-    if (!onSaveReorder) return;
-
-    try {
-      await onSaveReorder(items);
-      // Atualiza snapshot para o estado recém-salvo
-      setSavedSnapshot({
-        items: cloneItems(items),
-        memberToContainer: { ...memberToContainer },
-      });
-      setHasUnsavedChanges(false);
-    } catch (error) {
-      console.error("Error saving reorder:", error);
-
-      // Reverte para o snapshot salvo (inicial ou último sucesso)
-      if (savedSnapshot) {
-        setItems(cloneItems(savedSnapshot.items));
-        setMemberToContainer({ ...savedSnapshot.memberToContainer });
-        setContainers(Object.keys(savedSnapshot.items) as UniqueIdentifier[]);
-        setHasUnsavedChanges(false);
-        setFamiliesReorderFlag(false);
-      }
-    }
-  }, [items, onSaveReorder, memberToContainer, savedSnapshot]);
-
-  const recentlyMovedToNewContainer = useRef(false);
   const isSortingContainer =
     activeId != null ? containers.includes(activeId) : false;
 
@@ -499,14 +270,6 @@ export default function RetreatFamiliesTable({
   };
   const open = Boolean(anchorEl);
 
-  /**
-   * Custom collision detection strategy optimized for multiple containers
-   *
-   * - First, find any droppable containers intersecting with the pointer.
-   * - If there are none, find intersecting containers with the active draggable.
-   * - If there are no intersecting containers, return the last matched intersection
-   *
-   */
   const collisionDetectionStrategy: CollisionDetection = useCallback(
     (args) => {
       if (activeId && activeId in items) {
@@ -518,28 +281,22 @@ export default function RetreatFamiliesTable({
         });
       }
 
-      // Start by finding any intersecting droppable
       const pointerIntersections = pointerWithin(args);
       const intersections =
         pointerIntersections.length > 0
-          ? // If there are droppables intersecting with the pointer, return those
-            pointerIntersections
+          ? pointerIntersections
           : rectIntersection(args);
       let overId = getFirstCollision(intersections, "id");
 
       if (overId != null) {
         if (overId === TRASH_ID) {
-          // If the intersecting droppable is the trash, return early
-          // Remove this if you're not using trashable functionality in your app
           return intersections;
         }
 
         if (overId in items) {
           const containerItems = items[overId];
 
-          // If a container is matched and it contains items (columns 'A', 'B', 'C')
           if (containerItems.length > 0) {
-            // Return the closest droppable within that container
             overId = closestCenter({
               ...args,
               droppableContainers: args.droppableContainers.filter(
@@ -556,20 +313,15 @@ export default function RetreatFamiliesTable({
         return [{ id: overId }];
       }
 
-      // When a draggable item moves to a new container, the layout may shift
-      // and the `overId` may become `null`. We manually set the cached `lastOverId`
-      // to the id of the draggable item that was moved to the new container, otherwise
-      // the previous `overId` will be returned which can cause items to incorrectly shift positions
       if (recentlyMovedToNewContainer.current) {
         lastOverId.current = activeId;
       }
 
-      // If no droppable is matched, return the last match
       return lastOverId.current ? [{ id: lastOverId.current }] : [];
     },
     [activeId, items]
   );
-  const [clonedItems, setClonedItems] = useState<Items | null>(null);
+
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
@@ -578,7 +330,61 @@ export default function RetreatFamiliesTable({
     })
   );
 
-  // Ajuste: onde antes iterava objetos com {id,name}, agora ids
+  const getIndex = (id: UniqueIdentifier) => {
+    const container = memberToContainer[id];
+    if (!container) return -1;
+    return items[container].indexOf(id);
+  };
+
+  const handleSaveReorder = useCallback(async () => {
+    if (!onSaveReorder) return;
+
+    try {
+      await onSaveReorder(items);
+      setSavedSnapshot({
+        items: cloneItems(items),
+        memberToContainer: { ...memberToContainer },
+      });
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("Error saving reorder:", error);
+
+      if (savedSnapshot) {
+        setItems(cloneItems(savedSnapshot.items));
+        setMemberToContainer({ ...savedSnapshot.memberToContainer });
+        setContainers(Object.keys(savedSnapshot.items) as UniqueIdentifier[]);
+        setHasUnsavedChanges(false);
+        setTentsReorderFlag(false);
+      }
+    }
+  }, [
+    items,
+    onSaveReorder,
+    memberToContainer,
+    savedSnapshot,
+    setTentsReorderFlag,
+  ]);
+
+  const onDragCancel = () => {
+    if (clonedItems) {
+      setItems(clonedItems);
+    }
+
+    setActiveId(null);
+    setClonedItems(null);
+  };
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      recentlyMovedToNewContainer.current = false;
+    });
+  }, [items]);
+
+  const page = filters.page || 1;
+  const pageLimit = filters.pageLimit || 8;
+  const totalItems = total ?? Object.keys(items).length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageLimit));
+
   const columnDefs: ColumnDef<UniqueIdentifier>[] = useMemo(
     () => [
       {
@@ -586,19 +392,21 @@ export default function RetreatFamiliesTable({
         cell: (row) => {
           const { original: containerId } = row.cell.row;
           const memberIds = items[containerId] || [];
-          const familyName = familiesById[containerId] || containerId;
-          console.log({ familyName });
+          const tentMeta = tentsById[containerId];
+          const label = tentMeta
+            ? t("card-label", { number: tentMeta.number })
+            : t("card-label", { number: containerId });
+
           return (
             <DroppableContainer
               key={containerId}
               id={containerId}
-              label={minimal ? undefined : `Família ${familyName.name}`}
-              color={familyName.color}
+              label={minimal ? undefined : label}
+              color={tentMeta?.color}
               items={memberIds}
               scrollable={scrollable}
               style={containerStyle}
               unstyled={minimal}
-              onRemove={() => handleRemove(containerId)}
             >
               <SortableContext items={memberIds} strategy={strategy}>
                 {memberIds.map((memberId, index) => {
@@ -622,21 +430,18 @@ export default function RetreatFamiliesTable({
               <ContainerButtons
                 onEdit={onEdit}
                 onView={onView}
-                familyId={containerId}
-                canEdit={canEditFamily}
+                tentId={containerId}
+                canEdit={canEditTent}
               />
-              {familyValidationErrors[containerId]?.length ? (
-                <Stack spacing={0.5} mt={1}>
-                  {familyValidationErrors[containerId].map((message, idx) => (
-                    <Typography
-                      key={`${containerId}-validation-error-${idx}`}
-                      variant="caption"
-                      color="error"
-                      display="block"
-                    >
-                      {message}
-                    </Typography>
-                  ))}
+              {tentMeta ? (
+                <Stack spacing={0.5} mt={1} alignItems="center">
+                  <Typography variant="caption" color="text.secondary">
+                    {t("tent-info", {
+                      gender: t(`gender.${tentMeta.gender}` as const),
+                      capacity: tentMeta.capacity,
+                      current: memberIds.length,
+                    })}
+                  </Typography>
                 </Stack>
               ) : null}
             </DroppableContainer>
@@ -646,7 +451,7 @@ export default function RetreatFamiliesTable({
     ],
     [
       items,
-      membersById,
+      tentsById,
       minimal,
       scrollable,
       containerStyle,
@@ -657,39 +462,10 @@ export default function RetreatFamiliesTable({
       wrapperStyle,
       onEdit,
       onView,
-      canEditFamily,
-      familyValidationErrors,
+      canEditTent,
+      t,
     ]
   );
-
-  // getIndex agora trabalha só com IDs
-  const getIndex = (id: UniqueIdentifier) => {
-    const container = memberToContainer[id];
-    if (!container) return -1;
-    return items[container].indexOf(id);
-  };
-
-  const onDragCancel = () => {
-    if (clonedItems) {
-      // Reset items to their original state in case items have been
-      // Dragged across containers
-      setItems(clonedItems);
-    }
-
-    setActiveId(null);
-    setClonedItems(null);
-  };
-
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      recentlyMovedToNewContainer.current = false;
-    });
-  }, [items]);
-
-  const page = filters.page || 1; // 1-based
-  const pageLimit = filters.pageLimit || 8;
-  const totalItems = total ?? items.length ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageLimit));
 
   const table = useReactTable({
     data: containers || [],
@@ -729,23 +505,9 @@ export default function RetreatFamiliesTable({
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        position: "relative", // For absolute positioned save button
+        position: "relative",
       }}
     >
-      {rulesLoading && !rulesError && (
-        <Box sx={{ mb: 2, flexShrink: 0 }}>
-          <Typography variant="body2" color="text.secondary">
-            {t("loading")}
-          </Typography>
-        </Box>
-      )}
-      {rulesError && (
-        <Box sx={{ mb: 2, flexShrink: 0 }}>
-          <Typography color="error" variant="body2">
-            {rulesError}
-          </Typography>
-        </Box>
-      )}
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetectionStrategy}
@@ -757,8 +519,7 @@ export default function RetreatFamiliesTable({
         onDragStart={({ active }) => {
           setActiveId(active.id);
           setClonedItems(items);
-          // Set reorder flag to true when drag starts
-          setFamiliesReorderFlag?.(true);
+          setTentsReorderFlag?.(true);
         }}
         onDragOver={({ active, over }) =>
           onDragOver({
@@ -784,14 +545,12 @@ export default function RetreatFamiliesTable({
             memberToContainer,
             setMemberToContainer,
           });
-          // Mark changes as unsaved and reset reorder flag
           setHasUnsavedChanges(true);
         }}
         cancelDrop={cancelDrop}
         onDragCancel={() => {
           onDragCancel();
-          // Reset reorder flag when drag is cancelled
-          setFamiliesReorderFlag?.(false);
+          setTentsReorderFlag?.(false);
         }}
         modifiers={modifiers}
       >
@@ -824,7 +583,7 @@ export default function RetreatFamiliesTable({
             </Grid>
           </Box>
         </SortableContext>
-        {/* PAGINAÇÃO */}
+
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
@@ -839,7 +598,7 @@ export default function RetreatFamiliesTable({
             onClick={handlePopoverOpen}
             sx={{ minWidth: 120 }}
           >
-            {filters.pageLimit || 8} por página
+            {filters.pageLimit || 8} {t("per-page")}
           </Button>
 
           <Popover
@@ -852,7 +611,7 @@ export default function RetreatFamiliesTable({
             <MenuList>
               {[4, 8, 12, 16].map((n) => (
                 <MenuItem key={n} onClick={() => handlePageLimitChange(n)}>
-                  <ListItemText primary={`${n} por página`} />
+                  <ListItemText primary={`${n} ${t("per-page")}`} />
                 </MenuItem>
               ))}
             </MenuList>
@@ -866,12 +625,12 @@ export default function RetreatFamiliesTable({
                   table.getState().pagination.pageSize,
                 total ?? 0
               )}{" "}
-              de {total ?? 0}
+              {t("of-total", { total: total ?? 0 })}
             </Typography>
             <Pagination
               count={table.getPageCount()}
               page={table.getState().pagination.pageIndex + 1}
-              onChange={(_, page) => onFiltersChange?.({ page: page })}
+              onChange={(_, page) => onFiltersChange?.({ page })}
               color="primary"
             />
           </Box>
@@ -892,7 +651,6 @@ export default function RetreatFamiliesTable({
         ) : null}
       </DndContext>
 
-      {/* Floating Save Button */}
       <Fade in={hasUnsavedChanges}>
         <Fab
           color="primary"
@@ -925,7 +683,6 @@ export default function RetreatFamiliesTable({
           isDragging: true,
           isDragOverlay: true,
         })}
-        color={getColor(id)}
         wrapperStyle={wrapperStyle({ index: 0 })}
         dragOverlay
       >
@@ -936,15 +693,18 @@ export default function RetreatFamiliesTable({
 
   function renderContainerDragOverlay(containerId: UniqueIdentifier) {
     const memberIds = items[containerId] || [];
-    const familyName = familiesById[containerId] || containerId;
+    const tentMeta = tentsById[containerId];
+    const label = tentMeta
+      ? t("card-label", { number: tentMeta.number })
+      : t("card-label", { number: containerId });
+
     return (
       <Container
-        label={`Família ${familyName}`}
+        label={label}
         columns={memberIds.length}
         style={{ height: "100%" }}
         shadow
         unstyled={false}
-        sx={{}}
       >
         {memberIds.map((memberId, index) => {
           const meta = membersById[memberId];
@@ -962,7 +722,6 @@ export default function RetreatFamiliesTable({
                 isSorting: false,
                 isDragOverlay: false,
               })}
-              color={getColor(memberId)}
               wrapperStyle={wrapperStyle({ index })}
             />
           );
@@ -970,16 +729,10 @@ export default function RetreatFamiliesTable({
         <ContainerButtons
           onEdit={onEdit}
           onView={onView}
-          familyId={containerId}
-          canEdit={canEditFamily}
+          tentId={containerId}
+          canEdit={canEditTent}
         />
       </Container>
-    );
-  }
-
-  function handleRemove(containerID: UniqueIdentifier) {
-    setContainers((containers) =>
-      containers.filter((id) => id !== containerID)
     );
   }
 
@@ -987,23 +740,8 @@ export default function RetreatFamiliesTable({
     const containerIds = Object.keys(items);
     const lastContainerId = containerIds[containerIds.length - 1];
 
-    return String.fromCharCode(lastContainerId.charCodeAt(0) + 1);
+    return `${lastContainerId}-new`;
   }
-}
-
-function getColor(id: UniqueIdentifier) {
-  switch (String(id)[0]) {
-    case "A":
-      return "#7193f1";
-    case "B":
-      return "#ffda6c";
-    case "C":
-      return "#00bcd4";
-    case "D":
-      return "#ef769f";
-  }
-
-  return undefined;
 }
 
 function Trash({ id }: { id: UniqueIdentifier }) {
@@ -1051,7 +789,6 @@ interface SortableItemProps {
     isDragOverlay: boolean;
   }): React.CSSProperties;
   getIndex(id: UniqueIdentifier): number;
-  renderItem?(): React.ReactElement;
   wrapperStyle({ index }: { index: number }): React.CSSProperties;
 }
 
@@ -1061,7 +798,6 @@ function SortableItem({
   index,
   handle,
   value,
-  renderItem,
   style,
   containerId,
   getIndex,
@@ -1082,6 +818,15 @@ function SortableItem({
   });
   const mounted = useMountStatus();
   const mountedWhileDragging = isDragging && !mounted;
+  const computedStyle = style({
+    index,
+    value: id,
+    isDragging,
+    isSorting,
+    overIndex: over ? getIndex(over.id) : overIndex,
+    containerId,
+    isDragOverlay: false,
+  });
   return (
     <Item
       ref={disabled ? undefined : setNodeRef}
@@ -1092,20 +837,11 @@ function SortableItem({
       handleProps={handle ? { ref: setActivatorNodeRef } : undefined}
       index={index}
       wrapperStyle={wrapperStyle({ index })}
-      // style={style({
-      //   index,
-      //   value: id,
-      //   isDragging,
-      //   isSorting,
-      //   overIndex: over ? getIndex(over.id) : overIndex,
-      //   containerId,
-      // })}
-      color={getColor(id)}
+      style={computedStyle}
       transition={transition}
       transform={transform}
       fadeIn={mountedWhileDragging}
       listeners={listeners}
-      //renderItem={renderItem}
     />
   );
 }

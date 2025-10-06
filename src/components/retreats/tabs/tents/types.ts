@@ -7,7 +7,7 @@ import {
 import { SortingStrategy } from "@dnd-kit/sortable";
 import { RetreatsCardTableFilters } from "../../types";
 
-export interface RetreatFamiliesProps {
+export interface RetreatTentsTableProps {
   adjustScale?: boolean;
   cancelDrop?: CancelDrop;
   columns?: number;
@@ -24,7 +24,7 @@ export interface RetreatFamiliesProps {
   }): React.CSSProperties;
   wrapperStyle?(args: { index: number }): React.CSSProperties;
   itemCount?: number;
-  items?: RetreatFamily[];
+  items?: RetreatTent[];
   handle?: boolean;
   renderItem?: unknown;
   strategy?: SortingStrategy;
@@ -37,13 +37,13 @@ export interface RetreatFamiliesProps {
     filters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => void;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
-  onEdit: (familyId: UniqueIdentifier) => void;
-  onView: (familyId: UniqueIdentifier) => void;
+  onEdit: (tentId: UniqueIdentifier) => void;
+  onView: (tentId: UniqueIdentifier) => void;
   total: number;
-  setFamiliesReorderFlag: (flag: boolean) => void;
+  setTentsReorderFlag: (flag: boolean) => void;
   onSaveReorder?: (items: Items) => Promise<void>;
   retreatId: string;
-  canEditFamily: boolean;
+  canEditTent: boolean;
 }
 
 export type Items = Record<string, UniqueIdentifier[]>;

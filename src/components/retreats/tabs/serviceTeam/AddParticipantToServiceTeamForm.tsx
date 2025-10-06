@@ -25,14 +25,14 @@ import {
   sendRequestServerVanilla,
 } from "@/src/lib/sendRequestServerVanilla";
 
-interface AddParticipantToFamilyFormProps {
+interface AddParticipantToServiceTeamFormProps {
   retreatId: string;
-  families: RetreatFamily[];
+  serviceSpaces: ServiceSpace[];
   onSuccess: () => void;
 }
 
 interface Participant {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone?: string;
@@ -41,22 +41,26 @@ interface Participant {
   isAssigned?: boolean;
 }
 
+const ROLE_VALUES = ["member", "support", "coordinator", "vice"] as const;
+
+type ServiceTeamRole = (typeof ROLE_VALUES)[number];
+
 const addParticipantSchema = z.object({
-  familyId: z.string().min(1, "Selecione uma família"),
+  serviceSpaceId: z.string().min(1, "Selecione uma equipe de serviço"),
   participantIds: z
-    .array(z.number())
+    .array(z.string())
     .min(1, "Selecione pelo menos um participante"),
-  role: z.enum(["leader", "member"]),
+  role: z.enum(ROLE_VALUES).default("member"),
 });
 
 type AddParticipantData = z.infer<typeof addParticipantSchema>;
 
-export default function AddParticipantToFamilyForm({
+export default function AddParticipantToServiceTeamForm({
   retreatId,
-  families,
+  serviceSpaces,
   onSuccess,
-}: AddParticipantToFamilyFormProps) {
-  const t = useTranslations();
+}: AddParticipantToServiceTeamFormProps) {
+  const t = useTranslations("service-team");
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
 
@@ -69,13 +73,13 @@ export default function AddParticipantToFamilyForm({
   } = useForm<AddParticipantData>({
     resolver: zodResolver(addParticipantSchema),
     defaultValues: {
-      familyId: "",
+      serviceSpaceId: "",
       participantIds: [],
       role: "member",
     },
   });
 
-  const familyId = watch("familyId");
+  const serviceSpaceId = watch("serviceSpaceId");
 
   // Buscar participantes disponíveis
   useEffect(() => {
@@ -88,7 +92,11 @@ export default function AddParticipantToFamilyForm({
           )
         );
         if (response.success && response.data) {
-          setParticipants(response.data || []);
+          const normalized = (response.data || []).map((participant) => ({
+            ...participant,
+            id: String(participant.id),
+          }));
+          setParticipants(normalized);
         }
       } catch (error) {
         console.error("Erro ao buscar participantes:", error);
@@ -101,20 +109,21 @@ export default function AddParticipantToFamilyForm({
     fetchParticipants();
   }, [retreatId]);
 
-  const selectedFamily = families.find((f) => String(f.id) === familyId);
+  const selectedServiceSpace = serviceSpaces.find(
+    (space) => String(space.id) === serviceSpaceId
+  );
   const availableParticipants = participants.filter((p) => !p.isAssigned);
 
   const onSubmit = async (data: AddParticipantData) => {
     try {
       const payload = {
-        familyId: data.familyId,
         participantIds: data.participantIds,
         role: data.role,
       };
 
       const response = await handleApiResponse(
         await sendRequestServerVanilla.post(
-          `/retreats/${retreatId}/families/add-participants`,
+          `/retreats/${retreatId}/service-spaces/${data.serviceSpaceId}/members`,
           payload
         )
       );
@@ -123,10 +132,10 @@ export default function AddParticipantToFamilyForm({
         reset();
         onSuccess();
       } else {
-        console.error("Erro ao adicionar participantes:", response.error);
+        console.error("Erro ao adicionar participantes na equipe:", response.error);
       }
     } catch (error) {
-      console.error("Erro ao adicionar participantes:", error);
+      console.error("Erro ao adicionar participantes na equipe:", error);
     }
   };
 
@@ -134,18 +143,29 @@ export default function AddParticipantToFamilyForm({
     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 1 }}>
       <Stack spacing={3}>
         <Typography variant="h6" gutterBottom>
-          {t("add-participant-description")}
+          {t("addParticipant.formTitle", {
+            defaultMessage: "Add participants to a service team",
+          })}
         </Typography>
 
         <Controller
-          name="familyId"
+          name="serviceSpaceId"
           control={control}
           render={({ field }) => (
-            <FormControl fullWidth required error={!!errors.familyId}>
-              <InputLabel>{t("select-family")}</InputLabel>
-              <Select {...field} label={t("select-family")}>
-                {families.map((family) => (
-                  <MenuItem key={family.id} value={String(family.id)}>
+            <FormControl fullWidth required error={!!errors.serviceSpaceId}>
+              <InputLabel>
+                {t("addParticipant.selectServiceSpace", {
+                  defaultMessage: "Select a service space",
+                })}
+              </InputLabel>
+              <Select
+                {...field}
+                label={t("addParticipant.selectServiceSpace", {
+                  defaultMessage: "Select a service space",
+                })}
+              >
+                {serviceSpaces.map((space) => (
+                  <MenuItem key={space.id} value={String(space.id)}>
                     <Box
                       sx={{
                         display: "flex",
@@ -153,29 +173,27 @@ export default function AddParticipantToFamilyForm({
                         width: "100%",
                       }}
                     >
-                      <Typography>{family.name}</Typography>
+                      <Typography>{space.name}</Typography>
                       <Chip
                         size="small"
-                        label={`${family.members?.length || 0}/6`}
-                        color={
-                          (family.members?.length || 0) >= 6
-                            ? "error"
-                            : "default"
-                        }
+                        label={`${space.members?.length ?? 0}/${space.minMembers ?? ""}`}
+                        color="primary"
                       />
                     </Box>
                   </MenuItem>
                 ))}
               </Select>
-              {selectedFamily && (
+              {selectedServiceSpace && (
                 <Typography variant="caption" sx={{ mt: 1 }}>
-                  {t("family-current-members")}:{" "}
-                  {selectedFamily.members?.length || 0} / 6
+                  {t("addParticipant.currentTeamSize", {
+                    defaultMessage: "Current members: {count}",
+                    count: selectedServiceSpace.members?.length ?? 0,
+                  })}
                 </Typography>
               )}
-              {errors.familyId && (
+              {errors.serviceSpaceId && (
                 <Typography variant="caption" color="error" sx={{ mt: 1 }}>
-                  {errors.familyId.message}
+                  {errors.serviceSpaceId.message}
                 </Typography>
               )}
             </FormControl>
@@ -187,10 +205,31 @@ export default function AddParticipantToFamilyForm({
           control={control}
           render={({ field }) => (
             <FormControl fullWidth>
-              <InputLabel>{t("participant-role")}</InputLabel>
-              <Select {...field} label={t("participant-role")}>
-                <MenuItem value="member">{t("member")}</MenuItem>
-                <MenuItem value="leader">{t("leader")}</MenuItem>
+              <InputLabel>
+                {t("addParticipant.memberRole", {
+                  defaultMessage: "Participant role",
+                })}
+              </InputLabel>
+              <Select
+                {...field}
+                label={t("addParticipant.memberRole", {
+                  defaultMessage: "Participant role",
+                })}
+              >
+                <MenuItem value="member">
+                  {t("roles.member", { defaultMessage: "Member" })}
+                </MenuItem>
+                <MenuItem value="support">
+                  {t("roles.support", { defaultMessage: "Support" })}
+                </MenuItem>
+                <MenuItem value="coordinator">
+                  {t("roles.coordinator", { defaultMessage: "Coordinator" })}
+                </MenuItem>
+                <MenuItem value="vice">
+                  {t("roles.viceCoordinator", {
+                    defaultMessage: "Vice Coordinator",
+                  })}
+                </MenuItem>
               </Select>
             </FormControl>
           )}
@@ -198,13 +237,18 @@ export default function AddParticipantToFamilyForm({
 
         <Box>
           <Typography variant="subtitle2" gutterBottom>
-            {t("select-participants")}:
+            {t("addParticipant.selectParticipants", {
+              defaultMessage: "Select participants",
+            })}
+            :
           </Typography>
           {loadingParticipants ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <CircularProgress size={16} />
               <Typography variant="body2">
-                {t("loading-participants")}
+                {t("addParticipant.loadingParticipants", {
+                  defaultMessage: "Loading participants",
+                })}
               </Typography>
             </Box>
           ) : (
@@ -227,10 +271,15 @@ export default function AddParticipantToFamilyForm({
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      placeholder={t("search-participants")}
+                      placeholder={t("addParticipant.searchPlaceholder", {
+                        defaultMessage: "Search participants",
+                      })}
                       helperText={
                         errors.participantIds?.message ||
-                        t("participants-helper-text")
+                        t("addParticipant.helperText", {
+                          defaultMessage:
+                            "You can select multiple participants to add",
+                        })
                       }
                       error={!!errors.participantIds}
                     />
@@ -245,8 +294,7 @@ export default function AddParticipantToFamilyForm({
                         <Typography variant="caption" color="text.secondary">
                           {option.email}
                           {option.age &&
-                            ` • ${option.age} anos •` &&
-                            option.location}
+                            ` • ${option.age} anos • ${option.location ?? ""}`}
                         </Typography>
                       </Box>
                     </Box>
@@ -263,17 +311,54 @@ export default function AddParticipantToFamilyForm({
                       />
                     ))
                   }
-                  disabled={!familyId}
-                  noOptionsText={t("no-participants-available")}
+                  disabled={!serviceSpaceId}
+                  noOptionsText={t("addParticipant.noParticipants", {
+                    defaultMessage: "No participants available",
+                  })}
                 />
               )}
             />
           )}
         </Box>
 
-        {selectedFamily && (selectedFamily.members?.length || 0) >= 6 && (
-          <Typography variant="body2" color="warning.main">
-            ⚠️ {t("family-full-warning")}
+        {selectedServiceSpace &&
+          selectedServiceSpace.minMembers &&
+          (selectedServiceSpace.members?.length ?? 0) <
+            selectedServiceSpace.minMembers && (
+            <Typography variant="body2" color="warning.main">
+              ⚠️
+              {t("addParticipant.minMembersWarning", {
+                defaultMessage:
+                  "This service space still needs at least {remaining} member(s) to reach the minimum",
+                remaining:
+                  Math.max(
+                    0,
+                    (selectedServiceSpace.minMembers ?? 0) -
+                      (selectedServiceSpace.members?.length ?? 0)
+                  ),
+              })}
+            </Typography>
+          )}
+
+        {selectedServiceSpace &&
+          selectedServiceSpace.maxMembers &&
+          (selectedServiceSpace.members?.length ?? 0) >=
+            selectedServiceSpace.maxMembers && (
+            <Typography variant="body2" color="warning.main">
+              ⚠️
+              {t("addParticipant.maxMembersWarning", {
+                defaultMessage:
+                  "This service space has reached its maximum capacity",
+              })}
+            </Typography>
+          )}
+
+        {!selectedServiceSpace && (
+          <Typography variant="body2" color="text.secondary">
+            {t("addParticipant.selectTeamHint", {
+              defaultMessage:
+                "Select a service space to see current members and limits",
+            })}
           </Typography>
         )}
 
@@ -283,7 +368,7 @@ export default function AddParticipantToFamilyForm({
             onClick={onSuccess}
             disabled={isSubmitting}
           >
-            {t("cancel")}
+            {t("actions.cancel", { defaultMessage: "Cancel" })}
           </Button>
           <Button
             type="submit"
@@ -293,7 +378,13 @@ export default function AddParticipantToFamilyForm({
               isSubmitting ? <CircularProgress size={16} /> : undefined
             }
           >
-            {isSubmitting ? t("adding") : t("add-participants")}
+            {isSubmitting
+              ? t("addParticipant.submitting", {
+                  defaultMessage: "Adding...",
+                })
+              : t("addParticipant.submit", {
+                  defaultMessage: "Add participants",
+                })}
           </Button>
         </Stack>
       </Stack>

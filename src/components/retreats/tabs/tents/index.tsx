@@ -1,2 +1,2 @@
-export * from "./RetreatFamilies";
-export * from "./RetreatFamiliesTable";
+export * from "./RetreatTents";
+export * from "./RetreatTentsTable";

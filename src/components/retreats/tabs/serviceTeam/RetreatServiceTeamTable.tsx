@@ -206,11 +206,12 @@ export default function RetreatServiceTeamTable({
   onEdit,
   total,
   setServiceTeamReorderFlag,
+  reorderFlag,
   onSaveReorder,
   retreatId,
   canEditServiceTeam,
 }: ServiceSpaceTableProps) {
-  const t = useTranslations("stily-validation");
+  //const t = useTranslations();
 
   // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
 
@@ -224,7 +225,7 @@ export default function RetreatServiceTeamTable({
     return () => {
       isActive = false;
     };
-  }, [retreatId, t]);
+  }, [retreatId]);
 
   const [stiliesStructure, setServiceTeamStructure] = useState<{
     items: Items;
@@ -264,6 +265,7 @@ export default function RetreatServiceTeamTable({
               id: mid,
               name: m.name as string,
               gender: m.gender,
+              role: m.role,
               //city: m.city,
               //realFamilyId: m.realFamilyId,
             };
@@ -465,6 +467,7 @@ export default function RetreatServiceTeamTable({
                 })}
               </SortableContext>
               <ContainerButtons
+                reorderFlag={reorderFlag || false}
                 onEdit={onEdit}
                 onView={onView}
                 familyId={containerId}
@@ -788,6 +791,7 @@ export default function RetreatServiceTeamTable({
           onView={onView}
           familyId={containerId}
           canEdit={canEditServiceTeam}
+          reorderFlag={reorderFlag || false}
         />
       </Container>
     );
