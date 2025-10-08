@@ -11,9 +11,15 @@ import {
   Box,
   Menu,
   MenuItem,
+  Chip,
 } from "@mui/material";
 import React, { memo } from "react";
-import { BaseFieldType, FieldDefinition, BASE_FIELD_TYPES } from "./types";
+import {
+  BaseFieldType,
+  FieldDefinition,
+  BASE_FIELD_TYPES,
+  SpecialTextType,
+} from "./types";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import AddIcon from "@mui/icons-material/Add";
 import { nanoid } from "nanoid";
@@ -48,6 +54,7 @@ const MASK_OPTIONS: BackendOption[] = [
 
 const FIELD_TYPE_LABELS: Record<BaseFieldType, string> = {
   text: "Campo de texto",
+  textSpecial: "Campo de texto especial",
   textarea: "Texto longo",
   number: "Número",
   select: "Seleção",
@@ -63,11 +70,30 @@ const FIELD_TYPE_LABELS: Record<BaseFieldType, string> = {
   photo: "Foto",
   location: "Localização",
   switchExpansible: "Interruptor expansível",
+  specialField: "Campos Especiais",
 };
 
 const CHILD_FIELD_TYPES = BASE_FIELD_TYPES.filter(
   (type) => type !== "switchExpansible"
 );
+
+const SPECIAL_TEXT_OPTIONS: BackendOption[] = [
+  { id: "special-name", value: "name", label: "Nome" },
+  { id: "special-email", value: "email", label: "Email" },
+  { id: "special-phone", value: "phone", label: "Telefone" },
+  {
+    id: "special-profile-photo",
+    value: "profilePhoto",
+    label: "Foto de perfil",
+  },
+];
+
+const SPECIAL_TEXT_LABELS: Record<SpecialTextType, string> = {
+  name: "Nome",
+  email: "Email",
+  phone: "Telefone",
+  profilePhoto: "Foto de perfil",
+};
 
 interface FieldEditorCardProps {
   field: FieldDefinition;
@@ -196,9 +222,24 @@ function FieldEditorCard({
         <IconButton size="small" {...attributes} {...listeners}>
           <DragIndicatorIcon fontSize="small" />
         </IconButton>
-        <Typography variant="subtitle2" sx={{ flex: 1 }}>
-          {index + 1}. {field.label || field.name} - {field.type}
-        </Typography>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ flex: 1, minWidth: 0 }}
+        >
+          <Typography variant="subtitle2" sx={{ flex: 1, minWidth: 0 }}>
+            {index + 1}. {field.label || field.name} -{" "}
+            {FIELD_TYPE_LABELS[field.type] ?? field.type}
+          </Typography>
+          {field.type === "textSpecial" && field.specialType && (
+            <Chip
+              size="small"
+              color="info"
+              label={`Especial: ${SPECIAL_TEXT_LABELS[field.specialType]}`}
+            />
+          )}
+        </Stack>
         <Button size="small" color="error" onClick={onDelete}>
           Remover
         </Button>
@@ -211,17 +252,29 @@ function FieldEditorCard({
           onChange={(e) => onChange({ label: e.target.value })}
           fullWidth
         />
-        {field.placeholder && (
+        {(field.type === "text" ||
+          field.type === "textSpecial" ||
+          field.type === "textarea" ||
+          field.type === "email" ||
+          field.type === "phone" ||
+          field.type === "number") && (
           <TextField
-            label="Placeholder"
-            value={field.placeholder || ""}
+            label="Texto exibido quando o campo está vazio"
+            value={field.placeholder ?? ""}
             size="small"
-            onChange={(e) => onChange({ placeholder: e.target.value })}
+            onChange={(e) =>
+              onChange({
+                placeholder:
+                  e.target.value.trim().length === 0 ? null : e.target.value,
+              })
+            }
             fullWidth
           />
         )}
 
-        {(field.mask || field.type === "text" || field.type === "textarea") && (
+        {(!!field.mask ||
+          field.type === "text" ||
+          field.type === "textarea") && (
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <Box sx={{ flex: 1 }}>
               <SmartSelect
@@ -257,6 +310,39 @@ function FieldEditorCard({
               />
             )}
           </Stack>
+        )}
+
+        {field.type === "textSpecial" && (
+          <SmartSelect
+            label="Tipo especial"
+            placeholder="Selecionar"
+            options={SPECIAL_TEXT_OPTIONS}
+            value={(field.specialType ?? "") as string}
+            onChange={(selected) => {
+              const rawValue = Array.isArray(selected)
+                ? selected.length > 0
+                  ? String(selected[0])
+                  : ""
+                : selected === undefined || selected === null
+                  ? ""
+                  : String(selected);
+
+              if (!rawValue) {
+                onChange({ specialType: null });
+                return;
+              }
+
+              const isValid = SPECIAL_TEXT_OPTIONS.some(
+                (option) => option.value === rawValue
+              );
+
+              onChange({
+                specialType: isValid ? (rawValue as SpecialTextType) : null,
+              });
+            }}
+            noOptionsText="Nenhum tipo disponível"
+            helperText="Selecione o tipo que será vinculado ao perfil do participante"
+          />
         )}
 
         <FormControlLabel

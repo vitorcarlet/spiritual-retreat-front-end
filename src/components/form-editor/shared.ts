@@ -13,6 +13,7 @@ export function createFieldByType(
     mask: false,
     helperTextContent: "",
     multiple: false,
+    specialType: null,
   };
 
   switch (type) {
@@ -23,6 +24,16 @@ export function createFieldByType(
         placeholder: "Digite aqui...",
         defaultValue: "",
         mask: true,
+      };
+
+    case "textSpecial":
+      return {
+        ...baseField,
+        label: "Campo de Texto Especial",
+        placeholder: "Digite aqui...",
+        defaultValue: "",
+        mask: false,
+        specialType: "name",
       };
 
     case "radio":

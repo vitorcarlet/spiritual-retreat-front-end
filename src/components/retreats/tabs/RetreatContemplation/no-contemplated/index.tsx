@@ -24,10 +24,9 @@ import { useTranslations } from "next-intl";
 import { RetreatsCardTableFilters } from "@/src/components/public/retreats/types";
 import { getSelectedIds as getSelectedIdsFn } from "@/src/components/table/shared";
 import DeleteConfirmation from "@/src/components/confirmations/DeleteConfirmation";
-import { Participant } from "@/src/types/retreats";
 import { useModal } from "@/src/hooks/useModal";
 import ParticipantForm, { ParticipantFormValues } from "./ParticipantForm";
-import requestServer, { requestServerApi } from "@/src/lib/requestServer";
+import requestServer from "@/src/lib/requestServer";
 import { enqueueSnackbar } from "notistack";
 import { DefaultResponse } from "@/src/auth/types";
 
@@ -62,7 +61,6 @@ const getContemplated = async (
   if (!response || response.error) {
     throw new Error("Failed to fetch Non-Contemplated");
   }
-  console.log("Fetched Contemplated:", response);
   return response.data as ContemplatedDataRequest;
 };
 
@@ -119,7 +117,8 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
     field: "phone",
     headerName: "Telefone",
     width: 140,
-    valueFormatter: (v) => (v?.value ? String(v.value) : ""),
+    valueFormatter: (v: { value?: unknown }) =>
+      v?.value ? String(v.value) : "",
   },
   {
     field: "activity",
@@ -218,7 +217,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   const filtersConfig = getFilters();
 
   // ✅ Helper para obter IDs selecionados
-  const getSelectedIds = useMemo(
+  const selectedIds = useMemo(
     () =>
       getSelectedIdsFn<ContemplatedParticipant>({
         data: contemplatedData,
@@ -242,8 +241,12 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           preventDuplicate: true,
         });
       }
-    } catch (error: any) {
-      enqueueSnackbar(error?.message || "ocorreu um erro na requisição", {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Ocorreu um erro na requisição";
+      enqueueSnackbar(message, {
         variant: "error",
         autoHideDuration: 8000,
         anchorOrigin: { vertical: "top", horizontal: "center" },
@@ -267,8 +270,12 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           preventDuplicate: true,
         });
       }
-    } catch (error: any) {
-      enqueueSnackbar(error?.message || "ocorreu um erro na requisição", {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Ocorreu um erro na requisição";
+      enqueueSnackbar(message, {
         variant: "error",
         autoHideDuration: 8000,
         anchorOrigin: { vertical: "top", horizontal: "center" },
@@ -290,12 +297,13 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           onSubmit={
             participant == null ? submitNewParticipant : editParticipant
           }
+          retreatId={id}
         />
       ),
     });
   };
 
-  const handleDeleteParticipant = (participant: Participant) => {
+  const handleDeleteParticipant = (participant: ContemplatedParticipant) => {
     modal.open({
       title: "Confirm deletion",
       size: "sm",
@@ -321,10 +329,12 @@ export default function NonContemplatedTable({ id }: { id: string }) {
                   variant: "success",
                 });
               }
-            } catch (err: any) {
+            } catch (err: unknown) {
               if (typeof window !== "undefined") {
                 const { enqueueSnackbar } = await import("notistack");
-                enqueueSnackbar(err.message || "Failed to delete user", {
+                const message =
+                  err instanceof Error ? err.message : "Failed to delete user";
+                enqueueSnackbar(message, {
                   variant: "errorMUI",
                 });
               }
@@ -336,8 +346,12 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   };
 
   const handleBulkAction = () => {
-    const selectedIds = getSelectedIds;
-    console.log("Ação em lote para:", selectedIds);
+    if (!selectedIds.length) {
+      return;
+    }
+    enqueueSnackbar("Ação em lote ainda não implementada.", {
+      variant: "info",
+    });
   };
 
   const handleRefresh = () => {
@@ -364,15 +378,18 @@ export default function NonContemplatedTable({ id }: { id: string }) {
       ? contemplatedData?.rows
       : ([contemplatedData?.rows] as unknown as ContemplatedParticipant[]);
 
-  console.log("selectedRows:", selectedRows);
-
   if (isLoading || session.status === "loading" || !session.data?.user) {
     return <div>Carregando usuários...</div>;
   }
 
-  function handleContemplate(row: ContemplatedParticipant): void {
-    throw new Error("Function not implemented.");
-  }
+  const handleContemplate = (row: ContemplatedParticipant): void => {
+    enqueueSnackbar(
+      `Participante ${row.name} marcado para contemplação (em breve).`,
+      {
+        variant: "info",
+      }
+    );
+  };
 
   return (
     <Box
@@ -420,9 +437,9 @@ export default function NonContemplatedTable({ id }: { id: string }) {
         />
 
         {/* ✅ CORREÇÃO: Usar helper para contar */}
-        {getSelectedIds.length > 0 && (
+        {selectedIds.length > 0 && (
           <Button variant="outlined" color="primary" onClick={handleBulkAction}>
-            Contemplar em lote ({getSelectedIds.length})
+            Contemplar em lote ({selectedIds.length})
           </Button>
         )}
         <Button
@@ -493,9 +510,6 @@ export default function NonContemplatedTable({ id }: { id: string }) {
             },
           ]}
           // Eventos
-          onRowClick={(params) => {
-            console.log("Linha clicada:", params.row);
-          }}
           // onRowDoubleClick={(params) => {
           //   handleView(params.row);
           // }}

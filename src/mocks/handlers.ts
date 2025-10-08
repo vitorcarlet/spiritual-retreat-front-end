@@ -342,6 +342,98 @@ export const handlers = [
   ),
 
   http.get(
+    "http://localhost:3001/api/retreats/:id/participants/:participantId/form",
+    ({ params }) => {
+      const retreatId = params.id as string;
+      const participantId = Number(params.participantId);
+
+      const participant = mockContemplatedParticipants.find(
+        (item) => item.id === participantId
+      );
+
+      const answers = {
+        nome_completo: participant?.name ?? `Participante ${participantId}`,
+        email: participant?.email ?? `participante${participantId}@email.com`,
+        n_whatsapp: participant?.phone ?? "+55 (11) 99999-9999",
+        celular: participant?.phone ?? "+55 (11) 99999-9999",
+        celular_vizinho_conhecido: "+55 (11) 98888-0001",
+        celular_parente_conhecido: "+55 (11) 97777-0002",
+        sexo: participantId % 2 === 0 ? "Feminino" : "Masculino",
+        cpf: "123.456.789-00",
+        data_nascimento: "1990-05-12",
+        idade: "33",
+        estado_civil: "Solteiro(a)",
+        profissao: "Analista de Sistemas",
+        tamanho_camiseta: "M",
+        location: {
+          stateShort: "SP",
+          city: "São Paulo",
+        },
+        rua_e_n_casa: "Rua das Flores, 123",
+        bairro: "Centro",
+        estou_gravida: "Não",
+        peso: '75',
+        altura: '177',
+        nome_usuario_facebook: "nao tenho",
+        instagram: "@participante",
+        "Pai está vivo?": true,
+        nome_pai: "João da Silva",
+        celular_pai: "+55 (11) 95555-1111",
+        grau_parentesco_preencheu: ["Pai"],
+        mae_esta: true,
+        nome_mae: "Maria da Silva",
+        celular_mae: "+55 (11) 96666-2222",
+        sofreu_perda_familiar: false,
+        expectativas_para_o_retiro:
+          "Buscando crescimento espiritual e novos aprendizados.",
+        possui_doenca_cronica: true,
+        quais_doencas_cronicas: ["Hipertensão"],
+        faz_uso_medicacao: true,
+        quais_medicacoes: "Losartana 50mg",
+        restricoes_alimentares: ["Vegetariano"],
+        apoio_emocional: false,
+        experiencia_retiros: "Já participei de 2 retiros anteriormente.",
+        habilidades_especificas: ["Música", "Fotografia"],
+        disponibilidade_servir: true,
+        termos_aceitos: true,
+      } as Record<string, unknown>;
+
+      return HttpResponse.json(
+        {
+          success: true,
+          data: {
+            retreatId,
+            participantId,
+            answers,
+          },
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  http.put(
+    "http://localhost:3001/api/retreats/:id/participants/:participantId/form",
+    async ({ request, params }) => {
+      const retreatId = params.id as string;
+      const participantId = Number(params.participantId);
+      const body = (await request.json()) as { answers: Record<string, unknown> };
+
+      return HttpResponse.json(
+        {
+          success: true,
+          data: {
+            retreatId,
+            participantId,
+            answers: body.answers,
+          },
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  http.get(
     "http://localhost:3001/api/retreats/:id/tents",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
@@ -417,6 +509,7 @@ export const handlers = [
       const newSpace: MockServiceSpace = {
         id: createRandomId("service-space"),
         retreatId,
+        color: "#1976d2",
         name: body.name,
         description: typeof body.description === "string" ? body.description : "",
         minMembers: minMembersValue,

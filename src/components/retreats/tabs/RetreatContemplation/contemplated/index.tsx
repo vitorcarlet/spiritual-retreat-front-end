@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Avatar, Box, Button, Chip, Stack, Typography } from "@mui/material";
+import { Avatar, Box, Button, Chip, Stack } from "@mui/material";
 import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
 import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 //import ContemplatedummaryModal from "../ContemplatedummaryModal";
@@ -20,10 +20,8 @@ import {
   ContemplatedTableFilters,
   ContemplatedTableFiltersWithDates,
 } from "../types";
-import { useTranslations } from "next-intl";
 import { useModal } from "@/src/hooks/useModal";
 import ParticipantForm from "../no-contemplated/ParticipantForm";
-import { Send } from "@mui/icons-material";
 import { SendMessage } from "./SendMessage";
 
 type ContemplatedDataRequest = {
@@ -55,7 +53,6 @@ const getContemplated = async (
   if (!response || response.error) {
     throw new Error("Failed to fetch Contemplated");
   }
-  console.log("Fetched Contemplated:", response);
   return response.data as ContemplatedDataRequest;
 };
 
@@ -112,7 +109,8 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
     field: "phone",
     headerName: "Telefone",
     width: 140,
-    valueFormatter: (v) => (v?.value ? String(v.value) : ""),
+    valueFormatter: (v: { value?: unknown }) =>
+      v?.value ? String(v.value) : "",
   },
   {
     field: "activity",
@@ -186,7 +184,6 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
 ];
 
 export default function ContemplatedTable({ id }: { id: string }) {
-  const t = useTranslations();
   const modal = useModal();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
@@ -221,11 +218,6 @@ export default function ContemplatedTable({ id }: { id: string }) {
     return [];
   };
 
-  const handleBulkAction = () => {
-    const selectedIds = getSelectedIds();
-    console.log("Ação em lote para:", selectedIds);
-  };
-
   const handleRefresh = () => {
     setLoading(true);
     setTimeout(() => {
@@ -240,7 +232,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
   // };
 
   const handleApplyFilters = (
-    newFilters: Partial<TableDefaultFilters<RetreatsCardTableFilters>>
+    newFilters: Partial<TableDefaultFilters<Record<string, unknown>>>
   ) => {
     updateFilters({ ...filters, ...newFilters });
   };
@@ -249,8 +241,6 @@ export default function ContemplatedTable({ id }: { id: string }) {
     Array.isArray(contemplatedData?.rows)
       ? contemplatedData?.rows
       : ([contemplatedData?.rows] as unknown as ContemplatedParticipant[]);
-
-  console.log("selectedRows:", selectedRows);
 
   if (isLoading || session.status === "loading" || !session.data?.user) {
     return (
@@ -312,7 +302,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
       title: "Participant Details",
       size: "md",
       customRender: () => (
-        <ParticipantForm participant={participant} disabled />
+        <ParticipantForm participant={participant} disabled retreatId={id} />
       ),
     });
   };
@@ -427,9 +417,6 @@ export default function ContemplatedTable({ id }: { id: string }) {
             },
           ]}
           // Eventos
-          onRowClick={(params) => {
-            console.log("Linha clicada:", params.row);
-          }}
           // onRowDoubleClick={(params) => {
           //   handleView(params.row);
           // }}

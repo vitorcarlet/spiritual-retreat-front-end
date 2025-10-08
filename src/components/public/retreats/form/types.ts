@@ -1,5 +1,6 @@
 export type BackendFieldType =
   | "text"
+  | "textSpecial"
   | "email"
   | "number"
   | "select"
@@ -49,6 +50,7 @@ export interface BackendField {
   dependsValue?: unknown; // valor que habilita
   grid?: number; // grid layout
   fields?: BackendField[]; // utilizado em campos compostos
+  specialType?: "name" | "email" | "phone" | "profilePhoto" | null;
 }
 
 export interface BackendSection {

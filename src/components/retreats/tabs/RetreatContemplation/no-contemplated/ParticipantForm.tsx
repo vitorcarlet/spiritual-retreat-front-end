@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Stack,
@@ -16,10 +16,13 @@ import {
   Avatar,
   Typography,
   Divider,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import ParticipantPublicFormTab from "./ParticipantPublicFormTab";
 
 /* Zod schema */
 const participantSchema = z.object({
@@ -54,6 +57,7 @@ interface ParticipantFormProps {
   loading?: boolean;
   submitLabel?: string;
   disabled?: boolean;
+  retreatId: string;
 }
 
 const defaultEmpty: ParticipantFormValues = {
@@ -73,7 +77,11 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   loading = false,
   submitLabel = "Salvar",
   disabled = true,
+  retreatId,
 }) => {
+  const hasParticipant = Boolean(participant?.id);
+  const [tab, setTab] = useState<"details" | "form">("details");
+
   const {
     control,
     handleSubmit,
@@ -90,6 +98,23 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
     mode: "onBlur",
   });
 
+  useEffect(() => {
+    reset(
+      participant
+        ? {
+            ...participant,
+            photoUrl: participant.photoUrl ?? "",
+          }
+        : defaultEmpty
+    );
+  }, [participant, reset]);
+
+  useEffect(() => {
+    if (!hasParticipant) {
+      setTab("details");
+    }
+  }, [hasParticipant]);
+
   const submitting = loading || isSubmitting;
 
   const submit: SubmitHandler<ParticipantFormValues> = async (data) => {
@@ -103,231 +128,263 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   const hasAvatar = !!participant?.photoUrl;
 
   return (
-    <Box
-      component="form"
-      noValidate
-      onSubmit={handleSubmit(submit)}
-      sx={{ width: "100%" }}
-    >
-      <Stack sx={{ margin: "0 auto" }} spacing={3}>
-        <Stack
-          direction="row"
-          spacing={2}
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar
-              src={participant?.photoUrl}
-              alt={participant?.name || "Participant"}
-              sx={{ width: 64, height: 64 }}
-            >
-              {participant?.name?.[0]}
-            </Avatar>
-            <Box>
-              <Typography variant="h6" fontWeight={600}>
-                {participant ? "Editar Participante" : "Novo Participante"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {participant
-                  ? "Atualize os dados necessários"
-                  : "Preencha os campos abaixo"}
-              </Typography>
-            </Box>
-          </Stack>
-        </Stack>
-
-        <Divider />
-
-        {/* Name */}
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Nome"
-              required
-              fullWidth
-              disabled={submitting || disabled}
-              error={!!errors.name}
-              helperText={errors.name?.message}
-            />
-          )}
-        />
-
-        {/* Email */}
-        <Controller
-          name="email"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              type="email"
-              label="Email"
-              required
-              fullWidth
-              disabled={submitting || disabled}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-            />
-          )}
-        />
-
-        {/* Phone */}
-        <Controller
-          name="phone"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Telefone"
-              fullWidth
-              disabled={submitting || disabled}
-              error={!!errors.phone}
-              helperText={errors.phone?.message || "Opcional"}
-            />
-          )}
-        />
-
-        {/* Activity */}
-        <Controller
-          name="activity"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Atividade"
-              required
-              fullWidth
-              disabled={submitting || disabled}
-              error={!!errors.activity}
-              helperText={errors.activity?.message}
-            />
-          )}
-        />
-
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          {/* Status */}
-          <Controller
-            name="status"
-            control={control}
-            render={({ field }) => (
-              <FormControl
-                fullWidth
-                error={!!errors.status}
-                disabled={submitting || disabled}
-              >
-                <InputLabel>Status</InputLabel>
-                <Select
-                  {...field}
-                  label="Status"
-                  onChange={(e) => field.onChange(e.target.value)}
-                >
-                  <MenuItem value="contemplated">Contemplado</MenuItem>
-                  <MenuItem value="not_contemplated">Não contemplado</MenuItem>
-                </Select>
-                <FormHelperText>{errors.status?.message}</FormHelperText>
-              </FormControl>
-            )}
-          />
-
-          {/* Payment Status */}
-          <Controller
-            name="paymentStatus"
-            control={control}
-            render={({ field }) => (
-              <FormControl
-                fullWidth
-                error={!!errors.paymentStatus}
-                disabled={submitting || disabled}
-              >
-                <InputLabel>Pagamento</InputLabel>
-                <Select
-                  {...field}
-                  label="Pagamento"
-                  onChange={(e) => field.onChange(e.target.value)}
-                >
-                  <MenuItem value="paid">Pago</MenuItem>
-                  <MenuItem value="pending">Pendente</MenuItem>
-                  <MenuItem value="overdue">Atrasado</MenuItem>
-                </Select>
-                <FormHelperText>{errors.paymentStatus?.message}</FormHelperText>
-              </FormControl>
-            )}
-          />
-        </Stack>
-
-        {/* Participation */}
-        <Controller
-          name="participation"
-          control={control}
-          render={({ field }) => (
-            <FormControlLabel
-              control={
-                <Switch
-                  color="primary"
-                  checked={field.value}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                  disabled={submitting || disabled}
-                />
-              }
-              label="Participação confirmada"
-            />
-          )}
-        />
-        {errors.participation && (
-          <Typography variant="caption" color="error">
-            {errors.participation.message?.toString()}
-          </Typography>
-        )}
-
-        {/* Photo URL */}
-        <Controller
-          name="photoUrl"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="URL da Foto"
-              fullWidth
-              disabled={submitting || disabled}
-              error={!!errors.photoUrl}
-              helperText={
-                errors.photoUrl?.message ||
-                (hasAvatar
-                  ? "Foto atual pode ser substituída"
-                  : "Opcional (URL)")
-              }
-            />
-          )}
-        />
-
-        <Stack direction="row" spacing={2} justifyContent="flex-end">
-          <Button
-            variant="outlined"
-            type="button"
-            disabled={submitting || !isDirty || disabled}
-            onClick={() =>
-              reset(
-                participant
-                  ? { ...participant, photoUrl: participant.photoUrl ?? "" }
-                  : defaultEmpty
-              )
-            }
+    <Stack sx={{ margin: "0 auto", width: "100%" }} spacing={3}>
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        justifyContent="space-between"
+      >
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Avatar
+            src={participant?.photoUrl}
+            alt={participant?.name || "Participant"}
+            sx={{ width: 64, height: 64 }}
           >
-            Resetar
-          </Button>
-          <Button
-            variant="contained"
-            type="submit"
-            disabled={submitting || disabled}
-          >
-            {submitLabel}
-          </Button>
+            {participant?.name?.[0]}
+          </Avatar>
+          <Box>
+            <Typography variant="h6" fontWeight={600}>
+              {participant ? "Editar Participante" : "Novo Participante"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {participant
+                ? "Atualize os dados necessários"
+                : "Preencha os campos abaixo"}
+            </Typography>
+          </Box>
         </Stack>
       </Stack>
-    </Box>
+
+      <Tabs
+        value={tab}
+        onChange={(_, value) => setTab(value)}
+        variant="fullWidth"
+        sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}
+      >
+        <Tab value="details" label="Dados do participante" />
+        <Tab
+          value="form"
+          label="Formulário respondido"
+          disabled={!hasParticipant}
+        />
+      </Tabs>
+
+      {tab === "details" && (
+        <Box
+          component="form"
+          noValidate
+          onSubmit={handleSubmit(submit)}
+          sx={{ width: "100%" }}
+        >
+          <Stack spacing={3}>
+            <Divider />
+
+            {/* Name */}
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Nome"
+                  required
+                  fullWidth
+                  disabled={submitting || disabled}
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                />
+              )}
+            />
+
+            {/* Email */}
+            <Controller
+              name="email"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="email"
+                  label="Email"
+                  required
+                  fullWidth
+                  disabled={submitting || disabled}
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                />
+              )}
+            />
+
+            {/* Phone */}
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Telefone"
+                  fullWidth
+                  disabled={submitting || disabled}
+                  error={!!errors.phone}
+                  helperText={errors.phone?.message || "Opcional"}
+                />
+              )}
+            />
+
+            {/* Activity */}
+            <Controller
+              name="activity"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Atividade"
+                  required
+                  fullWidth
+                  disabled={submitting || disabled}
+                  error={!!errors.activity}
+                  helperText={errors.activity?.message}
+                />
+              )}
+            />
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              {/* Status */}
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <FormControl
+                    fullWidth
+                    error={!!errors.status}
+                    disabled={submitting || disabled}
+                  >
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                      {...field}
+                      label="Status"
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      <MenuItem value="contemplated">Contemplado</MenuItem>
+                      <MenuItem value="not_contemplated">
+                        Não contemplado
+                      </MenuItem>
+                    </Select>
+                    <FormHelperText>{errors.status?.message}</FormHelperText>
+                  </FormControl>
+                )}
+              />
+
+              {/* Payment Status */}
+              <Controller
+                name="paymentStatus"
+                control={control}
+                render={({ field }) => (
+                  <FormControl
+                    fullWidth
+                    error={!!errors.paymentStatus}
+                    disabled={submitting || disabled}
+                  >
+                    <InputLabel>Pagamento</InputLabel>
+                    <Select
+                      {...field}
+                      label="Pagamento"
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      <MenuItem value="paid">Pago</MenuItem>
+                      <MenuItem value="pending">Pendente</MenuItem>
+                      <MenuItem value="overdue">Atrasado</MenuItem>
+                    </Select>
+                    <FormHelperText>
+                      {errors.paymentStatus?.message}
+                    </FormHelperText>
+                  </FormControl>
+                )}
+              />
+            </Stack>
+
+            {/* Participation */}
+            <Controller
+              name="participation"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      color="primary"
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      disabled={submitting || disabled}
+                    />
+                  }
+                  label="Participação confirmada"
+                />
+              )}
+            />
+            {errors.participation && (
+              <Typography variant="caption" color="error">
+                {errors.participation.message?.toString()}
+              </Typography>
+            )}
+
+            {/* Photo URL */}
+            <Controller
+              name="photoUrl"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="URL da Foto"
+                  fullWidth
+                  disabled={submitting || disabled}
+                  error={!!errors.photoUrl}
+                  helperText={
+                    errors.photoUrl?.message ||
+                    (hasAvatar
+                      ? "Foto atual pode ser substituída"
+                      : "Opcional (URL)")
+                  }
+                />
+              )}
+            />
+
+            <Stack direction="row" spacing={2} justifyContent="flex-end">
+              <Button
+                variant="outlined"
+                type="button"
+                disabled={submitting || !isDirty || disabled}
+                onClick={() =>
+                  reset(
+                    participant
+                      ? {
+                          ...participant,
+                          photoUrl: participant.photoUrl ?? "",
+                        }
+                      : defaultEmpty
+                  )
+                }
+              >
+                Resetar
+              </Button>
+              <Button
+                variant="contained"
+                type="submit"
+                disabled={submitting || disabled}
+              >
+                {submitLabel}
+              </Button>
+            </Stack>
+          </Stack>
+        </Box>
+      )}
+
+      {tab === "form" && participant?.id && (
+        <ParticipantPublicFormTab
+          retreatId={retreatId}
+          participantId={participant.id}
+        />
+      )}
+    </Stack>
   );
 };
 

@@ -10,6 +10,7 @@ type FormNavigationProps = {
   onNext: () => void;
   onBack: () => void;
   submitLabel?: string;
+  disableSubmit?: boolean;
 };
 
 const FormNavigation: React.FC<FormNavigationProps> = ({
@@ -19,6 +20,7 @@ const FormNavigation: React.FC<FormNavigationProps> = ({
   onNext,
   onBack,
   submitLabel,
+  disableSubmit = false,
 }) => {
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep >= totalSteps - 1;
@@ -34,7 +36,11 @@ const FormNavigation: React.FC<FormNavigationProps> = ({
         Voltar
       </Button>
       {isLastStep ? (
-        <Button type="submit" variant="contained" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={isSubmitting || disableSubmit}
+        >
           {isSubmitting ? "Enviando..." : submitLabel || "Enviar inscrição"}
         </Button>
       ) : (
