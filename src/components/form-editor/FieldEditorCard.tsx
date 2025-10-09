@@ -79,15 +79,19 @@ const TEXT_SPECIAL_OPTIONS: BackendOption[] = [
   { id: "special-name", value: "name", label: "Nome" },
   { id: "special-email", value: "email", label: "Email" },
   { id: "special-phone", value: "phone", label: "Telefone" },
+  { id: "special-cpf", value: "cpf", label: "CPF" },
+];
+
+const SELECT_SPECIAL_OPTIONS: BackendOption[] = [
+  { id: "special-gender", value: "gender", label: "Gênero" },
+];
+
+const PHOTO_SPECIAL_OPTIONS: BackendOption[] = [
   {
     id: "special-profile-photo",
     value: "profilePhoto",
     label: "Foto de perfil",
   },
-];
-
-const SELECT_SPECIAL_OPTIONS: BackendOption[] = [
-  { id: "special-gender", value: "gender", label: "Gênero" },
 ];
 
 const getSpecialOptions = (type: BaseFieldType): BackendOption[] => {
@@ -96,6 +100,9 @@ const getSpecialOptions = (type: BaseFieldType): BackendOption[] => {
   }
   if (type === "select" || type === "radio") {
     return SELECT_SPECIAL_OPTIONS;
+  }
+  if (type === "photo") {
+    return PHOTO_SPECIAL_OPTIONS;
   }
   return [];
 };
