@@ -26,16 +26,6 @@ export function createFieldByType(
         mask: true,
       };
 
-    case "textSpecial":
-      return {
-        ...baseField,
-        label: "Campo de Texto Especial",
-        placeholder: "Digite aqui...",
-        defaultValue: "",
-        mask: false,
-        specialType: "name",
-      };
-
     case "radio":
     case "select":
       return {

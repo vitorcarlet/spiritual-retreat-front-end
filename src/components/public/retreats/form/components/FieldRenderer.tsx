@@ -77,7 +77,6 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
 
   switch (field.type) {
     case "text":
-    case "textSpecial":
     case "textarea":
     case "email":
     case "phone":

@@ -3,7 +3,6 @@ import { z } from "zod";
 // Basic field types supported by the editor
 export const BASE_FIELD_TYPES = [
   "text",
-  "textSpecial",
   "textarea",
   "number",
   "select",
@@ -19,19 +18,28 @@ export const BASE_FIELD_TYPES = [
   "photo",
   "location",
   "switchExpansible",
-  "specialField",
 ] as const;
 
 export type BaseFieldType = typeof BASE_FIELD_TYPES[number];
 
-export const SPECIAL_TEXT_TYPES = [
+export const SPECIAL_TEXT_FIELD_TYPES = [
   "name",
   "email",
   "phone",
   "profilePhoto",
 ] as const;
 
-export type SpecialTextType = typeof SPECIAL_TEXT_TYPES[number];
+export const SPECIAL_SELECT_FIELD_TYPES = ["gender"] as const;
+
+export type SpecialTextFieldType = typeof SPECIAL_TEXT_FIELD_TYPES[number];
+export type SpecialSelectFieldType = typeof SPECIAL_SELECT_FIELD_TYPES[number];
+
+export type SpecialFieldType = SpecialTextFieldType | SpecialSelectFieldType;
+
+export const ALL_SPECIAL_FIELD_TYPES = [
+  ...SPECIAL_TEXT_FIELD_TYPES,
+  ...SPECIAL_SELECT_FIELD_TYPES,
+] as const;
 
 export interface OptionItem {
   id: string;
@@ -67,7 +75,7 @@ export interface BaseFieldDefinition {
   multiple?: boolean | null;
   min?: number | null;
   max?: number | null;
-  specialType?: SpecialTextType | null;
+  specialType?: SpecialFieldType | null;
 }
 
 export interface FieldDefinition extends BaseFieldDefinition {
@@ -163,7 +171,7 @@ const fieldSchema: z.ZodType<FieldDefinition> = z.lazy(() =>
     multiple: z.boolean().nullable().optional(),
     maskType: z.string().nullable().optional(),
     customMask: z.string().nullable().optional(),
-    specialType: z.enum(SPECIAL_TEXT_TYPES).nullable().optional(),
+    specialType: z.enum(ALL_SPECIAL_FIELD_TYPES).nullable().optional(),
     options: z
       .array(
         z.object({

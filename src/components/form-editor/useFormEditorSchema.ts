@@ -8,8 +8,9 @@ import {
   SectionDefinition,
   BaseFieldType,
   BASE_FIELD_TYPES,
-  SpecialTextType,
-  SPECIAL_TEXT_TYPES,
+  SpecialFieldType,
+  SPECIAL_TEXT_FIELD_TYPES,
+  SPECIAL_SELECT_FIELD_TYPES,
 } from "./types";
 import { nanoid } from "nanoid";
 import { createFieldByType } from "./shared";
@@ -58,7 +59,10 @@ function createSectionByTitle(title: string): SectionDefinition {
 }
 
 const FIELD_TYPE_SET = new Set<BaseFieldType>(BASE_FIELD_TYPES);
-const SPECIAL_TEXT_TYPE_SET = new Set<SpecialTextType>(SPECIAL_TEXT_TYPES);
+const SPECIAL_TYPE_BY_FIELD: Partial<Record<BaseFieldType, Set<SpecialFieldType>>> = {
+  text: new Set(SPECIAL_TEXT_FIELD_TYPES),
+  select: new Set(SPECIAL_SELECT_FIELD_TYPES),
+};
 
 type InitialSchemaInput =
   | FormSchemaDefinition
@@ -108,11 +112,14 @@ function normalizeField(field: unknown): FieldDefinition {
       ? true
       : raw.helperText === true || helperTextValue.trim().length > 0;
 
-  const specialType =
-    typeof raw.specialType === "string" &&
-    SPECIAL_TEXT_TYPE_SET.has(raw.specialType as SpecialTextType)
-      ? (raw.specialType as SpecialTextType)
-      : null;
+  let specialType: SpecialFieldType | null = null;
+  if (typeof raw.specialType === "string") {
+    const candidate = raw.specialType as SpecialFieldType;
+    const allowed = SPECIAL_TYPE_BY_FIELD[normalizedType];
+    if (allowed && allowed.has(candidate)) {
+      specialType = candidate;
+    }
+  }
 
   const normalized: FieldDefinition = {
     id: typeof raw.id === "string" ? raw.id : nanoid(),

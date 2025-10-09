@@ -13,12 +13,12 @@ import {
   MenuItem,
   Chip,
 } from "@mui/material";
-import React, { memo } from "react";
+import React, { memo, useEffect } from "react";
 import {
   BaseFieldType,
   FieldDefinition,
   BASE_FIELD_TYPES,
-  SpecialTextType,
+  SpecialFieldType,
 } from "./types";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import AddIcon from "@mui/icons-material/Add";
@@ -54,7 +54,6 @@ const MASK_OPTIONS: BackendOption[] = [
 
 const FIELD_TYPE_LABELS: Record<BaseFieldType, string> = {
   text: "Campo de texto",
-  textSpecial: "Campo de texto especial",
   textarea: "Texto longo",
   number: "Número",
   select: "Seleção",
@@ -70,14 +69,13 @@ const FIELD_TYPE_LABELS: Record<BaseFieldType, string> = {
   photo: "Foto",
   location: "Localização",
   switchExpansible: "Interruptor expansível",
-  specialField: "Campos Especiais",
 };
 
 const CHILD_FIELD_TYPES = BASE_FIELD_TYPES.filter(
   (type) => type !== "switchExpansible"
 );
 
-const SPECIAL_TEXT_OPTIONS: BackendOption[] = [
+const TEXT_SPECIAL_OPTIONS: BackendOption[] = [
   { id: "special-name", value: "name", label: "Nome" },
   { id: "special-email", value: "email", label: "Email" },
   { id: "special-phone", value: "phone", label: "Telefone" },
@@ -88,11 +86,18 @@ const SPECIAL_TEXT_OPTIONS: BackendOption[] = [
   },
 ];
 
-const SPECIAL_TEXT_LABELS: Record<SpecialTextType, string> = {
-  name: "Nome",
-  email: "Email",
-  phone: "Telefone",
-  profilePhoto: "Foto de perfil",
+const SELECT_SPECIAL_OPTIONS: BackendOption[] = [
+  { id: "special-gender", value: "gender", label: "Gênero" },
+];
+
+const getSpecialOptions = (type: BaseFieldType): BackendOption[] => {
+  if (type === "text") {
+    return TEXT_SPECIAL_OPTIONS;
+  }
+  if (type === "select" || type === "radio") {
+    return SELECT_SPECIAL_OPTIONS;
+  }
+  return [];
 };
 
 interface FieldEditorCardProps {
@@ -140,6 +145,17 @@ function FieldEditorCard({
 
   const optionSensors = useSensors(useSensor(PointerSensor));
   const childSensors = useSensors(useSensor(PointerSensor));
+
+  const specialOptions = getSpecialOptions(field.type);
+  const currentSpecialOption = specialOptions.find(
+    (option) => option.value === field.specialType
+  );
+
+  useEffect(() => {
+    if (specialOptions.length === 0 && field.specialType) {
+      onChange({ specialType: null });
+    }
+  }, [specialOptions.length, field.specialType, onChange]);
 
   const childFields = field.fields ?? [];
   const [childMenuAnchor, setChildMenuAnchor] =
@@ -232,11 +248,11 @@ function FieldEditorCard({
             {index + 1}. {field.label || field.name} -{" "}
             {FIELD_TYPE_LABELS[field.type] ?? field.type}
           </Typography>
-          {field.type === "textSpecial" && field.specialType && (
+          {currentSpecialOption && (
             <Chip
               size="small"
               color="info"
-              label={`Especial: ${SPECIAL_TEXT_LABELS[field.specialType]}`}
+              label={`Especial: ${currentSpecialOption.label ?? currentSpecialOption.value}`}
             />
           )}
         </Stack>
@@ -253,13 +269,12 @@ function FieldEditorCard({
           fullWidth
         />
         {(field.type === "text" ||
-          field.type === "textSpecial" ||
           field.type === "textarea" ||
           field.type === "email" ||
           field.type === "phone" ||
           field.type === "number") && (
           <TextField
-            label="Texto exibido quando o campo está vazio"
+            label="Placeholder"
             value={field.placeholder ?? ""}
             size="small"
             onChange={(e) =>
@@ -269,6 +284,7 @@ function FieldEditorCard({
               })
             }
             fullWidth
+            helperText="Texto exibido quando o campo está vazio"
           />
         )}
 
@@ -300,6 +316,7 @@ function FieldEditorCard({
                 noOptionsText="Nenhuma máscara disponível"
               />
             </Box>
+
             {field.maskType === "custom" && (
               <TextField
                 size="small"
@@ -312,11 +329,11 @@ function FieldEditorCard({
           </Stack>
         )}
 
-        {field.type === "textSpecial" && (
+        {specialOptions.length > 0 && (
           <SmartSelect
             label="Tipo especial"
             placeholder="Selecionar"
-            options={SPECIAL_TEXT_OPTIONS}
+            options={specialOptions}
             value={(field.specialType ?? "") as string}
             onChange={(selected) => {
               const rawValue = Array.isArray(selected)
@@ -332,12 +349,12 @@ function FieldEditorCard({
                 return;
               }
 
-              const isValid = SPECIAL_TEXT_OPTIONS.some(
+              const isValid = specialOptions.some(
                 (option) => option.value === rawValue
               );
 
               onChange({
-                specialType: isValid ? (rawValue as SpecialTextType) : null,
+                specialType: isValid ? (rawValue as SpecialFieldType) : null,
               });
             }}
             noOptionsText="Nenhum tipo disponível"

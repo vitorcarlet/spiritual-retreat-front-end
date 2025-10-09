@@ -5,8 +5,6 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import ToggleOnIcon from "@mui/icons-material/ToggleOn";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
-import PersonIcon from "@mui/icons-material/Person";
-import TextFieldsIcon from "@mui/icons-material/TextFields";
 import { BaseFieldType } from "./types";
 
 interface FloatingButtonsProps {
@@ -29,15 +27,6 @@ export default function FloatingButtons({ onAddField }: FloatingButtonsProps) {
       <Tooltip title="Campo de Texto" placement="left">
         <Fab size="small" color="primary" onClick={() => onAddField("text")}>
           <TitleIcon fontSize="small" />
-        </Fab>
-      </Tooltip>
-      <Tooltip title="Texto Especial" placement="left">
-        <Fab
-          size="small"
-          color="primary"
-          onClick={() => onAddField("textSpecial")}
-        >
-          <PersonIcon fontSize="small" />
         </Fab>
       </Tooltip>
       <Tooltip title="Opção Única" placement="left">
@@ -71,15 +60,6 @@ export default function FloatingButtons({ onAddField }: FloatingButtonsProps) {
           onClick={() => onAddField("switchExpansible")}
         >
           <UnfoldMoreIcon fontSize="small" />
-        </Fab>
-      </Tooltip>
-      <Tooltip title="Campos Especiais" placement="left">
-        <Fab
-          size="small"
-          color="primary"
-          onClick={() => onAddField("textSpecial")}
-        >
-          <TextFieldsIcon fontSize="small" />
         </Fab>
       </Tooltip>
     </Box>
