@@ -119,6 +119,7 @@ export interface DataTableProps<
   autoWidth?: boolean;
   height?: number | string;
   autoHeight?: boolean;
+  rowHeight?: number;
   density?: "compact" | "standard" | "comfortable";
   disableColumnFilter?: boolean;
   disableColumnMenu?: boolean;
@@ -280,6 +281,7 @@ export function DataTable<
   page,
   // Ações
   actions,
+  rowHeight,
 }: DataTableProps<T, F>) {
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: page,
@@ -456,6 +458,7 @@ export function DataTable<
         columns={processedColumns}
         loading={loading}
         getRowId={getRowId}
+        rowHeight={rowHeight}
         // Paginação
         pagination
         hideFooterPagination={false}

@@ -73,10 +73,10 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
     type: "number",
   },
   {
-    field: "name",
-    headerName: "Nome",
+    field: "photo",
+    headerName: "Foto",
     flex: 1,
-    minWidth: 180,
+    minWidth: 250,
     renderCell: (params) => (
       <Stack
         direction="row"
@@ -86,26 +86,19 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
       >
         <Avatar
           src={params.row.photoUrl}
-          alt={params.value}
-          sx={{ width: 32, height: 32, fontSize: 14 }}
+          alt={params.row.name}
+          sx={{ width: 200, height: 200 }}
         >
-          {getInitials(params.value)}
+          {!params.row.photoUrl && getInitials(params.row.name)}
         </Avatar>
-        <Box
-          component="span"
-          sx={{
-            fontSize: 14,
-            fontWeight: 500,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            maxWidth: 160,
-          }}
-        >
-          {params.value}
-        </Box>
       </Stack>
     ),
+  },
+  {
+    field: "name",
+    headerName: "Nome",
+    flex: 1,
+    minWidth: 180,
   },
   {
     field: "email",
@@ -457,6 +450,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           rowCount={contemplatedData?.total || 0}
           columns={columns}
           loading={isLoading || loading}
+          rowHeight={200}
           // Configurações de aparência
           title="Gerenciamento de Usuários"
           subtitle="Lista completa de usuários do sistema"

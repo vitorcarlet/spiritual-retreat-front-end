@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Stack,
@@ -23,6 +23,9 @@ import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ParticipantPublicFormTab from "./ParticipantPublicFormTab";
+import SingleImageUpload from "@/src/components/fields/ImageUpload/SingleImageUpload";
+
+const dataUrlRegex = /^data:image\/[a-zA-Z]+;base64,/;
 
 /* Zod schema */
 const participantSchema = z.object({
@@ -43,10 +46,13 @@ const participantSchema = z.object({
   }),
   participation: z.boolean(),
   photoUrl: z
-    .string()
-    .url("Invalid URL")
+    .union([
+      z.string().url("Invalid URL"),
+      z.string().regex(dataUrlRegex, "Imagem inválida"),
+    ])
     .optional()
-    .or(z.literal("").transform(() => undefined)),
+    .or(z.literal("").transform(() => undefined))
+    .or(z.null()),
 });
 
 export type ParticipantFormValues = z.infer<typeof participantSchema>;
@@ -68,7 +74,7 @@ const defaultEmpty: ParticipantFormValues = {
   activity: "",
   paymentStatus: "pending",
   participation: false,
-  photoUrl: "",
+  photoUrl: null,
 };
 
 const ParticipantForm: React.FC<ParticipantFormProps> = ({
@@ -81,10 +87,12 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
 }) => {
   const hasParticipant = Boolean(participant?.id);
   const [tab, setTab] = useState<"details" | "form">("details");
+  const [isEditing, setIsEditing] = useState(() => !disabled);
 
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting, isDirty },
     reset,
   } = useForm<ParticipantFormValues>({
@@ -92,7 +100,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
     defaultValues: participant
       ? {
           ...participant,
-          photoUrl: participant.photoUrl ?? "",
+          photoUrl: participant.photoUrl ?? null,
         }
       : defaultEmpty,
     mode: "onBlur",
@@ -103,11 +111,15 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
       participant
         ? {
             ...participant,
-            photoUrl: participant.photoUrl ?? "",
+            photoUrl: participant.photoUrl ?? null,
           }
         : defaultEmpty
     );
   }, [participant, reset]);
+
+  useEffect(() => {
+    setIsEditing(!disabled);
+  }, [disabled]);
 
   useEffect(() => {
     if (!hasParticipant) {
@@ -116,6 +128,21 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   }, [hasParticipant]);
 
   const submitting = loading || isSubmitting;
+  const isFormLocked = !isEditing;
+
+  const watchedPhoto = watch("photoUrl");
+
+  const currentAvatarSrc = useMemo(() => {
+    if (typeof watchedPhoto === "string" && watchedPhoto) {
+      return watchedPhoto;
+    }
+
+    if (typeof participant?.photoUrl === "string" && participant.photoUrl) {
+      return participant.photoUrl;
+    }
+
+    return undefined;
+  }, [participant?.photoUrl, watchedPhoto]);
 
   const submit: SubmitHandler<ParticipantFormValues> = async (data) => {
     // Preserve id if coming as prop but absent in data (optional)
@@ -125,7 +152,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
     await onSubmit?.(data);
   };
 
-  const hasAvatar = !!participant?.photoUrl;
+  const hasAvatar = Boolean(currentAvatarSrc);
 
   return (
     <Stack sx={{ margin: "0 auto", width: "100%" }} spacing={3}>
@@ -137,7 +164,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
       >
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar
-            src={participant?.photoUrl}
+            src={currentAvatarSrc}
             alt={participant?.name || "Participant"}
             sx={{ width: 64, height: 64 }}
           >
@@ -154,6 +181,26 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
             </Typography>
           </Box>
         </Stack>
+        <Button
+          variant={isEditing ? "outlined" : "contained"}
+          onClick={() => {
+            if (isSubmitting || loading) return;
+            if (isEditing) {
+              reset(
+                participant
+                  ? {
+                      ...participant,
+                      photoUrl: participant.photoUrl ?? null,
+                    }
+                  : defaultEmpty
+              );
+            }
+            setIsEditing((prev) => !prev);
+          }}
+          disabled={loading || isSubmitting}
+        >
+          {isEditing ? "Cancelar edição" : "Ativar edição"}
+        </Button>
       </Stack>
 
       <Tabs
@@ -190,7 +237,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                   label="Nome"
                   required
                   fullWidth
-                  disabled={submitting || disabled}
+                  disabled={submitting || isFormLocked}
                   error={!!errors.name}
                   helperText={errors.name?.message}
                 />
@@ -208,7 +255,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                   label="Email"
                   required
                   fullWidth
-                  disabled={submitting || disabled}
+                  disabled={submitting || isFormLocked}
                   error={!!errors.email}
                   helperText={errors.email?.message}
                 />
@@ -224,7 +271,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                   {...field}
                   label="Telefone"
                   fullWidth
-                  disabled={submitting || disabled}
+                  disabled={submitting || isFormLocked}
                   error={!!errors.phone}
                   helperText={errors.phone?.message || "Opcional"}
                 />
@@ -241,7 +288,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                   label="Atividade"
                   required
                   fullWidth
-                  disabled={submitting || disabled}
+                  disabled={submitting || isFormLocked}
                   error={!!errors.activity}
                   helperText={errors.activity?.message}
                 />
@@ -257,7 +304,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                   <FormControl
                     fullWidth
                     error={!!errors.status}
-                    disabled={submitting || disabled}
+                    disabled={submitting || isFormLocked}
                   >
                     <InputLabel>Status</InputLabel>
                     <Select
@@ -283,7 +330,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                   <FormControl
                     fullWidth
                     error={!!errors.paymentStatus}
-                    disabled={submitting || disabled}
+                    disabled={submitting || isFormLocked}
                   >
                     <InputLabel>Pagamento</InputLabel>
                     <Select
@@ -314,7 +361,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                       color="primary"
                       checked={field.value}
                       onChange={(e) => field.onChange(e.target.checked)}
-                      disabled={submitting || disabled}
+                      disabled={submitting || isFormLocked}
                     />
                   }
                   label="Participação confirmada"
@@ -332,17 +379,15 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               name="photoUrl"
               control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="URL da Foto"
-                  fullWidth
-                  disabled={submitting || disabled}
-                  error={!!errors.photoUrl}
+                <ParticipantPhotoField
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={submitting || isFormLocked}
+                  errorMessage={errors.photoUrl?.message}
                   helperText={
-                    errors.photoUrl?.message ||
-                    (hasAvatar
-                      ? "Foto atual pode ser substituída"
-                      : "Opcional (URL)")
+                    hasAvatar
+                      ? "A foto atual pode ser substituída ao enviar uma nova imagem."
+                      : "Opcional. Formatos sugeridos: PNG, JPG ou WEBP."
                   }
                 />
               )}
@@ -352,13 +397,13 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               <Button
                 variant="outlined"
                 type="button"
-                disabled={submitting || !isDirty || disabled}
+                disabled={submitting || !isDirty || isFormLocked}
                 onClick={() =>
                   reset(
                     participant
                       ? {
                           ...participant,
-                          photoUrl: participant.photoUrl ?? "",
+                          photoUrl: participant.photoUrl ?? null,
                         }
                       : defaultEmpty
                   )
@@ -369,7 +414,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               <Button
                 variant="contained"
                 type="submit"
-                disabled={submitting || disabled}
+                disabled={submitting || isFormLocked}
               >
                 {submitLabel}
               </Button>
@@ -389,3 +434,107 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
 };
 
 export default ParticipantForm;
+
+type ParticipantPhotoFieldProps = {
+  value?: string | null;
+  onChange: (value: string | null) => void;
+  disabled?: boolean;
+  errorMessage?: string;
+  helperText?: string;
+};
+
+const readFileAsDataUrl = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+      reject(new Error("Não foi possível processar o arquivo selecionado."));
+    };
+    reader.onerror = () => {
+      reject(new Error("Falha ao ler a imagem. Tente novamente."));
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+const ParticipantPhotoField: React.FC<ParticipantPhotoFieldProps> = ({
+  value,
+  onChange,
+  disabled,
+  errorMessage,
+  helperText,
+}) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const existingImage = useMemo(() => {
+    if (typeof value === "string" && value) {
+      return { url: value };
+    }
+    return undefined;
+  }, [value]);
+
+  const effectiveHelperText = useMemo(() => {
+    if (errorMessage || localError) {
+      return undefined;
+    }
+    return helperText;
+  }, [errorMessage, helperText, localError]);
+
+  const effectiveErrorText = useMemo(() => {
+    return errorMessage ?? localError ?? undefined;
+  }, [errorMessage, localError]);
+
+  const handleFileChange = useCallback(
+    async (nextFile: File | null) => {
+      if (!nextFile) {
+        setLocalError(null);
+        onChange(null);
+        return;
+      }
+
+      setIsProcessing(true);
+      try {
+        const dataUrl = await readFileAsDataUrl(nextFile);
+        setLocalError(null);
+        onChange(dataUrl);
+      } catch (error) {
+        console.error(error);
+        setLocalError(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar a imagem selecionada."
+        );
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [onChange]
+  );
+
+  const handleRemoveExisting = useCallback(() => {
+    setLocalError(null);
+    onChange(null);
+  }, [onChange]);
+
+  return (
+    <SingleImageUpload
+      label="Foto do participante"
+      variant="avatar"
+      size={120}
+      value={null}
+      existing={existingImage}
+      onChange={handleFileChange}
+      onRemoveExisting={
+        existingImage ? () => handleRemoveExisting() : undefined
+      }
+      disabled={disabled || isProcessing}
+      helperText={effectiveHelperText ?? undefined}
+      errorText={effectiveErrorText}
+      accept={{ "image/*": [] }}
+    />
+  );
+};
