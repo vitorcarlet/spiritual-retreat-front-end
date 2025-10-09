@@ -17,7 +17,7 @@ export default function ServiceTeamFormEditor({ id }: { id: string }) {
       <Typography variant="h5" fontWeight={600}>
         Editor de Formulário - Equipe de Serviço
       </Typography>
-      <FormEditor id={id} />
+      <FormEditor id={id} type="service" />
     </Box>
   );
 }

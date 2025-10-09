@@ -15,9 +15,9 @@ export default function ParticipantsFormEditor({ id }: { id: string }) {
       sx={{ height: "100%", boxSizing: "border-box" }}
     >
       <Typography variant="h5" fontWeight={600}>
-        Editor de Formulário - Equipe de Serviço
+        Editor de Formulário - Participantes
       </Typography>
-      <FormEditor id={id} />
+      <FormEditor id={id} type="participant" />
     </Box>
   );
 }

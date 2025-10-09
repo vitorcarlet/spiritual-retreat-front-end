@@ -10,6 +10,7 @@ import {
   defaultValues as baseDefaultValues,
   buildZodSchema,
   PublicRetreatFormProps,
+  sendFormData,
 } from "./shared";
 import type { BackendForm, BackendSection, BackendField } from "./types";
 import FormHeader from "./components/FormHeader";
@@ -80,6 +81,41 @@ const collectFieldsForValidation = (
   return result;
 };
 
+const applySpecialFieldNaming = (
+  sections: BackendSection[]
+): BackendSection[] => {
+  const renameField = (field: BackendField): BackendField => {
+    if (!field || field.type === "section") {
+      return field;
+    }
+
+    const specialName = field.specialType
+      ? `${field.specialType}Special`
+      : undefined;
+
+    const renamedField: BackendField = {
+      ...field,
+      name: specialName ?? field.name,
+    };
+
+    if (
+      renamedField.type === "switchExpansible" &&
+      Array.isArray(renamedField.fields)
+    ) {
+      renamedField.fields = renamedField.fields.map((child) =>
+        renameField(child)
+      );
+    }
+
+    return renamedField;
+  };
+
+  return sections.map((section) => ({
+    ...section,
+    fields: section.fields.map((field) => renameField(field)),
+  }));
+};
+
 const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
   const form = use(getFormPromise(id));
 
@@ -87,12 +123,20 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
     return <Skeleton />;
   }
 
-  const schema = useMemo(() => buildZodSchema(form.sections), [form.sections]);
+  const normalizedSections = useMemo(
+    () => applySpecialFieldNaming(form.sections),
+    [form.sections]
+  );
+
+  const schema = useMemo(
+    () => buildZodSchema(normalizedSections),
+    [normalizedSections]
+  );
 
   const steps = useMemo(() => {
     const result: BackendSection[] = [];
 
-    form.sections.forEach((section) => {
+    normalizedSections.forEach((section) => {
       if (!section) return;
       const current = result[result.length - 1];
       if (current && current.fields.length <= 3 && section.fields.length <= 3) {
@@ -110,7 +154,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
     });
 
     return result;
-  }, [form.sections]);
+  }, [normalizedSections]);
 
   const totalSteps = steps.length || 1;
   const [currentStep, setCurrentStep] = React.useState(0);
@@ -124,7 +168,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
   } = useForm<Record<string, unknown>>({
     resolver: zodResolver(schema),
     defaultValues: useMemo(() => {
-      const allFields = flattenSectionFields(form.sections);
+      const allFields = flattenSectionFields(normalizedSections);
 
       const accumulator = allFields.reduce<Record<string, unknown>>(
         (acc, field) => {
@@ -179,7 +223,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
       );
 
       return accumulator;
-    }, [form.sections]),
+    }, [normalizedSections]),
     mode: "onBlur",
   });
 
@@ -187,6 +231,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
 
   const onSubmit: SubmitHandler<Record<string, unknown>> = async (data) => {
     console.warn("Form submitted:", data);
+    sendFormData(id, data);
   };
 
   const renderField = (field: BackendField): React.ReactNode => {

@@ -187,7 +187,36 @@ export const fetchFormData = async (
         `/api/public/retreats/${retreatId}/form/participant`,
         {
           baseUrl: "http://localhost:3001", // URL do MSW
+          requireAuth: false,
         }
+      )
+    );
+
+    if (result.success && result.data) {
+      return result.data as BackendForm;
+    }
+    return {} as BackendForm;
+  } catch (error) {
+    console.error("Erro ao buscar dados do formulario:", error);
+    return {} as BackendForm;
+  }
+};
+
+export const sendFormData = async (
+  retreatId: string,
+  body: Record<string, unknown>
+): Promise<BackendForm> => {
+  try {
+    const result = await handleApiResponse<BackendForm>(
+      await sendRequestServerVanilla.post(
+        `/Registrations`,
+        {
+          payload: {
+            retreatId: retreatId,
+            ...body,
+          },
+        },
+        { requireAuth: false }
       )
     );
 

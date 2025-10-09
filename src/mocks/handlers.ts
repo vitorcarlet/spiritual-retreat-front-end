@@ -22,7 +22,7 @@ import {
 import { mockTents } from "./handlerData/retreats/tents";
 import { columnsMock } from "./handlerData/reports/columns";
 import { createByOrigin, MockNotification, mockNotifications } from "./handlerData/notifications";
-import { sections } from "./handlerData/formData";
+import { sections2 as sections } from "./handlerData/formData";
 
 type Request = {
   email?: string;
@@ -1003,6 +1003,31 @@ export const handlers = [
       };
 
       return HttpResponse.json(form, { status: 200 });
+    }
+  ),
+
+   http.get(
+    "http://localhost:3001/api/public/retreats/:id/form/service-team",
+    ({ params }) => {
+      const id = params.id as string;
+
+      const form = {
+        id: `retreat-${id}-service-team-form`,
+        title: "Inscrição - XV RahaminVIDA - Equipe de Serviço",
+        description: "Preencha seus dados para servir no retiro",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        sections
+      };
+
+      return HttpResponse.json(form, { status: 200 });
+    }
+  ),
+
+  http.post("http://localhost:3001/api/Registrations",
+    async ({request}) => {
+      const body = await request.json()
+      return HttpResponse.json(body, {status: 200})
     }
   ),
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -11,6 +11,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
+  Typography,
 } from "@mui/material";
 import { useFormEditorSchema } from "./useFormEditorSchema";
 import {
@@ -28,16 +30,86 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
 import SectionCard from "./SectionCard";
-import { sections } from "@/src/mocks/handlerData/formData";
+import { BackendForm } from "../public/retreats/form/types";
+import {
+  handleApiResponse,
+  sendRequestServerVanilla,
+} from "@/src/lib/sendRequestServerVanilla";
+import { FormSchemaDefinition } from "./types";
 
-const MOCK_FORM_SCHEMA = {
-  id: "mock-form-editor",
-  title: "Formulário de Exemplo",
-  description: "Estrutura carregada do mock local",
-  sections,
+const cloneForm = <T,>(value: T): T => {
+  if (typeof structuredClone === "function") {
+    return structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value)) as T;
 };
 
-export function FormEditor() {
+interface FormEditorProps {
+  id: string;
+  type: string;
+}
+
+const fetchFormData = async (
+  retreatId: string,
+  type: "participant" | "service-team"
+): Promise<BackendForm> => {
+  try {
+    const result = await handleApiResponse<BackendForm>(
+      await sendRequestServerVanilla.get(
+        `/api/public/retreats/${retreatId}/form/${type}`,
+        {
+          baseUrl: "http://localhost:3001", // URL do MSW
+        }
+      )
+    );
+
+    if (result.success && result.data) {
+      return result.data as BackendForm;
+    }
+    return {} as BackendForm;
+  } catch (error) {
+    console.error("Erro ao buscar dados do formulario:", error);
+    return {} as BackendForm;
+  }
+};
+
+const sendFormData = async (
+  schema: FormSchemaDefinition,
+  retreatId: string,
+  type: string
+): Promise<BackendForm> => {
+  try {
+    const result = await handleApiResponse<BackendForm>(
+      await sendRequestServerVanilla.post(
+        `/api/public/retreats/${retreatId}/form/${type}`,
+        {
+          baseUrl: "http://localhost:3001",
+          payload: schema, // URL do MSW
+        }
+      )
+    );
+
+    if (result.success && result.data) {
+      return result.data as BackendForm;
+    }
+    return {} as BackendForm;
+  } catch (error) {
+    console.error("Erro ao buscar dados do formulario:", error);
+    return {} as BackendForm;
+  }
+};
+
+type LoadedFormEditorProps = {
+  initialSchema: BackendForm;
+  id: string;
+  type: string;
+};
+
+function FormEditorContent({
+  initialSchema,
+  id,
+  type: formType,
+}: LoadedFormEditorProps) {
   const {
     state,
     addSection,
@@ -54,7 +126,7 @@ export function FormEditor() {
     updateOption,
     removeOption,
     reorderOptions,
-  } = useFormEditorSchema(MOCK_FORM_SCHEMA);
+  } = useFormEditorSchema(initialSchema);
 
   const [showAddSectionDialog, setShowAddSectionDialog] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
@@ -83,9 +155,7 @@ export function FormEditor() {
   };
 
   async function handleSave() {
-    // TODO integrate backend: POST /api/forms/{id}
-    // For now just warn
-    console.warn("Saving schema", schema);
+    sendFormData(schema, id, formType);
   }
 
   return (
@@ -208,5 +278,94 @@ export function FormEditor() {
         </DialogActions>
       </Dialog>
     </Box>
+  );
+}
+
+export function FormEditor({ id, type }: FormEditorProps) {
+  const [initialSchema, setInitialSchema] = useState<BackendForm | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const formType = useMemo<"participant" | "service-team">(() => {
+    return type === "service-team" ? "service-team" : "participant";
+  }, [type]);
+
+  useEffect(() => {
+    const loadSchema = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchFormData(id, formType);
+        setInitialSchema(cloneForm(data));
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Falha ao carregar formulário.";
+        setError(message);
+        setInitialSchema(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSchema();
+  }, [id, formType, reloadKey]);
+
+  if (loading) {
+    return (
+      <Stack
+        spacing={2}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ py: 6 }}
+      >
+        <CircularProgress color="primary" />
+        <Typography variant="body2" color="text.secondary">
+          Carregando estrutura do formulário...
+        </Typography>
+      </Stack>
+    );
+  }
+
+  if (error) {
+    return (
+      <Stack
+        spacing={2}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ py: 6 }}
+      >
+        <Typography variant="body2" color="error">
+          {error}
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => {
+            setReloadKey((key) => key + 1);
+          }}
+        >
+          Tentar novamente
+        </Button>
+      </Stack>
+    );
+  }
+
+  if (!initialSchema) {
+    return (
+      <Stack
+        spacing={2}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ py: 6 }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Nenhuma estrutura encontrada para este formulário.
+        </Typography>
+      </Stack>
+    );
+  }
+
+  return (
+    <FormEditorContent initialSchema={initialSchema} id={id} type={type} />
   );
 }

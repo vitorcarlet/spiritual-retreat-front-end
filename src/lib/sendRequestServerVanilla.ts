@@ -56,7 +56,7 @@ export async function sendRequestServerVanillaFn(
   options: ApiOptions = {}
 ): Promise<Response> {
   const {
-    requireAuth = false,
+    requireAuth = true,
     baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
     headers = {},
     params,
