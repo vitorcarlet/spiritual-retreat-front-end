@@ -1,8 +1,7 @@
-// app/layout.tsx ou algum componente Client
 "use client";
-
 import { useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { useConfigureClientRequests } from "../hooks/useConfigureClientRequests";
 
 export default function SessionWatcher({
   children,
@@ -10,16 +9,20 @@ export default function SessionWatcher({
   children: React.ReactNode;
 }) {
   const { data: session } = useSession();
+  useConfigureClientRequests();
 
   useEffect(() => {
+    const message = session?.error;
+    if (!message) return;
+
     if (
-      session?.error.includes("RefreshTokenExpired") ||
-      session?.error.includes("RefreshTokenNotFound")
+      message.includes("RefreshTokenExpired") ||
+      message.includes("RefreshTokenNotFound")
     ) {
       console.warn("Sessão com erro de refresh — desconectando...");
       signOut();
     }
-  }, [session]);
+  }, [session?.error]);
 
   return children;
 }

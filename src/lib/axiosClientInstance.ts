@@ -13,21 +13,19 @@ const apiClient = axios.create({
 // Interceptor para adicionar token do cliente
 apiClient.interceptors.request.use(
   async (config) => {
-    try {
-      const session = await getSession(); // Use getSession para client-side
+    const session = await getSession(); // precisa ser await
+    const token =
+      session?.tokens?.access_token ||
+      (session as { accessToken?: string })?.accessToken;
 
-      if (session?.tokens?.access_token) {
-        config.headers.Authorization = `Bearer ${session.tokens.access_token}`;
-      }
-    } catch (error) {
-      console.warn("Failed to get session in interceptor:", error);
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Interceptor para resposta

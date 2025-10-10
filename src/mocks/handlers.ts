@@ -913,25 +913,43 @@ export const handlers = [
 
   // Send message to families endpoint
   http.post(
-    "http://localhost:3001/api/retreats/:id/families/send-message",
+    "http://localhost:3001/api/admin/retreats/{retreatId}/groups",
     async ({ request }) => {
       const body = await request.json() as {
         subject: string;
         message: string;
-        familyIds: string[];
         messageType: "email" | "sms" | "notification";
       };
       
       return HttpResponse.json({
         success: true,
-        message: `Mensagem enviada para ${body.familyIds.length} família(s) com sucesso`,
+        message: `Mensagem enviada para todas as família com sucesso`,
         data: {
-          messagesSent: body.familyIds.length,
           messageType: body.messageType,
         }
       }, { status: 200 });
     }
   ),
+
+   http.post(
+    "http://localhost:3001/api/admin/retreats/{retreatId}/groups/{familyId}/notify",
+    async ({ request, params }) => {
+      const body = await request.json() as {
+        subject: string;
+        message: string;
+        messageType: "email" | "sms" | "notification";
+      };
+      
+      return HttpResponse.json({
+        success: true,
+        message: `Mensagem enviada para a família ${params.familyId} com sucesso`,
+        data: {
+          messageType: body.messageType,
+        }
+      }, { status: 200 });
+    }
+  ),
+
 
   http.get(
     "http://localhost:3001/api/public/retreats",

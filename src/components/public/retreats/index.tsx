@@ -2,8 +2,8 @@
 import { Container, Typography } from "@mui/material";
 import {
   handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+  sendRequestClientVanilla,
+} from "@/src/lib/sendRequestClientVanilla";
 import { useQuery } from "@tanstack/react-query";
 import { Box, Stack } from "@mui/material";
 import FilterButton from "@/src/components/filters/FilterButton";
@@ -19,6 +19,7 @@ import {
 import { Retreat } from "@/src/types/retreats";
 import { getFilters } from "./getFilters";
 import PublicRetreatsCardTable from "./table";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 const getRetreats = async (
   filters: TableDefaultFilters<
@@ -26,7 +27,7 @@ const getRetreats = async (
   >
 ) => {
   const response = await handleApiResponse<RetreatRequest>(
-    await sendRequestServerVanilla.get("/public/retreats", { params: filters })
+    await apiClient.get("/public/retreats", { params: filters })
   );
 
   if (!response || response.error) {
@@ -49,6 +50,7 @@ export default function PublicRetreatsPage() {
     });
 
   const filtersConfig = getFilters();
+  //const { status: sessionStatus } = useSession();
   const {
     data: retreatsData,
     isLoading,
@@ -56,7 +58,8 @@ export default function PublicRetreatsPage() {
   } = useQuery({
     queryKey: ["retreats", filters],
     queryFn: () => getRetreats(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes,
+    //enabled: sessionStatus === "authenticated",
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleView = (retreat: Retreat) => {
@@ -79,9 +82,10 @@ export default function PublicRetreatsPage() {
     ? retreatsData?.rows
     : ([retreatsData?.rows] as unknown as Retreat[]);
 
-  if (isLoading) return <Typography>Loading retreats...</Typography>;
+  if (isLoading || !retreatsDataArray.length)
+    return <Typography>Loading retreats...</Typography>;
   if (isError) return <Typography>No data available.</Typography>;
-
+  console.log({ retreatsData });
   return (
     <Container
       maxWidth="xl"

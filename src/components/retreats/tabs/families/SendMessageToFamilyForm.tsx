@@ -15,10 +15,11 @@ import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+import { useSession } from "next-auth/react";
+import { useMemo } from "react";
+import axios from "axios";
+import apiClient from "@/src/lib/axiosClientInstance";
+import { enqueueSnackbar } from "notistack";
 
 interface SendMessageToFamilyFormProps {
   retreatId: string;
@@ -41,6 +42,15 @@ export default function SendMessageToFamilyForm({
   onSuccess,
 }: SendMessageToFamilyFormProps) {
   const t = useTranslations();
+  const { data: sessionData } = useSession();
+  const accessToken = useMemo(() => {
+    if (!sessionData) return undefined;
+    const tokenFromTokens = (
+      sessionData as { tokens?: { access_token?: string } }
+    ).tokens?.access_token;
+    if (tokenFromTokens) return tokenFromTokens;
+    return (sessionData as { accessToken?: string })?.accessToken;
+  }, [sessionData]);
 
   const {
     control,
@@ -64,36 +74,66 @@ export default function SendMessageToFamilyForm({
 
   const handleFamilySelection = (familyId: string) => {
     const currentSelected = selectedFamilies || [];
-    const newSelected = currentSelected.includes(familyId)
-      ? currentSelected.filter((id) => id !== familyId)
-      : [...currentSelected, familyId];
-    setValue("selectedFamilies", newSelected);
+    const isAlreadySelected = currentSelected.includes(familyId);
+
+    setValue("selectedFamilies", isAlreadySelected ? [] : [familyId]);
   };
 
   const onSubmit = async (data: MessageData) => {
     try {
+      if (!accessToken) {
+        return;
+      }
+
+      const selectedFamilyId = data.selectedFamilies[0];
+
+      const endpoint = data.sendToAll
+        ? `/admin/retreats/${retreatId}/groups`
+        : `/admin/retreats/${retreatId}/groups/${selectedFamilyId}/notify`;
+
       const payload = {
-        ...data,
+        subject: data.subject,
+        message: data.message,
         familyIds: data.sendToAll
           ? families.map((f) => f.id)
-          : data.selectedFamilies,
+          : selectedFamilyId
+            ? [selectedFamilyId]
+            : [],
       };
 
-      const response = await handleApiResponse(
-        await sendRequestServerVanilla.post(
-          `/retreats/${retreatId}/families/send-message`,
-          payload
-        )
-      );
+      const response = await apiClient.post(endpoint, payload);
 
-      if (response.success) {
+      if (response.status >= 200 && response.status < 300) {
         reset();
         onSuccess();
+        enqueueSnackbar("Mensagem enviada com sucesso!", {
+          variant: "success",
+          autoHideDuration: 3000,
+        });
       } else {
-        console.error("Erro ao enviar mensagem:", response.error);
+        console.error("Erro ao enviar mensagem:", response);
+        enqueueSnackbar("Não foi possível enviar a mensagem.", {
+          variant: "error",
+          autoHideDuration: 3000,
+        });
       }
     } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
+      if (axios.isAxiosError(error)) {
+        const message =
+          (error.response?.data as { error?: string })?.error ??
+          error.message ??
+          "Não foi possível enviar a mensagem.";
+        enqueueSnackbar(message, {
+          variant: "error",
+          autoHideDuration: 4000,
+        });
+      } else {
+        enqueueSnackbar("Não foi possível enviar a mensagem.", {
+          variant: "error",
+          autoHideDuration: 4000,
+        });
+      }
     }
   };
 
@@ -160,12 +200,12 @@ export default function SendMessageToFamilyForm({
                   key={family.id}
                   label={family.name}
                   variant={
-                    selectedFamilies?.includes(String(family.id))
+                    selectedFamilies?.[0] === String(family.id)
                       ? "filled"
                       : "outlined"
                   }
                   color={
-                    selectedFamilies?.includes(String(family.id))
+                    selectedFamilies?.[0] === String(family.id)
                       ? "primary"
                       : "default"
                   }
@@ -194,7 +234,9 @@ export default function SendMessageToFamilyForm({
             type="submit"
             variant="contained"
             disabled={
-              isSubmitting || (!sendToAll && selectedFamilies?.length === 0)
+              isSubmitting ||
+              !accessToken ||
+              (!sendToAll && selectedFamilies?.length === 0)
             }
             startIcon={
               isSubmitting ? <CircularProgress size={16} /> : undefined

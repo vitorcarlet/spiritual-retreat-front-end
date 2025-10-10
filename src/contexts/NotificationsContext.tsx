@@ -6,11 +6,13 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useMemo,
 } from "react";
 import {
   handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+  sendRequestClientVanilla,
+} from "@/src/lib/sendRequestClientVanilla";
+import { useSession } from "next-auth/react";
 
 export type NotificationItem = {
   id: number | string;
@@ -42,10 +44,20 @@ export function NotificationsProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { data: sessionData } = useSession();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const unreadCount = items.filter((n) => !n.read).length;
+
+  const accessToken = useMemo(() => {
+    if (!sessionData) return undefined;
+    const tokenFromTokens = (
+      sessionData as { tokens?: { access_token?: string } }
+    ).tokens?.access_token;
+    if (tokenFromTokens) return tokenFromTokens;
+    return (sessionData as { accessToken?: string })?.accessToken;
+  }, [sessionData]);
 
   const addNotification = useCallback((notification: NotificationItem) => {
     setItems((prev) => [notification, ...prev]);
@@ -58,10 +70,13 @@ export function NotificationsProvider({
   }, []);
 
   const fetchNotifications = useCallback(async () => {
+    if (!accessToken) return;
     setLoading(true);
     try {
       const resp = await handleApiResponse<NotificationItem[]>(
-        await sendRequestServerVanilla.get("/notifications")
+        await sendRequestClientVanilla.get("/notifications", {
+          getAccessToken: async () => accessToken,
+        })
       );
       if (!resp.success) throw new Error(resp.error || "Falha ao buscar");
       setItems(resp.data || []);
@@ -71,23 +86,30 @@ export function NotificationsProvider({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accessToken]);
 
   const markAllAsRead = useCallback(async () => {
+    if (!accessToken) return;
     try {
       const ids = items.filter((n) => !n.read).map((n) => n.id);
       if (ids.length) {
         await handleApiResponse(
-          await sendRequestServerVanilla.post("/notifications/mark-all-read", {
-            ids,
-          })
+          await sendRequestClientVanilla.post(
+            "/notifications/mark-all-read",
+            {
+              ids,
+            },
+            {
+              getAccessToken: async () => accessToken,
+            }
+          )
         );
       }
       setItems((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
-  }, [items]);
+  }, [accessToken, items]);
 
   // Busca notificações na inicialização
   useEffect(() => {

@@ -84,6 +84,7 @@ import {
   TRASH_ID,
 } from "./shared";
 import { LoadingScreen } from "@/src/components/loading-screen";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 // export default {
 //   title: "Presets/Sortable/Multiple Containers",
@@ -253,22 +254,19 @@ export default function RetreatFamiliesTable({
       setRulesError(null);
 
       try {
-        const response =
-          await handleApiResponse<FamilyCompositionRulesResponse>(
-            await sendRequestServerVanilla.get(
-              `/retreats/${retreatId}/families/rules`
-            )
-          );
+        const response = await apiClient.get(
+          `/retreats/${retreatId}/families/rules`
+        );
 
         if (!isActive) {
           return;
         }
 
-        if (response.success && response.data?.rules) {
+        if (response.data && response.data?.rules) {
           setCompositionRules(response.data.rules);
         } else {
           setCompositionRules(null);
-          setRulesError(response.error || t("fetch-error"));
+          setRulesError(response.statusText || t("fetch-error"));
         }
       } catch (error) {
         if (!isActive) {

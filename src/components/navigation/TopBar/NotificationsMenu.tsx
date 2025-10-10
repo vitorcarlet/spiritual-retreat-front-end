@@ -21,7 +21,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useModal } from "@/src/hooks/useModal";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { sendRequestServerVanilla } from "@/src/lib/sendRequestServerVanilla";
+import { sendRequestClientVanilla } from "@/src/lib/sendRequestClientVanilla";
 import {
   useNotifications,
   NotificationItem,
@@ -104,7 +104,7 @@ const NotificationsMenu = () => {
     markAsRead(n.id);
     // opcional: avisa backend
     try {
-      await sendRequestServerVanilla.post(`/notifications/${n.id}/read`);
+      await sendRequestClientVanilla.post(`/notifications/${n.id}/read`);
     } catch {
       // ignore
     }

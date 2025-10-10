@@ -5,6 +5,7 @@ import SnackbarClientProvider from "@/src/providers/SnackbarProvider";
 import NotificationListener from "@/src/components/notifications/NotificationListener";
 import TokenErrorMonitor from "@/src/components/auth/TokenErrorMonitor";
 import { SessionProvider } from "next-auth/react";
+import SessionWatcher from "@/src/providers/SessionWatcher";
 
 export const metadata = {
   title: "Protected Routes",
@@ -17,15 +18,17 @@ export default function ProtectedLayout({
 }) {
   return (
     <SessionProvider>
-      <TokenErrorMonitor />
-      <DrawerProvider>
-        <NotificationsProvider>
-          <SnackbarClientProvider>
-            <NotificationListener />
-            <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
-          </SnackbarClientProvider>
-        </NotificationsProvider>
-      </DrawerProvider>
+      <SessionWatcher>
+        <TokenErrorMonitor />
+        <DrawerProvider>
+          <NotificationsProvider>
+            <SnackbarClientProvider>
+              <NotificationListener />
+              <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
+            </SnackbarClientProvider>
+          </NotificationsProvider>
+        </DrawerProvider>
+      </SessionWatcher>
     </SessionProvider>
   );
 }

@@ -35,6 +35,7 @@ import ConfigureFamily from "./ConfigureFamily";
 import DrawFamilies from "./DrawFamilies";
 import { Items } from "./types";
 import FamilyDetails from "./FamilyDetails";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 interface RetreatFamilyRequest {
   rows: RetreatFamily[];
@@ -51,17 +52,10 @@ const getRetreatFamilies = async (
   >,
   retreatId: string
 ) => {
-  const response = await handleApiResponse<
-    RequestResponse<RetreatFamilyRequest>
-  >(
-    await sendRequestServerVanilla.get(`/retreats/${retreatId}/families`, {
-      params: filters,
-    })
-  );
+  const response = await apiClient.get(`/retreats/${retreatId}/families`, {
+    params: filters,
+  });
 
-  if (!response || response.error) {
-    throw new Error("Failed to fetch retreats");
-  }
   return response.data as unknown as RetreatFamilyRequest;
 };
 
@@ -308,12 +302,9 @@ export default function RetreatFamilies({
           })
         );
 
-        await sendRequestServerVanilla.put(
-          `/retreats/${retreatId}/families/reorder`,
-          {
-            data: reorderData,
-          }
-        );
+        await apiClient.put(`/retreats/${retreatId}/families/reorder`, {
+          data: reorderData,
+        });
         setFamiliesReorderFlag(false);
         // Refetch families data to get updated order
         queryClient.invalidateQueries({ queryKey: ["retreat-families"] });

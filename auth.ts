@@ -142,6 +142,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       session.user = token.data.user;
       session.validity = token.data.validity;
+      session.tokens = token.data.tokens;
       session.error = token.error;
       //console.log(session, 'SESSION CALLBACK')
       return session;
