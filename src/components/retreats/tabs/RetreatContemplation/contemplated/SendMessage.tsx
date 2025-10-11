@@ -46,9 +46,12 @@ import {
 import StarterKit from "@tiptap/starter-kit";
 import Mention from "@tiptap/extension-mention";
 import { Editor, useEditor } from "@tiptap/react";
+import { useSnackbar } from "notistack";
+import apiClient from "@/src/lib/axiosClientInstance";
+import axios from "axios";
 
 export interface MessageParticipant {
-  id: number;
+  id: string;
   name: string;
   //avatarUrl?: string;
 }
@@ -61,19 +64,16 @@ export interface MessageVariable {
 }
 
 interface SendMessageProps {
+  retreatId: string;
+  mode: "single" | "all";
   participants: MessageParticipant[];
-  preselectedIds?: string[];
   loadingParticipants?: boolean;
   variables?: MessageVariable[];
   defaultMessageTemplate?: string;
   maxVisibleChips?: number;
-  onSubmit?: (payload: {
-    participantIds: string[];
-    messageHtml: string;
-    messageText: string;
-    channels: { whatsapp: boolean; email: boolean; sms: boolean };
-  }) => Promise<void> | void;
+  initialParticipantIds?: string[];
   onCancel?: () => void;
+  onSuccess?: () => void;
   disabled?: boolean;
 }
 
@@ -186,8 +186,10 @@ function updateSuggestion(el: HTMLDivElement, props: any) {
 }
 
 export const SendMessage: React.FC<SendMessageProps> = ({
+  retreatId,
+  mode,
   participants,
-  preselectedIds = [],
+  initialParticipantIds = [],
   loadingParticipants,
   variables = [
     { key: "nome", label: "Nome do participante" },
@@ -199,10 +201,11 @@ export const SendMessage: React.FC<SendMessageProps> = ({
   ],
   defaultMessageTemplate = DEFAULT_TEMPLATE,
   maxVisibleChips = 9,
-  onSubmit,
   onCancel,
+  onSuccess,
   //disabled,
 }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const [selected, setSelected] = useState<MessageParticipant[]>([]);
   const [channels, setChannels] = useState({
     whatsapp: true,
@@ -214,11 +217,26 @@ export const SendMessage: React.FC<SendMessageProps> = ({
 
   // Sync initial preselected
   useEffect(() => {
-    if (participants.length) {
-      const pre = participants.filter((p) => preselectedIds.includes(p.id));
-      setSelected(pre);
+    if (!participants.length) {
+      setSelected([]);
+      return;
     }
-  }, [participants, preselectedIds]);
+
+    if (mode === "all") {
+      setSelected(participants);
+      return;
+    }
+
+    const initial = participants.find((p) =>
+      initialParticipantIds.includes(String(p.id))
+    );
+
+    if (initial) {
+      setSelected([initial]);
+    } else {
+      setSelected([participants[0]]);
+    }
+  }, [participants, mode, initialParticipantIds]);
 
   // TipTap editor
   const mentionExt = useMemo(
@@ -231,34 +249,99 @@ export const SendMessage: React.FC<SendMessageProps> = ({
     content: defaultMessageTemplate,
   }) as Editor | null;
 
-  const allSelectedIds = useMemo(() => selected.map((s) => s.id), [selected]);
+  const allSelectedIds = useMemo(
+    () => selected.map((s) => String(s.id)),
+    [selected]
+  );
+
+  const chipsSource = mode === "all" ? participants : selected;
 
   const visibleChips = expandedChips
-    ? selected
-    : selected.slice(0, maxVisibleChips);
+    ? chipsSource
+    : chipsSource.slice(0, maxVisibleChips);
 
-  const overflowCount = selected.length - visibleChips.length;
+  const overflowCount = chipsSource.length - visibleChips.length;
 
   const toggleChannel = (key: keyof typeof channels) =>
     setChannels((c) => ({ ...c, [key]: !c[key] }));
 
   const handleSubmit = useCallback(async () => {
-    if (!editor || !selected.length) return;
+    if (!editor) return;
+
+    if (mode === "single" && !selected.length) {
+      enqueueSnackbar("Selecione um participante para enviar a mensagem.", {
+        variant: "warning",
+        autoHideDuration: 3000,
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const html = editor.getHTML();
       const text = editor.getText();
-
-      await onSubmit?.({
-        participantIds: allSelectedIds,
+      const payload = {
+        participantIds:
+          mode === "all" ? participants.map((p) => p.id) : allSelectedIds,
         messageHtml: html,
         messageText: text,
         channels,
+      };
+
+      if (!channels.whatsapp && !channels.email && !channels.sms) {
+        enqueueSnackbar("Selecione ao menos um meio de envio.", {
+          variant: "warning",
+          autoHideDuration: 3000,
+        });
+        setSubmitting(false);
+        return;
+      }
+
+      if (mode === "all") {
+        await apiClient.post(
+          `/admin/notifications/retreats/${retreatId}/notify-selected`,
+          payload
+        );
+      } else {
+        const registrationId = allSelectedIds[0];
+        await apiClient.post(
+          `/admin/notifications/registrations/${registrationId}/notify`,
+          {
+            messageHtml: html,
+            messageText: text,
+            channels,
+          }
+        );
+      }
+
+      enqueueSnackbar("Mensagem enviada com sucesso!", {
+        variant: "success",
+        autoHideDuration: 3000,
+      });
+
+      onSuccess?.();
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Não foi possível enviar a mensagem.";
+      enqueueSnackbar(message, {
+        variant: "error",
+        autoHideDuration: 4000,
       });
     } finally {
       setSubmitting(false);
     }
-  }, [editor, selected.length, allSelectedIds, channels, onSubmit]);
+  }, [
+    editor,
+    mode,
+    selected.length,
+    enqueueSnackbar,
+    participants,
+    allSelectedIds,
+    channels,
+    retreatId,
+    onSuccess,
+  ]);
 
   const insertVariable = (key: string) => {
     if (!editor) return;
@@ -300,34 +383,55 @@ export const SendMessage: React.FC<SendMessageProps> = ({
             display: "block",
           }}
         >
-          Selecionados
+          {mode === "all"
+            ? "Mensagens para todos os contemplados"
+            : "Participante selecionado"}
         </Typography>
-        <Autocomplete
-          multiple
-          options={participants}
-          loading={loadingParticipants}
-          value={selected}
-          onChange={(_, val) => setSelected(val)}
-          getOptionLabel={(o) => o.name}
-          isOptionEqualToValue={(a, b) => a.id === b.id}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Pesquisar participantes..."
-              variant="outlined"
-              size="small"
-            />
-          )}
-          renderTags={() => null} // custom chips below
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              flexWrap: "wrap",
-              alignItems: "flex-start",
-              p: 0.5,
-              minHeight: 56,
-            },
-          }}
-        />
+        {mode === "single" ? (
+          <Autocomplete
+            multiple={false}
+            options={participants}
+            loading={loadingParticipants}
+            value={selected[0] ?? null}
+            onChange={(_, val) => {
+              if (val) {
+                setSelected([val]);
+              }
+            }}
+            getOptionLabel={(o) => o.name}
+            isOptionEqualToValue={(a, b) => a.id === b.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Pesquisar participante..."
+                variant="outlined"
+                size="small"
+              />
+            )}
+            renderTags={() => null}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                flexWrap: "wrap",
+                alignItems: "flex-start",
+                p: 0.5,
+                minHeight: 56,
+              },
+            }}
+          />
+        ) : (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 1,
+              bgcolor: "action.hover",
+              borderStyle: "dashed",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              A mensagem será enviada para todos os contemplados atuais.
+            </Typography>
+          </Paper>
+        )}
         <Box
           sx={{
             mt: 0.5,
@@ -351,8 +455,10 @@ export const SendMessage: React.FC<SendMessageProps> = ({
               key={p.id}
               size="small"
               label={p.name}
-              onDelete={() =>
-                setSelected((s) => s.filter((x) => x.id !== p.id))
+              onDelete={
+                mode === "single"
+                  ? () => setSelected((s) => s.filter((x) => x.id !== p.id))
+                  : undefined
               }
               sx={{
                 bgcolor: "background.paper",
@@ -392,7 +498,7 @@ export const SendMessage: React.FC<SendMessageProps> = ({
             color="text.secondary"
             sx={{ display: "block", mt: 0.5 }}
           >
-            Mostrando todos os {selected.length} participantes.
+            Mostrando todos os {chipsSource.length} participantes.
           </Typography>
         </Collapse>
       </Box>
@@ -422,26 +528,16 @@ export const SendMessage: React.FC<SendMessageProps> = ({
           }}
         >
           {editor && (
-            <RichTextEditorProvider
-              editor={editor}
-              //   editable={!disabled && !submitting}
-              //   slotProps={{
-              //     editorContent: {
-              //       sx: {
-              //         px: 1.25,
-              //         py: 1,
-              //         minHeight: 160,
-              //         fontSize: 14,
-              //         outline: "none",
-              //         "&:focus": {
-              //           boxShadow: "0 0 0 2px var(--mui-palette-primary-main)",
-              //         },
-              //       },
-              //     },
-              //   }}
-              //extensions={[StarterKit, mentionExt]}
-            >
+            <RichTextEditorProvider editor={editor}>
               <RichTextField
+                sx={{
+                  "& .MuiTiptap-RichTextField-content": {
+                    backgroundColor: "background.default",
+                  },
+                  "& .MuiTiptap-MenuBar-root": {
+                    backgroundColor: "action.active",
+                  },
+                }}
                 controls={
                   <MenuControlsContainer>
                     <MenuSelectHeading />
@@ -579,7 +675,7 @@ export const SendMessage: React.FC<SendMessageProps> = ({
           loading={submitting}
           disabled={
             submitting ||
-            !selected.length ||
+            (mode === "single" && !selected.length) ||
             (!channels.whatsapp && !channels.email && !channels.sms) ||
             !editor?.getText().trim()
           }

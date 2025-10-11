@@ -62,6 +62,82 @@ type ServiceSpaceMemberInput = Partial<{
 const createRandomId = (prefix: string) =>
   `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
+type MockFamilyGroupStatus = "none" | "creating" | "active" | "failed";
+
+type MockFamilyGroup = {
+  retreatId: string;
+  familyId: string;
+  name: string;
+  groupStatus: MockFamilyGroupStatus;
+  groupLink: string | null;
+  groupExternalId: string | null;
+  groupChannel: string | null;
+  groupCreatedAt: string | null;
+  groupLastNotifiedAt: string | null;
+  groupVersion: number | null;
+};
+
+const mockFamilyGroupsByRetreat = new Map<string, MockFamilyGroup[]>();
+
+const ensureFamilyGroups = (retreatId: string): MockFamilyGroup[] => {
+  if (!mockFamilyGroupsByRetreat.has(retreatId)) {
+    const statuses: MockFamilyGroupStatus[] = [
+      "none",
+      "creating",
+      "active",
+      "failed",
+    ];
+    const channels = ["WhatsApp", "Telegram", "Signal"];
+    const groups = mockFamilies.map((family, index) => {
+      const status = statuses[index % statuses.length];
+      const hasGroup = status !== "none";
+      const createdAt = hasGroup
+        ? new Date(Date.now() - (index + 1) * 86_400_000).toISOString()
+        : null;
+      const lastNotifiedAt =
+        hasGroup && status === "active"
+          ? new Date(Date.now() - (index + 1) * 43_200_000).toISOString()
+          : null;
+
+      return {
+        retreatId,
+        familyId: String(family.id),
+        name: family.name,
+        groupStatus: status,
+        groupLink: hasGroup
+          ? `https://chat.example.com/${retreatId}/${family.id}`
+          : null,
+        groupExternalId: hasGroup ? `grp-${family.id}` : null,
+        groupChannel: hasGroup ? channels[index % channels.length] : null,
+        groupCreatedAt: createdAt,
+        groupLastNotifiedAt: lastNotifiedAt,
+        groupVersion: hasGroup ? 1 : null,
+      } satisfies MockFamilyGroup;
+    });
+
+    mockFamilyGroupsByRetreat.set(retreatId, groups);
+  }
+
+  return mockFamilyGroupsByRetreat.get(retreatId) ?? [];
+};
+
+const getGroupsSummary = (groups: MockFamilyGroup[]) => {
+  return groups.reduce(
+    (acc, group) => {
+      acc.totalFamilies += 1;
+      acc[group.groupStatus] += 1;
+      return acc;
+    },
+    {
+      totalFamilies: 0,
+      none: 0,
+      creating: 0,
+      active: 0,
+      failed: 0,
+    } as Record<MockFamilyGroupStatus | "totalFamilies", number>
+  );
+};
+
 function normalizeServiceSpaceMember(
   input: ServiceSpaceMemberInput | undefined,
   fallbackIndex: number,
@@ -452,6 +528,105 @@ export const handlers = [
   ),
 
   http.get(
+    "http://localhost:3001/api/admin/retreats/:retreatId/groups",
+    ({ params, request }) => {
+      const retreatId = params.retreatId as string;
+      const url = new URL(request.url);
+      const statusFilter = url.searchParams.get("status");
+      const groups = ensureFamilyGroups(retreatId);
+
+      const items = statusFilter
+        ? groups.filter((group) => group.groupStatus === statusFilter)
+        : groups;
+
+      return HttpResponse.json(
+        {
+          items,
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  http.get(
+    "http://localhost:3001/api/admin/retreats/:retreatId/groups/status",
+    ({ params }) => {
+      const retreatId = params.retreatId as string;
+      const groups = ensureFamilyGroups(retreatId);
+      const summary = getGroupsSummary(groups);
+
+      return HttpResponse.json(summary, { status: 200 });
+    }
+  ),
+
+  http.post(
+    "http://localhost:3001/api/admin/retreats/:retreatId/groups/:familyId/resend",
+    ({ params }) => {
+      const retreatId = params.retreatId as string;
+      const familyId = params.familyId as string;
+      const groups = ensureFamilyGroups(retreatId);
+      const group = groups.find((item) => item.familyId === familyId);
+
+      if (!group) {
+        return HttpResponse.json(
+          { error: "Família não encontrada para reenviar." },
+          { status: 404 }
+        );
+      }
+
+      group.groupLastNotifiedAt = new Date().toISOString();
+      group.groupVersion = (group.groupVersion ?? 0) + 1;
+      if (group.groupStatus === "creating") {
+        group.groupStatus = "active";
+      }
+
+      mockFamilyGroupsByRetreat.set(retreatId, groups);
+
+      return HttpResponse.json(
+        {
+          success: true,
+          message: "Notificação reenviada com sucesso.",
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  http.post(
+    "http://localhost:3001/api/admin/retreats/:retreatId/groups/retry-failed",
+    ({ params }) => {
+      const retreatId = params.retreatId as string;
+      const groups = ensureFamilyGroups(retreatId);
+      let processed = 0;
+
+      groups.forEach((group) => {
+        if (group.groupStatus === "failed") {
+          group.groupStatus = "creating";
+          group.groupLink = null;
+          group.groupExternalId = null;
+          group.groupChannel = null;
+          group.groupCreatedAt = null;
+          group.groupLastNotifiedAt = null;
+          group.groupVersion = null;
+          processed += 1;
+        }
+      });
+
+      mockFamilyGroupsByRetreat.set(retreatId, groups);
+
+      return HttpResponse.json(
+        {
+          success: true,
+          message: processed
+            ? `${processed} grupo(s) reenfileirado(s) para recriação.`
+            : "Nenhum grupo pendente para reenfileirar.",
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  http.get(
     "http://localhost:3001/api/retreats/:id/service-spaces",
     ({ request, params }) => {
       const url = new URL(request.url);
@@ -786,6 +961,50 @@ export const handlers = [
     }
   ),
 
+  http.post(
+    "http://localhost:3001/api/admin/notifications/retreats/:retreatId/notify-selected",
+    async ({ params, request }) => {
+      const retreatId = params.retreatId as string;
+      const body = await request.json() as {
+        participantIds?: string[];
+        messageText?: string;
+        messageHtml?: string;
+        channels?: {
+          whatsapp?: boolean;
+          email?: boolean;
+          sms?: boolean;
+        };
+      };
+
+      return HttpResponse.json(
+        {
+          success: true,
+          message: `Mensagens para o retiro ${retreatId} enfileiradas com sucesso`,
+          data: {
+            totalParticipants: body.participantIds?.length ?? mockFamilies.length,
+            channels: body.channels,
+          },
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  http.post(
+    "http://localhost:3001/api/admin/notifications/registrations/:registrationId/notify",
+    async ({ params }) => {
+      const registrationId = params.registrationId as string;
+
+      return HttpResponse.json(
+        {
+          success: true,
+          message: `Notificação enviada para a inscrição ${registrationId}`,
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
   // Get available participants for a retreat
   http.get(
     "http://localhost:3001/api/retreats/:id/participants/available",
@@ -949,6 +1168,8 @@ export const handlers = [
       }, { status: 200 });
     }
   ),
+
+
 
 
   http.get(

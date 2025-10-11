@@ -29,7 +29,7 @@ import Link from "next/link";
 import { UniqueIdentifier } from "@dnd-kit/core";
 import { useModal } from "@/src/hooks/useModal";
 import CreateFamilyForm from "./CreateFamilyForm";
-import SendMessageToFamilyForm from "./SendMessageToFamilyForm";
+import FamilyCommunicationTabs from "./FamilyCommunicationTabs";
 import AddParticipantToFamilyForm from "./AddParticipantToFamilyForm";
 import ConfigureFamily from "./ConfigureFamily";
 import DrawFamilies from "./DrawFamilies";
@@ -259,7 +259,7 @@ export default function RetreatFamilies({
       size: "md",
       customRender() {
         return (
-          <SendMessageToFamilyForm
+          <FamilyCommunicationTabs
             retreatId={retreatId}
             families={familiesDataArray}
             onSuccess={() => {
@@ -406,7 +406,7 @@ export default function RetreatFamilies({
               onClick={sendMessageToFamily}
               disabled={familiesReorderFlag}
             >
-              {t("send-message-to-family")}
+              {t("send-messages")}
             </Button>
             <Button
               variant="contained"

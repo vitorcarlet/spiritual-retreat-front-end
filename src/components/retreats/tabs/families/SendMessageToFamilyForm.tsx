@@ -19,7 +19,7 @@ import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 import axios from "axios";
 import apiClient from "@/src/lib/axiosClientInstance";
-import { enqueueSnackbar } from "notistack";
+import { useSnackbar } from "notistack";
 
 interface SendMessageToFamilyFormProps {
   retreatId: string;
@@ -43,6 +43,7 @@ export default function SendMessageToFamilyForm({
 }: SendMessageToFamilyFormProps) {
   const t = useTranslations();
   const { data: sessionData } = useSession();
+  const { enqueueSnackbar } = useSnackbar();
   const accessToken = useMemo(() => {
     if (!sessionData) return undefined;
     const tokenFromTokens = (

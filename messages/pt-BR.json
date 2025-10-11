@@ -135,7 +135,8 @@
     "no-members": "Esta família ainda não possui integrantes.",
     "close": "Fechar",
     "no-leader": "Nenhum líder definido",
-    "family-color": "Cor da Família"
+    "family-color": "Cor da Família",
+    "send-messages": "Enviar Mensagens"
   },
   "tents": {
     "createIndividual": "Cadastro individual",

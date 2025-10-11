@@ -5,10 +5,6 @@ import { Avatar, Box, Button, Chip, Stack } from "@mui/material";
 import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
 import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 //import ContemplatedummaryModal from "../ContemplatedummaryModal";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +19,9 @@ import {
 import { useModal } from "@/src/hooks/useModal";
 import ParticipantForm from "../no-contemplated/ParticipantForm";
 import { SendMessage } from "./SendMessage";
+import apiClient from "@/src/lib/axiosClientInstance";
+import axios from "axios";
+import { enqueueSnackbar } from "notistack";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
@@ -44,16 +43,25 @@ const getContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
   id: string
 ) => {
-  const response = await handleApiResponse<ContemplatedDataRequest>(
-    await sendRequestServerVanilla.get(`/retreats/${id}/contemplated`, {
-      params: filters,
-    })
-  );
+  try {
+    const response = await apiClient.get<ContemplatedDataRequest>(
+      `/retreats/${id}/contemplated`,
+      {
+        params: filters,
+      }
+    );
 
-  if (!response || response.error) {
-    throw new Error("Failed to fetch Contemplated");
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao resgatar contemplados:", error);
+    const message = axios.isAxiosError(error)
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
+      : "Erro ao reenviar notificação.";
+    enqueueSnackbar(message, {
+      variant: "error",
+      autoHideDuration: 4000,
+    });
   }
-  return response.data as ContemplatedDataRequest;
 };
 
 // Definir as colunas da tabela
@@ -275,16 +283,49 @@ export default function ContemplatedTable({ id }: { id: string }) {
       </Box>
     );
   }
-  function handleOpenMessagesComponent(selectedIds: GridRowId[]): void {
-    const selectedParticipants =
-      contemplatedDataArray
-        ?.filter((participant) => selectedIds.includes(participant.id))
-        .map((p) => ({ name: p.name, id: p.id })) || [];
+  function handleOpenMessagesComponent(selectedIds: GridRowId[] | "all"): void {
+    const allParticipants = (contemplatedDataArray ?? []).map(
+      (participant) => ({
+        id: String(participant.id),
+        name: participant.name,
+      })
+    );
+
+    const isAll =
+      selectedIds === "all" ||
+      (Array.isArray(selectedIds) && selectedIds.length !== 1);
+
+    const initialIds =
+      Array.isArray(selectedIds) && !isAll ? [String(selectedIds[0])] : [];
+
+    if (!isAll && initialIds.length) {
+      const selectedArray = Array.isArray(selectedIds)
+        ? selectedIds
+        : [selectedIds];
+
+      selectedArray.forEach((idValue) => {
+        if (!allParticipants.find((p) => p.id === String(idValue))) {
+          allParticipants.push({
+            id: String(idValue),
+            name: `Participante ${idValue}`,
+          });
+        }
+      });
+    }
 
     modal.open({
       title: "Enviar Mensagem",
       size: "xl",
-      customRender: () => <SendMessage participants={selectedParticipants} />,
+      customRender: () => (
+        <SendMessage
+          retreatId={id}
+          mode={isAll ? "all" : "single"}
+          participants={allParticipants}
+          initialParticipantIds={initialIds}
+          onCancel={() => modal.close?.()}
+          onSuccess={() => modal.close?.()}
+        />
+      ),
     });
   }
 
@@ -345,15 +386,22 @@ export default function ContemplatedTable({ id }: { id: string }) {
         />
 
         {/* ✅ CORREÇÃO: Usar helper para contar */}
-        {getSelectedIds().length > 0 && (
+        {getSelectedIds().length === 1 && (
           <Button
             variant="outlined"
             color="primary"
             onClick={() => handleOpenMessagesComponent(getSelectedIds())}
           >
-            Enviar mensagens para ({getSelectedIds().length} contemplados)
+            Enviar mensagem para o contemplado selecionado
           </Button>
         )}
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => handleOpenMessagesComponent("all")}
+        >
+          Enviar mensagens para todos os contemplados
+        </Button>
       </Box>
 
       <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
