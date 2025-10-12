@@ -136,7 +136,8 @@
     "close": "Fechar",
     "no-leader": "Nenhum líder definido",
     "family-color": "Cor da Família",
-    "send-messages": "Enviar Mensagens"
+    "send-messages": "Enviar Mensagens",
+    "delete-family": "Deletar Família"
   },
   "tents": {
     "createIndividual": "Cadastro individual",

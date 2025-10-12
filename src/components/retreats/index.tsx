@@ -11,7 +11,7 @@ import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import getPermission from "@/src/utils/getPermission";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   RetreatsCardTableDateFilters,
@@ -20,32 +20,18 @@ import {
 import { Retreat } from "@/src/types/retreats";
 import { useModal } from "@/src/hooks/useModal";
 import RetreatOverview from "./CardTable/RetreatOverview";
-import {
-  handleApiResponse,
-  sendRequestClientVanilla,
-} from "@/src/lib/sendRequestClientVanilla";
 import apiClient from "@/src/lib/axiosClientInstance";
 
 const getRetreats = async (
   filters: TableDefaultFilters<
     RetreatsCardTableFilters & RetreatsCardTableDateFilters
-  >,
-  token?: string | undefined
+  >
 ) => {
   try {
-    const response = await apiClient.get("/retreats", {
+    const response = await apiClient.get("/Retreats", {
       params: filters,
-      // //requireAuth: false,
-      // headers: {
-      //   Authorization: `Bearer ${token}`,
-      // },
     });
 
-    console.log(response, "vitor");
-    // if (!response || response.status) {
-    //   console.error("Retreats API error:", response?.error);
-    //   throw new Error(response?.error ?? "Failed to fetch retreats");
-    // }
     return response.data;
   } catch (err) {
     console.error("getRetreats: ", err);
@@ -66,7 +52,7 @@ export default function RetreatsTablePage() {
       excludeFromCount: ["page", "pageLimit"], // Don't count pagination in active filters
     });
 
-  const { data: sessionData, status } = useSession();
+  const { data: sessionData } = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
 
   useEffect(() => {
@@ -82,16 +68,6 @@ export default function RetreatsTablePage() {
   }, [sessionData]);
 
   const filtersConfig = getFilters();
-  const accessToken = useMemo(() => {
-    if (!sessionData) return undefined;
-    const tokenFromTokens = (
-      sessionData as { tokens?: { access_token?: string } }
-    ).tokens?.access_token;
-    if (tokenFromTokens) {
-      return tokenFromTokens;
-    }
-    return (sessionData as { accessToken?: string })?.accessToken;
-  }, [sessionData]);
 
   const {
     data: retreatsData,
@@ -99,8 +75,7 @@ export default function RetreatsTablePage() {
     isError,
   } = useQuery({
     queryKey: ["retreats", filters],
-    queryFn: () => getRetreats(filters, accessToken),
-    enabled: Boolean(accessToken),
+    queryFn: () => getRetreats(filters),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -135,7 +110,7 @@ export default function RetreatsTablePage() {
     : ([retreatsData?.rows] as unknown as Retreat[]);
 
   if (isError) return <Typography>No data available.</Typography>;
-  console.log(retreatsData, status, sessionData, "vitor");
+
   return (
     <Container
       maxWidth="xl"

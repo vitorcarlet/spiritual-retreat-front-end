@@ -10,10 +10,6 @@ import {
   Container,
   Button,
 } from "@mui/material";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import RetreatFamiliesTable from "./RetreatFamiliesTable";
 import {
   RetreatsCardTableDateFilters,
@@ -33,6 +29,7 @@ import FamilyCommunicationTabs from "./FamilyCommunicationTabs";
 import AddParticipantToFamilyForm from "./AddParticipantToFamilyForm";
 import ConfigureFamily from "./ConfigureFamily";
 import DrawFamilies from "./DrawFamilies";
+import DeleteFamilyForm from "./DeleteFamilyForm";
 import { Items } from "./types";
 import FamilyDetails from "./FamilyDetails";
 import apiClient from "@/src/lib/axiosClientInstance";
@@ -53,7 +50,7 @@ const getRetreatFamilies = async (
   retreatId: string
 ) => {
   const response = await apiClient.get(`/retreats/${retreatId}/families`, {
-    params: filters,
+    //params: filters,
   });
 
   return response.data as unknown as RetreatFamilyRequest;
@@ -158,21 +155,13 @@ export default function RetreatFamilies({
 
   const openFamilyDetails = useCallback(
     (familyId: UniqueIdentifier, startInEdit = false) => {
-      const family = familiesDataArray.find(
-        (item) => String(item.id) === String(familyId)
-      );
-
-      if (!family) {
-        return;
-      }
-
       modal.open({
-        title: tFamilyDetails("title", { family: family.name }),
+        title: tFamilyDetails("title"),
         size: "md",
         customRender() {
           return (
             <FamilyDetails
-              family={family}
+              familyId={familyId}
               retreatId={retreatId}
               canEdit={canEditFamily}
               startInEdit={startInEdit && canEditFamily}
@@ -209,15 +198,38 @@ export default function RetreatFamilies({
         },
       });
     },
-    [
-      familiesDataArray,
-      modal,
-      tFamilyDetails,
-      retreatId,
-      canEditFamily,
-      queryClient,
-      filters,
-    ]
+    [modal, tFamilyDetails, retreatId, canEditFamily, queryClient, filters]
+  );
+
+  const handleDelete = useCallback(
+    (familyId: UniqueIdentifier) => {
+      const family = familiesDataArray.find(
+        (item) => String(item.id) === String(familyId)
+      );
+
+      modal.open({
+        title: t("delete-family"),
+        size: "sm",
+        customRender() {
+          return (
+            <DeleteFamilyForm
+              retreatId={retreatId}
+              familyId={String(familyId)}
+              familyName={family?.name}
+              onSuccess={() => {
+                modal.close?.();
+                // Refetch families data
+                queryClient.invalidateQueries({
+                  queryKey: ["retreat-families"],
+                });
+              }}
+              onCancel={() => modal.close?.()}
+            />
+          );
+        },
+      });
+    },
+    [modal, t, retreatId, queryClient, familiesDataArray]
   );
 
   const handleEdit = useCallback(
@@ -295,16 +307,44 @@ export default function RetreatFamilies({
     async (items: Items) => {
       try {
         // Transform items to the format expected by the API
-        const reorderData = Object.entries(items).map(
-          ([familyId, memberIds]) => ({
-            familyId,
-            memberIds: memberIds.map((id) => String(id)),
+        const families = Object.entries(items)
+          .map(([familyId, memberIds]) => {
+            // Find the original family data
+            const originalFamily = familiesDataArray.find(
+              (f) => String(f.id) === String(familyId)
+            );
+
+            if (!originalFamily) {
+              return null;
+            }
+
+            // Map members with their positions
+            const members = memberIds.map((memberId, index) => ({
+              registrationId: String(memberId),
+              position: index,
+            }));
+
+            return {
+              familyId: String(familyId),
+              name: originalFamily.name,
+              capacity: members.length, // Use current members count as capacity
+              members,
+            };
           })
+          .filter(Boolean); // Remove null entries
+
+        const payload = {
+          retreatId: retreatId,
+          version: 0, // You may want to track version from familiesData if available
+          families,
+          ignoreWarnings: true,
+        };
+
+        await apiClient.put(
+          `/api/retreats/${retreatId}/families/reorder`,
+          payload
         );
 
-        await apiClient.put(`/retreats/${retreatId}/families/reorder`, {
-          data: reorderData,
-        });
         setFamiliesReorderFlag(false);
         // Refetch families data to get updated order
         queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
@@ -314,7 +354,7 @@ export default function RetreatFamilies({
         throw error; // Re-throw to handle in the component
       }
     },
-    [retreatId, queryClient]
+    [retreatId, queryClient, familiesDataArray]
   );
 
   const configureFamilies = () => {
@@ -454,6 +494,7 @@ export default function RetreatFamilies({
             items={familiesDataArray}
             onEdit={handleEdit}
             onView={handleView}
+            onDelete={handleDelete}
             onFiltersChange={handleFiltersChange}
             retreatId={retreatId}
             canEditFamily={canEditFamily}

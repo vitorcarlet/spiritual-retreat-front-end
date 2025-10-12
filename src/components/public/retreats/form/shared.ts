@@ -1,7 +1,3 @@
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import { BackendForm, BackendOption, BackendSection } from "./types";
 import z from "zod";
 
@@ -212,26 +208,18 @@ export const sendFormData = async (
   body: Record<string, unknown>
 ): Promise<BackendForm> => {
   try {
-    const result = await handleApiResponse<BackendForm>(
-      await sendRequestServerVanilla.post(
-        `/Registrations`,
-        {
-          payload: {
-            retreatId: retreatId,
-            ...body,
-          },
-        },
-        { requireAuth: false }
-      )
-    );
+    const response = await apiClient.post<BackendForm>(`/api/Registrations`, {
+      retreatId: retreatId,
+      ...body,
+    });
 
-    if (result.success && result.data) {
-      return result.data as BackendForm;
+    if (response.data) {
+      return response.data;
     }
     return {} as BackendForm;
   } catch (error) {
     console.error("Erro ao buscar dados do formulario:", error);
-    return {} as BackendForm;
+    throw error;
   }
 };
 

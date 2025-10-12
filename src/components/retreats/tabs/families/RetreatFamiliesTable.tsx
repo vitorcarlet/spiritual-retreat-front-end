@@ -227,6 +227,7 @@ export default function RetreatFamiliesTable({
   filters,
   onView,
   onEdit,
+  onDelete,
   total,
   setFamiliesReorderFlag,
   onSaveReorder,
@@ -619,6 +620,7 @@ export default function RetreatFamiliesTable({
               <ContainerButtons
                 onEdit={onEdit}
                 onView={onView}
+                onDelete={onDelete}
                 familyId={containerId}
                 canEdit={canEditFamily}
               />
@@ -967,6 +969,7 @@ export default function RetreatFamiliesTable({
         <ContainerButtons
           onEdit={onEdit}
           onView={onView}
+          onDelete={onDelete}
           familyId={containerId}
           canEdit={canEditFamily}
         />

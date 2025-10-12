@@ -39,6 +39,7 @@ export interface RetreatFamiliesProps {
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
   onEdit: (familyId: UniqueIdentifier) => void;
   onView: (familyId: UniqueIdentifier) => void;
+  onDelete?: (familyId: UniqueIdentifier) => void;
   total: number;
   setFamiliesReorderFlag: (flag: boolean) => void;
   onSaveReorder?: (items: Items) => Promise<void>;

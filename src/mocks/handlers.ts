@@ -30,26 +30,47 @@ type Request = {
 };
 
 function paginate<T>(items: T[], urlObj: URL) {
+  const parseIntSafe = (value: string | null, fallback: number) => {
+    const parsed = Number.parseInt(value ?? "", 10);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  };
+
+  const rawSkip = urlObj.searchParams.get("skip");
+  const rawTake = urlObj.searchParams.get("take");
   const rawPage = urlObj.searchParams.get("page");
   const rawLimit = urlObj.searchParams.get("pageLimit");
-  // Aceita pageLimit=all para retornar tudo
-  const pageLimitAll = rawLimit === "all";
-  const page = Math.max(parseInt(rawPage || "1", 10), 1);
-  const pageLimit = pageLimitAll
-    ? items.length
-    : Math.max(parseInt(rawLimit || "10", 10), 1);
 
-  const start = (page - 1) * pageLimit;
-  const end = start + pageLimit;
+  const hasSkipTake = rawSkip !== null || rawTake !== null;
+
+  const pageLimitAll = !hasSkipTake && rawLimit === "all";
+
+  const take = hasSkipTake
+    ? Math.max(parseIntSafe(rawTake, 20), 1)
+    : pageLimitAll
+    ? items.length
+    : Math.max(parseIntSafe(rawLimit, 10), 1);
+
+  const skip = hasSkipTake
+    ? Math.max(parseIntSafe(rawSkip, 0), 0)
+    : Math.max((Math.max(parseIntSafe(rawPage, 1), 1) - 1) * take, 0);
+
+  const start = Math.min(skip, Math.max(items.length, 0));
+  const end = start + take;
   const slice = items.slice(start, end);
+
+  const page = hasSkipTake
+    ? Math.floor(skip / take) + 1
+    : Math.max(parseIntSafe(rawPage, 1), 1);
 
   return {
     rows: slice,
     total: items.length,
     page,
-    pageLimit: pageLimitAll ? "all" : pageLimit,
-    hasNextPage: pageLimitAll ? false : end < items.length,
+    pageLimit: pageLimitAll ? "all" : take,
+    hasNextPage: end < items.length,
     hasPrevPage: page > 1,
+    skip,
+    take,
   };
 }
 
@@ -581,6 +602,100 @@ export const handlers = [
     return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
   }),
 
+  http.post("http://localhost:3001/api/Retreats", async ({ request }) => {
+    const contentType = request.headers.get("content-type");
+    
+    let payload: Record<string, unknown>;
+    
+    if (contentType?.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const payloadStr = formData.get("payload");
+      payload = payloadStr ? JSON.parse(payloadStr as string) : {};
+      // Images would be in formData.getAll("images") but we'll skip processing for mock
+    } else {
+      payload = (await request.json()) as Record<string, unknown>;
+    }
+    
+    const newRetreat = {
+      id: mockRetreats.length > 0 
+        ? Math.max(...mockRetreats.map(r => typeof r.id === 'number' ? r.id : 0)) + 1
+        : 1,
+      title: (payload.title as string) || "Novo Retiro",
+      edition: (payload.edition as number) || 1,
+      state: "", // Will be derived from stateShort
+      stateShort: (payload.stateShort as string) || "",
+      city: (payload.city as string) || "",
+      theme: (payload.theme as string) || "",
+      description: (payload.description as string) || "",
+      startDate: (payload.startDate as string) || "",
+      endDate: (payload.endDate as string) || "",
+      capacity: (payload.capacity as number) || 0,
+      participationTax: (payload.participationTax as string) || "",
+      enrolled: (payload.enrolled as number) || 0,
+      location: (payload.location as string) || "",
+      isActive: (payload.isActive as boolean) ?? true,
+      images: (payload.images as string[]) || [],
+      status: (payload.status as "open" | "closed" | "running" | "ended" | "upcoming") || "upcoming",
+      instructor: (payload.instructor as string) || "",
+    };
+    
+    mockRetreats.push(newRetreat);
+    
+    return HttpResponse.json(newRetreat, { status: 201 });
+  }),
+
+  http.put("http://localhost:3001/api/Retreats/:id", async ({ params, request }) => {
+    const id = params.id as string;
+    const contentType = request.headers.get("content-type");
+    
+    let payload: Record<string, unknown>;
+    
+    if (contentType?.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const payloadStr = formData.get("payload");
+      payload = payloadStr ? JSON.parse(payloadStr as string) : {};
+      // Images would be in formData.getAll("images") but we'll skip processing for mock
+    } else {
+      payload = (await request.json()) as Record<string, unknown>;
+    }
+    
+    const index = mockRetreats.findIndex((r) => r.id.toString() === id);
+    
+    if (index === -1) {
+      return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
+    }
+    
+    const updatedRetreat = {
+      ...mockRetreats[index],
+      ...payload,
+      id: mockRetreats[index].id, // Preserve original ID
+    };
+    
+    mockRetreats[index] = updatedRetreat;
+    
+    return HttpResponse.json(updatedRetreat, { status: 200 });
+  }),
+
+  http.delete("http://localhost:3001/api/Retreats/:id", ({ params }) => {
+    const id = params.id as string;
+    const index = mockRetreats.findIndex((r) => r.id.toString() === id);
+    
+    if (index === -1) {
+      return HttpResponse.json({ error: "Retreat not found" }, { status: 404 });
+    }
+    
+    const deletedRetreat = mockRetreats[index];
+    mockRetreats.splice(index, 1);
+    
+    return HttpResponse.json(
+      { 
+        message: `Retiro "${deletedRetreat.title}" excluído com sucesso`,
+        id: deletedRetreat.id
+      },
+      { status: 200 }
+    );
+  }),
+
   // Mock para /api/retreats/:id/metrics
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   http.get("http://localhost:3001/api/retreats/:id/metrics", ({ params }) => {
@@ -717,6 +832,56 @@ export const handlers = [
       const url = new URL(request.url);
       const payload = paginate(mockFamilies, url);
       return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
+
+  // Get single family by ID
+  http.get(
+    "http://localhost:3001/api/retreats/:retreatId/families/:familyId",
+    ({ params }) => {
+      const familyId = Number(params.familyId);
+      const family = mockFamilies.find((f) => f.id === familyId);
+
+      if (family) {
+        return HttpResponse.json(family, { status: 200 });
+      }
+
+      return HttpResponse.json(
+        { error: "Família não encontrada" },
+        { status: 404 }
+      );
+    }
+  ),
+
+  // Update family by ID
+  http.put(
+    "http://localhost:3001/api/retreats/:retreatId/families/:familyId",
+    async ({ params, request }) => {
+      const familyId = Number(params.familyId);
+      const body = await request.json() as {
+        name?: string;
+        contactName?: string;
+        contactEmail?: string;
+        contactPhone?: string;
+        color?: string;
+      };
+
+      const family = mockFamilies.find((f) => f.id === familyId);
+
+      if (family) {
+        const updatedFamily = {
+          ...family,
+          ...body,
+          updatedAt: new Date().toISOString(),
+        };
+
+        return HttpResponse.json(updatedFamily, { status: 200 });
+      }
+
+      return HttpResponse.json(
+        { error: "Família não encontrada" },
+        { status: 404 }
+      );
     }
   ),
 
@@ -994,7 +1159,7 @@ export const handlers = [
   ),
 
   http.get(
-    "http://localhost:3001/api/retreats/:id/families/unassigned",
+    "http://localhost:3001/api/retreats/:id/lottery/preview",
     ({ params }) => {
       const retreatId = params.id;
       const unassignedParticipants = mockFamilies
@@ -1132,7 +1297,7 @@ export const handlers = [
 
   // Family creation endpoint
   http.post(
-    "http://localhost:3001/api/retreats/:id/families",
+    "http://localhost:3001/api/retreats/:id/families/generate",
     async ({ request }) => {
       const body = await request.json() as {
         name: string;
@@ -1326,6 +1491,51 @@ export const handlers = [
     }
   ),
 
+  // Reorder families and members endpoint
+  http.put(
+    "http://localhost:3001/api/retreats/:id/families/reorder",
+    async ({ params, request }) => {
+      const retreatId = params.id as string;
+      const body = await request.json() as {
+        retreatId: string;
+        version: number;
+        families: Array<{
+          familyId: string;
+          name: string;
+          capacity: number;
+          members: Array<{
+            registrationId: string;
+            position: number;
+          }>;
+        }>;
+        ignoreWarnings: boolean;
+      };
+      
+      return HttpResponse.json({
+        success: true,
+        message: "Famílias reordenadas com sucesso",
+        data: {
+          retreatId,
+          updatedFamilies: body.families.length,
+          version: body.version + 1,
+        }
+      }, { status: 200 });
+    }
+  ),
+
+  // Delete family endpoint
+  http.delete(
+    "http://localhost:3001/api/retreats/:retreatId/families/:familyId",
+    async ({ params }) => {
+      const { retreatId, familyId } = params;
+      
+      return HttpResponse.json({
+        success: true,
+        message: `Família ${familyId} deletada com sucesso do retiro ${retreatId}`,
+      }, { status: 200 });
+    }
+  ),
+
   // Send message to families endpoint
   http.post(
     "http://localhost:3001/api/admin/retreats/{retreatId}/groups",
@@ -1465,6 +1675,89 @@ export const handlers = [
       return HttpResponse.json(body, {status: 200})
     }
   ),
+
+  http.get("http://localhost:3001/api/Registrations", ({ request }) => {
+    const url = new URL(request.url);
+    const statusParam = url.searchParams.get("status");
+    
+    let filteredParticipants = mockContemplatedParticipants;
+    
+    // Filter by status if provided (0 = not_contemplated, 1 = contemplated)
+    if (statusParam !== null) {
+      const statusValue = Number.parseInt(statusParam, 10);
+      filteredParticipants = mockContemplatedParticipants.filter((p) => {
+        const isContemplated = p.status === "contemplated";
+        return statusValue === 1 ? isContemplated : !isContemplated;
+      });
+    }
+    
+    const payload = paginate(filteredParticipants, url);
+    return HttpResponse.json(payload, { status: 200 });
+  }),
+
+  http.get("http://localhost:3001/api/Registrations/:id", ({ params }) => {
+    const id = Number(params.id);
+    const participant = mockContemplatedParticipants.find(
+      (p) => p.id === id
+    );
+
+    if (participant) {
+      return HttpResponse.json(participant, { status: 200 });
+    }
+
+    return HttpResponse.json(
+      { error: "Participante não encontrado" },
+      { status: 404 }
+    );
+  }),
+
+  http.put("http://localhost:3001/api/Registrations/:id", async ({ params, request }) => {
+    const id = Number(params.id);
+    const body = await request.json();
+    const participant = mockContemplatedParticipants.find(
+      (p) => p.id === id
+    );
+
+    if (!participant) {
+      return HttpResponse.json(
+        { error: "Participante não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Update the participant in the mock data
+    Object.assign(participant, body);
+    
+    return HttpResponse.json(
+      { 
+        ...participant,
+        message: "Participante atualizado com sucesso" 
+      },
+      { status: 200 }
+    );
+  }),
+
+  http.delete("http://localhost:3001/api/Registrations/:id", ({ params }) => {
+    const id = Number(params.id);
+    const index = mockContemplatedParticipants.findIndex(
+      (p) => p.id === id
+    );
+
+    if (index === -1) {
+      return HttpResponse.json(
+        { error: "Participante não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Remove from mock data
+    mockContemplatedParticipants.splice(index, 1);
+    
+    return HttpResponse.json(
+      { message: "Participante excluído com sucesso" },
+      { status: 200 }
+    );
+  }),
 
   http.get("http://localhost:3001/api/reports", ({ request }) => {
     const url = new URL(request.url);

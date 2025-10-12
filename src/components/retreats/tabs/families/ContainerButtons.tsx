@@ -8,6 +8,7 @@ interface ContainerButtonsProps {
   familyId: UniqueIdentifier;
   onEdit: (familyId: UniqueIdentifier) => void;
   onView: (familyId: UniqueIdentifier) => void;
+  onDelete?: (familyId: UniqueIdentifier) => void;
   canEdit: boolean;
 }
 
@@ -15,6 +16,7 @@ export default function ContainerButtons({
   familyId,
   onEdit,
   onView,
+  onDelete,
   canEdit,
 }: ContainerButtonsProps) {
   const t = useTranslations("family-details");
@@ -30,15 +32,29 @@ export default function ContainerButtons({
         {t("view")}
       </Button>
       {canEdit && (
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<Iconify icon="solar:pen-bold" />}
-          onClick={() => onEdit(familyId)}
-          sx={{ minWidth: "auto" }}
-        >
-          {t("edit")}
-        </Button>
+        <>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Iconify icon="solar:pen-bold" />}
+            onClick={() => onEdit(familyId)}
+            sx={{ minWidth: "auto" }}
+          >
+            {t("edit")}
+          </Button>
+          {onDelete && (
+            <Button
+              size="small"
+              variant="outlined"
+              color="error"
+              startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+              onClick={() => onDelete(familyId)}
+              sx={{ minWidth: "auto" }}
+            >
+              {t("delete")}
+            </Button>
+          )}
+        </>
       )}
     </Stack>
   );

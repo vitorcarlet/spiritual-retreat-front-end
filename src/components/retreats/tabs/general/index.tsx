@@ -7,15 +7,10 @@ import {
   Typography,
   Skeleton,
 } from "@mui/material";
-//import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 import { useParams, useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import { useQuery } from "@tanstack/react-query";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import { fetchRetreatData } from "../../shared";
@@ -23,6 +18,10 @@ import LocationField from "@/src/components/fields/LocalizationFields/LocationFi
 import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldMasked";
 import { Retreat } from "@/src/types/retreats";
 import MultiImageUpload from "@/src/components/fields/ImageUpload/MultiImageUpload";
+import apiClient from "@/src/lib/axiosClientInstance";
+import axios from "axios";
+import { useModal } from "@/src/hooks/useModal";
+import DeleteConfirmation from "@/src/components/confirmations/DeleteConfirmation";
 
 const emptyFormData: Omit<Retreat, "id" | "state"> = {
   title: "",
@@ -38,7 +37,7 @@ const emptyFormData: Omit<Retreat, "id" | "state"> = {
   location: "",
   participationTax: "",
   isActive: false,
-  images: [""],
+  images: [],
   status: "upcoming",
   instructor: "",
 };
@@ -58,7 +57,7 @@ function mapRetreatToFormData(r: Retreat): Omit<Retreat, "id" | "state"> {
     location: r.location ?? "",
     participationTax: r.participationTax ?? "",
     isActive: r.isActive ?? false,
-    images: r.images ?? "",
+    images: r.images ?? [],
     status: r.status ?? "upcoming",
     instructor: r.instructor ?? "",
   };
@@ -70,6 +69,7 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   const router = useRouter();
   const params = useParams();
   const retreatId = params.id as string;
+  const modal = useModal();
 
   const { data: retreatData, isLoading } = useQuery({
     queryKey: ["retreats", retreatId],
@@ -82,7 +82,6 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
     retreatData || null
   );
   const isReadOnly = menuMode === "view";
-  console.log("isReadOnly", isReadOnly);
   const [formData, setFormData] =
     useState<Omit<Retreat, "id" | "state">>(emptyFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,7 +97,6 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
 
   useEffect(() => {
     if (retreatData) {
-      console.log("Retiro data loaded:", retreatData);
       setBreadCrumbsTitle({
         title: retreatData.title,
         pathname: `/retreats/${retreatData.id}`,
@@ -132,59 +130,126 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
     }));
   };
 
+  const handleDelete = () => {
+    if (!retreat?.id) return;
+
+    modal.open({
+      title: "Confirmar exclusão",
+      size: "sm",
+      customRender: () => (
+        <DeleteConfirmation
+          title="Excluir Retiro"
+          resourceName={retreat.title}
+          description="Esta ação não pode ser desfeita e removerá permanentemente o retiro."
+          requireCheckboxLabel="Eu entendo as consequências."
+          confirmLabel="Excluir"
+          cancelLabel="Cancelar"
+          onConfirm={async () => {
+            try {
+              await apiClient.delete(`/api/Retreats/${retreat.id}`);
+
+              enqueueSnackbar("Retiro excluído com sucesso!", {
+                variant: "success",
+              });
+
+              modal.close();
+              router.push("/retreats");
+            } catch (error: unknown) {
+              const message = axios.isAxiosError(error)
+                ? ((error.response?.data as { error?: string })?.error ??
+                  error.message)
+                : "Erro ao excluir retiro. Tente novamente.";
+              enqueueSnackbar(message, {
+                variant: "error",
+              });
+              throw error; // Re-throw para o DeleteConfirmation mostrar o erro
+            }
+          }}
+          onCancel={() => modal.close()}
+        />
+      ),
+    });
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      // Exemplo: se tiver upload, envie como multipart/form-data
       const hasUploads = newImages.length > 0 || imagesToDelete.length > 0;
+
       if (isCreating) {
         const payload = { ...formData, imagesToDelete };
-        const body = hasUploads ? new FormData() : formData;
+
         if (hasUploads) {
+          const body = new FormData();
           body.append(
             "payload",
             new Blob([JSON.stringify(payload)], { type: "application/json" })
           );
           newImages.forEach((f) => body.append("images", f));
+
+          const res = await apiClient.post<Retreat>("/api/Retreats", body, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+
+          enqueueSnackbar("Retiro criado com sucesso!", {
+            variant: "success",
+          });
+          router.push(`/retreats/${res.data.id}`);
+        } else {
+          const res = await apiClient.post<Retreat>("/api/Retreats", payload);
+
+          enqueueSnackbar("Retiro criado com sucesso!", {
+            variant: "success",
+          });
+          router.push(`/retreats/${res.data.id}`);
         }
-        const res = await handleApiResponse<Retreat>(
-          await sendRequestServerVanilla.post("/api/retreat/create", body)
-        );
-        if (res.error || !res.data)
-          throw new Error(res.error || "Falha ao criar retiro");
-        const result = res.data as Retreat;
-        router.push(`/retreats/${result.id}`);
       } else {
         if (!retreat?.id) throw new Error("ID do retiro não encontrado");
+
         const payload = { ...formData, imagesToDelete };
-        const body = hasUploads ? new FormData() : payload;
+
         if (hasUploads) {
+          const body = new FormData();
           body.append(
             "payload",
             new Blob([JSON.stringify(payload)], { type: "application/json" })
           );
           newImages.forEach((f) => body.append("images", f));
+
+          const res = await apiClient.put<Retreat>(
+            `/api/Retreats/${retreat.id}`,
+            body,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
+          );
+
+          setRetreat(res.data);
+          enqueueSnackbar("Retiro atualizado com sucesso!", {
+            variant: "success",
+          });
+        } else {
+          const res = await apiClient.put<Retreat>(
+            `/api/Retreats/${retreat.id}`,
+            payload
+          );
+
+          setRetreat(res.data);
+          enqueueSnackbar("Retiro atualizado com sucesso!", {
+            variant: "success",
+          });
         }
-        const res = await handleApiResponse<Retreat>(
-          await sendRequestServerVanilla.put(`/api/retreat/${retreat.id}`, body)
-        );
-        if (res.error)
-          throw new Error(res.error || "Falha ao atualizar retiro");
-        setRetreat((res.data as Retreat) ?? null);
-        enqueueSnackbar("Retiro atualizado com sucesso!", {
-          variant: "success",
-        });
       }
-    } catch (e: unknown) {
-      enqueueSnackbar(
-        (e as Error)?.message || "Ocorreu um erro. Tente novamente.",
-        {
-          variant: "errorMUI",
-        }
-      );
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Ocorreu um erro. Tente novamente.";
+      enqueueSnackbar(message, {
+        variant: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -284,13 +349,33 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
           <MultiImageUpload
             label="Imagens do retiro"
             existing={
-              // Ajuste conforme sua API: tente usar uma galeria (retreatData?.gallery)
-              // ou faça fallback para uma única imagem de capa (formData.image)
-              (retreatData as any)?.gallery?.map((g: any) => ({
-                id: g.id,
-                url: g.url,
-                title: g.title,
-              })) || (formData.images ? [{ url: formData.images }] : [])
+              Array.isArray(
+                (
+                  retreatData as Retreat & {
+                    gallery?: Array<{
+                      id: string | number;
+                      url: string;
+                      title?: string;
+                    }>;
+                  }
+                )?.gallery
+              )
+                ? (
+                    retreatData as Retreat & {
+                      gallery: Array<{
+                        id: string | number;
+                        url: string;
+                        title?: string;
+                      }>;
+                    }
+                  ).gallery.map((g) => ({
+                    id: g.id,
+                    url: g.url,
+                    title: g.title,
+                  }))
+                : Array.isArray(formData.images)
+                  ? formData.images.map((url, idx) => ({ id: idx, url }))
+                  : []
             }
             onRemoveExisting={(id) =>
               setImagesToDelete((prev) => [...prev, id])
@@ -368,19 +453,29 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
         >
           <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
             {!isCreating && (
-              <Button
-                variant="outlined"
-                onClick={() =>
-                  setFormData(
-                    retreatData
-                      ? mapRetreatToFormData(retreatData)
-                      : emptyFormData
-                  )
-                }
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
+              <>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleDelete}
+                  disabled={isSubmitting}
+                >
+                  Excluir Retiro
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() =>
+                    setFormData(
+                      retreatData
+                        ? mapRetreatToFormData(retreatData)
+                        : emptyFormData
+                    )
+                  }
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+              </>
             )}
             <Button type="submit" variant="contained" disabled={isSubmitting}>
               {isSubmitting

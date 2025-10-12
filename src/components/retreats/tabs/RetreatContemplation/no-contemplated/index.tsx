@@ -4,11 +4,6 @@ import React, { useMemo, useState } from "react";
 import { Avatar, Box, Button, Chip, Stack } from "@mui/material";
 import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
 import { GridRowSelectionModel } from "@mui/x-data-grid";
-//import ContemplatedummaryModal from "../ContemplatedummaryModal";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useQuery } from "@tanstack/react-query";
@@ -21,22 +16,210 @@ import {
   ContemplatedTableFiltersWithDates,
 } from "../types";
 import { useTranslations } from "next-intl";
-import { RetreatsCardTableFilters } from "@/src/components/public/retreats/types";
 import { getSelectedIds as getSelectedIdsFn } from "@/src/components/table/shared";
 import DeleteConfirmation from "@/src/components/confirmations/DeleteConfirmation";
 import { useModal } from "@/src/hooks/useModal";
 import ParticipantForm, { ParticipantFormValues } from "./ParticipantForm";
-import requestServer from "@/src/lib/requestServer";
 import { enqueueSnackbar } from "notistack";
-import { DefaultResponse } from "@/src/auth/types";
+import apiClient from "@/src/lib/axiosClientInstance";
+import axios from "axios";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
   total: number;
   page: number;
   pageLimit: number;
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
+  hasPrevPage?: boolean;
+  hasNextPage?: boolean;
+};
+
+type RegistrationMeta = {
+  totalItems?: number;
+  itemCount?: number;
+};
+
+type RegistrationDTO = {
+  id?: string | number | null;
+  status?: number | string | null;
+  participantName?: string | null;
+  participantEmail?: string | null;
+  participantPhone?: string | null;
+  photoUrl?: string | null;
+  avatarUrl?: string | null;
+  activity?: string | null;
+  paymentStatus?: string | null;
+  participation?: boolean | number | string | null;
+  attendance?: boolean | number | string | null;
+  participant?: {
+    id?: string | number | null;
+    fullName?: string | null;
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    avatarUrl?: string | null;
+    photoUrl?: string | null;
+    activity?: string | null;
+  } | null;
+  registrationStatus?: number | string | null;
+};
+
+type RegistrationApiResponse = {
+  data?: RegistrationDTO[];
+  items?: RegistrationDTO[];
+  rows?: RegistrationDTO[];
+  result?: RegistrationDTO[];
+  registrations?: RegistrationDTO[];
+  total?: number;
+  totalCount?: number;
+  count?: number;
+  meta?: RegistrationMeta;
+};
+
+const normalizePaymentStatus = (
+  value: unknown
+): ContemplatedParticipant["paymentStatus"] => {
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+    if (
+      ["paid", "pago", "completed"].some((item) => normalized.includes(item))
+    ) {
+      return "paid";
+    }
+    if (
+      ["overdue", "late", "atrasado"].some((item) => normalized.includes(item))
+    ) {
+      return "overdue";
+    }
+    if (
+      ["pending", "pendente", "waiting"].some((item) =>
+        normalized.includes(item)
+      )
+    ) {
+      return "pending";
+    }
+  }
+  return "pending";
+};
+
+const normalizeParticipation = (value: unknown): boolean => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value === 1;
+  }
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+    return ["true", "1", "yes", "presente", "present"].includes(normalized);
+  }
+  return false;
+};
+
+const getDisplayName = (registration: RegistrationDTO): string => {
+  const nested = registration.participant ?? {};
+  return (
+    nested.fullName ||
+    nested.name ||
+    registration.participantName ||
+    "Participante sem nome"
+  );
+};
+
+const getDisplayEmail = (registration: RegistrationDTO): string => {
+  const nested = registration.participant ?? {};
+  return (
+    nested.email ||
+    registration.participantEmail ||
+    registration.participant?.email ||
+    ""
+  );
+};
+
+const getDisplayPhone = (registration: RegistrationDTO): string | undefined => {
+  const nested = registration.participant ?? {};
+  return nested.phone || registration.participantPhone || undefined;
+};
+
+const getActivity = (registration: RegistrationDTO): string => {
+  const nested = registration.participant ?? {};
+  return (
+    (typeof nested.activity === "string" && nested.activity) ||
+    (typeof registration.activity === "string" && registration.activity) ||
+    "Participante"
+  );
+};
+
+const getPhotoUrl = (registration: RegistrationDTO): string | undefined => {
+  const nested = registration.participant ?? {};
+  const value =
+    nested.avatarUrl ||
+    nested.photoUrl ||
+    registration.avatarUrl ||
+    registration.photoUrl ||
+    undefined;
+  return typeof value === "string" && value.trim().length > 0
+    ? value
+    : undefined;
+};
+
+const mapRegistrationToParticipant = (
+  registration: RegistrationDTO
+): ContemplatedParticipant => {
+  const rawId = registration.id ?? registration.participant?.id ?? 0;
+  const parsedId = Number(rawId);
+  const statusValue =
+    typeof registration.status === "number"
+      ? registration.status
+      : typeof registration.status === "string"
+        ? Number.parseInt(registration.status, 10)
+        : typeof registration.registrationStatus === "number"
+          ? registration.registrationStatus
+          : typeof registration.registrationStatus === "string"
+            ? Number.parseInt(registration.registrationStatus, 10)
+            : undefined;
+
+  return {
+    id: Number.isFinite(parsedId) ? parsedId : 0,
+    name: getDisplayName(registration),
+    email: getDisplayEmail(registration),
+    phone: getDisplayPhone(registration),
+    status: statusValue === 0 ? "not_contemplated" : "contemplated",
+    photoUrl: getPhotoUrl(registration),
+    activity: getActivity(registration),
+    paymentStatus: normalizePaymentStatus(registration.paymentStatus),
+    participation: normalizeParticipation(
+      registration.participation ?? registration.attendance
+    ),
+  };
+};
+
+const extractRegistrations = (
+  payload: RegistrationApiResponse
+): RegistrationDTO[] => {
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.rows)) return payload.rows;
+  if (Array.isArray(payload.result)) return payload.result;
+  if (Array.isArray(payload.registrations)) return payload.registrations;
+  return [];
+};
+
+const extractTotal = (
+  payload: RegistrationApiResponse,
+  fallback: number
+): number => {
+  if (typeof payload.total === "number") return payload.total;
+  if (typeof payload.totalCount === "number") return payload.totalCount;
+  if (typeof payload.count === "number") return payload.count;
+  if (payload.meta) {
+    if (typeof payload.meta.totalItems === "number") {
+      return payload.meta.totalItems;
+    }
+    if (typeof payload.meta.itemCount === "number") {
+      return payload.meta.itemCount;
+    }
+  }
+  return fallback;
 };
 
 // Helper para iniciais (caso não haja foto)
@@ -50,18 +233,94 @@ const getInitials = (name?: string) =>
 
 const getContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
-  id: string
+  retreatId: string
 ) => {
-  const response = await handleApiResponse<ContemplatedDataRequest>(
-    await sendRequestServerVanilla.get(`/retreats/${id}/non-contemplated`, {
-      params: filters,
-    })
-  );
+  try {
+    const page = filters.page && filters.page > 0 ? filters.page : 1;
+    const pageLimit =
+      filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 10;
+    const skip = (page - 1) * pageLimit;
 
-  if (!response || response.error) {
-    throw new Error("Failed to fetch Non-Contemplated");
+    const params: Record<string, unknown> = {
+      retreatId,
+      status: 0,
+      skip,
+      take: pageLimit,
+    };
+
+    if (filters.search) {
+      params.search = filters.search;
+    }
+
+    if (filters.city) {
+      params.region = filters.city;
+    }
+
+    if (filters.state) {
+      params.state = filters.state;
+    }
+
+    if (filters.periodStart) {
+      params.periodStart = filters.periodStart;
+    }
+
+    if (filters.periodEnd) {
+      params.periodEnd = filters.periodEnd;
+    }
+
+    const response = await apiClient.get<RegistrationApiResponse>(
+      `/api/Registrations`,
+      {
+        params,
+      }
+    );
+
+    const registrations = extractRegistrations(response.data).filter((item) => {
+      const statusValue =
+        typeof item.status === "number"
+          ? item.status
+          : typeof item.status === "string"
+            ? Number.parseInt(item.status, 10)
+            : typeof item.registrationStatus === "number"
+              ? item.registrationStatus
+              : typeof item.registrationStatus === "string"
+                ? Number.parseInt(item.registrationStatus, 10)
+                : undefined;
+      return statusValue === 0;
+    });
+
+    const rows = registrations.map(mapRegistrationToParticipant);
+    const total = extractTotal(response.data, rows.length);
+
+    return {
+      rows,
+      total,
+      page,
+      pageLimit,
+      hasNextPage: skip + pageLimit < total,
+      hasPrevPage: page > 1,
+    } satisfies ContemplatedDataRequest;
+  } catch (error) {
+    console.error("Erro ao resgatar não contemplados:", error);
+    const message = axios.isAxiosError(error)
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
+      : "Erro ao carregar inscrições não contempladas.";
+    enqueueSnackbar(message, {
+      variant: "error",
+      autoHideDuration: 4000,
+    });
+    const page = filters.page && filters.page > 0 ? filters.page : 1;
+    const pageLimit =
+      filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 10;
+    return {
+      rows: [],
+      total: 0,
+      page,
+      pageLimit,
+      hasNextPage: false,
+      hasPrevPage: false,
+    } satisfies ContemplatedDataRequest;
   }
-  return response.data as ContemplatedDataRequest;
 };
 
 // Definir as colunas da tabela
@@ -195,14 +454,17 @@ export default function NonContemplatedTable({ id }: { id: string }) {
       },
       excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
     });
-  const { data: contemplatedData, isLoading } = useQuery({
-    queryKey: ["Contemplated", filters],
+  const {
+    data: contemplatedData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["NonContemplated", id, filters],
     queryFn: () => getContemplated(filters, id),
     staleTime: 5 * 60 * 1000, // 5 minutes,
   });
   const session = useSession();
 
-  // ✅ CORREÇÃO: Usar o tipo correto
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
   >(undefined);
@@ -219,26 +481,21 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     [contemplatedData, selectedRows]
   );
 
-  //console.log(getSelectedIds, "getSelectedIds");
-
   const submitNewParticipant = async (participant: ParticipantFormValues) => {
-    // Lógica para enviar o novo participante ao servidor
     try {
-      const data = await requestServer.post<ContemplatedParticipant>(
-        `/no-contemplated`,
-        participant
-      );
-      if (data.success) {
-        enqueueSnackbar((data as DefaultResponse).message, {
-          variant: "success",
-          preventDuplicate: true,
-        });
-      }
+      await apiClient.post(`/api/Registrations`, {
+        ...participant,
+        retreatId: id,
+      });
+      enqueueSnackbar("Participante criado com sucesso", {
+        variant: "success",
+        preventDuplicate: true,
+      });
+      await refetch();
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Ocorreu um erro na requisição";
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Ocorreu um erro ao criar o participante";
       enqueueSnackbar(message, {
         variant: "error",
         autoHideDuration: 8000,
@@ -247,27 +504,20 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     } finally {
       modal.close();
     }
-    // Aqui você pode fazer uma chamada API para salvar o participante
   };
 
   const editParticipant = async (participant: ParticipantFormValues) => {
-    // Lógica para editar o participante no servidor
     try {
-      const data = await requestServer.put<ContemplatedParticipant>(
-        `/no-contemplated/${participant.id}`,
-        participant
-      );
-      if (data.success) {
-        enqueueSnackbar((data as DefaultResponse).message, {
-          variant: "success",
-          preventDuplicate: true,
-        });
-      }
+      await apiClient.put(`/api/Registrations/${participant.id}`, participant);
+      enqueueSnackbar("Participante atualizado com sucesso", {
+        variant: "success",
+        preventDuplicate: true,
+      });
+      await refetch();
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Ocorreu um erro na requisição";
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Ocorreu um erro ao atualizar o participante";
       enqueueSnackbar(message, {
         variant: "error",
         autoHideDuration: 8000,
@@ -278,17 +528,15 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     }
   };
 
-  const handleOpenParticipantForm = (
-    participant: ContemplatedParticipant | null
-  ) => {
+  const handleOpenParticipantForm = (participantId: string | null) => {
     modal.open({
-      title: "Participant Details",
+      title: "Detalhes do Participante",
       size: "md",
       customRender: () => (
         <ParticipantForm
-          participant={participant}
+          participantId={participantId}
           onSubmit={
-            participant == null ? submitNewParticipant : editParticipant
+            participantId == null ? submitNewParticipant : editParticipant
           }
           retreatId={id}
         />
@@ -298,39 +546,31 @@ export default function NonContemplatedTable({ id }: { id: string }) {
 
   const handleDeleteParticipant = (participant: ContemplatedParticipant) => {
     modal.open({
-      title: "Confirm deletion",
+      title: "Confirmar exclusão",
       size: "sm",
       customRender: () => (
         <DeleteConfirmation
-          title="Delete participant"
+          title="Excluir participante"
           resourceName={participant.name}
-          description="This action cannot be undone and will permanently remove the participant."
-          requireCheckboxLabel="I understand the consequences."
+          description="Esta ação não pode ser desfeita e removerá permanentemente o participante."
+          requireCheckboxLabel="Eu entendo as consequências."
           onConfirm={async () => {
             try {
-              const res = await sendRequestServerVanilla.delete(
-                `/Contemplated/${participant.id}`
-              );
-              const result = await handleApiResponse(res);
-              if (result.error) {
-                throw new Error(result.error || "Server error");
-              }
-              // Optionally trigger a refetch outside
-              if (typeof window !== "undefined") {
-                const { enqueueSnackbar } = await import("notistack");
-                enqueueSnackbar("User deleted successfully", {
-                  variant: "success",
-                });
-              }
-            } catch (err: unknown) {
-              if (typeof window !== "undefined") {
-                const { enqueueSnackbar } = await import("notistack");
-                const message =
-                  err instanceof Error ? err.message : "Failed to delete user";
-                enqueueSnackbar(message, {
-                  variant: "errorMUI",
-                });
-              }
+              await apiClient.delete(`/api/Registrations/${participant.id}`);
+              enqueueSnackbar("Participante excluído com sucesso", {
+                variant: "success",
+              });
+              await refetch();
+            } catch (error: unknown) {
+              const message = axios.isAxiosError(error)
+                ? ((error.response?.data as { error?: string })?.error ??
+                  error.message)
+                : "Falha ao excluir participante";
+              enqueueSnackbar(message, {
+                variant: "error",
+              });
+            } finally {
+              modal.close();
             }
           }}
         />
@@ -347,32 +587,65 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     });
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await refetch({ throwOnError: false });
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
   };
 
-  // const handleFiltersChange = (
-  //   newFilters: TableDefaultFilters<RetreatsCardTableFilters>
-  // ) => {
-  //   updateFilters({ ...filters, ...newFilters });
-  // };
-
   const handleApplyFilters = (
-    newFilters: Partial<TableDefaultFilters<RetreatsCardTableFilters>>
+    newFilters: Partial<TableDefaultFilters<ContemplatedTableFilters>>
   ) => {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const contemplatedDataArray: ContemplatedParticipant[] | undefined =
-    Array.isArray(contemplatedData?.rows)
-      ? contemplatedData?.rows
-      : ([contemplatedData?.rows] as unknown as ContemplatedParticipant[]);
+  const contemplatedDataArray: ContemplatedParticipant[] =
+    Array.isArray(contemplatedData?.rows) && contemplatedData.rows.length > 0
+      ? contemplatedData.rows
+      : [];
 
   if (isLoading || session.status === "loading" || !session.data?.user) {
-    return <div>Carregando usuários...</div>;
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 400,
+          width: "100%",
+        }}
+      >
+        <Avatar
+          sx={{
+            bgcolor: "primary.main",
+            width: 56,
+            height: 56,
+            mb: 2,
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              fontSize: 32,
+              fontWeight: 700,
+              color: "white",
+            }}
+          >
+            ...
+          </Box>
+        </Avatar>
+        <Box sx={{ fontSize: 18, fontWeight: 500, mb: 1 }}>
+          Carregando participantes não contemplados
+        </Box>
+        <Box sx={{ color: "text.secondary", fontSize: 14 }}>
+          Aguarde enquanto os dados são carregados.
+        </Box>
+      </Box>
+    );
   }
 
   const handleContemplate = (row: ContemplatedParticipant): void => {
@@ -483,18 +756,17 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           // Ações personalizadas
           actions={[
             {
-              icon: "lucide:trash-2",
+              icon: "lucide:eye",
               label: "Ver Mais",
-              onClick: (participant) => handleOpenParticipantForm(participant),
+              onClick: (participant) =>
+                handleOpenParticipantForm(String(participant.id)),
               color: "primary",
-              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
             {
-              icon: "lucide:trash-2",
+              icon: "lucide:check-circle",
               label: "Contemplar",
               onClick: handleContemplate,
               color: "secondary",
-              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
             {
               icon: "lucide:trash-2",

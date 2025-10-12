@@ -24,6 +24,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ParticipantPublicFormTab from "./ParticipantPublicFormTab";
 import SingleImageUpload from "@/src/components/fields/ImageUpload/SingleImageUpload";
+import apiClient from "@/src/lib/axiosClientInstance";
+import { enqueueSnackbar } from "notistack";
+import axios from "axios";
 
 const dataUrlRegex = /^data:image\/[a-zA-Z]+;base64,/;
 
@@ -58,7 +61,7 @@ const participantSchema = z.object({
 export type ParticipantFormValues = z.infer<typeof participantSchema>;
 
 interface ParticipantFormProps {
-  participant?: ContemplatedParticipant | null;
+  participantId: string | null;
   onSubmit?: (data: ParticipantFormValues) => Promise<void> | void;
   loading?: boolean;
   submitLabel?: string;
@@ -77,14 +80,39 @@ const defaultEmpty: ParticipantFormValues = {
   photoUrl: null,
 };
 
+const getRetreatParticipant = async (
+  participantId: string
+): Promise<ContemplatedParticipant | undefined> => {
+  try {
+    const response = await apiClient.get<ContemplatedParticipant>(
+      `/api/Registrations/${participantId}`
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Erro ao resgatar participante:", error);
+    const message = axios.isAxiosError(error)
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
+      : "Erro ao carregar dados do participante.";
+    enqueueSnackbar(message, {
+      variant: "error",
+      autoHideDuration: 4000,
+    });
+    return undefined;
+  }
+};
+
 const ParticipantForm: React.FC<ParticipantFormProps> = ({
-  participant,
+  participantId,
   onSubmit,
   loading = false,
   submitLabel = "Salvar",
   disabled = true,
   retreatId,
 }) => {
+  const [participant, setParticipant] =
+    useState<ContemplatedParticipant | null>(null);
+  const [isLoadingParticipant, setIsLoadingParticipant] = useState(false);
   const hasParticipant = Boolean(participant?.id);
   const [tab, setTab] = useState<"details" | "form">("details");
   const [isEditing, setIsEditing] = useState(() => !disabled);
@@ -106,6 +134,24 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
     mode: "onBlur",
   });
 
+  // Fetch participant data when participantId changes
+  useEffect(() => {
+    if (participantId) {
+      setIsLoadingParticipant(true);
+      getRetreatParticipant(participantId)
+        .then((data) => {
+          if (data) {
+            setParticipant(data);
+          }
+        })
+        .finally(() => {
+          setIsLoadingParticipant(false);
+        });
+    } else {
+      setParticipant(null);
+    }
+  }, [participantId]);
+
   useEffect(() => {
     reset(
       participant
@@ -116,7 +162,6 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
         : defaultEmpty
     );
   }, [participant, reset]);
-
   useEffect(() => {
     setIsEditing(!disabled);
   }, [disabled]);
@@ -153,6 +198,21 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   };
 
   const hasAvatar = Boolean(currentAvatarSrc);
+
+  if (isLoadingParticipant) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 200,
+        }}
+      >
+        <Typography>Carregando dados do participante...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Stack sx={{ margin: "0 auto", width: "100%" }} spacing={3}>

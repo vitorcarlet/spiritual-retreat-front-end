@@ -5,11 +5,10 @@ import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import { MuiColorInput } from "mui-color-input";
+import apiClient from "@/src/lib/axiosClientInstance";
+import { enqueueSnackbar } from "notistack";
+import axios from "axios";
 
 interface CreateFamilyFormProps {
   retreatId: string;
@@ -20,9 +19,7 @@ const HEX_REGEX = /^#(?:[0-9a-fA-F]{3}){1,2}$/;
 
 const createFamilySchema = z.object({
   name: z.string().min(1, "Nome da família é obrigatório"),
-  color: z
-    .string()
-    .regex(HEX_REGEX, "Cor inválida"),
+  color: z.string().regex(HEX_REGEX, "Cor inválida"),
 });
 
 type CreateFamilyData = z.infer<typeof createFamilySchema>;
@@ -48,21 +45,27 @@ export default function CreateFamilyForm({
 
   const onSubmit = async (data: CreateFamilyData) => {
     try {
-      const response = await handleApiResponse(
-        await sendRequestServerVanilla.post(
-          `/retreats/${retreatId}/families`,
-          data
-        )
+      const response = await apiClient.post(
+        `/api/retreats/${retreatId}/families/generate`,
+        data
       );
 
-      if (response.success) {
+      if (response.data) {
+        enqueueSnackbar("Família criada com sucesso!", {
+          variant: "success",
+        });
         reset();
         onSuccess();
-      } else {
-        console.error("Erro ao criar família:", response.error);
       }
     } catch (error) {
       console.error("Erro ao criar família:", error);
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Erro ao criar família.";
+      enqueueSnackbar(message, {
+        variant: "error",
+        autoHideDuration: 4000,
+      });
     }
   };
 

@@ -30,6 +30,195 @@ type ContemplatedDataRequest = {
   pageLimit: number;
 };
 
+type RegistrationMeta = {
+  totalItems?: number;
+  itemCount?: number;
+};
+
+type RegistrationDTO = {
+  id?: string | number | null;
+  status?: number | string | null;
+  participantName?: string | null;
+  participantEmail?: string | null;
+  participantPhone?: string | null;
+  photoUrl?: string | null;
+  avatarUrl?: string | null;
+  activity?: string | null;
+  paymentStatus?: string | null;
+  participation?: boolean | number | string | null;
+  attendance?: boolean | number | string | null;
+  participant?: {
+    id?: string | number | null;
+    fullName?: string | null;
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    avatarUrl?: string | null;
+    photoUrl?: string | null;
+    activity?: string | null;
+  } | null;
+  registrationStatus?: number | string | null;
+};
+
+type RegistrationApiResponse = {
+  data?: RegistrationDTO[];
+  items?: RegistrationDTO[];
+  rows?: RegistrationDTO[];
+  result?: RegistrationDTO[];
+  registrations?: RegistrationDTO[];
+  total?: number;
+  totalCount?: number;
+  count?: number;
+  meta?: RegistrationMeta;
+};
+
+const normalizePaymentStatus = (
+  value: unknown
+): ContemplatedParticipant["paymentStatus"] => {
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+    if (
+      ["paid", "pago", "completed"].some((item) => normalized.includes(item))
+    ) {
+      return "paid";
+    }
+    if (
+      ["overdue", "late", "atrasado"].some((item) => normalized.includes(item))
+    ) {
+      return "overdue";
+    }
+    if (
+      ["pending", "pendente", "waiting"].some((item) =>
+        normalized.includes(item)
+      )
+    ) {
+      return "pending";
+    }
+  }
+  return "pending";
+};
+
+const normalizeParticipation = (value: unknown): boolean => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value === 1;
+  }
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+    return ["true", "1", "yes", "presente", "present"].includes(normalized);
+  }
+  return false;
+};
+
+const getDisplayName = (registration: RegistrationDTO): string => {
+  const nested = registration.participant ?? {};
+  return (
+    nested.fullName ||
+    nested.name ||
+    registration.participantName ||
+    "Participante sem nome"
+  );
+};
+
+const getDisplayEmail = (registration: RegistrationDTO): string => {
+  const nested = registration.participant ?? {};
+  return (
+    nested.email ||
+    registration.participantEmail ||
+    registration.participant?.email ||
+    ""
+  );
+};
+
+const getDisplayPhone = (registration: RegistrationDTO): string | undefined => {
+  const nested = registration.participant ?? {};
+  return nested.phone || registration.participantPhone || undefined;
+};
+
+const getActivity = (registration: RegistrationDTO): string => {
+  const nested = registration.participant ?? {};
+  return (
+    (typeof nested.activity === "string" && nested.activity) ||
+    (typeof registration.activity === "string" && registration.activity) ||
+    "Participante"
+  );
+};
+
+const getPhotoUrl = (registration: RegistrationDTO): string | undefined => {
+  const nested = registration.participant ?? {};
+  const value =
+    nested.avatarUrl ||
+    nested.photoUrl ||
+    registration.avatarUrl ||
+    registration.photoUrl ||
+    undefined;
+  return typeof value === "string" && value.trim().length > 0
+    ? value
+    : undefined;
+};
+
+const mapRegistrationToParticipant = (
+  registration: RegistrationDTO
+): ContemplatedParticipant => {
+  const rawId = registration.id ?? registration.participant?.id ?? 0;
+  const parsedId = Number(rawId);
+  const statusValue =
+    typeof registration.status === "number"
+      ? registration.status
+      : typeof registration.status === "string"
+        ? Number.parseInt(registration.status, 10)
+        : typeof registration.registrationStatus === "number"
+          ? registration.registrationStatus
+          : typeof registration.registrationStatus === "string"
+            ? Number.parseInt(registration.registrationStatus, 10)
+            : undefined;
+
+  return {
+    id: Number.isFinite(parsedId) ? parsedId : 0,
+    name: getDisplayName(registration),
+    email: getDisplayEmail(registration),
+    phone: getDisplayPhone(registration),
+    status: statusValue === 1 ? "contemplated" : "not_contemplated",
+    photoUrl: getPhotoUrl(registration),
+    activity: getActivity(registration),
+    paymentStatus: normalizePaymentStatus(registration.paymentStatus),
+    participation: normalizeParticipation(
+      registration.participation ?? registration.attendance
+    ),
+  };
+};
+
+const extractRegistrations = (
+  payload: RegistrationApiResponse
+): RegistrationDTO[] => {
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.rows)) return payload.rows;
+  if (Array.isArray(payload.result)) return payload.result;
+  if (Array.isArray(payload.registrations)) return payload.registrations;
+  return [];
+};
+
+const extractTotal = (
+  payload: RegistrationApiResponse,
+  fallback: number
+): number => {
+  if (typeof payload.total === "number") return payload.total;
+  if (typeof payload.totalCount === "number") return payload.totalCount;
+  if (typeof payload.count === "number") return payload.count;
+  if (payload.meta) {
+    if (typeof payload.meta.totalItems === "number") {
+      return payload.meta.totalItems;
+    }
+    if (typeof payload.meta.itemCount === "number") {
+      return payload.meta.itemCount;
+    }
+  }
+  return fallback;
+};
+
 // Helper para iniciais (caso não haja foto)
 const getInitials = (name?: string) =>
   (name || "")
@@ -41,26 +230,81 @@ const getInitials = (name?: string) =>
 
 const getContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
-  id: string
+  retreatId: string
 ) => {
   try {
-    const response = await apiClient.get<ContemplatedDataRequest>(
-      `/retreats/${id}/contemplated`,
+    const page = filters.page && filters.page > 0 ? filters.page : 1;
+    const pageLimit =
+      filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 20;
+    const skip = (page - 1) * pageLimit;
+
+    const params: Record<string, unknown> = {
+      retreatId,
+      status: 1,
+      skip,
+      take: pageLimit,
+    };
+
+    if (filters.search) {
+      params.search = filters.search;
+    }
+
+    if (filters.city) {
+      params.region = filters.city;
+    }
+
+    if (filters.state) {
+      params.state = filters.state;
+    }
+
+    if (filters.periodStart) {
+      params.periodStart = filters.periodStart;
+    }
+
+    if (filters.periodEnd) {
+      params.periodEnd = filters.periodEnd;
+    }
+
+    const response = await apiClient.get<RegistrationApiResponse>(
+      `/api/Registrations`,
       {
-        params: filters,
+        params,
       }
     );
 
-    return response.data;
+    const registrations = extractRegistrations(response.data).filter((item) => {
+      const statusValue =
+        typeof item.status === "number"
+          ? item.status
+          : typeof item.status === "string"
+            ? Number.parseInt(item.status, 10)
+            : typeof item.registrationStatus === "number"
+              ? item.registrationStatus
+              : typeof item.registrationStatus === "string"
+                ? Number.parseInt(item.registrationStatus, 10)
+                : undefined;
+      return statusValue === 1;
+    });
+
+    const rows = registrations.map(mapRegistrationToParticipant);
+    const total = extractTotal(response.data, rows.length);
+
+    return {
+      rows,
+      total,
+      page,
+      pageLimit,
+    } satisfies ContemplatedDataRequest;
   } catch (error) {
     console.error("Erro ao resgatar contemplados:", error);
     const message = axios.isAxiosError(error)
       ? ((error.response?.data as { error?: string })?.error ?? error.message)
-      : "Erro ao reenviar notificação.";
+      : "Erro ao carregar inscrições contempladas.";
     enqueueSnackbar(message, {
       variant: "error",
       autoHideDuration: 4000,
     });
+    //throw error;
   }
 };
 
@@ -190,12 +434,16 @@ export default function ContemplatedTable({ id }: { id: string }) {
     useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
       defaultFilters: {
         page: 1,
-        pageLimit: 10,
+        pageLimit: 20,
       },
       excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
     });
-  const { data: contemplatedData, isLoading } = useQuery({
-    queryKey: ["Contemplated", filters],
+  const {
+    data: contemplatedData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["Contemplated", id, filters],
     queryFn: () => getContemplated(filters, id),
     staleTime: 5 * 60 * 1000, // 5 minutes,
   });
@@ -219,11 +467,13 @@ export default function ContemplatedTable({ id }: { id: string }) {
     return [];
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await refetch({ throwOnError: false });
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
   };
 
   // const handleFiltersChange = (
@@ -238,10 +488,10 @@ export default function ContemplatedTable({ id }: { id: string }) {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const contemplatedDataArray: ContemplatedParticipant[] | undefined =
-    Array.isArray(contemplatedData?.rows)
-      ? contemplatedData?.rows
-      : ([contemplatedData?.rows] as unknown as ContemplatedParticipant[]);
+  const contemplatedDataArray: ContemplatedParticipant[] =
+    Array.isArray(contemplatedData?.rows) && contemplatedData.rows.length > 0
+      ? contemplatedData.rows
+      : [];
 
   if (isLoading || session.status === "loading" || !session.data?.user) {
     return (
@@ -330,13 +580,18 @@ export default function ContemplatedTable({ id }: { id: string }) {
   }
 
   const handleOpenParticipantForm = (
-    participant: ContemplatedParticipant | null
+    participantId: string,
+    retreatId: string
   ) => {
     modal.open({
       title: "Participant Details",
       size: "md",
       customRender: () => (
-        <ParticipantForm participant={participant} disabled retreatId={id} />
+        <ParticipantForm
+          participantId={participantId}
+          retreatId={retreatId}
+          disabled
+        />
       ),
     });
   };
@@ -423,8 +678,8 @@ export default function ContemplatedTable({ id }: { id: string }) {
           showToolbar={false}
           paginationMode="server"
           page={filters.page ? filters.page - 1 : 0}
-          pageSize={filters.pageLimit || 10}
-          pageSizeOptions={[10, 25, 50, 100]}
+          pageSize={filters.pageLimit || 20}
+          pageSizeOptions={[10, 20, 25, 50, 100]}
           onPaginationModelChange={(newModel) => {
             updateFilters({
               ...filters,
@@ -445,7 +700,8 @@ export default function ContemplatedTable({ id }: { id: string }) {
             {
               icon: "lucide:trash-2",
               label: "Ver Mais",
-              onClick: (participant) => handleOpenParticipantForm(participant),
+              onClick: (participant) =>
+                handleOpenParticipantForm(String(participant.id), id),
               color: "primary",
               //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },

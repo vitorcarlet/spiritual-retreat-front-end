@@ -22,15 +22,14 @@ import {
 } from "@mui/material";
 import { useTranslations } from "next-intl";
 import Iconify from "@/src/components/Iconify";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import type { RequestResponse } from "@/src/lib/requestServer";
 import { MuiColorInput } from "mui-color-input";
+import { UniqueIdentifier } from "@dnd-kit/core";
+import apiClient from "@/src/lib/axiosClientInstance";
+import { enqueueSnackbar } from "notistack";
+import axios from "axios";
 
 interface FamilyDetailsProps {
-  family: RetreatFamily;
+  familyId: UniqueIdentifier;
   retreatId: string;
   canEdit: boolean;
   startInEdit?: boolean;
@@ -47,7 +46,7 @@ interface UpdateFamilyPayload {
 }
 
 export default function FamilyDetails({
-  family,
+  familyId,
   retreatId,
   canEdit,
   startInEdit = false,
@@ -57,38 +56,65 @@ export default function FamilyDetails({
   const t = useTranslations("family-details");
   const [isEditing, setIsEditing] = useState(startInEdit && canEdit);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [familyState, setFamilyState] = useState<RetreatFamily>(family);
+  const [familyState, setFamilyState] = useState<RetreatFamily | null>(null);
   const [formValues, setFormValues] = useState<UpdateFamilyPayload>({
-    name: family.name,
-    contactName: family.contactName ?? "",
-    contactEmail: family.contactEmail ?? "",
-    contactPhone: family.contactPhone ?? "",
-    color: family.color ?? "",
+    name: "",
+    contactName: "",
+    contactEmail: "",
+    contactPhone: "",
+    color: "",
   });
 
+  // Fetch family data when component mounts or familyId changes
   useEffect(() => {
-    setFamilyState(family);
-    setFormValues({
-      name: family.name,
-      contactName: family.contactName ?? "",
-      contactEmail: family.contactEmail ?? "",
-      contactPhone: family.contactPhone ?? "",
-      color: family.color ?? "",
-    });
-    setIsEditing(startInEdit && canEdit);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-  }, [family, startInEdit, canEdit]);
+    const fetchFamilyData = async () => {
+      setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const response = await apiClient.get<RetreatFamily>(
+          `/api/retreats/${retreatId}/families/${familyId}`
+        );
+
+        const family = response.data;
+        setFamilyState(family);
+        setFormValues({
+          name: family.name,
+          contactName: family.contactName ?? "",
+          contactEmail: family.contactEmail ?? "",
+          contactPhone: family.contactPhone ?? "",
+          color: family.color ?? "",
+        });
+        setIsEditing(startInEdit && canEdit);
+      } catch (error) {
+        console.error("Erro ao buscar dados da família:", error);
+        const message = axios.isAxiosError(error)
+          ? ((error.response?.data as { error?: string })?.error ??
+            error.message)
+          : t("load-error");
+        setErrorMessage(message);
+        enqueueSnackbar(message, {
+          variant: "error",
+          autoHideDuration: 4000,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFamilyData();
+  }, [familyId, retreatId, startInEdit, canEdit, t]);
 
   const leaderName = useMemo(() => {
+    if (!familyState) return t("no-leader");
     if (familyState.contactName) return familyState.contactName;
     return familyState.members?.[0]?.name ?? t("no-leader");
   }, [familyState, t]);
 
   const handleToggleEdit = () => {
-    if (!canEdit) return;
+    if (!canEdit || !familyState) return;
     setIsEditing((prev) => !prev);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -109,6 +135,8 @@ export default function FamilyDetails({
     };
 
   const handleSave = async () => {
+    if (!familyState) return;
+
     setIsSaving(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -119,20 +147,15 @@ export default function FamilyDetails({
         contactName: formValues.contactName?.trim() || undefined,
         contactEmail: formValues.contactEmail?.trim() || undefined,
         contactPhone: formValues.contactPhone?.trim() || undefined,
+        color: formValues.color?.trim() || undefined,
       };
 
-      const response = await handleApiResponse<RequestResponse<RetreatFamily>>(
-        await sendRequestServerVanilla.put(
-          `/retreats/${retreatId}/families/${familyState.id}`,
-          payload
-        )
+      const response = await apiClient.put<RetreatFamily>(
+        `/api/retreats/${retreatId}/families/${familyState.id}`,
+        payload
       );
 
-      if (!response?.success || !response.data?.data) {
-        throw new Error(response.error || t("update-error"));
-      }
-
-      const updatedFamily = response.data.data;
+      const updatedFamily = response.data;
 
       setFamilyState(updatedFamily);
       setFormValues({
@@ -140,20 +163,30 @@ export default function FamilyDetails({
         contactName: updatedFamily.contactName ?? "",
         contactEmail: updatedFamily.contactEmail ?? "",
         contactPhone: updatedFamily.contactPhone ?? "",
+        color: updatedFamily.color ?? "",
       });
       setSuccessMessage(t("update-success"));
+      enqueueSnackbar(t("update-success"), {
+        variant: "success",
+      });
       setIsEditing(false);
       onUpdated?.(updatedFamily);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : t("update-error");
+      console.error("Erro ao atualizar família:", error);
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : t("update-error");
       setErrorMessage(message);
+      enqueueSnackbar(message, {
+        variant: "error",
+        autoHideDuration: 4000,
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const members = familyState.members ?? [];
+  const members = familyState?.members ?? [];
   const initialsFromName = (name?: string | null) => {
     if (!name) return "?";
 
@@ -167,6 +200,38 @@ export default function FamilyDetails({
 
     return initials || "?";
   };
+
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          width: "100%",
+          minHeight: 300,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!familyState) {
+    return (
+      <Box sx={{ width: "100%", minHeight: 300 }}>
+        <Alert severity="error">{errorMessage || t("load-error")}</Alert>
+        <Button
+          variant="outlined"
+          onClick={() => onClose?.()}
+          startIcon={<Iconify icon="solar:arrow-left-bold" />}
+          sx={{ mt: 2 }}
+        >
+          {t("close")}
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ width: "100%", minHeight: 300 }}>
@@ -194,7 +259,10 @@ export default function FamilyDetails({
                   required
                 />
               ) : (
-                <InfoRow label={t("name-label")} value={familyState.name} />
+                <InfoRow
+                  label={t("name-label")}
+                  value={familyState?.name ?? ""}
+                />
               )}
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -218,9 +286,9 @@ export default function FamilyDetails({
             <Grid size={{ xs: 12, md: 6 }}>
               {isEditing ? (
                 <Autocomplete
-                  options={familyState.members ?? []}
+                  options={familyState?.members ?? []}
                   value={
-                    familyState.members?.find(
+                    familyState?.members?.find(
                       (member) =>
                         member.email === formValues.contactEmail &&
                         member.name === formValues.contactName
@@ -290,7 +358,7 @@ export default function FamilyDetails({
                       />
                     ))
                   }
-                  disabled={!familyState.members?.length}
+                  disabled={!familyState?.members?.length}
                   noOptionsText={t("no-participants-available")}
                 />
               ) : (

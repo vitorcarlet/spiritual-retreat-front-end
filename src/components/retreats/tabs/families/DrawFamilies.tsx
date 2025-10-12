@@ -44,9 +44,7 @@ const fetchParticipantsWithoutFamily = async (
   retreatId: string
 ): Promise<ParticipantWithoutFamily[]> => {
   const response = await handleApiResponse<DrawFamiliesResponse>(
-    await sendRequestServerVanilla.get(
-      `/retreats/${retreatId}/families/unassigned`
-    )
+    await sendRequestServerVanilla.get(`/retreats/${retreatId}/lottery/preview`)
   );
   console.log({ response }, response.data, response.data?.participants);
   if (!response.success) {
