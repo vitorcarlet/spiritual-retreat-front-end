@@ -21,9 +21,9 @@ import FieldRenderer from "./components/FieldRenderer";
 
 const formCache = new Map<string, Promise<BackendForm>>();
 
-const getFormPromise = (id: string) => {
+const getFormPromise = (id: string, type: string) => {
   if (!formCache.has(id)) {
-    formCache.set(id, fetchFormData(id));
+    formCache.set(id, fetchFormData(id, type));
   }
   return formCache.get(id)!;
 };
@@ -116,8 +116,8 @@ const applySpecialFieldNaming = (
   }));
 };
 
-const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id }) => {
-  const form = use(getFormPromise(id));
+const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
+  const form = use(getFormPromise(id, type));
 
   if (!form || !Array.isArray(form.sections)) {
     return <Skeleton />;

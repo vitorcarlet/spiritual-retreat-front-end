@@ -280,5 +280,62 @@
       "submit": "Adicionar participantes",
       "submitting": "Adicionando..."
     }
+  },
+  "retreat-outbox": {
+    "page-title": "Fila de mensagens (Outbox)",
+    "fetch-error": "Não foi possível carregar a fila de mensagens.",
+    "detail-modal-title": "Mensagem {id}",
+    "filters": {
+      "status": "Status",
+      "processed": "Processado",
+      "type": "Tipo",
+      "type-placeholder": "Ex.: email, sms",
+      "startDate": "Data inicial",
+      "endDate": "Data final",
+      "reset": "Limpar filtros"
+    },
+    "columns": {
+      "id": "ID",
+      "type": "Tipo",
+      "status": "Status",
+      "attempts": "Tentativas",
+      "createdAt": "Criada em",
+      "processedAt": "Processada em"
+    },
+    "table": {
+      "title": "Mensagens na fila",
+      "subtitle": "Acompanhe o processamento de notificações.",
+      "actions": {
+        "view": "Ver detalhes"
+      },
+      "error": "Erro ao carregar mensagens.",
+      "empty": "Nenhuma mensagem encontrada."
+    },
+    "pending": "Pendentes",
+    "pending-helper": "Mensagens aguardando processamento.",
+    "processed": "Processadas",
+    "processed-helper": "Mensagens finalizadas com sucesso.",
+    "failed": "Com erro",
+    "failed-helper": "Mensagens que precisam de intervenção.",
+    "last-run": "Última execução",
+    "last-success": "Sem registros",
+    "requeue-success": "Mensagem reenfileirada.",
+    "requeue-error": "Não foi possível reenfileirar a mensagem.",
+    "loading-detail": "Carregando detalhes da mensagem...",
+    "detail-title": "Mensagem {id}",
+    "detail-subtitle": "Status {status} • {attempts} tentativa(s)",
+    "requeue": "Reenfileirar",
+    "status": "Status",
+    "type": "Tipo",
+    "attempts": "Tentativas",
+    "max-attempts": "Máx. tentativas",
+    "created-at": "Criada em",
+    "processed-at": "Processada em",
+    "payload": "Payload",
+    "last-error": "Último erro",
+    "no-error": "Nenhum erro registrado.",
+    "history": "Histórico",
+    "no-history": "Nenhum evento registrado.",
+    "close": "Fechar"
   }
 }

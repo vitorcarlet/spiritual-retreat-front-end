@@ -7,37 +7,54 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PieChart } from "@mui/x-charts/PieChart";
 import Iconify from "../Iconify";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import { AsynchronousAutoComplete } from "@/src/components/select-auto-complete/AsynchronousAutoComplete";
 import { RetreatLite, RetreatMetrics, RetreatOption } from "./types";
 import { MetricCard } from "./MetricCard";
 import { CriticalIssuesCard } from "./CriticalIssuesCard";
+import apiClient from "@/src/lib/axiosClientInstance";
+import { enqueueSnackbar } from "notistack";
+import axios from "axios";
 
 const fetchRetreats = async (): Promise<RetreatLite[]> => {
-  const resp = await handleApiResponse<RetreatOption>(
-    await sendRequestServerVanilla.get("/retreats?selectAutocomplete=true")
-  );
-  if (!resp.success) {
-    throw new Error("Falha ao carregar retiros");
+  try {
+    const response = await apiClient.get<RetreatOption>(
+      "/retreats?selectAutocomplete=true"
+    );
+    return response.data?.options ?? [];
+  } catch (error) {
+    console.error("Erro ao carregar retiros:", error);
+    const message = axios.isAxiosError(error)
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
+      : "Erro ao carregar retiros.";
+    enqueueSnackbar(message, {
+      variant: "error",
+      autoHideDuration: 4000,
+    });
+    return [];
   }
-  return resp.data?.options ?? [];
 };
 
 const fetchRetreatMetrics = async (
   retreatId: number
 ): Promise<RetreatMetrics> => {
   if (!retreatId) return Promise.reject("ID do retiro não fornecido");
+  try {
+    const response = await apiClient.get<RetreatMetrics>(
+      `/retreats/${retreatId}/metrics`
+    );
 
-  const response = await handleApiResponse<RetreatMetrics>(
-    await sendRequestServerVanilla.get(`/retreats/${retreatId}/metrics`)
-  );
-  if (!response.success) {
-    throw new Error("Falha ao carregar métricas do retiro");
+    return response.data as RetreatMetrics;
+  } catch (error) {
+    console.error("Erro ao requisitar as métricas:", error);
+    const message = axios.isAxiosError(error)
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
+      : "Erro ao requisitar as métricas.";
+    enqueueSnackbar(message, {
+      variant: "error",
+      autoHideDuration: 4000,
+    });
+    return {} as RetreatMetrics;
   }
-  return response.data as RetreatMetrics;
 };
 
 const DashboardPage = () => {
@@ -55,15 +72,23 @@ const DashboardPage = () => {
   // Função assíncrona para o componente (busca incremental)
   const fetchRetreatOptions = useCallback(
     async (q: string): Promise<RetreatLite[]> => {
-      const ep = `/retreats?selectAutocomplete=true${
-        q ? `&search=${encodeURIComponent(q)}` : ""
-      }`;
-      const resp = await handleApiResponse<RetreatOption>(
-        await sendRequestServerVanilla.get(ep)
-      );
-      if (!resp.success) throw new Error("Erro ao buscar retiros");
-      const list = resp.data!.options || [];
-      return list;
+      try {
+        const response = await apiClient.get<RetreatOption>(
+          `/retreats?selectAutocomplete=true${q ? `&search=${encodeURIComponent(q)}` : ""}`
+        );
+        return response.data?.options ?? [];
+      } catch (error) {
+        console.error("Erro ao buscar retiros:", error);
+        const message = axios.isAxiosError(error)
+          ? ((error.response?.data as { error?: string })?.error ??
+            error.message)
+          : "Erro ao buscar retiros.";
+        enqueueSnackbar(message, {
+          variant: "error",
+          autoHideDuration: 4000,
+        });
+        return [];
+      }
     },
     []
   );

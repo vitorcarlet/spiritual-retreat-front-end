@@ -6,6 +6,9 @@ import { BackendForm, BackendOption, BackendSection } from "./types";
 import z from "zod";
 
 import type { BackendField } from "./types";
+import apiClient from "@/src/lib/axiosClientInstance";
+import { sections, sectionsServe } from "@/src/mocks/handlerData/formData";
+import { Retreat } from "@/src/types/retreats";
 
 const MASK_REGEX: Record<string, RegExp> = {
   cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
@@ -179,26 +182,28 @@ const MASK_REGEX: Record<string, RegExp> = {
 // };
 
 export const fetchFormData = async (
-  retreatId: string
+  retreatId: string,
+  type: string
 ): Promise<BackendForm> => {
   try {
-    const result = await handleApiResponse<BackendForm>(
-      await sendRequestServerVanilla.get(
-        `/api/public/retreats/${retreatId}/form/participant`,
-        {
-          baseUrl: "http://localhost:3001", // URL do MSW
-          requireAuth: false,
-        }
-      )
-    );
+    const result = await apiClient.get<Retreat>(`/retreats/${retreatId}`);
 
-    if (result.success && result.data) {
-      return result.data as BackendForm;
-    }
-    return {} as BackendForm;
+    const retreat = result.data;
+
+    return {
+      id: `retreat-${retreatId}-participant-form`,
+      title: retreat.title,
+      description:
+        type === RetreatFormType.PARTICIPATE
+          ? "Preencha seus dados para participar do retiro"
+          : RetreatFormType.SERVER,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      sections: type === RetreatFormType.PARTICIPATE ? sections : sectionsServe,
+    } as BackendForm;
   } catch (error) {
     console.error("Erro ao buscar dados do formulario:", error);
-    return {} as BackendForm;
+    throw error;
   }
 };
 
@@ -504,4 +509,10 @@ export function buildZodSchema(sections: BackendSection[]): z.ZodTypeAny {
 }
 export interface PublicRetreatFormProps {
   id: string;
+  type: string;
 }
+
+const RetreatFormType = {
+  PARTICIPATE: "participate",
+  SERVER: "serve",
+};

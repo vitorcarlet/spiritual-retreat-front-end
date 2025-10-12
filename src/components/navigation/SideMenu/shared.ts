@@ -90,6 +90,18 @@ export const menuConfig: MenuItem[] = [
     },
   },
   {
+    id: "outbox",
+    label: "Gestão de OutBox",
+    icon: "ic:round-payments",
+    path: "/outbox",
+    access: {
+      permissions: {
+        retreats: ["read"],
+      },
+      roles: ["admin", "manager"],
+    },
+  },
+  {
     id: "profile-management",
     label: "Gestão de Perfil",
     icon: "material-symbols:person",

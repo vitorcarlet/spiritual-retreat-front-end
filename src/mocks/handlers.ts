@@ -138,6 +138,199 @@ const getGroupsSummary = (groups: MockFamilyGroup[]) => {
   );
 };
 
+type MockOutboxStatus = "pending" | "processing" | "processed" | "failed" | "queued";
+
+interface MockOutboxHistoryEntry {
+  id: string;
+  status: MockOutboxStatus;
+  timestamp: string;
+  message?: string | null;
+}
+
+interface MockOutboxItem {
+  id: string;
+  type: string;
+  status: MockOutboxStatus;
+  attempts: number;
+  maxAttempts: number;
+  processed: boolean;
+  createdAt: string;
+  processedAt: string | null;
+  lastError: string | null;
+  payload: Record<string, unknown>;
+  history: MockOutboxHistoryEntry[];
+}
+
+const mockOutboxItems: MockOutboxItem[] = Array.from({ length: 48 }).map((_, index) => {
+  const id = createRandomId("outbox");
+  const statusCycle: MockOutboxStatus[] = [
+    "pending",
+    "processing",
+    "processed",
+    "failed",
+    "queued",
+  ];
+  const status = statusCycle[index % statusCycle.length];
+  const attempts = status === "processed" ? 1 : Math.min(3, index % 5);
+  const createdAt = new Date(Date.now() - index * 3_600_000).toISOString();
+  const processedAt =
+    status === "processed"
+      ? new Date(Date.now() - index * 1_800_000).toISOString()
+      : null;
+
+  return {
+    id,
+    type: index % 2 === 0 ? "email" : "whatsapp",
+    status,
+    attempts,
+    maxAttempts: 5,
+    processed: status === "processed",
+    createdAt,
+    processedAt,
+    lastError:
+      status === "failed"
+        ? "Falha ao enviar mensagem devido à indisponibilidade do serviço."
+        : null,
+    payload: {
+      subject: `Notificação ${index + 1}`,
+      recipient: `usuario${index + 1}@example.com`,
+      body: `Conteúdo da mensagem ${index + 1}`,
+    },
+    history: [
+      {
+        id: createRandomId("hist"),
+        status: "queued",
+        timestamp: createdAt,
+        message: "Mensagem adicionada à fila.",
+      },
+      {
+        id: createRandomId("hist"),
+        status,
+        timestamp: processedAt ?? createdAt,
+        message:
+          status === "failed"
+            ? "Tentativa de envio falhou."
+            : status === "processed"
+            ? "Mensagem processada com sucesso."
+            : "Mensagem aguardando processamento.",
+      },
+    ],
+  } satisfies MockOutboxItem;
+});
+
+const getOutboxSummary = () => {
+  const now = new Date();
+  const lastProcessed = mockOutboxItems
+    .filter((item) => item.processedAt)
+    .sort((a, b) => Date.parse(b.processedAt ?? "") - Date.parse(a.processedAt ?? ""))[0];
+
+  return {
+    pending: mockOutboxItems.filter((item) => item.status === "pending").length,
+    processed: mockOutboxItems.filter((item) => item.status === "processed").length,
+    failed: mockOutboxItems.filter((item) => item.status === "failed").length,
+    lastRunAt: now.toISOString(),
+    lastSuccessAt: lastProcessed?.processedAt ?? null,
+  };
+};
+
+const paginateOutbox = (items: MockOutboxItem[], url: URL) => {
+  const page = Math.max(parseInt(url.searchParams.get("page") ?? "1", 10), 1);
+  const limit = Math.max(parseInt(url.searchParams.get("limit") ?? "50", 10), 1);
+  const start = (page - 1) * limit;
+  const sliced = items.slice(start, start + limit);
+
+  return {
+    items: sliced,
+    total: items.length,
+    page,
+    pageLimit: limit,
+  };
+};
+
+const createOutboxHandlers = (baseUrl: string) => [
+  http.get(`${baseUrl}/summary`, () => {
+    return HttpResponse.json(getOutboxSummary(), { status: 200 });
+  }),
+  http.get(baseUrl, ({ request }) => {
+    const url = new URL(request.url);
+    let filtered = [...mockOutboxItems];
+
+    const processedParam = url.searchParams.get("processed");
+    if (processedParam === "true") {
+      filtered = filtered.filter((item) => item.processed);
+    }
+    if (processedParam === "false") {
+      filtered = filtered.filter((item) => !item.processed);
+    }
+
+    const statusParam = url.searchParams.get("status");
+    if (statusParam) {
+      filtered = filtered.filter((item) => item.status === statusParam);
+    }
+
+    const typeParam = url.searchParams.get("type");
+    if (typeParam) {
+      filtered = filtered.filter((item) => item.type === typeParam);
+    }
+
+    const startDate = url.searchParams.get("startDate");
+    if (startDate) {
+      const start = Date.parse(startDate);
+      filtered = filtered.filter((item) => Date.parse(item.createdAt) >= start);
+    }
+
+    const endDate = url.searchParams.get("endDate");
+    if (endDate) {
+      const end = Date.parse(endDate) + 86_400_000; // include entire day
+      filtered = filtered.filter((item) => Date.parse(item.createdAt) <= end);
+    }
+
+    const payload = paginateOutbox(filtered, url);
+    return HttpResponse.json(payload, { status: 200 });
+  }),
+  http.get(`${baseUrl}/:id`, ({ params }) => {
+    const { id } = params as { id: string };
+    const item = mockOutboxItems.find((entry) => entry.id === id);
+
+    if (!item) {
+      return HttpResponse.json({ error: "Mensagem não encontrada." }, { status: 404 });
+    }
+
+    return HttpResponse.json(item, { status: 200 });
+  }),
+  http.post(`${baseUrl}/:id/requeue`, ({ params }) => {
+    const { id } = params as { id: string };
+    const item = mockOutboxItems.find((entry) => entry.id === id);
+
+    if (!item) {
+      return HttpResponse.json({ error: "Mensagem não encontrada." }, { status: 404 });
+    }
+
+    item.status = "pending";
+    item.processed = false;
+    item.processedAt = null;
+    item.lastError = null;
+    item.attempts = 0;
+    item.history = [
+      ...item.history,
+      {
+        id: createRandomId("hist"),
+        status: "pending",
+        timestamp: new Date().toISOString(),
+        message: "Mensagem reenfileirada manualmente.",
+      },
+    ];
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "Mensagem reenfileirada com sucesso.",
+      },
+      { status: 200 }
+    );
+  }),
+];
+
 function normalizeServiceSpaceMember(
   input: ServiceSpaceMemberInput | undefined,
   fallbackIndex: number,
@@ -1004,6 +1197,9 @@ export const handlers = [
       );
     }
   ),
+
+  ...createOutboxHandlers("http://localhost:3001/api/admin/outbox"),
+  ...createOutboxHandlers("http://localhost:3001/admin/outbox"),
 
   // Get available participants for a retreat
   http.get(

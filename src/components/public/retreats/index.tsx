@@ -1,9 +1,5 @@
 "use client";
 import { Container, Typography } from "@mui/material";
-import {
-  handleApiResponse,
-  sendRequestClientVanilla,
-} from "@/src/lib/sendRequestClientVanilla";
 import { useQuery } from "@tanstack/react-query";
 import { Box, Stack } from "@mui/material";
 import FilterButton from "@/src/components/filters/FilterButton";
@@ -20,20 +16,26 @@ import { Retreat } from "@/src/types/retreats";
 import { getFilters } from "./getFilters";
 import PublicRetreatsCardTable from "./table";
 import apiClient from "@/src/lib/axiosClientInstance";
+import axios from "axios";
 
 const getRetreats = async (
   filters: TableDefaultFilters<
     RetreatsCardTableFilters & RetreatsCardTableDateFilters
   >
 ) => {
-  const response = await handleApiResponse<RetreatRequest>(
-    await apiClient.get("/public/retreats", { params: filters })
-  );
+  try {
+    const response = await apiClient.get<RetreatRequest>("/public/retreats", {
+      params: filters,
+    });
 
-  if (!response || response.error) {
-    throw new Error("Failed to fetch retreats");
+    return response.data as RetreatRequest;
+  } catch (error) {
+    console.error("Erro ao reenviar notificação:", error);
+    const message = axios.isAxiosError(error)
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
+      : "Erro ao reenviar notificação.";
+    console.error(message);
   }
-  return response.data as RetreatRequest;
 };
 
 export default function PublicRetreatsPage() {
@@ -85,7 +87,7 @@ export default function PublicRetreatsPage() {
   if (isLoading || !retreatsDataArray.length)
     return <Typography>Loading retreats...</Typography>;
   if (isError) return <Typography>No data available.</Typography>;
-  console.log({ retreatsData });
+
   return (
     <Container
       maxWidth="xl"
