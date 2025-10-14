@@ -20,10 +20,9 @@ import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+import apiClient from "@/src/lib/axiosClientInstance";
+import axios from "axios";
+import { enqueueSnackbar } from "notistack";
 
 interface AddParticipantToFamilyFormProps {
   retreatId: string;
@@ -31,20 +30,22 @@ interface AddParticipantToFamilyFormProps {
   onSuccess: () => void;
 }
 
-interface Participant {
-  id: number;
+interface UnassignedParticipant {
+  registrationId: string;
   name: string;
+  gender: string;
+  city: string;
   email: string;
-  phone?: string;
-  age?: number;
-  location?: string;
-  isAssigned?: boolean;
+}
+
+interface UnassignedParticipantsResponse {
+  items: UnassignedParticipant[];
 }
 
 const addParticipantSchema = z.object({
   familyId: z.string().min(1, "Selecione uma família"),
   participantIds: z
-    .array(z.number())
+    .array(z.string())
     .min(1, "Selecione pelo menos um participante"),
   role: z.enum(["leader", "member"]),
 });
@@ -58,7 +59,7 @@ export default function AddParticipantToFamilyForm({
 }: AddParticipantToFamilyFormProps) {
   const t = useTranslations();
   const [loadingParticipants, setLoadingParticipants] = useState(false);
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [participants, setParticipants] = useState<UnassignedParticipant[]>([]);
 
   const {
     control,
@@ -77,21 +78,23 @@ export default function AddParticipantToFamilyForm({
 
   const familyId = watch("familyId");
 
-  // Buscar participantes disponíveis
+  // Buscar participantes não atribuídos
   useEffect(() => {
     const fetchParticipants = async () => {
       setLoadingParticipants(true);
       try {
-        const response = await handleApiResponse<Participant[]>(
-          await sendRequestServerVanilla.get(
-            `/retreats/${retreatId}/participants/available`
-          )
+        const response = await apiClient.get<UnassignedParticipantsResponse>(
+          `/api/retreats/${retreatId}/families/unassigned`
         );
-        if (response.success && response.data) {
-          setParticipants(response.data || []);
-        }
+        setParticipants(response.data.items || []);
       } catch (error) {
         console.error("Erro ao buscar participantes:", error);
+        if (axios.isAxiosError(error)) {
+          enqueueSnackbar(
+            error.response?.data?.message || t("error-loading-participants"),
+            { variant: "error" }
+          );
+        }
         setParticipants([]);
       } finally {
         setLoadingParticipants(false);
@@ -99,10 +102,9 @@ export default function AddParticipantToFamilyForm({
     };
 
     fetchParticipants();
-  }, [retreatId]);
+  }, [retreatId, t]);
 
   const selectedFamily = families.find((f) => String(f.id) === familyId);
-  const availableParticipants = participants.filter((p) => !p.isAssigned);
 
   const onSubmit = async (data: AddParticipantData) => {
     try {
@@ -112,21 +114,24 @@ export default function AddParticipantToFamilyForm({
         role: data.role,
       };
 
-      const response = await handleApiResponse(
-        await sendRequestServerVanilla.post(
-          `/retreats/${retreatId}/families/add-participants`,
-          payload
-        )
+      await apiClient.post(
+        `/api/retreats/${retreatId}/families/add-participants`,
+        payload
       );
 
-      if (response.success) {
-        reset();
-        onSuccess();
-      } else {
-        console.error("Erro ao adicionar participantes:", response.error);
-      }
+      enqueueSnackbar(t("participants-added-successfully"), {
+        variant: "success",
+      });
+      reset();
+      onSuccess();
     } catch (error) {
       console.error("Erro ao adicionar participantes:", error);
+      if (axios.isAxiosError(error)) {
+        enqueueSnackbar(
+          error.response?.data?.message || t("error-adding-participants"),
+          { variant: "error" }
+        );
+      }
     }
   };
 
@@ -214,15 +219,15 @@ export default function AddParticipantToFamilyForm({
               render={({ field }) => (
                 <Autocomplete
                   multiple
-                  options={availableParticipants}
+                  options={participants}
                   getOptionLabel={(option) =>
                     `${option.name} (${option.email})`
                   }
-                  value={availableParticipants.filter((p) =>
-                    field.value.includes(p.id)
+                  value={participants.filter((p) =>
+                    field.value.includes(p.registrationId)
                   )}
                   onChange={(_, newValue) =>
-                    field.onChange(newValue.map((p) => p.id))
+                    field.onChange(newValue.map((p) => p.registrationId))
                   }
                   renderInput={(params) => (
                     <TextField
@@ -244,9 +249,8 @@ export default function AddParticipantToFamilyForm({
                         <Typography variant="body2">{option.name}</Typography>
                         <Typography variant="caption" color="text.secondary">
                           {option.email}
-                          {option.age &&
-                            ` • ${option.age} anos •` &&
-                            option.location}
+                          {option.city && ` • ${option.city}`}
+                          {option.gender && ` • ${option.gender}`}
                         </Typography>
                       </Box>
                     </Box>
@@ -255,7 +259,7 @@ export default function AddParticipantToFamilyForm({
                     tagValue.map((option, index) => (
                       <Chip
                         {...getTagProps({ index })}
-                        key={option.id}
+                        key={option.registrationId}
                         label={option.name}
                         avatar={
                           <Avatar>{option.name.charAt(0).toUpperCase()}</Avatar>

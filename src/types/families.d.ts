@@ -9,4 +9,5 @@ interface RetreatFamily {
   createdAt: string;
   updatedAt: string;
   members: Participant[] | null;
+  locked?: boolean;
 }

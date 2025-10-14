@@ -32,6 +32,8 @@ import DrawFamilies from "./DrawFamilies";
 import DeleteFamilyForm from "./DeleteFamilyForm";
 import { Items } from "./types";
 import FamilyDetails from "./FamilyDetails";
+import LockFamiliesModal from "./LockFamiliesModal";
+import ResetFamiliesModal from "./ResetFamiliesModal";
 import apiClient from "@/src/lib/axiosClientInstance";
 
 interface RetreatFamilyRequest {
@@ -395,6 +397,48 @@ export default function RetreatFamilies({
     });
   };
 
+  const lockFamilies = () => {
+    modal.open({
+      title: t("lock-families"),
+      size: "lg",
+      customRender() {
+        return (
+          <LockFamiliesModal
+            retreatId={retreatId}
+            families={familiesDataArray}
+            onSuccess={() => {
+              modal.close?.();
+              // Refetch families data
+              queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+            }}
+            onCancel={() => modal.close?.()}
+          />
+        );
+      },
+    });
+  };
+
+  const resetFamilies = () => {
+    modal.open({
+      title: t("reset-families"),
+      size: "md",
+      customRender() {
+        return (
+          <ResetFamiliesModal
+            retreatId={retreatId}
+            families={familiesDataArray}
+            onSuccess={() => {
+              modal.close?.();
+              // Refetch families data
+              queryClient.invalidateQueries({ queryKey: ["retreat-families"] });
+            }}
+            onCancel={() => modal.close?.()}
+          />
+        );
+      },
+    });
+  };
+
   const handleFiltersChange = (
     newFilters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => {
@@ -468,6 +512,21 @@ export default function RetreatFamilies({
               disabled={familiesReorderFlag}
             >
               {t("draw-the-families")}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={lockFamilies}
+              disabled={familiesReorderFlag}
+            >
+              {t("lock-families")}
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={resetFamilies}
+              disabled={familiesReorderFlag}
+            >
+              {t("reset-families")}
             </Button>
           </>
         )}

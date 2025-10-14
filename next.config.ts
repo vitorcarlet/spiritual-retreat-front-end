@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: ["@mui/material", "@mui/icons-material"],
+    // reactCompiler: true,
   },
   transpilePackages: ["msw"],
   env: {

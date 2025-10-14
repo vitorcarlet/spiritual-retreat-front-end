@@ -83,7 +83,7 @@ type ServiceSpaceMemberInput = Partial<{
 const createRandomId = (prefix: string) =>
   `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
-type MockFamilyGroupStatus = "none" | "creating" | "active" | "failed";
+type MockFamilyGroupStatus = "none" | "creating" | "active" | "failed" | "locked";
 
 type MockFamilyGroup = {
   retreatId: string;
@@ -885,6 +885,132 @@ export const handlers = [
     }
   ),
 
+  // Get lock status for all families in a retreat
+  http.get(
+    "http://localhost:3001/api/retreats/:retreatId/families/lock",
+    ({ params }) => {
+      const retreatId = params.retreatId as string;
+      const groups = ensureFamilyGroups(retreatId);
+      
+      // Check if there's a global lock
+      const globalLock = groups.every((g) => g.groupStatus === "locked");
+      
+      return HttpResponse.json({
+        version: 0,
+        locked: globalLock,
+        families: mockFamilies.map((family) => ({
+          familyId: String(family.id),
+          familyName: family.name,
+          locked: family.locked ?? false,
+        })),
+      }, { status: 200 });
+    }
+  ),
+
+  // Lock/Unlock all families in a retreat (global lock)
+  http.post(
+    "http://localhost:3001/api/retreats/:retreatId/families/lock",
+    async ({ params, request }) => {
+      const retreatId = params.retreatId as string;
+      const body = await request.json() as { lock: boolean };
+      
+      // Update all families lock status
+      mockFamilies.forEach((family) => {
+        family.locked = body.lock;
+      });
+
+      // Update groups status if needed
+      const groups = ensureFamilyGroups(retreatId);
+      groups.forEach((group) => {
+        group.groupStatus = body.lock ? "locked" : "active";
+      });
+      
+      return HttpResponse.json({
+        version: 0,
+        locked: body.lock,
+      }, { status: 200 });
+    }
+  ),
+
+  // Lock/Unlock a specific family
+  http.post(
+    "http://localhost:3001/api/retreats/:retreatId/families/:familyId/lock",
+    async ({ params, request }) => {
+      const familyId = Number(params.familyId);
+      const body = await request.json() as { lock: boolean };
+      
+      const family = mockFamilies.find((f) => f.id === familyId);
+      
+      if (!family) {
+        return HttpResponse.json(
+          { error: "Família não encontrada" },
+          { status: 404 }
+        );
+      }
+      
+      family.locked = body.lock;
+      
+      return HttpResponse.json({
+        version: 0,
+        locked: body.lock,
+      }, { status: 200 });
+    }
+  ),
+
+  // Reset all families
+  http.post(
+    "http://localhost:3001/api/retreats/:retreatId/families/reset",
+    async ({ request }) => {
+      const body = await request.json() as { forceLockedFamilies: boolean };
+      
+      // Count families and members before deletion
+      const familiesToDelete = body.forceLockedFamilies
+        ? mockFamilies
+        : mockFamilies.filter((f) => !f.locked);
+      
+      const familiesDeleted = familiesToDelete.length;
+      const membersDeleted = familiesToDelete.reduce(
+        (sum, family) => sum + (family.members?.length || 0),
+        0
+      );
+      
+      // If not forcing, check if there are locked families
+      const hasLockedFamilies = mockFamilies.some((f) => f.locked);
+      
+      if (hasLockedFamilies && !body.forceLockedFamilies) {
+        return HttpResponse.json(
+          { 
+            error: "Existem famílias trancadas. Use forceLockedFamilies=true para resetar todas as famílias." 
+          },
+          { status: 400 }
+        );
+      }
+      
+      // Reset families (in real implementation, this would delete from database)
+      // For mock, we'll clear the members array
+      if (body.forceLockedFamilies) {
+        // Reset all families
+        mockFamilies.forEach((family) => {
+          family.members = [];
+          family.locked = false;
+        });
+      } else {
+        // Only reset unlocked families
+        mockFamilies
+          .filter((f) => !f.locked)
+          .forEach((family) => {
+            family.members = [];
+          });
+      }
+      
+      return HttpResponse.json({
+        version: 0,
+        familiesDeleted,
+        membersDeleted,
+      }, { status: 200 });
+    }
+  ),
+
   http.get(
     "http://localhost:3001/api/admin/retreats/:retreatId/groups",
     ({ params, request }) => {
@@ -1366,7 +1492,120 @@ export const handlers = [
   ...createOutboxHandlers("http://localhost:3001/api/admin/outbox"),
   ...createOutboxHandlers("http://localhost:3001/admin/outbox"),
 
-  // Get available participants for a retreat
+  // Get unassigned participants for a retreat
+  http.get(
+    "http://localhost:3001/api/retreats/:retreatId/families/unassigned",
+    ({ request }) => {
+      const url = new URL(request.url);
+      const gender = url.searchParams.get("gender");
+      const city = url.searchParams.get("city");
+      const search = url.searchParams.get("search");
+
+      const mockUnassignedParticipants = [
+        {
+          registrationId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          name: "João Silva",
+          gender: "Masculino",
+          city: "São Paulo",
+          email: "joao.silva@email.com",
+        },
+        {
+          registrationId: "4fb96f75-6828-5673-c4gd-3d074g77bgb7",
+          name: "Maria Santos",
+          gender: "Feminino",
+          city: "Rio de Janeiro",
+          email: "maria.santos@email.com",
+        },
+        {
+          registrationId: "5gc07g86-7939-6784-d5he-4e185h88chc8",
+          name: "Pedro Oliveira",
+          gender: "Masculino",
+          city: "Belo Horizonte",
+          email: "pedro.oliveira@email.com",
+        },
+        {
+          registrationId: "6hd18h97-8a4a-7895-e6if-5f296i99did9",
+          name: "Ana Costa",
+          gender: "Feminino",
+          city: "Porto Alegre",
+          email: "ana.costa@email.com",
+        },
+        {
+          registrationId: "7ie29ia8-9b5b-89a6-f7jg-6g3a7ja0eje0",
+          name: "Carlos Pereira",
+          gender: "Masculino",
+          city: "Salvador",
+          email: "carlos.pereira@email.com",
+        },
+        {
+          registrationId: "8jf3ajb9-ac6c-9ab7-g8kh-7h4b8kb1fkf1",
+          name: "Fernanda Lima",
+          gender: "Feminino",
+          city: "Brasília",
+          email: "fernanda.lima@email.com",
+        },
+        {
+          registrationId: "9kg4bkc0-bd7d-abc8-h9li-8i5c9lc2glg2",
+          name: "Ricardo Mendes",
+          gender: "Masculino",
+          city: "Curitiba",
+          email: "ricardo.mendes@email.com",
+        },
+        {
+          registrationId: "alh5cld1-ce8e-bcd9-iamj-9j6damd3hmh3",
+          name: "Juliana Ferreira",
+          gender: "Feminino",
+          city: "Fortaleza",
+          email: "juliana.ferreira@email.com",
+        },
+        {
+          registrationId: "bmi6dme2-df9f-cdea-jbnk-ak7ebne4ini4",
+          name: "Rafael Alves",
+          gender: "Masculino",
+          city: "Recife",
+          email: "rafael.alves@email.com",
+        },
+        {
+          registrationId: "cnj7enf3-eg0g-defb-kcol-bl8fcof5joj5",
+          name: "Luciana Rocha",
+          gender: "Feminino",
+          city: "Goiânia",
+          email: "luciana.rocha@email.com",
+        },
+      ];
+
+      let filteredParticipants = mockUnassignedParticipants;
+
+      // Apply filters
+      if (gender) {
+        filteredParticipants = filteredParticipants.filter((p) =>
+          p.gender.toLowerCase().includes(gender.toLowerCase())
+        );
+      }
+
+      if (city) {
+        filteredParticipants = filteredParticipants.filter((p) =>
+          p.city.toLowerCase().includes(city.toLowerCase())
+        );
+      }
+
+      if (search) {
+        const searchLower = search.toLowerCase();
+        filteredParticipants = filteredParticipants.filter(
+          (p) =>
+            p.name.toLowerCase().includes(searchLower) ||
+            p.email.toLowerCase().includes(searchLower)
+        );
+      }
+
+      return HttpResponse.json(
+        { items: filteredParticipants },
+        { status: 200 }
+      );
+    }
+  ),
+
+  // Get available participants for a retreat (legacy endpoint)
   http.get(
     "http://localhost:3001/api/retreats/:id/participants/available",
     () => {
