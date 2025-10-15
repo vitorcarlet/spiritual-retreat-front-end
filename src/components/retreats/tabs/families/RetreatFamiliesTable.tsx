@@ -299,7 +299,10 @@ export default function RetreatFamiliesTable({
     items: Items;
     membersById: MembersById;
     memberToContainer: MemberToContainer;
-    familiesById: Record<string, { name: string; color: string }>;
+    familiesById: Record<
+      string,
+      { name: string; color: string; locked?: boolean }
+    >;
   }>({
     items: {},
     membersById: {},
@@ -310,7 +313,7 @@ export default function RetreatFamiliesTable({
   const [items, setItems] = useState<Items>({});
   const [membersById, setMembersById] = useState<MembersById>({});
   const [familiesById, setFamiliesById] = useState<
-    Record<string, { name: string; color: string }>
+    Record<string, { name: string; color: string; locked?: boolean }>
   >({});
   const [memberToContainer, setMemberToContainer] = useState<MemberToContainer>(
     {}
@@ -320,12 +323,19 @@ export default function RetreatFamiliesTable({
     const buildFamiliesStructure = () => {
       const items: Items = {};
       const membersById: MembersById = {};
-      const familiesById: Record<string, { name: string; color: string }> = {};
+      const familiesById: Record<
+        string,
+        { name: string; color: string; locked?: boolean }
+      > = {};
       const memberToContainer: MemberToContainer = {};
 
       InitialItems?.forEach((fam) => {
         const fid = String(fam.id);
-        familiesById[fid] = { name: fam.name, color: fam.color };
+        familiesById[fid] = {
+          name: fam.name,
+          color: fam.color,
+          locked: fam.locked,
+        };
         items[fid] =
           fam.members?.map((m) => {
             const mid = String(m.id);
@@ -597,13 +607,33 @@ export default function RetreatFamiliesTable({
               style={containerStyle}
               unstyled={minimal}
               onRemove={() => handleRemove(containerId)}
+              disabled={familyName.locked} // Disable drag for locked families
             >
+              {familyName.locked && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    mb: 1,
+                    px: 1,
+                    py: 0.5,
+                    bgcolor: "warning.lighter",
+                    borderRadius: 1,
+                  }}
+                >
+                  <Iconify icon="solar:lock-bold" width={16} />
+                  <Typography variant="caption" color="warning.dark">
+                    Família Bloqueada
+                  </Typography>
+                </Box>
+              )}
               <SortableContext items={memberIds} strategy={strategy}>
                 {memberIds.map((memberId, index) => {
                   const meta = membersById[memberId];
                   return (
                     <SortableItem
-                      disabled={isSortingContainer}
+                      disabled={isSortingContainer || familyName.locked} // Disable sorting for locked families
                       key={memberId}
                       id={memberId}
                       value={meta?.name || String(memberId)}
@@ -622,7 +652,7 @@ export default function RetreatFamiliesTable({
                 onView={onView}
                 onDelete={onDelete}
                 familyId={containerId}
-                canEdit={canEditFamily}
+                canEdit={canEditFamily && !familyName.locked} // Disable edit for locked families
               />
               {familyValidationErrors[containerId]?.length ? (
                 <Stack spacing={0.5} mt={1}>
@@ -754,12 +784,37 @@ export default function RetreatFamiliesTable({
           },
         }}
         onDragStart={({ active }) => {
+          // Check if the item being dragged belongs to a locked family
+          const containerId = memberToContainer[active.id];
+          const isLocked = containerId && familiesById[containerId]?.locked;
+
+          if (isLocked) {
+            // Cancel drag if family is locked
+            return;
+          }
+
           setActiveId(active.id);
           setClonedItems(items);
           // Set reorder flag to true when drag starts
           setFamiliesReorderFlag?.(true);
         }}
-        onDragOver={({ active, over }) =>
+        onDragOver={({ active, over }) => {
+          // Check if dragging from or to a locked family
+          const sourceContainerId = memberToContainer[active.id];
+          const targetContainerId =
+            over?.id &&
+            (over.id in items ? over.id : memberToContainer[over.id]);
+
+          const isSourceLocked =
+            sourceContainerId && familiesById[sourceContainerId]?.locked;
+          const isTargetLocked =
+            targetContainerId && familiesById[targetContainerId]?.locked;
+
+          // Prevent drag if source or target is locked
+          if (isSourceLocked || isTargetLocked) {
+            return;
+          }
+
           onDragOver({
             active,
             over,
@@ -768,9 +823,27 @@ export default function RetreatFamiliesTable({
             recentlyMovedToNewContainer,
             memberToContainer,
             setMemberToContainer,
-          })
-        }
+          });
+        }}
         onDragEnd={({ active, over }) => {
+          // Check if dragging from or to a locked family
+          const sourceContainerId = memberToContainer[active.id];
+          const targetContainerId =
+            over?.id &&
+            (over.id in items ? over.id : memberToContainer[over.id]);
+
+          const isSourceLocked =
+            sourceContainerId && familiesById[sourceContainerId]?.locked;
+          const isTargetLocked =
+            targetContainerId && familiesById[targetContainerId]?.locked;
+
+          // Prevent drop if source or target is locked
+          if (isSourceLocked || isTargetLocked) {
+            onDragCancel();
+            setFamiliesReorderFlag?.(false);
+            return;
+          }
+
           onDragEnd({
             active,
             over,
@@ -938,13 +1011,32 @@ export default function RetreatFamiliesTable({
     const familyName = familiesById[containerId] || containerId;
     return (
       <Container
-        label={`Família ${familyName}`}
+        label={`Família ${familyName.name}`}
         columns={memberIds.length}
         style={{ height: "100%" }}
         shadow
         unstyled={false}
         sx={{}}
       >
+        {familyName.locked && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              mb: 1,
+              px: 1,
+              py: 0.5,
+              bgcolor: "warning.lighter",
+              borderRadius: 1,
+            }}
+          >
+            <Iconify icon="solar:lock-bold" width={16} />
+            <Typography variant="caption" color="warning.dark">
+              Família Bloqueada
+            </Typography>
+          </Box>
+        )}
         {memberIds.map((memberId, index) => {
           const meta = membersById[memberId];
           return (
@@ -971,7 +1063,7 @@ export default function RetreatFamiliesTable({
           onView={onView}
           onDelete={onDelete}
           familyId={containerId}
-          canEdit={canEditFamily}
+          canEdit={canEditFamily && !familyName.locked}
         />
       </Container>
     );
@@ -1079,6 +1171,7 @@ function SortableItem({
     transition,
   } = useSortable({
     id,
+    disabled, // This will disable the sorting functionality
   });
   const mounted = useMountStatus();
   const mountedWhileDragging = isDragging && !mounted;
@@ -1089,7 +1182,9 @@ function SortableItem({
       dragging={isDragging}
       sorting={isSorting}
       handle={handle}
-      handleProps={handle ? { ref: setActivatorNodeRef } : undefined}
+      handleProps={
+        handle && !disabled ? { ref: setActivatorNodeRef } : undefined
+      }
       index={index}
       wrapperStyle={wrapperStyle({ index })}
       // style={style({
@@ -1104,8 +1199,12 @@ function SortableItem({
       transition={transition}
       transform={transform}
       fadeIn={mountedWhileDragging}
-      listeners={listeners}
+      listeners={disabled ? undefined : listeners} // Disable listeners if disabled
       //renderItem={renderItem}
+      style={{
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? "not-allowed" : undefined,
+      }}
     />
   );
 }

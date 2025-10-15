@@ -1998,6 +1998,148 @@ export const handlers = [
     );
   }),
 
+  // Contemplate a participant (mark as selected for retreat)
+  http.post(
+    "http://localhost:3001/api/retreats/:retreatId/selections/:registrationId",
+    ({ params }) => {
+      const { retreatId, registrationId } = params;
+      
+      // Find the participant in mock data
+      const participantIndex = mockContemplatedParticipants.findIndex(
+        (p) => String(p.id) === String(registrationId)
+      );
+
+      if (participantIndex === -1) {
+        return HttpResponse.json(
+          { error: "Participante não encontrado" },
+          { status: 404 }
+        );
+      }
+
+      // Update the participant status to contemplated (status = 1)
+      mockContemplatedParticipants[participantIndex] = {
+        ...mockContemplatedParticipants[participantIndex],
+        status: "contemplated",
+      };
+
+      return HttpResponse.json(
+        {
+          message: "Participante contemplado com sucesso",
+          retreatId,
+          registrationId,
+          status: "contemplated",
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  // Remove contemplation from a participant
+  http.delete(
+    "http://localhost:3001/api/retreats/:retreatId/selections/:registrationId",
+    ({ params }) => {
+      const { retreatId, registrationId } = params;
+      
+      // Find the participant in mock data
+      const participantIndex = mockContemplatedParticipants.findIndex(
+        (p) => String(p.id) === String(registrationId)
+      );
+
+      if (participantIndex === -1) {
+        return HttpResponse.json(
+          { error: "Participante não encontrado" },
+          { status: 404 }
+        );
+      }
+
+      // Update the participant status to not_contemplated (status = 0)
+      mockContemplatedParticipants[participantIndex] = {
+        ...mockContemplatedParticipants[participantIndex],
+        status: "not_contemplated",
+      };
+
+      return HttpResponse.json(
+        {
+          message: "Contemplação removida com sucesso",
+          retreatId,
+          registrationId,
+          status: "not_contemplated",
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  // Lottery preview - show which participants would be selected
+  http.get(
+    "http://localhost:3001/api/retreats/:retreatId/lottery/preview",
+    () => {
+      // Get contemplated participants
+      const contemplated = mockContemplatedParticipants.filter(
+        (p) => p.status === "contemplated"
+      );
+
+      // Separate by gender (mock - assuming we have gender data)
+      const maleParticipants = contemplated
+        .filter((_, index) => index % 2 === 0) // Mock: alternate genders
+        .map((p) => String(p.id));
+
+      const femaleParticipants = contemplated
+        .filter((_, index) => index % 2 === 1) // Mock: alternate genders
+        .map((p) => String(p.id));
+
+      // Mock capacity limits
+      const maleCap = Math.max(maleParticipants.length + 5, 20);
+      const femaleCap = Math.max(femaleParticipants.length + 5, 20);
+
+      return HttpResponse.json(
+        {
+          male: maleParticipants,
+          female: femaleParticipants,
+          maleCap,
+          femaleCap,
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
+  // Lottery commit - confirm the lottery selection
+  http.post(
+    "http://localhost:3001/api/retreats/:retreatId/lottery/commit",
+    () => {
+      // Get contemplated participants
+      const contemplated = mockContemplatedParticipants.filter(
+        (p) => p.status === "contemplated"
+      );
+
+      // Separate by gender (mock - assuming we have gender data)
+      const maleParticipants = contemplated
+        .filter((_, index) => index % 2 === 0) // Mock: alternate genders
+        .map((p) => String(p.id));
+
+      const femaleParticipants = contemplated
+        .filter((_, index) => index % 2 === 1) // Mock: alternate genders
+        .map((p) => String(p.id));
+
+      // Mock capacity limits
+      const maleCap = Math.max(maleParticipants.length + 5, 20);
+      const femaleCap = Math.max(femaleParticipants.length + 5, 20);
+
+      // In a real scenario, this would update the database
+      // For now, just return the same data as preview
+      return HttpResponse.json(
+        {
+          male: maleParticipants,
+          female: femaleParticipants,
+          maleCap,
+          femaleCap,
+        },
+        { status: 200 }
+      );
+    }
+  ),
+
   http.get("http://localhost:3001/api/reports", ({ request }) => {
     const url = new URL(request.url);
     const payload = paginate(mockReports, url);

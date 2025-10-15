@@ -23,6 +23,7 @@ import ParticipantForm, { ParticipantFormValues } from "./ParticipantForm";
 import { enqueueSnackbar } from "notistack";
 import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
+import LotteryModal from "../LotteryModal";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
@@ -269,7 +270,7 @@ const getContemplated = async (
     }
 
     const response = await apiClient.get<RegistrationApiResponse>(
-      `/api/Registrations`,
+      `/Registrations`,
       {
         params,
       }
@@ -483,7 +484,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
 
   const submitNewParticipant = async (participant: ParticipantFormValues) => {
     try {
-      await apiClient.post(`/api/Registrations`, {
+      await apiClient.post(`/Registrations`, {
         ...participant,
         retreatId: id,
       });
@@ -508,7 +509,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
 
   const editParticipant = async (participant: ParticipantFormValues) => {
     try {
-      await apiClient.put(`/api/Registrations/${participant.id}`, participant);
+      await apiClient.put(`/Registrations/${participant.id}`, participant);
       enqueueSnackbar("Participante atualizado com sucesso", {
         variant: "success",
         preventDuplicate: true,
@@ -556,7 +557,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           requireCheckboxLabel="Eu entendo as consequências."
           onConfirm={async () => {
             try {
-              await apiClient.delete(`/api/Registrations/${participant.id}`);
+              await apiClient.delete(`/Registrations/${participant.id}`);
               enqueueSnackbar("Participante excluído com sucesso", {
                 variant: "success",
               });
@@ -648,13 +649,47 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     );
   }
 
-  const handleContemplate = (row: ContemplatedParticipant): void => {
-    enqueueSnackbar(
-      `Participante ${row.name} marcado para contemplação (em breve).`,
-      {
-        variant: "info",
-      }
-    );
+  const handleContemplate = async (
+    row: ContemplatedParticipant
+  ): Promise<void> => {
+    try {
+      await apiClient.post(`/retreats/${id}/selections/${row.id}`);
+
+      enqueueSnackbar(`Participante ${row.name} contemplado com sucesso!`, {
+        variant: "success",
+      });
+
+      // Refetch data to update the list
+      await refetch();
+    } catch (error) {
+      console.error("Erro ao contemplar participante:", error);
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Erro ao contemplar participante";
+
+      enqueueSnackbar(message, {
+        variant: "error",
+        autoHideDuration: 5000,
+      });
+    }
+  };
+
+  const handleOpenLottery = () => {
+    modal.open({
+      title: "Loteria de Participantes",
+      size: "xl",
+      customRender: () => (
+        <LotteryModal
+          retreatId={id}
+          onSuccess={() => {
+            modal.close?.();
+            // Refetch data to update the list
+            refetch();
+          }}
+          onCancel={() => modal.close?.()}
+        />
+      ),
+    });
   };
 
   return (
@@ -714,6 +749,13 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           onClick={() => handleOpenParticipantForm(null)}
         >
           {t("contemplations.no-contemplated.create-new-participant")}
+        </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleOpenLottery}
+        >
+          Realizar Sorteio
         </Button>
       </Box>
 

@@ -32,6 +32,7 @@
     "@sentry/nextjs": "^10.7.0",
     "@tanstack/react-query": "^5.84.1",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.12",
     "@tiptap/extension-mention": "^3.3.0",
     "@tiptap/react": "^3.3.0",
     "@tiptap/starter-kit": "^3.3.0",

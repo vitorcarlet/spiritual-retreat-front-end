@@ -266,7 +266,7 @@ const getContemplated = async (
     }
 
     const response = await apiClient.get<RegistrationApiResponse>(
-      `/api/Registrations`,
+      `/Registrations`,
       {
         params,
       }
@@ -595,6 +595,32 @@ export default function ContemplatedTable({ id }: { id: string }) {
       ),
     });
   };
+
+  const handleRemoveContemplation = async (
+    row: ContemplatedParticipant
+  ): Promise<void> => {
+    try {
+      await apiClient.delete(`/retreats/${id}/selections/${row.id}`);
+
+      enqueueSnackbar(`Contemplação de ${row.name} removida com sucesso!`, {
+        variant: "success",
+      });
+
+      // Refetch data to update the list
+      await refetch();
+    } catch (error) {
+      console.error("Erro ao remover contemplação:", error);
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Erro ao remover contemplação";
+
+      enqueueSnackbar(message, {
+        variant: "error",
+        autoHideDuration: 5000,
+      });
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -698,20 +724,24 @@ export default function ContemplatedTable({ id }: { id: string }) {
           // Ações personalizadas
           actions={[
             {
-              icon: "lucide:trash-2",
+              icon: "lucide:eye",
               label: "Ver Mais",
               onClick: (participant) =>
                 handleOpenParticipantForm(String(participant.id), id),
               color: "primary",
-              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
             {
-              icon: "lucide:trash-2",
+              icon: "lucide:send",
               label: "Enviar Mensagem",
               onClick: (participant) =>
                 handleOpenMessagesComponent([participant.id]),
               color: "primary",
-              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+            },
+            {
+              icon: "lucide:x-circle",
+              label: "Remover Contemplação",
+              onClick: handleRemoveContemplation,
+              color: "error",
             },
           ]}
           // Eventos
