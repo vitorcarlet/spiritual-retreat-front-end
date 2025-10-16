@@ -205,10 +205,12 @@ export const fetchFormData = async (
 
 export const sendFormData = async (
   retreatId: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  type: string
 ): Promise<BackendForm> => {
   try {
-    const response = await apiClient.post<BackendForm>(`/api/Registrations`, {
+    const url = type == RetreatFormType.PARTICIPATE ? `/retreats/${retreatId}/service/registrations` : '/Registrations'
+    const response = await apiClient.post<BackendForm>(url, {
       retreatId: retreatId,
       ...body,
     });

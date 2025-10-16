@@ -231,7 +231,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
 
   const onSubmit: SubmitHandler<Record<string, unknown>> = async (data) => {
     console.warn("Form submitted:", data);
-    sendFormData(id, data);
+    sendFormData(id, data, type);
   };
 
   const renderField = (field: BackendField): React.ReactNode => {
