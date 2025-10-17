@@ -1,5 +1,81 @@
 import { Report } from "@/src/types/reports";
+import { mockFamilies } from "../retreats/families";
+import { columnsMock } from "./columns";
 
+type FamilyReportRow = {
+  id: string;
+  familyId: number;
+  familyName: string;
+  color: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  membersCount: number;
+  createdAt: string;
+  updatedAt: string;
+  locked: boolean;
+  members: Array<{
+    id: number;
+    fullName: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    city: string;
+    state: string;
+    status: string;
+  }>;
+};
+
+const familyReportRows: FamilyReportRow[] = mockFamilies.map((family) => {
+  const members = (family.members ?? []).map((member) => ({
+    id: member.id,
+    fullName:
+      member.name || `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim(),
+    firstName: member.firstName ?? "",
+    lastName: member.lastName ?? "",
+    email: member.email,
+    phone: member.phone,
+    city: member.city,
+    state: member.state,
+    status: member.status,
+  }));
+
+  return {
+    id: String(family.id),
+    familyId: family.id,
+    familyName: family.name,
+    color: family.color,
+    contactName: family.contactName,
+    contactEmail: family.contactEmail,
+    contactPhone: family.contactPhone,
+    membersCount: family.membersCount,
+    createdAt: family.createdAt,
+    updatedAt: family.updatedAt,
+    locked: Boolean(family.locked && members.length > 0),
+    members,
+  } satisfies FamilyReportRow;
+});
+
+const familyReportSummary = familyReportRows.reduce(
+  (acc, family) => {
+    acc.totalParticipants += family.members.length;
+    if (family.locked) acc.lockedFamilies += 1;
+    return acc;
+  },
+  {
+    totalFamilies: familyReportRows.length,
+    totalParticipants: 0,
+    lockedFamilies: 0,
+  }
+);
+
+const familyReportColumns = [
+  { field: "familyName", headerName: "Família", type: "string" },
+  { field: "membersCount", headerName: "Participantes", type: "number" },
+  { field: "contactName", headerName: "Contato", type: "string" },
+  { field: "contactPhone", headerName: "Telefone", type: "string" },
+];
 export const mockReports: Report[] = [
   {
     id: "1",
@@ -72,9 +148,10 @@ export const mockReports: Report[] = [
   },
 ];
 
-export const mockReportDetails = [
+export const mockReportDetails: Array<Record<string, unknown>> = [
   {
     id: "1",
+    type: "participant",
     name: "Relatório de Inscrições",
     preFilters: {
       reportFilters: [1, 2, 3],
@@ -82,6 +159,7 @@ export const mockReportDetails = [
     },
     retreatName: "Retiro de Verão 2025",
     retreatId: "1",
+    columns: columnsMock,
     rows: [
       {
         id: 1,
@@ -521,5 +599,20 @@ export const mockReportDetails = [
         parente_amigo_na_inscricao: "Não",
       },
     ],
+  },
+  {
+    id: "5",
+    type: "families",
+    name: "Relatório de Famílias",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+    summary: {
+      totalFamilies: familyReportSummary.totalFamilies,
+      totalParticipants: familyReportSummary.totalParticipants,
+      lockedFamilies: familyReportSummary.lockedFamilies,
+      generatedAt: new Date("2025-03-06T09:30:00Z").toISOString(),
+    },
+    columns: familyReportColumns,
+    rows: familyReportRows,
   },
 ];

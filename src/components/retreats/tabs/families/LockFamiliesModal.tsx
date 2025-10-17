@@ -57,7 +57,7 @@ export default function LockFamiliesModal({
       try {
         setLoading(true);
         const response = await apiClient.get<RetreatLockStatus>(
-          `/api/retreats/${retreatId}/families/lock`
+          `/retreats/${retreatId}/families/lock`
         );
 
         setGlobalLock(response.data.locked);
@@ -105,7 +105,7 @@ export default function LockFamiliesModal({
       const newLockState = !globalLock;
 
       const response = await apiClient.post<RetreatLockStatus>(
-        `/api/retreats/${retreatId}/families/lock`,
+        `/retreats/${retreatId}/families/lock`,
         { lock: newLockState }
       );
 
@@ -155,7 +155,7 @@ export default function LockFamiliesModal({
       const response = await apiClient.post<{
         version: number;
         locked: boolean;
-      }>(`/api/retreats/${retreatId}/families/${familyId}/lock`, {
+      }>(`/retreats/${retreatId}/families/${familyId}/lock`, {
         lock: newLockState,
       });
 

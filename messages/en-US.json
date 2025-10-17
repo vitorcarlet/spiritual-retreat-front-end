@@ -17,6 +17,49 @@
   "filters": "Filters",
   "startDate": "Start Date",
   "retreats": "Retreats",
+  "contemplations": {
+    "contemplated": {
+      "tab-label": "Contemplated"
+    },
+    "no-contemplated": {
+      "tab-label": "Not contemplated"
+    },
+    "service": {
+      "unassigned": {
+        "tab-label": "Service team pending",
+        "title": "Participants waiting for a service team",
+        "subtitle": "{count, plural, one {# participant is waiting} other {# participants are waiting}} for a service team assignment.",
+        "search-placeholder": "Search by name, email, city, or CPF",
+        "refresh": "Refresh list",
+        "refreshing": "Refreshing...",
+        "total-count": "{count, plural, one {# participant listed} other {# participants listed}}",
+        "columns": {
+          "name": "Name",
+          "email": "Email",
+          "city": "City",
+          "cpf": "CPF",
+          "preferredSpaceName": "Preferred space"
+        },
+        "no-data": "Nobody is waiting for a service team assignment right now.",
+        "error": "We couldn't load the service participants waiting for a team.",
+        "actions": {
+          "view": "View participant"
+        },
+        "modal-title": "Service participant: {name}",
+        "errors": {
+          "missing-id": "We couldn't identify the selected participant."
+        },
+        "form": {
+          "submit-label": "Save changes",
+          "success": "Service participant updated successfully!",
+          "error": "We couldn't update the service participant.",
+          "fetch-error": "We couldn't load the service participant data.",
+          "fallback-name": "Service participant",
+          "fallback-activity": "Service team"
+        }
+      }
+    }
+  },
   "loading-participants": "Loading participants",
   "participants-without-family": "Participants without family",
   "participants-without-family-description": "Below is the list of participants who have not been assigned to a family yet.",
@@ -120,8 +163,120 @@
     "no-leader": "No leader assigned"
   },
   "service-team-details": {
+    "confirmDelete": "Confirm removal",
     "createSpace": {
-      "cta": "Create new Team"
-    }
+      "title": "Create new team",
+      "cta": "Create new team"
+    },
+    "fields": {
+      "minMembers": "Minimum members",
+      "maxMembers": "Maximum members",
+      "name": "Service team name",
+      "description": "Description",
+      "color": "Tag color",
+      "isActive": "Active team",
+      "coordinator": "Coordinator",
+      "viceCoordinator": "Assistant coordinator"
+    },
+    "sections": {
+      "coordinator": "Service team coordinator",
+      "vice-coordinator": "Service team assistant coordinator",
+      "members": "Service team members",
+      "viceCoordinator": "Assistant coordinator",
+      "general": "General information"
+    },
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "labels": {
+      "memberCount": "{count, plural, one {# member} other {# members}}"
+    },
+    "placeholders": {
+      "selectMember": "Select members"
+    },
+    "messages": {
+      "noMembers": "No members",
+      "noDescription": "No description",
+      "updateSuccess": "Service space updated successfully!",
+      "createSuccess": "Service space created successfully!"
+    },
+    "hints": {
+      "memberLimit": "Use minimum and maximum values to control the team size."
+    },
+    "lock": {
+      "title": "Lock service teams",
+      "button": "Lock teams",
+      "alerts": {
+        "intro": "Lock service teams to prevent changes during the event.",
+        "globalActive": "Global lock is active. Disable it to manage teams individually."
+      },
+      "global": {
+        "title": "Global lock",
+        "active": "All teams are locked for editing.",
+        "inactive": "Lock or unlock all teams at once.",
+        "lockedLabel": "Locked",
+        "unlockedLabel": "Unlocked"
+      },
+      "individual": {
+        "title": "Individual lock",
+        "summary": "{locked} / {total} locked",
+        "members": "{count, plural, one {# member} other {# members}}"
+      },
+      "messages": {
+        "globalLocked": "All teams have been locked.",
+        "globalUnlocked": "All teams have been unlocked.",
+        "disableGlobal": "Disable the global lock to manage teams individually.",
+        "spaceLocked": "Service team \"{name}\" locked.",
+        "spaceUnlocked": "Service team \"{name}\" unlocked."
+      },
+      "errors": {
+        "fetch": "Unable to load lock status.",
+        "global": "Unable to update the global lock.",
+        "individual": "Unable to update the team lock."
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "finish": "Done"
+      }
+    },
+    "actions": {
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save",
+      "edit": "Edit"
+    },
+    "errors": {
+      "update": "Unable to update the service space",
+      "create": "Unable to create the service space"
+    },
+    "viceCoordinator": {
+      "unassigned": "Unassigned"
+    },
+    "coordinator": {
+      "unassigned": "Coordinator not assigned"
+    },
+    "create-new-team": "Create new team",
+    "add-new-participant": "Add new participant",
+    "add-participant-in-service-team": "Add participant to service team"
+  },
+  "family-report-refresh": "Refresh data",
+  "family-report-refresh-loading": "Refreshing...",
+  "family-report-export": "Export CSV",
+  "family-report-search": "Search families or participants",
+  "family-report-total-families": "Families",
+  "family-report-total-participants": "Participants",
+  "family-report-locked-families": "Locked families",
+  "family-report-generated-at": "Generated at {value}",
+  "family-report-empty-state": "No families matched your filters.",
+  "family-report-contact": "Contact: {name} • {phone} • {email}",
+  "family-report-members-count": "{count, plural, one {# participant} other {# participants}}",
+  "family-report-updated-at": "Last update: {value}",
+  "family-report-members": "Participants",
+  "family-report-hide-members": "Hide participants",
+  "family-report-show-members": "Show participants",
+  "family-report-no-members": "This family doesn't have participants yet.",
+  "family-report-member-status-unknown": "Status unavailable",
+  "family-report-tags": {
+    "locked": "Locked",
+    "active": "Active"
   }
 }

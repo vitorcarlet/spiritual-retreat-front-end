@@ -262,12 +262,21 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
           sx={{
             backgroundColor: "background.paper",
             height: "100%",
-            flexGrow: 1,
+            width: openPersistent
+              ? `calc(100% - ${drawerWidth}px)`
+              : `calc(100% - 65px)`,
             // On desktop, account for drawer width; on mobile, full width
             // ml: {
             //   sm: openPersistent ? `${drawerWidth}px` : `calc(64px + 1px)`,
             //   xs: 0,
             // },
+            transition: (theme) =>
+              theme.transitions.create("width", {
+                easing: theme.transitions.easing.sharp,
+                duration: openPersistent
+                  ? theme.transitions.duration.enteringScreen
+                  : theme.transitions.duration.leavingScreen,
+              }),
           }}
         >
           <DrawerHeader />

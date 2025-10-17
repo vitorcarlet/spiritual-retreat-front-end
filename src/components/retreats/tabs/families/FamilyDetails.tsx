@@ -75,7 +75,7 @@ export default function FamilyDetails({
       setErrorMessage(null);
       try {
         const response = await apiClient.get<RetreatFamily>(
-          `/api/retreats/${retreatId}/families/${familyId}`
+          `/retreats/${retreatId}/families/${familyId}`
         );
 
         const family = response.data;
@@ -151,7 +151,7 @@ export default function FamilyDetails({
       };
 
       const response = await apiClient.put<RetreatFamily>(
-        `/api/retreats/${retreatId}/families/${familyState.id}`,
+        `/retreats/${retreatId}/families/${familyState.id}`,
         payload
       );
 

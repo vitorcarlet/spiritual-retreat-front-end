@@ -1,6 +1,7 @@
 "use client";
 import { Tab, Tabs, Box, Skeleton } from "@mui/material";
 import { useState, useMemo, Suspense } from "react";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 
 // Lazy (carrega só quando a aba for aberta)
@@ -10,10 +11,13 @@ const Contemplated = dynamic(() => import("./contemplated"), {
 const NonContemplatedTable = dynamic(() => import("./no-contemplated"), {
   loading: () => <Skeleton variant="rectangular" height={160} />,
 });
+const ServiceUnassigned = dynamic(() => import("./service/unassigned"), {
+  loading: () => <Skeleton variant="rectangular" height={160} />,
+});
 
 interface TabConfig {
   value: number;
-  label: string;
+  labelKey: string;
   render: (id: string) => React.ReactNode;
   preload?: () => void;
 }
@@ -21,15 +25,21 @@ interface TabConfig {
 const TABS: TabConfig[] = [
   {
     value: 0,
-    label: "contemplated",
+    labelKey: "contemplations.contemplated.tab-label",
     render: (id: string) => <Contemplated id={id} />,
     preload: () => import("./contemplated"),
   },
   {
     value: 1,
-    label: "no-contemplated",
+    labelKey: "contemplations.no-contemplated.tab-label",
     render: (id: string) => <NonContemplatedTable id={id} />,
     preload: () => import("./no-contemplated"),
+  },
+  {
+    value: 2,
+    labelKey: "contemplations.service.unassigned.tab-label",
+    render: (id: string) => <ServiceUnassigned id={id} />,
+    preload: () => import("./service/unassigned"),
   },
 ];
 
@@ -41,17 +51,18 @@ function a11yProps(index: number) {
 }
 
 export default function RetreatContemplation({ id }: { id: string }) {
+  const t = useTranslations();
   const [tabValue, setTabValue] = useState(0);
 
   // Pré-carrega próxima aba após montagem / troca (opcional)
   useMemo(() => {
-    const next = TABS.find((t) => t.value !== tabValue)?.preload;
+    const next = TABS.find((tab) => tab.value !== tabValue)?.preload;
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     next && next();
   }, [tabValue]);
 
   const current = useMemo(
-    () => TABS.find((t) => t.value === tabValue),
+    () => TABS.find((tab) => tab.value === tabValue),
     [tabValue]
   );
 
@@ -74,7 +85,7 @@ export default function RetreatContemplation({ id }: { id: string }) {
         {TABS.map((tab) => (
           <Tab
             key={tab.value}
-            label={tab.label}
+            label={t(tab.labelKey)}
             {...a11yProps(tab.value)}
             sx={{ textTransform: "none", fontSize: "0.95rem", fontWeight: 500 }}
           />

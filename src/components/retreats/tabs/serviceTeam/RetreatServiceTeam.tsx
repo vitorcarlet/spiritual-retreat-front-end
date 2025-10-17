@@ -16,11 +16,8 @@ import {
 
 import { useModal } from "@/src/hooks/useModal";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import getPermission from "@/src/utils/getPermission";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 import FilterButton from "../../../filters/FilterButton";
 import { getFilters } from "./getFilters";
@@ -33,6 +30,7 @@ import {
   RetreatsCardTableFilters,
 } from "../../types";
 import AddParticipantToServiceTeamForm from "./AddParticipantToServiceTeamForm";
+import LockServiceSpacesModal from "./LockServiceSpacesModal";
 
 interface ServiceSpacesResponse {
   rows: ServiceSpace[] | ServiceSpace;
@@ -49,20 +47,95 @@ const getServiceSpaces = async (
   >,
   retreatId: string
 ): Promise<ServiceSpacesResponse> => {
-  const response = await handleApiResponse<ServiceSpacesResponse>(
-    await sendRequestServerVanilla.get(
-      `/retreats/${retreatId}/service-spaces`,
-      {
-        params: filters,
-      }
-    )
-  );
+  const page = filters.page && filters.page > 0 ? filters.page : 1;
+  const pageLimit =
+    filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 12;
 
-  if (!response.success || !response.data) {
-    throw new Error(response.error || "Failed to fetch service spaces");
+  const params: Record<string, unknown> = {
+    page,
+    pageSize: pageLimit,
+  };
+
+  if (filters.search) {
+    params.q = filters.search;
   }
 
-  return response.data;
+  const { data } = await apiClient.get(
+    `/api/retreats/${retreatId}/service/spaces`,
+    {
+      params,
+    }
+  );
+
+  const extractRows = (payload: unknown): ServiceSpace[] => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload as ServiceSpace[];
+    if (typeof payload !== "object") return [];
+
+    const source = payload as {
+      rows?: ServiceSpace[];
+      items?: ServiceSpace[];
+      data?: ServiceSpace[];
+      result?: ServiceSpace[];
+    };
+
+    if (Array.isArray(source.rows)) return source.rows;
+    if (Array.isArray(source.items)) return source.items;
+    if (Array.isArray(source.data)) return source.data;
+    if (Array.isArray(source.result)) return source.result;
+
+    return [];
+  };
+
+  const rows = extractRows(data);
+
+  const total =
+    (data &&
+      typeof data === "object" &&
+      (data as { total?: number; totalCount?: number; count?: number })
+        .total) ??
+    (data &&
+      typeof data === "object" &&
+      (data as { total?: number; totalCount?: number; count?: number })
+        .totalCount) ??
+    (data &&
+      typeof data === "object" &&
+      (data as { total?: number; totalCount?: number; count?: number })
+        .count) ??
+    rows.length;
+
+  const responsePage =
+    (data && typeof data === "object" && (data as { page?: number }).page) ??
+    page;
+  const responseLimit =
+    (data &&
+      typeof data === "object" &&
+      (data as { pageLimit?: number; pageSize?: number }).pageLimit) ??
+    (data &&
+      typeof data === "object" &&
+      (data as { pageLimit?: number; pageSize?: number }).pageSize) ??
+    pageLimit;
+
+  const hasNextPage =
+    (data &&
+      typeof data === "object" &&
+      (data as { hasNextPage?: boolean }).hasNextPage) ??
+    responsePage * responseLimit < total;
+
+  const hasPrevPage =
+    (data &&
+      typeof data === "object" &&
+      (data as { hasPrevPage?: boolean }).hasPrevPage) ??
+    responsePage > 1;
+
+  return {
+    rows,
+    total,
+    page: responsePage,
+    pageLimit: responseLimit,
+    hasNextPage,
+    hasPrevPage,
+  };
 };
 
 interface RetreatServiceTeamProps {
@@ -134,15 +207,12 @@ export default function RetreatServiceTeam({
     if (!user) {
       return false;
     }
-    console.log("canEditSerce", user);
     return getPermission({
       permissions: user.permissions,
       permission: "retreats.update",
       role: user.role,
     });
   }, [session.data]);
-
-  console.log("canEditSerce", canEditServiceSpace);
 
   const openServiceSpaceDetails = useCallback(
     (spaceId: string, startInEdit = false) => {
@@ -205,20 +275,45 @@ export default function RetreatServiceTeam({
 
   const handleSaveReorder = useCallback(
     async (items: Items) => {
-      try {
-        const reorderData = Object.entries(items).map(
-          ([serviceSpaceId, memberIds]) => ({
-            serviceSpaceId,
-            memberIds: memberIds.map((memberId) => String(memberId)),
-          })
-        );
+      const serviceSpacesById = new Map(
+        serviceSpaces.map((space) => [String(space.id), space])
+      );
 
-        await sendRequestServerVanilla.put(
-          `/retreats/${retreatId}/service-spaces/reorder`,
-          {
-            data: reorderData,
+      const membersIndex = new Map<string, ServiceSpaceMember>();
+      serviceSpaces.forEach((space) => {
+        space.members?.forEach((member) => {
+          membersIndex.set(String(member.id), member);
+        });
+      });
+
+      try {
+        const spacesPayload = Object.entries(items).map(
+          ([serviceSpaceId, memberIds]) => {
+            const originalSpace = serviceSpacesById.get(serviceSpaceId);
+
+            const members = memberIds.map((memberId, index) => {
+              const member = membersIndex.get(String(memberId));
+              return {
+                registrationId: String(memberId),
+                role: member?.role ?? "member",
+                position: index,
+              };
+            });
+
+            return {
+              spaceId: serviceSpaceId,
+              name: originalSpace?.name ?? serviceSpaceId,
+              members,
+            };
           }
         );
+
+        await apiClient.put(`/api/retreats/${retreatId}/service/roster`, {
+          retreatId,
+          version: 0,
+          spaces: spacesPayload,
+          ignoreWarnings: true,
+        });
 
         queryClient.invalidateQueries({
           queryKey: ["retreat-service-spaces", retreatId],
@@ -233,7 +328,7 @@ export default function RetreatServiceTeam({
         setSpacesReorderFlag(false);
       }
     },
-    [queryClient, retreatId, setSpacesReorderFlag]
+    [queryClient, retreatId, serviceSpaces, setSpacesReorderFlag]
   );
 
   const handleView = useCallback(
@@ -264,17 +359,9 @@ export default function RetreatServiceTeam({
       }
 
       try {
-        const response = await handleApiResponse<{ success: boolean }>(
-          await sendRequestServerVanilla.delete(
-            `/retreats/${retreatId}/service-spaces/${spaceKey}`
-          )
+        await apiClient.delete(
+          `/api/retreats/${retreatId}/service/spaces/${spaceKey}`
         );
-
-        if (!response.success) {
-          throw new Error(
-            response.error || "Unable to delete the selected service space"
-          );
-        }
 
         queryClient.setQueryData<ServiceSpacesResponse | undefined>(
           ["retreat-service-spaces", retreatId, filters],
@@ -342,6 +429,30 @@ export default function RetreatServiceTeam({
       },
     });
   }, [modal, queryClient, retreatId, t]);
+
+  const handleLockServiceSpaces = useCallback(() => {
+    modal.open({
+      title: tDetails("lock.title", {
+        defaultMessage: "Lock service teams",
+      }),
+      size: "md",
+      customRender() {
+        return (
+          <LockServiceSpacesModal
+            retreatId={retreatId}
+            serviceSpaces={serviceSpaces}
+            onCancel={modal.close}
+            onSuccess={() => {
+              modal.close?.();
+              queryClient.invalidateQueries({
+                queryKey: ["retreat-service-spaces", retreatId],
+              });
+            }}
+          />
+        );
+      },
+    });
+  }, [modal, queryClient, retreatId, serviceSpaces, tDetails]);
 
   const handleFiltersChange = useCallback(
     (newFilters: TableDefaultFilters<RetreatsCardTableFilters>) => {
@@ -411,6 +522,15 @@ export default function RetreatServiceTeam({
               disabled={isFetching || spacesReorderFlag}
             >
               {tDetails("add-new-participant")}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleLockServiceSpaces}
+              disabled={isFetching || spacesReorderFlag}
+            >
+              {tDetails("lock.button", {
+                defaultMessage: "Lock service teams",
+              })}
             </Button>
           </>
         )}

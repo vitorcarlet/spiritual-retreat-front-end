@@ -184,7 +184,8 @@ const ReportPage = () => {
 
   // Handlers for the DataGrid actions
   const handleViewReport = (report: any) => {
-    router.push(`/reports/${report.id}`);
+    const url = getUrlByReportType(report.type);
+    router.push(`/reports/${report.id}/${url}`);
   };
 
   const handleDeleteReport = (
@@ -331,3 +332,44 @@ const ReportPage = () => {
 };
 
 export default ReportPage;
+function getUrlByReportType(type: any): string {
+  const t = (
+    typeof type === "string" ? type : String(type || "")
+  ).toLowerCase();
+
+  switch (t) {
+    case "participant":
+    case "participants":
+      return "participant";
+
+    case "family":
+    case "families":
+      return "family";
+
+    case "service":
+    case "service_order":
+    case "service-orders":
+    case "serviceorders":
+    case "service_order_report":
+      return "service";
+
+    case "tent":
+    case "tents":
+      return "tent";
+
+    case "attendance":
+    case "attendance_report":
+      return "attendance";
+
+    case "financial":
+    case "finance":
+    case "financial_report":
+      return "financial";
+
+    // add other known report types here
+
+    default:
+      // fallback route segment when type is unknown
+      return "participant";
+  }
+}

@@ -342,10 +342,7 @@ export default function RetreatFamilies({
           ignoreWarnings: true,
         };
 
-        await apiClient.put(
-          `/api/retreats/${retreatId}/families/reorder`,
-          payload
-        );
+        await apiClient.put(`/retreats/${retreatId}/families/reorder`, payload);
 
         setFamiliesReorderFlag(false);
         // Refetch families data to get updated order

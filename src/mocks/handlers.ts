@@ -2125,7 +2125,7 @@ export const handlers = [
       // Mock capacity limits
       const maleCap = Math.max(maleParticipants.length + 5, 20);
       const femaleCap = Math.max(femaleParticipants.length + 5, 20);
-
+      //const arr = ['1231',123,'asdas',{ggg: 11}]
       // In a real scenario, this would update the database
       // For now, just return the same data as preview
       return HttpResponse.json(
@@ -2149,11 +2149,39 @@ export const handlers = [
   // GET - Obter relatório específico
   http.get("http://localhost:3001/api/reports/:id", ({ params }) => {
     const id = params.id as string;
-    const report = mockReportDetails.find((r) => r.id === id);
-    const columns = columnsMock;
+    const report = mockReportDetails.find((r) => {
+      const item = r as { id?: unknown };
+      return item.id === id;
+    });
+
     if (report) {
+      const detail = report as {
+        columns?: unknown;
+        rows?: unknown;
+        summary?: { totalFamilies?: number; totalParticipants?: number };
+      };
+
+      const reportColumns = Array.isArray(detail.columns)
+        ? (detail.columns as unknown[])
+        : columnsMock;
+
+      const reportRows = Array.isArray(detail.rows)
+        ? (detail.rows as unknown[])
+        : [];
+
+      const total =
+        typeof detail.summary?.totalFamilies === "number"
+          ? detail.summary.totalFamilies
+          : reportRows.length;
+
       return HttpResponse.json(
-        { report, columns, total: report.rows.length, page: 1, pageLimit: 0 },
+        {
+          report,
+          columns: reportColumns,
+          total,
+          page: 1,
+          pageLimit: 0,
+        },
         { status: 200 }
       );
     }

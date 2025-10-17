@@ -36,8 +36,47 @@
     "title": "Usuários"
   },
   "contemplations": {
+    "contemplated": {
+      "tab-label": "Contemplados"
+    },
     "no-contemplated": {
+      "tab-label": "Não contemplados",
       "create-new-participant": "Adicionar Novo Participante"
+    },
+    "service": {
+      "unassigned": {
+        "tab-label": "Sem equipe de serviço",
+        "title": "Participantes sem equipe de serviço",
+        "subtitle": "{count, plural, one {# participante aguardando alocação} other {# participantes aguardando alocação}} em equipes de serviço.",
+        "search-placeholder": "Buscar por nome, e-mail, cidade ou CPF",
+        "refresh": "Atualizar lista",
+        "refreshing": "Atualizando...",
+        "total-count": "{count, plural, one {# participante listado} other {# participantes listados}}",
+        "columns": {
+          "name": "Nome",
+          "email": "E-mail",
+          "city": "Cidade",
+          "cpf": "CPF",
+          "preferredSpaceName": "Espaço preferido"
+        },
+        "no-data": "Nenhum participante aguardando alocação em equipes de serviço.",
+        "error": "Não foi possível carregar os participantes de serviço sem equipe.",
+        "actions": {
+          "view": "Ver participante"
+        },
+        "modal-title": "Participante de serviço: {name}",
+        "errors": {
+          "missing-id": "Não foi possível identificar o participante selecionado."
+        },
+        "form": {
+          "submit-label": "Salvar alterações",
+          "success": "Participante de serviço atualizado com sucesso!",
+          "error": "Não foi possível atualizar o participante de serviço.",
+          "fetch-error": "Não foi possível carregar os dados do participante de serviço.",
+          "fallback-name": "Participante de serviço",
+          "fallback-activity": "Equipe de serviço"
+        }
+      }
     }
   },
   "new-report": "Novo Relatório",
@@ -242,6 +281,9 @@
       "minMembers": "Número Mínimo de Membros",
       "name": "Nome da Equipe de Serviço",
       "description": "Descrição",
+      "maxMembers": "Número Máximo de Membros",
+      "color": "Cor do Marcador",
+      "isActive": "Equipe ativa",
       "coordinator": "Coordenador",
       "viceCoordinator": "Vice-Coordenador"
     },
@@ -263,7 +305,47 @@
     "messages": {
       "noMembers": "Sem Membros",
       "noDescription": "Sem Descrição",
-      "updateSuccess": "Atualização do espaço de serviço realizada com sucesso!"
+      "updateSuccess": "Atualização do espaço de serviço realizada com sucesso!",
+      "createSuccess": "Equipe de serviço criada com sucesso!"
+    },
+    "hints": {
+      "memberLimit": "Use os valores mínimo e máximo para controlar o tamanho da equipe."
+    },
+    "lock": {
+      "title": "Bloquear equipes de serviço",
+      "button": "Bloquear equipes",
+      "alerts": {
+        "intro": "Bloqueie as equipes de serviço para evitar alterações durante o evento.",
+        "globalActive": "O bloqueio global está ativo. Desative-o para gerenciar equipes individualmente."
+      },
+      "global": {
+        "title": "Bloqueio global",
+        "active": "Todas as equipes estão bloqueadas para edição.",
+        "inactive": "Bloqueie ou desbloqueie todas as equipes de uma vez.",
+        "lockedLabel": "Bloqueado",
+        "unlockedLabel": "Desbloqueado"
+      },
+      "individual": {
+        "title": "Bloqueio individual",
+        "summary": "{locked} / {total} bloqueadas",
+        "members": "{count, plural, one {# membro} other {# membros}}"
+      },
+      "messages": {
+        "globalLocked": "Todas as equipes foram bloqueadas.",
+        "globalUnlocked": "Todas as equipes foram desbloqueadas.",
+        "disableGlobal": "Desative o bloqueio global para gerenciar equipes individualmente.",
+        "spaceLocked": "Equipe \"{name}\" bloqueada.",
+        "spaceUnlocked": "Equipe \"{name}\" desbloqueada."
+      },
+      "errors": {
+        "fetch": "Não foi possível carregar o status de bloqueio.",
+        "global": "Não foi possível atualizar o bloqueio global.",
+        "individual": "Não foi possível atualizar o bloqueio da equipe."
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "finish": "Concluir"
+      }
     },
     "actions": {
       "close": "Fechar",
@@ -272,7 +354,8 @@
       "edit": "Editar"
     },
     "errors": {
-      "update": "Erro ao atualizar o espaço de serviço"
+      "update": "Erro ao atualizar o espaço de serviço",
+      "create": "Erro ao criar o espaço de serviço"
     },
     "viceCoordinator": {
       "unassigned": "Não Alocado"
@@ -283,6 +366,27 @@
     "create-new-team": "Criar Nova Equipe",
     "add-new-participant": "Adicionar Novo Participante",
     "add-participant-in-service-team": "Adicionar Participante à Equipe de Serviço"
+  },
+  "family-report-refresh": "Atualizar dados",
+  "family-report-refresh-loading": "Atualizando...",
+  "family-report-export": "Exportar CSV",
+  "family-report-search": "Buscar famílias ou participantes",
+  "family-report-total-families": "Famílias",
+  "family-report-total-participants": "Participantes",
+  "family-report-locked-families": "Famílias bloqueadas",
+  "family-report-generated-at": "Gerado em {value}",
+  "family-report-empty-state": "Nenhuma família corresponde aos seus filtros.",
+  "family-report-contact": "Contato: {name} • {phone} • {email}",
+  "family-report-members-count": "{count, plural, one {# participante} other {# participantes}}",
+  "family-report-updated-at": "Última atualização: {value}",
+  "family-report-members": "Participantes",
+  "family-report-hide-members": "Ocultar participantes",
+  "family-report-show-members": "Mostrar participantes",
+  "family-report-no-members": "Esta família ainda não possui participantes.",
+  "family-report-member-status-unknown": "Status não disponível",
+  "family-report-tags": {
+    "locked": "Bloqueada",
+    "active": "Ativa"
   },
   "service-team-a": {
     "minMembers": "Número Mínimo de Membros",

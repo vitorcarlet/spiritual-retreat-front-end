@@ -28,7 +28,7 @@ export default function DeleteFamilyForm({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await apiClient.delete(`/api/retreats/${retreatId}/families/${familyId}`);
+      await apiClient.delete(`/retreats/${retreatId}/families/${familyId}`);
 
       enqueueSnackbar(
         t("family-deleted-successfully", { name: familyName || familyId }),

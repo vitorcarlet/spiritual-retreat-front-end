@@ -84,7 +84,7 @@ export default function AddParticipantToFamilyForm({
       setLoadingParticipants(true);
       try {
         const response = await apiClient.get<UnassignedParticipantsResponse>(
-          `/api/retreats/${retreatId}/families/unassigned`
+          `/retreats/${retreatId}/families/unassigned`
         );
         setParticipants(response.data.items || []);
       } catch (error) {
@@ -115,7 +115,7 @@ export default function AddParticipantToFamilyForm({
       };
 
       await apiClient.post(
-        `/api/retreats/${retreatId}/families/add-participants`,
+        `/retreats/${retreatId}/families/add-participants`,
         payload
       );
 

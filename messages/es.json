@@ -16,6 +16,49 @@
   "city": "City",
   "filters": "Filters",
   "retreats": "retiros",
+  "contemplations": {
+    "contemplated": {
+      "tab-label": "Contemplados"
+    },
+    "no-contemplated": {
+      "tab-label": "No contemplados"
+    },
+    "service": {
+      "unassigned": {
+        "tab-label": "Pendientes de equipo de servicio",
+        "title": "Participantes en espera de un equipo de servicio",
+        "subtitle": "{count, plural, one {# participante está esperando} other {# participantes están esperando}} asignación a un equipo de servicio.",
+        "search-placeholder": "Buscar por nombre, correo electrónico, ciudad o CPF",
+        "refresh": "Actualizar lista",
+        "refreshing": "Actualizando...",
+        "total-count": "{count, plural, one {# participante listado} other {# participantes listados}}",
+        "columns": {
+          "name": "Nombre",
+          "email": "Correo electrónico",
+          "city": "Ciudad",
+          "cpf": "CPF",
+          "preferredSpaceName": "Espacio preferido"
+        },
+        "no-data": "No hay participantes esperando asignación a un equipo de servicio.",
+        "error": "No se pudieron cargar los participantes de servicio pendientes de equipo.",
+        "actions": {
+          "view": "Ver participante"
+        },
+        "modal-title": "Participante de servicio: {name}",
+        "errors": {
+          "missing-id": "No pudimos identificar al participante seleccionado."
+        },
+        "form": {
+          "submit-label": "Guardar cambios",
+          "success": "¡Participante de servicio actualizado con éxito!",
+          "error": "No se pudo actualizar al participante de servicio.",
+          "fetch-error": "No se pudieron cargar los datos del participante de servicio.",
+          "fallback-name": "Participante de servicio",
+          "fallback-activity": "Equipo de servicio"
+        }
+      }
+    }
+  },
   "loading-participants": "Cargando participantes",
   "participants-without-family": "Participantes sin familia",
   "participants-without-family-description": "A continuación se muestra la lista de participantes que todavía no tienen una familia asignada.",
@@ -90,7 +133,6 @@
       "gender": "Tipo de las carpas",
       "notes": "Notas",
       "notesPlaceholder": "Ej.: Carpas extra para llegadas tardías",
-      "cancel": "Cancelar",
       "submit": "Registrar en lote",
       "submitting": "Registrando..."
     }
@@ -117,5 +159,86 @@
       "female": "Femenina",
       "mixed": "Mixta"
     }
+  },
+  "service-team-details": {
+    "confirmDelete": "Confirmar eliminación",
+    "createSpace": {
+      "title": "Crear nuevo equipo",
+      "cta": "Crear nuevo equipo"
+    },
+    "fields": {
+      "minMembers": "Miembros mínimos",
+      "maxMembers": "Miembros máximos",
+      "name": "Nombre del equipo de servicio",
+      "description": "Descripción",
+      "color": "Color de etiqueta",
+      "isActive": "Equipo activo",
+      "coordinator": "Coordinador",
+      "viceCoordinator": "Coordinador adjunto"
+    },
+    "sections": {
+      "coordinator": "Coordinador del equipo de servicio",
+      "vice-coordinator": "Coordinador adjunto del equipo de servicio",
+      "members": "Miembros del equipo de servicio",
+      "viceCoordinator": "Coordinador adjunto",
+      "general": "Información general"
+    },
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error",
+    "labels": {
+      "memberCount": "{count, plural, one {# miembro} other {# miembros}}"
+    },
+    "placeholders": {
+      "selectMember": "Seleccionar miembros"
+    },
+    "messages": {
+      "noMembers": "Sin miembros",
+      "noDescription": "Sin descripción",
+      "updateSuccess": "¡Espacio de servicio actualizado con éxito!",
+      "createSuccess": "¡Espacio de servicio creado con éxito!"
+    },
+    "hints": {
+      "memberLimit": "Usa los valores mínimo y máximo para controlar el tamaño del equipo."
+    },
+    "actions": {
+      "close": "Cerrar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "edit": "Editar"
+    },
+    "errors": {
+      "update": "No se pudo actualizar el espacio de servicio",
+      "create": "No se pudo crear el espacio de servicio"
+    },
+    "viceCoordinator": {
+      "unassigned": "Sin asignar"
+    },
+    "coordinator": {
+      "unassigned": "Coordinador sin asignar"
+    },
+    "create-new-team": "Crear nuevo equipo",
+    "add-new-participant": "Agregar nuevo participante",
+    "add-participant-in-service-team": "Agregar participante al equipo de servicio"
+  },
+  "family-report-refresh": "Actualizar datos",
+  "family-report-refresh-loading": "Actualizando...",
+  "family-report-export": "Exportar CSV",
+  "family-report-search": "Buscar familias o participantes",
+  "family-report-total-families": "Familias",
+  "family-report-total-participants": "Participantes",
+  "family-report-locked-families": "Familias bloqueadas",
+  "family-report-generated-at": "Generado el {value}",
+  "family-report-empty-state": "Ninguna familia coincide con tus filtros.",
+  "family-report-contact": "Contacto: {name} • {phone} • {email}",
+  "family-report-members-count": "{count, plural, one {# participante} other {# participantes}}",
+  "family-report-updated-at": "Última actualización: {value}",
+  "family-report-members": "Participantes",
+  "family-report-hide-members": "Ocultar participantes",
+  "family-report-show-members": "Mostrar participantes",
+  "family-report-no-members": "Esta familia aún no tiene participantes.",
+  "family-report-member-status-unknown": "Estado no disponible",
+  "family-report-tags": {
+    "locked": "Bloqueada",
+    "active": "Activa"
   }
 }

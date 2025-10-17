@@ -46,7 +46,7 @@ export default function CreateFamilyForm({
   const onSubmit = async (data: CreateFamilyData) => {
     try {
       const response = await apiClient.post(
-        `/api/retreats/${retreatId}/families/generate`,
+        `/retreats/${retreatId}/families/generate`,
         data
       );
 

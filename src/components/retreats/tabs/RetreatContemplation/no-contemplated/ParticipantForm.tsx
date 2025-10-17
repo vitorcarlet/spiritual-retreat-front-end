@@ -30,6 +30,11 @@ import axios from "axios";
 
 const dataUrlRegex = /^data:image\/[a-zA-Z]+;base64,/;
 
+type ParticipantLoader = (
+  retreatId: string,
+  participantId: string
+) => Promise<ContemplatedParticipant | undefined>;
+
 /* Zod schema */
 const participantSchema = z.object({
   id: z.number().optional(), // read-only in form if present
@@ -67,6 +72,7 @@ interface ParticipantFormProps {
   submitLabel?: string;
   disabled?: boolean;
   retreatId: string;
+  loadParticipant?: ParticipantLoader;
 }
 
 const defaultEmpty: ParticipantFormValues = {
@@ -80,9 +86,10 @@ const defaultEmpty: ParticipantFormValues = {
   photoUrl: null,
 };
 
-const getRetreatParticipant = async (
-  participantId: string
-): Promise<ContemplatedParticipant | undefined> => {
+const getRetreatParticipant: ParticipantLoader = async (
+  _retreatId,
+  participantId
+) => {
   try {
     const response = await apiClient.get<ContemplatedParticipant>(
       `/api/Registrations/${participantId}`
@@ -109,6 +116,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   submitLabel = "Salvar",
   disabled = true,
   retreatId,
+  loadParticipant = getRetreatParticipant,
 }) => {
   const [participant, setParticipant] =
     useState<ContemplatedParticipant | null>(null);
@@ -138,10 +146,12 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   useEffect(() => {
     if (participantId) {
       setIsLoadingParticipant(true);
-      getRetreatParticipant(participantId)
+      loadParticipant(retreatId, participantId)
         .then((data) => {
           if (data) {
             setParticipant(data);
+          } else {
+            setParticipant(null);
           }
         })
         .finally(() => {
@@ -150,7 +160,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
     } else {
       setParticipant(null);
     }
-  }, [participantId]);
+  }, [participantId, loadParticipant, retreatId]);
 
   useEffect(() => {
     reset(

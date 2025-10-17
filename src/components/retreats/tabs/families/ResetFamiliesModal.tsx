@@ -67,7 +67,7 @@ export default function ResetFamiliesModal({
 
     try {
       const response = await apiClient.post<ResetFamiliesResponse>(
-        `/api/retreats/${retreatId}/families/reset`,
+        `/retreats/${retreatId}/families/reset`,
         {
           forceLockedFamilies,
         }
