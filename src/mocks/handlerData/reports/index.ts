@@ -1,5 +1,5 @@
-import { Report } from "@/src/types/reports";
-import { mockFamilies } from "../retreats/families";
+import { ExitChecklistRow, Report } from "@/src/types/reports";
+import { mockFamilies, mockFamilyParticipants } from "../retreats/families";
 import { columnsMock } from "./columns";
 
 type FamilyReportRow = {
@@ -35,6 +35,11 @@ type FiveMinutesCardRow = {
   familyName: string;
   familyColor: string;
   confirmed: boolean;
+  email?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  status?: string;
 };
 
 const familyReportRows: FamilyReportRow[] = mockFamilies.map((family) => {
@@ -110,6 +115,20 @@ const fiveMinutesCardRows: FiveMinutesCardRow[] = mockFamilies.flatMap(
 const fiveMinutesCardSummary = {
   totalParticipants: fiveMinutesCardRows.length,
 };
+
+const exitChecklistRows: ExitChecklistRow[] = mockFamilyParticipants
+  .filter((participant) => participant.status === "confirmed")
+  .map((participant, index) => ({
+    id: `exit-${participant.id}-${index}`,
+    participantId: participant.id,
+    fullName:
+      participant.name ||
+      `${participant.firstName ?? ""} ${participant.lastName ?? ""}`.trim(),
+  }));
+
+const exitChecklistSummary = {
+  totalParticipants: exitChecklistRows.length,
+};
 export const mockReports: Report[] = [
   {
     id: "1",
@@ -182,6 +201,15 @@ export const mockReports: Report[] = [
     name: "Relatorio de 5 minutos participante",
     sections: ["Participante"],
     dateCreation: "2025-03-05T16:20:00Z",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+  },
+  {
+    id: "7",
+    type: "botafora",
+    name: "Relatório Bota-Fora",
+    sections: ["Checklist"],
+    dateCreation: "2025-03-06T09:00:00Z",
     retreatName: "Retiro de Verão 2025",
     retreatId: "1",
   },
@@ -663,5 +691,15 @@ export const mockReportDetails: Array<Record<string, unknown>> = [
     summary: fiveMinutesCardSummary,
     columns: [],
     rows: fiveMinutesCardRows,
+  },
+  {
+    id: "7",
+    type: "exitChecklist",
+    name: "Relatório Bota-Fora",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+    summary: exitChecklistSummary,
+    columns: [],
+    rows: exitChecklistRows,
   },
 ];

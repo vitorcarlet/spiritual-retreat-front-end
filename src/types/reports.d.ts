@@ -5,6 +5,7 @@ export type ReportTypes =
   | "family"
   | "families"
   | "fiveMinutesCard"
+  | "exitChecklist"
   | "service"
   | "service_order"
   | "service-orders"
@@ -115,5 +116,19 @@ export interface FiveMinutesCardReportData extends ReportData {
   rows: FiveMinutesCardParticipant[];
   summary?: {
     totalParticipants?: number;
+  } & ReportDataSummary;
+}
+
+export interface ExitChecklistRow {
+  id: string;
+  participantId: number;
+  fullName: string;
+}
+
+export interface ExitChecklistReportData extends ReportData {
+  type: "exitChecklist";
+  rows: ExitChecklistRow[];
+  summary?: {
+    totalParticipants: number;
   } & ReportDataSummary;
 }

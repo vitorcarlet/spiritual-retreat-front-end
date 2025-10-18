@@ -345,9 +345,15 @@ function getUrlByReportType(type: any): string {
     case "family":
     case "families":
       return "family";
+
     case "fiveMinutesCard":
     case "fiveminutescard":
       return "fiveminutescard";
+
+    case "botafora":
+    case "bota-fora":
+    case "exitChecklist":
+      return "botafora";
 
     case "service":
     case "service_order":

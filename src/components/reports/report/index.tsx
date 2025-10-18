@@ -14,6 +14,11 @@ const FiveMinutesCardList = dynamic<{ reportId: string }>(
   { loading: () => <LoadingScreenCircular /> }
 );
 
+const ExitChecklistReport = dynamic<{ reportId: string }>(
+  () => import("./exitChecklist/ExitChecklistReport"),
+  { loading: () => <LoadingScreenCircular /> }
+);
+
 type ReportRouterProps = {
   reportId: string;
   reportType?: string;
@@ -31,6 +36,10 @@ const ReportViewRouter = ({ reportId, reportType }: ReportRouterProps) => {
       return <FamilyReportCards reportId={reportId} />;
     case "fiveminutescard":
       return <FiveMinutesCardList reportId={reportId} />;
+    case "exitchecklist":
+    case "botafora":
+    case "bota-fora":
+      return <ExitChecklistReport reportId={reportId} />;
     default:
       return <GenericReportTable reportId={reportId} />;
   }
