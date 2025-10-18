@@ -4,6 +4,7 @@ export type ReportTypes =
   | "participants"
   | "family"
   | "families"
+  | "fiveMinutesCard"
   | "service"
   | "service_order"
   | "service-orders"
@@ -23,7 +24,7 @@ export interface Report {
   sections: string[];
   type: ReportTypes;
   dateCreation: string; // ISO date string
-  period: Period;
+  period?: Period;
   preFilters?: {
     reportFilters: number[]; // IDs of standard filters applied
     customReportFilters: number[]; // IDs of custom filters applied
@@ -92,4 +93,27 @@ export interface FamilyReportData extends ReportData {
   type: "family" | "families";
   rows: FamilyReportRow[];
   summary: FamilyReportSummary;
+}
+
+export interface FiveMinutesCardParticipant {
+  id: string;
+  participantId: number;
+  fullName: string;
+  familyId: number;
+  familyName: string;
+  familyColor: string;
+  confirmed: boolean;
+  email?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  status?: string;
+}
+
+export interface FiveMinutesCardReportData extends ReportData {
+  type: "fiveMinutesCard";
+  rows: FiveMinutesCardParticipant[];
+  summary?: {
+    totalParticipants?: number;
+  } & ReportDataSummary;
 }

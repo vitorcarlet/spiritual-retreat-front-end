@@ -345,6 +345,9 @@ function getUrlByReportType(type: any): string {
     case "family":
     case "families":
       return "family";
+    case "fiveMinutesCard":
+    case "fiveminutescard":
+      return "fiveminutescard";
 
     case "service":
     case "service_order":

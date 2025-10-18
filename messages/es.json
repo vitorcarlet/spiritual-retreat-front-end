@@ -248,4 +248,13 @@
   "family-report-pdf-location-label": "Ciudad/Estado",
   "family-report-pdf-status-label": "Estado",
   "family-report-pdf-not-provided": "No informado"
+  ,
+  "five-minutes-card-refresh": "Actualizar datos",
+  "five-minutes-card-refreshing": "Actualizando...",
+  "five-minutes-card-export-pdf": "Generar PDF",
+  "five-minutes-card-exporting-pdf": "Generando PDF...",
+  "five-minutes-card-search-placeholder": "Buscar por participante o familia",
+  "five-minutes-card-total": "Participantes confirmados: {count}",
+  "five-minutes-card-empty": "No se encontraron participantes confirmados.",
+  "five-minutes-card-note-hint": "Deja esta área en blanco para que el participante escriba a mano."
 }

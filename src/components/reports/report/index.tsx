@@ -9,6 +9,11 @@ const FamilyReportCards = dynamic<{ reportId: string }>(
   { loading: () => <LoadingScreenCircular /> }
 );
 
+const FiveMinutesCardList = dynamic<{ reportId: string }>(
+  () => import("./fiveMinutesCard/FiveMinutesCardList"),
+  { loading: () => <LoadingScreenCircular /> }
+);
+
 type ReportRouterProps = {
   reportId: string;
   reportType?: string;
@@ -24,6 +29,8 @@ const ReportViewRouter = ({ reportId, reportType }: ReportRouterProps) => {
     case "family":
     case "families":
       return <FamilyReportCards reportId={reportId} />;
+    case "fiveminutescard":
+      return <FiveMinutesCardList reportId={reportId} />;
     default:
       return <GenericReportTable reportId={reportId} />;
   }

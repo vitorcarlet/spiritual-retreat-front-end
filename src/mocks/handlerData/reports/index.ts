@@ -27,6 +27,16 @@ type FamilyReportRow = {
   }>;
 };
 
+type FiveMinutesCardRow = {
+  id: string;
+  participantId: number;
+  fullName: string;
+  familyId: number;
+  familyName: string;
+  familyColor: string;
+  confirmed: boolean;
+};
+
 const familyReportRows: FamilyReportRow[] = mockFamilies.map((family) => {
   const members = (family.members ?? []).map((member) => ({
     id: member.id,
@@ -76,6 +86,30 @@ const familyReportColumns = [
   { field: "contactName", headerName: "Contato", type: "string" },
   { field: "contactPhone", headerName: "Telefone", type: "string" },
 ];
+
+const fiveMinutesCardRows: FiveMinutesCardRow[] = mockFamilies.flatMap(
+  (family) =>
+    (family.members ?? []).map((member) => ({
+      id: `${family.id}-${member.id}`,
+      participantId: member.id,
+      fullName:
+        member.name ||
+        `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim(),
+      familyId: family.id,
+      familyName: family.name,
+      familyColor: family.color,
+      confirmed: true,
+      email: member.email,
+      phone: member.phone,
+      city: member.city,
+      state: member.state,
+      status: member.status,
+    }))
+);
+
+const fiveMinutesCardSummary = {
+  totalParticipants: fiveMinutesCardRows.length,
+};
 export const mockReports: Report[] = [
   {
     id: "1",
@@ -141,10 +175,15 @@ export const mockReports: Report[] = [
     dateCreation: "2025-03-05T16:20:00Z",
     retreatName: "Retiro de Verão 2025",
     retreatId: "1",
-    period: {
-      from: "2025-03-01T00:00:00Z",
-      to: "2025-03-05T16:20:00Z",
-    },
+  },
+  {
+    id: "6",
+    type: "fiveMinutesCard",
+    name: "Relatorio de 5 minutos participante",
+    sections: ["Participante"],
+    dateCreation: "2025-03-05T16:20:00Z",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
   },
 ];
 
@@ -614,5 +653,15 @@ export const mockReportDetails: Array<Record<string, unknown>> = [
     },
     columns: familyReportColumns,
     rows: familyReportRows,
+  },
+  {
+    id: "6",
+    type: "fiveMinutesCard",
+    name: "Relatorio de 5 minutos participante",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+    summary: fiveMinutesCardSummary,
+    columns: [],
+    rows: fiveMinutesCardRows,
   },
 ];
