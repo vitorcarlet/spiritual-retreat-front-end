@@ -240,5 +240,12 @@
   "family-report-tags": {
     "locked": "Bloqueada",
     "active": "Activa"
-  }
+  },
+  "family-report-export-pdf": "Exportar PDF",
+  "family-report-exporting-pdf": "Generando PDF...",
+  "family-report-pdf-phone-label": "Teléfono",
+  "family-report-pdf-email-label": "Correo",
+  "family-report-pdf-location-label": "Ciudad/Estado",
+  "family-report-pdf-status-label": "Estado",
+  "family-report-pdf-not-provided": "No informado"
 }

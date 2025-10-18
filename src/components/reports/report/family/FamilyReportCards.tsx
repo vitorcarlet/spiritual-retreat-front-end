@@ -37,6 +37,229 @@ import {
 import { fetchReport } from "../api";
 import { useTranslations } from "next-intl";
 
+type TranslateFn = ReturnType<typeof useTranslations>;
+
+const fallbackFamilyColor = "#1976d2";
+
+const normalizeHexColor = (color?: string) => {
+  if (!color) return fallbackFamilyColor;
+  const trimmed = color.trim();
+  if (!trimmed) return fallbackFamilyColor;
+  return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+};
+
+const hexToRgb = (hex?: string) => {
+  const normalized = normalizeHexColor(hex).replace("#", "");
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((char) => char + char)
+          .join("")
+      : normalized;
+  const parsed = Number.parseInt(value, 16);
+  const intValue = Number.isNaN(parsed)
+    ? Number.parseInt(fallbackFamilyColor.replace("#", ""), 16)
+    : parsed;
+  const r = (intValue >> 16) & 255;
+  const g = (intValue >> 8) & 255;
+  const b = intValue & 255;
+  return { r, g, b };
+};
+
+const getContrastingTextColor = (hex?: string) => {
+  const { r, g, b } = hexToRgb(hex);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? { r: 33, g: 33, b: 33 } : { r: 255, g: 255, b: 255 };
+};
+
+const buildMemberEntries = (
+  doc: import("jspdf").jsPDF,
+  members: FamilyReportMember[],
+  contentWidth: number,
+  fontSize: number,
+  lineHeight: number,
+  t: TranslateFn
+) => {
+  doc.setFontSize(fontSize);
+  const notProvided = t("family-report-pdf-not-provided");
+  const phoneLabel = t("family-report-pdf-phone-label");
+  const emailLabel = t("family-report-pdf-email-label");
+  const locationLabel = t("family-report-pdf-location-label");
+  const statusLabel = t("family-report-pdf-status-label");
+
+  const membersEntries = members.map((member) => {
+    const location =
+      [member.city, member.state].filter(Boolean).join(" / ") || notProvided;
+    const status = member.status || t("family-report-member-status-unknown");
+    const pieces = [
+      member.fullName || notProvided,
+      `${phoneLabel}: ${member.phone || notProvided}`,
+      `${emailLabel}: ${member.email || notProvided}`,
+      `${locationLabel}: ${location}`,
+      `${statusLabel}: ${status}`,
+    ];
+
+    const text = pieces.join(" • ");
+    const lines = doc.splitTextToSize(text, contentWidth);
+    const height = lines.length * lineHeight + 2;
+
+    return { lines, height };
+  });
+
+  const totalHeight = membersEntries.reduce(
+    (acc, entry) => acc + entry.height,
+    0
+  );
+
+  return { membersEntries, totalHeight };
+};
+
+const generateFamilyReportPdf = async ({
+  families,
+  summary,
+  reportId,
+  t,
+}: {
+  families: FamilyReportRow[];
+  summary?: FamilyReportSummary | ReportDataSummary;
+  reportId: string;
+  t: TranslateFn;
+}) => {
+  if (!families.length) return;
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  const headerHeight = 18;
+  const contentWidth = pageWidth - margin * 2;
+  const minFontSize = 6;
+
+  families.forEach((family, index) => {
+    if (index > 0) {
+      doc.addPage();
+    }
+
+    const familyColor = normalizeHexColor(family.color);
+    const { r, g, b } = hexToRgb(familyColor);
+    const contrast = getContrastingTextColor(familyColor);
+
+    doc.setFillColor(r, g, b);
+    doc.rect(margin, margin, contentWidth, headerHeight, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(contrast.r, contrast.g, contrast.b);
+    doc.text(
+      family.familyName,
+      margin + contentWidth / 2,
+      margin + headerHeight / 2 + 5,
+      {
+        align: "center",
+      }
+    );
+
+    if (summary?.generatedAt && index === 0) {
+      doc.setFontSize(9);
+      doc.text(
+        t("family-report-generated-at", {
+          value: formatSummaryDate(summary.generatedAt),
+        }),
+        margin + contentWidth,
+        margin + headerHeight / 2 + 5,
+        { align: "right" }
+      );
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(33, 33, 33);
+
+    let cursorY = margin + headerHeight + 8;
+
+    doc.setFontSize(11);
+    const membersCount = t("family-report-members-count", {
+      count: family.membersCount,
+    });
+    doc.text(membersCount, margin, cursorY);
+
+    if (family.updatedAt) {
+      doc.text(
+        t("family-report-updated-at", {
+          value: formatSummaryDate(family.updatedAt),
+        }),
+        margin + contentWidth,
+        cursorY,
+        { align: "right" }
+      );
+    }
+
+    cursorY += 6;
+
+    const contactLine = t("family-report-contact", {
+      name: family.contactName || t("family-report-pdf-not-provided"),
+      phone: family.contactPhone || t("family-report-pdf-not-provided"),
+      email: family.contactEmail || t("family-report-pdf-not-provided"),
+    });
+
+    const contactLines = doc.splitTextToSize(contactLine, contentWidth);
+    doc.text(contactLines, margin, cursorY);
+    cursorY += contactLines.length * 6 + 4;
+
+    doc.setFont("helvetica", "bold");
+    doc.text(t("family-report-members"), margin, cursorY);
+    doc.setFont("helvetica", "normal");
+    cursorY += 6;
+
+    if (!family.members.length) {
+      doc.text(t("family-report-no-members"), margin, cursorY);
+      return;
+    }
+
+    const availableHeight = pageHeight - margin - cursorY;
+    let fontSize = 11;
+    let lineHeight = 6;
+
+    let { membersEntries, totalHeight } = buildMemberEntries(
+      doc,
+      family.members,
+      contentWidth,
+      fontSize,
+      lineHeight,
+      t
+    );
+
+    while (totalHeight > availableHeight && fontSize > minFontSize) {
+      fontSize -= 1;
+      lineHeight = Math.max(3.5, lineHeight - 0.5);
+      ({ membersEntries, totalHeight } = buildMemberEntries(
+        doc,
+        family.members,
+        contentWidth,
+        fontSize,
+        lineHeight,
+        t
+      ));
+    }
+
+    doc.setFontSize(fontSize);
+    doc.setDrawColor(220, 220, 220);
+
+    membersEntries.forEach(({ lines }, memberIndex) => {
+      doc.text(lines, margin, cursorY);
+      cursorY += lines.length * lineHeight + 2;
+
+      if (memberIndex < membersEntries.length - 1) {
+        doc.line(margin, cursorY - 1, margin + contentWidth, cursorY - 1);
+        cursorY += 1;
+      }
+    });
+  });
+
+  doc.save(`family-report-${reportId}.pdf`);
+};
+
 const formatSummaryDate = (value?: string) =>
   value ? dayjs(value).format("DD/MM/YYYY HH:mm") : "";
 
@@ -164,6 +387,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
   const t = useTranslations();
   const [searchTerm, setSearchTerm] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const filtersConfig = getFilters(reportId);
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<ReportsAllFilters>>({
@@ -232,6 +456,23 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
     });
     downloadBlob(blob, `families-report-${reportId}.csv`);
   }, [families, summary, reportId]);
+
+  const handleExportPdf = useCallback(async () => {
+    if (!families.length || isExportingPdf) return;
+    try {
+      setIsExportingPdf(true);
+      await generateFamilyReportPdf({
+        families,
+        summary,
+        reportId,
+        t,
+      });
+    } catch (error) {
+      console.error("Failed to generate family report PDF", error);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }, [families, summary, reportId, t, isExportingPdf]);
 
   const handleToggleFamily = (id: string) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -303,7 +544,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
           variant="outlined"
           onClick={() => refetch()}
           disabled={isFetching}
-          startIcon={<Iconify icon="mdi:refresh" size={20} />}
+          startIcon={<Iconify icon="mdi:refresh" size={2} />}
         >
           {isFetching
             ? t("family-report-refresh-loading")
@@ -314,9 +555,21 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
           variant="contained"
           onClick={handleExportCsv}
           disabled={!families.length}
-          startIcon={<Iconify icon="mdi:file-export-outline" size={20} />}
+          startIcon={<Iconify icon="mdi:file-export-outline" size={2} />}
         >
           {t("family-report-export")}
+        </Button>
+
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleExportPdf}
+          disabled={!families.length || isExportingPdf}
+          startIcon={<Iconify icon="mdi:file-pdf-box" size={2} />}
+        >
+          {isExportingPdf
+            ? t("family-report-exporting-pdf")
+            : t("family-report-export-pdf")}
         </Button>
 
         <FilterButton<
@@ -442,7 +695,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
                           icon={
                             isExpanded ? "mdi:chevron-up" : "mdi:chevron-down"
                           }
-                          size={20}
+                          size={2}
                         />
                       </IconButton>
                     </Stack>
@@ -464,7 +717,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
                     </Typography>
 
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <Iconify icon="mdi:account-multiple" size={18} />
+                      <Iconify icon="mdi:account-multiple" size={2} />
                       <Typography variant="body2" color="text.secondary">
                         {t("family-report-members-count", {
                           count: family.membersCount,
@@ -473,7 +726,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
                     </Stack>
 
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <Iconify icon="mdi:clock-outline" size={18} />
+                      <Iconify icon="mdi:clock-outline" size={2} />
                       <Typography variant="body2" color="text.secondary">
                         {t("family-report-updated-at", {
                           value: formatSummaryDate(family.updatedAt),
@@ -499,7 +752,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
                           icon={
                             isExpanded ? "mdi:chevron-up" : "mdi:chevron-down"
                           }
-                          size={18}
+                          size={2}
                         />
                       }
                       onClick={() => handleToggleFamily(family.id)}
@@ -536,7 +789,7 @@ const SummaryCard = ({
     <CardContent>
       <Stack direction="row" spacing={2} alignItems="center">
         <Chip
-          icon={<Iconify icon={icon} size={18} />}
+          icon={<Iconify icon={icon} size={2} />}
           label={value}
           color="primary"
           variant="outlined"

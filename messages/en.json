@@ -285,5 +285,12 @@
   "family-report-tags": {
     "locked": "Locked",
     "active": "Active"
-  }
+  },
+  "family-report-export-pdf": "Export PDF",
+  "family-report-exporting-pdf": "Generating PDF...",
+  "family-report-pdf-phone-label": "Phone",
+  "family-report-pdf-email-label": "Email",
+  "family-report-pdf-location-label": "City/State",
+  "family-report-pdf-status-label": "Status",
+  "family-report-pdf-not-provided": "Not provided"
 }

@@ -388,6 +388,13 @@
     "locked": "Bloqueada",
     "active": "Ativa"
   },
+  "family-report-export-pdf": "Exportar PDF",
+  "family-report-exporting-pdf": "Gerando PDF...",
+  "family-report-pdf-phone-label": "Telefone",
+  "family-report-pdf-email-label": "E-mail",
+  "family-report-pdf-location-label": "Cidade/Estado",
+  "family-report-pdf-status-label": "Status",
+  "family-report-pdf-not-provided": "Não informado",
   "service-team-a": {
     "minMembers": "Número Mínimo de Membros",
     "coordinator": "Coordenador"
