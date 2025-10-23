@@ -3,7 +3,7 @@ import z from "zod";
 
 import type { BackendField } from "./types";
 import apiClient from "@/src/lib/axiosClientInstance";
-import { sections, sectionsServe } from "@/src/mocks/handlerData/formData";
+import { sections2, sectionsServe } from "@/src/mocks/handlerData/formData";
 import { Retreat } from "@/src/types/retreats";
 
 const MASK_REGEX: Record<string, RegExp> = {
@@ -179,7 +179,7 @@ const MASK_REGEX: Record<string, RegExp> = {
 
 export const fetchFormData = async (
   retreatId: string,
-  type: string
+  type: "participate" | "serve"
 ): Promise<BackendForm> => {
   try {
     const result = await apiClient.get<Retreat>(`/retreats/${retreatId}`);
@@ -195,7 +195,8 @@ export const fetchFormData = async (
           : RetreatFormType.SERVER,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      sections: type === RetreatFormType.PARTICIPATE ? sections : sectionsServe,
+      sections:
+        type === RetreatFormType.PARTICIPATE ? sections2 : sectionsServe,
     } as BackendForm;
   } catch (error) {
     console.error("Erro ao buscar dados do formulario:", error);
@@ -209,7 +210,10 @@ export const sendFormData = async (
   type: string
 ): Promise<BackendForm> => {
   try {
-    const url = type == RetreatFormType.PARTICIPATE ? `/retreats/${retreatId}/service/registrations` : '/Registrations'
+    const url =
+      type == RetreatFormType.PARTICIPATE
+        ? `/retreats/${retreatId}/service/registrations`
+        : "/Registrations";
     const response = await apiClient.post<BackendForm>(url, {
       retreatId: retreatId,
       ...body,
@@ -321,6 +325,29 @@ const buildFieldSchema = (
     });
 
     return required ? fileSchema : z.union([fileSchema, z.null()]).optional();
+  }
+
+  if (field.type === "select") {
+    const selectValueSchema = z.union([z.string(), z.number()]);
+
+    if (required) {
+      return selectValueSchema.refine((value) => {
+        if (value === null || value === undefined) return false;
+        if (typeof value === "string") {
+          return value.trim() !== "";
+        }
+        return true;
+      }, "Selecione uma opção");
+    }
+
+    return z
+      .union([selectValueSchema, z.literal(""), z.null(), z.undefined()])
+      .transform((value) => {
+        if (value === "" || value === null || value === undefined) {
+          return undefined;
+        }
+        return value;
+      });
   }
 
   if (field.type === "multiselect" || field.type === "chips") {

@@ -257,7 +257,7 @@ const ParticipantPublicFormTab: React.FC<ParticipantPublicFormTabProps> = ({
     error: formError,
   } = useQuery({
     queryKey: ["participant-form-structure", retreatId],
-    queryFn: () => fetchFormData(retreatId),
+    queryFn: () => fetchFormData(retreatId, "participate"),
     enabled: Boolean(retreatId),
     staleTime: 5 * 60 * 1000,
   });
