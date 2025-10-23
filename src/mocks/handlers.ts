@@ -15,9 +15,11 @@ import { createByOrigin, MockNotification, mockNotifications } from "./handlerDa
 import { sections2 as sections } from "./handlerData/formData";
 import { paginate, ensureFamilyGroups, LoginRequest, normalizeOptionalServiceSpaceMember, normalizeServiceSpaceMember, ServiceSpaceMemberInput } from "./shared";
 import { mockServiceSpaces, MockServiceSpace, updateServiceSpace } from "./handlerData/retreats/serviceSpaces";
+import { handlersApi } from "./handlersApi";
 
 
 export const handlers = [
+  ...handlersApi,
   http.get("http://localhost:3001/api/user", () => {
     return HttpResponse.json({
       id: "1",

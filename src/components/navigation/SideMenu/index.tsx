@@ -137,6 +137,7 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("sm"));
+  const showMenuLabels = openPersistent || !isDesktop;
 
   // ✅ Obter apenas os menus que o usuário tem acesso
   const accessibleMenus = getAccessibleMenus();
@@ -155,7 +156,7 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
           <ListItem key={menu.id} disablePadding sx={{ display: "block" }}>
             <ListItemButton
               sx={[
-                openPersistent
+                showMenuLabels
                   ? { justifyContent: "initial" }
                   : { justifyContent: "center" },
               ]}
@@ -163,13 +164,13 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
               href={menu.path}
               onClick={() => handleMenuClick(menu.path)}
             >
-              <ListItemIcon sx={[openPersistent ? { mr: 3 } : { mr: "auto" }]}>
+              <ListItemIcon sx={[showMenuLabels ? { mr: 3 } : { mr: "auto" }]}>
                 <Iconify icon={menu.icon} />
               </ListItemIcon>
               <ListItemText
                 primary={menu.label}
                 sx={[
-                  openPersistent
+                  showMenuLabels
                     ? { opacity: 1, visibility: "visible" }
                     : { opacity: 0, visibility: "hidden" },
                 ]}
@@ -262,9 +263,12 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
           sx={{
             backgroundColor: "background.paper",
             height: "100%",
-            width: openPersistent
-              ? `calc(100% - ${drawerWidth}px)`
-              : `calc(100% - 65px)`,
+            width: {
+              xs: "100%",
+              sm: openPersistent
+                ? `calc(100% - ${drawerWidth}px)`
+                : `calc(100% - 65px)`,
+            },
             // On desktop, account for drawer width; on mobile, full width
             // ml: {
             //   sm: openPersistent ? `${drawerWidth}px` : `calc(64px + 1px)`,

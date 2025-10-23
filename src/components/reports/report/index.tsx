@@ -19,6 +19,16 @@ const ExitChecklistReport = dynamic<{ reportId: string }>(
   { loading: () => <LoadingScreenCircular /> }
 );
 
+const TentReport = dynamic<{ reportId: string }>(
+  () => import("./tents/TentReport"),
+  { loading: () => <LoadingScreenCircular /> }
+);
+
+const RibbonReport = dynamic<{ reportId: string }>(
+  () => import("./ribbons/RibbonReport"),
+  { loading: () => <LoadingScreenCircular /> }
+);
+
 type ReportRouterProps = {
   reportId: string;
   reportType?: string;
@@ -40,6 +50,10 @@ const ReportViewRouter = ({ reportId, reportType }: ReportRouterProps) => {
     case "botafora":
     case "bota-fora":
       return <ExitChecklistReport reportId={reportId} />;
+    case "tents":
+      return <TentReport reportId={reportId} />;
+    case "ribbons":
+      return <RibbonReport reportId={reportId} />;
     default:
       return <GenericReportTable reportId={reportId} />;
   }

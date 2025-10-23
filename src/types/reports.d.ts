@@ -12,6 +12,7 @@ export type ReportTypes =
   | "attendance"
   | "financial"
   | "tents"
+  | "ribbons"
   | (string & {});
 
 export type Period = {
@@ -130,5 +131,39 @@ export interface ExitChecklistReportData extends ReportData {
   rows: ExitChecklistRow[];
   summary?: {
     totalParticipants: number;
+  } & ReportDataSummary;
+}
+
+export interface TentReportRow {
+  id: string;
+  tentNumber: string;
+  familyName: string;
+  gender: "male" | "female" | "mixed";
+  sponsorName?: string;
+  rahamistas: string[];
+  familyColor?: string;
+  notes?: string;
+}
+
+export interface TentReportData extends ReportData {
+  type: "tents";
+  rows: TentReportRow[];
+  summary?: {
+    totalTents: number;
+  } & ReportDataSummary;
+}
+
+export interface RibbonReportRow {
+  id: string;
+  displayName: string;
+  uppercase?: boolean;
+}
+
+export interface RibbonReportData extends ReportData {
+  type: "ribbons";
+  rows: RibbonReportRow[];
+  summary?: {
+    totalParticipants: number;
+    uppercaseDefault?: boolean;
   } & ReportDataSummary;
 }

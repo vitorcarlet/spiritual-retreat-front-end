@@ -1,5 +1,11 @@
-import { ExitChecklistRow, Report } from "@/src/types/reports";
+import {
+  ExitChecklistRow,
+  Report,
+  TentReportRow,
+  RibbonReportRow,
+} from "@/src/types/reports";
 import { mockFamilies, mockFamilyParticipants } from "../retreats/families";
+import { mockTents } from "../retreats/tents";
 import { columnsMock } from "./columns";
 
 type FamilyReportRow = {
@@ -129,6 +135,69 @@ const exitChecklistRows: ExitChecklistRow[] = mockFamilyParticipants
 const exitChecklistSummary = {
   totalParticipants: exitChecklistRows.length,
 };
+
+const getMemberDisplayName = (member: {
+  name?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+}) => {
+  if (member.name) return member.name;
+  const composed = `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim();
+  return composed || "Participante";
+};
+
+const tentReportRows: TentReportRow[] = mockTents.map((tent, index) => {
+  const family = mockFamilies[index % mockFamilies.length];
+  const members = family.members ?? [];
+  const rahamistas = members.slice(0, 3).map((member) => getMemberDisplayName(member));
+
+  const sponsorName = (() => {
+    if (!members.length) return family.contactName ?? null;
+    if (tent.gender === "female") {
+      return getMemberDisplayName(members.find((m) => m.gender === "female") ?? members[0]);
+    }
+    if (tent.gender === "male") {
+      return getMemberDisplayName(members.find((m) => m.gender === "male") ?? members[0]);
+    }
+    return family.contactName ?? getMemberDisplayName(members[0]);
+  })();
+
+  return {
+    id: tent.id,
+    tentNumber: tent.number,
+    familyName: family.name,
+    familyColor: family.color,
+    gender: tent.gender,
+    sponsorName: sponsorName ?? undefined,
+    rahamistas,
+    notes: tent.notes,
+  } satisfies TentReportRow;
+});
+
+const tentReportSummary = {
+  totalTents: tentReportRows.length,
+  generatedAt: new Date("2025-03-06T09:45:00Z").toISOString(),
+};
+
+const ribbonReportRows: RibbonReportRow[] = mockFamilyParticipants.map(
+  (participant, index) => ({
+    id: `ribbon-${participant.id}-${index}`,
+    displayName:
+      participant.name ||
+      `${participant.firstName ?? ""} ${participant.lastName ?? ""}`.trim() ||
+      `Participante ${index + 1}`,
+    uppercase:
+      index % 4 === 0 // sprinkle uppercase rows for variation
+        ? true
+        : undefined,
+  })
+);
+
+const ribbonReportSummary = {
+  totalParticipants: ribbonReportRows.length,
+  uppercaseDefault: false,
+  generatedAt: new Date("2025-03-06T10:30:00Z").toISOString(),
+};
 export const mockReports: Report[] = [
   {
     id: "1",
@@ -210,6 +279,24 @@ export const mockReports: Report[] = [
     name: "Relatório Bota-Fora",
     sections: ["Checklist"],
     dateCreation: "2025-03-06T09:00:00Z",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+  },
+  {
+    id: "8",
+    type: "tents",
+    name: "Relatório de Barracas",
+    sections: ["Hospedagem"],
+    dateCreation: "2025-03-06T10:15:00Z",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+  },
+  {
+    id: "9",
+    type: "ribbons",
+    name: "Relatório de Fitas",
+    sections: ["Participantes"],
+    dateCreation: "2025-03-06T10:45:00Z",
     retreatName: "Retiro de Verão 2025",
     retreatId: "1",
   },
@@ -701,5 +788,25 @@ export const mockReportDetails: Array<Record<string, unknown>> = [
     summary: exitChecklistSummary,
     columns: [],
     rows: exitChecklistRows,
+  },
+  {
+    id: "8",
+    type: "tents",
+    name: "Relatório de Barracas",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+    summary: tentReportSummary,
+    columns: [],
+    rows: tentReportRows,
+  },
+  {
+    id: "9",
+    type: "ribbons",
+    name: "Relatório de Fitas",
+    retreatName: "Retiro de Verão 2025",
+    retreatId: "1",
+    summary: ribbonReportSummary,
+    columns: [],
+    rows: ribbonReportRows,
   },
 ];
