@@ -35,3 +35,5 @@ type TableRequest<T> = {
   hasNextPage: boolean;
   hasPrevPage: boolean;
 };
+
+export const keysToRemoveFromFilters = ["page", "pageLimit"];

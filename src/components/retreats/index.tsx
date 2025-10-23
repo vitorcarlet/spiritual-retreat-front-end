@@ -21,6 +21,7 @@ import { Retreat } from "@/src/types/retreats";
 import { useModal } from "@/src/hooks/useModal";
 import RetreatOverview from "./CardTable/RetreatOverview";
 import apiClient from "@/src/lib/axiosClientInstance";
+import { keysToRemoveFromFilters } from "../table/shared";
 
 const getRetreats = async (
   filters: TableDefaultFilters<
@@ -28,8 +29,21 @@ const getRetreats = async (
   >
 ) => {
   try {
+    const page = filters.page && filters.page > 0 ? filters.page : 1;
+    const pageLimit =
+      filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 20;
+    const skip = (page - 1) * pageLimit;
+    const filtersFiltered = keysToRemoveFromFilters.forEach(
+      (key) => delete filters[key]
+    );
+    const params: Record<string, unknown> = {
+      status: 1,
+      skip,
+      take: pageLimit,
+      filtersFiltered,
+    };
     const response = await apiClient.get("/Retreats", {
-      params: filters,
+      params,
     });
 
     return response.data;

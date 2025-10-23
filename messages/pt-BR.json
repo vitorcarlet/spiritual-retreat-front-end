@@ -551,5 +551,6 @@
     "history": "Histórico",
     "no-history": "Nenhum evento registrado.",
     "close": "Fechar"
-  }
+  },
+  "region": "Região"
 }

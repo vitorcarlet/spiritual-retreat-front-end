@@ -1,3 +1,7 @@
+import {
+  RetreatsCardTableDateFilters,
+  RetreatsCardTableFilters,
+} from "@/src/components/public/retreats/types";
 import { useTranslations } from "next-intl";
 
 type DateFilters = FiltersDate<UsersTableDateFilters>;
@@ -34,6 +38,19 @@ export const getFilters = (): Filters<
             primaryKey: "value",
             onlyFirstLoad: true,
             url: `models/filter/status/serviceOrders?type=F`,
+            isMultiple: true,
+            custom: { variant: "custom" },
+          },
+        ],
+      },
+      {
+        title: t("region"),
+        fields: [
+          {
+            typeField: "selectAutocomplete",
+            name: "region",
+            url: "clients/filter/region",
+            onlyFirstLoad: true,
             isMultiple: true,
             custom: { variant: "custom" },
           },

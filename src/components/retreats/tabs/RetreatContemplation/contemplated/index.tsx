@@ -22,6 +22,7 @@ import { SendMessage } from "./SendMessage";
 import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
 import { enqueueSnackbar } from "notistack";
+import { keysToRemoveFromFilters } from "@/src/components/table/shared";
 
 type ContemplatedDataRequest = {
   rows: ContemplatedParticipant[];
@@ -237,33 +238,36 @@ const getContemplated = async (
     const pageLimit =
       filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 20;
     const skip = (page - 1) * pageLimit;
-
+    const filtersFiltered = keysToRemoveFromFilters.forEach(
+      (key) => delete filters[key]
+    );
     const params: Record<string, unknown> = {
       retreatId,
       status: 1,
       skip,
       take: pageLimit,
+      filtersFiltered,
     };
 
-    if (filters.search) {
-      params.search = filters.search;
-    }
+    // if (filters.search) {
+    //   params.search = filters.search;
+    // }
 
-    if (filters.city) {
-      params.region = filters.city;
-    }
+    // if (filters.region) {
+    //   params.region = filters.region;
+    // }
 
-    if (filters.state) {
-      params.state = filters.state;
-    }
+    // if (filters.status) {
+    //   params.status = filters.status;
+    // }
 
-    if (filters.periodStart) {
-      params.periodStart = filters.periodStart;
-    }
+    // if (filters.periodStart) {
+    //   params.periodStart = filters.periodStart;
+    // }
 
-    if (filters.periodEnd) {
-      params.periodEnd = filters.periodEnd;
-    }
+    // if (filters.periodEnd) {
+    //   params.periodEnd = filters.periodEnd;
+    // }
 
     const response = await apiClient.get<RegistrationApiResponse>(
       `/Registrations`,
