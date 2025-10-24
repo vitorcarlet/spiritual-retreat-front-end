@@ -182,7 +182,7 @@ export default function RetreatsCardTable({
                   }}
                 />
                 <Typography variant="h6" component="div" gutterBottom>
-                  {retreat.title}
+                  {retreat.name}
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                   <Iconify

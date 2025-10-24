@@ -819,7 +819,7 @@ export const handlersApi = [
         let list = mockRetreats;
 
         if (search) {
-          list = list.filter((r) => r.title.toLowerCase().includes(search));
+          list = list.filter((r) => r.name.toLowerCase().includes(search));
         }
 
         // Optional limit for autocomplete (default 20)
@@ -830,7 +830,7 @@ export const handlersApi = [
           {
             options: sliced.map((r) => ({
               value: r.id,
-              label: r.title,
+              label: r.name,
               // extra metadata if needed by frontend
               // isActive: r.status === "running" || r.status === "open",
               isActive: true,
@@ -910,7 +910,7 @@ export const handlersApi = [
 
     return HttpResponse.json(
       {
-        message: `Retiro "${deletedRetreat.title}" excluído com sucesso`,
+        message: `Retiro "${deletedRetreat.name}" excluído com sucesso`,
         id: deletedRetreat.id,
       },
       { status: 200 }

@@ -1,22 +1,41 @@
 interface Retreat {
   id: number;
-  title: string;
-  edition: number;
-  state: string;
-  stateShort: string;
-  city: string;
+  name: string;
+  edition: string;
   theme: string;
-  description: string;
   startDate: string;
   endDate: string;
-  capacity: number;
-  participationTax: string;
-  enrolled: number;
-  location: string;
-  isActive: boolean;
-  images: string[]; // Substitua pelo caminho correto das imagens
-  status: "open" | "closed" | "running" | "ended" | "upcoming"; // Status do retiro,
-  instructor?: string; // Opcional, caso tenha instrutor
+  maleSlots: number;
+  femaleSlots: number;
+  registrationStart: string;
+  registrationEnd: string;
+  feeFazer: {
+    amount: number;
+    currency: string;
+  };
+  feeServir: {
+    amount: number;
+    currency: string;
+  };
+  westRegionPct: {
+    value: number;
+  };
+  otherRegionPct: {
+    value: number;
+  };
+  state?: string;
+  stateShort?: string;
+  city?: string;
+  description?: string;
+  capacity?: number;
+  participationTax?: string;
+  enrolled?: number;
+  location?: string;
+  isActive?: boolean;
+  images?: string[];
+  status: "open" | "closed" | "running" | "ended" | "upcoming";
+  instructor?: string;
+  image?: string;
 }
 
 export interface Participant {

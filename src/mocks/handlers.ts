@@ -20,7 +20,7 @@ import { mockServiceSpaces, MockServiceSpace, updateServiceSpace } from "./handl
 
 export const handlers = [
   //...handlersApi,
-  http.get("http://localhost:3001/api/user", () => {
+  http.get("http://localhost:5000/api/user", () => {
     return HttpResponse.json({
       id: "1",
       name: "Vitor Admin",
@@ -28,13 +28,13 @@ export const handlers = [
     });
   }),
 
-  http.get("http://localhost:3001/api/users", ({ request }) => {
+  http.get("http://localhost:5000/api/users", ({ request }) => {
     const url = new URL(request.url);
     const payload = paginate(mockUsers, url);
     return HttpResponse.json(payload, { status: 200 });
   }),
 
-  http.post("http://localhost:3001/api/users/create", () => {
+  http.post("http://localhost:5000/api/users/create", () => {
     const userId = Math.floor(Math.random() * 10) + 1;
     const user = getUserById(userId.toString());
     if (user) {
@@ -46,7 +46,7 @@ export const handlers = [
     );
   }),
 
-  http.get("http://localhost:3001/api/user/:id", ({ params }) => {
+  http.get("http://localhost:5000/api/user/:id", ({ params }) => {
     const userId = params.id as string;
     const user = getUserById(userId);
     if (user) {
@@ -55,7 +55,7 @@ export const handlers = [
     return HttpResponse.json({ error: "User not found" }, { status: 404 });
   }),
 
-  http.get("http://localhost:3001/api/user/:id/credentials", ({ params }) => {
+  http.get("http://localhost:5000/api/user/:id/credentials", ({ params }) => {
     const userId = params.id as string;
     const user = getUserById(userId);
     if (user) {
@@ -64,18 +64,18 @@ export const handlers = [
     return HttpResponse.json({ error: "User not found" }, { status: 404 });
   }),
 
-  http.get("http://localhost:3001/api/logout", () => {
+  http.get("http://localhost:5000/api/logout", () => {
     return HttpResponse.json(
       { message: "Logged out successfully" },
       { status: 200 }
     );
   }),
 
-  http.get("http://localhost:3001/api/refresh", () => {
+  http.get("http://localhost:5000/api/refresh", () => {
     return HttpResponse.json({ access_token: "1234" }, { status: 200 });
   }),
 
-  http.post("http://localhost:3001/api/login", async ({ request }) => {
+  http.post("http://localhost:5000/api/login", async ({ request }) => {
     const { email, password } = (await request.json()) as LoginRequest;
 
     if (!email || !password) {
@@ -123,7 +123,7 @@ export const handlers = [
     );
   }),
 
-  http.post("http://localhost:3001/api/verify-code", async ({ request }) => {
+  http.post("http://localhost:5000/api/verify-code", async ({ request }) => {
     const { email, code } = (await request.json()) as {
       email?: string;
       code?: string;
@@ -157,7 +157,7 @@ export const handlers = [
       { status: 400 }
     );
   }),
-  http.post("http://localhost:3001/api/register", async ({ request }) => {
+  http.post("http://localhost:5000/api/register", async ({ request }) => {
     const { email, password, code } = (await request.json()) as RegisterSchema;
 
     // Simular criação de usuário
@@ -187,7 +187,7 @@ export const handlers = [
 
   // Mock para /api/retreats/:id/metrics
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  http.get("http://localhost:3001/api/retreats/:id/metrics", ({ params }) => {
+  http.get("http://localhost:5000/api/retreats/:id/metrics", ({ params }) => {
     //const id = params.id as string;
     const metrics = mockMetrics[1];
     if (metrics) {
@@ -197,7 +197,7 @@ export const handlers = [
   }),
 
   http.get(
-    "http://localhost:3001/api/retreats/:id/contemplated",
+    "http://localhost:5000/api/retreats/:id/contemplated",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
       const payload = paginate(mockContemplatedParticipants, url);
@@ -206,7 +206,7 @@ export const handlers = [
   ),
 
   http.get(
-    "http://localhost:3001/api/retreats/:id/non-contemplated",
+    "http://localhost:5000/api/retreats/:id/non-contemplated",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
       const payload = paginate(mockContemplatedParticipants, url);
@@ -215,7 +215,7 @@ export const handlers = [
   ),
 
   http.get(
-    "http://localhost:3001/api/retreats/:id/participants/:participantId/form",
+    "http://localhost:5000/api/retreats/:id/participants/:participantId/form",
     ({ params }) => {
       const retreatId = params.id as string;
       const participantId = Number(params.participantId);
@@ -286,7 +286,7 @@ export const handlers = [
   ),
 
   http.put(
-    "http://localhost:3001/api/retreats/:id/participants/:participantId/form",
+    "http://localhost:5000/api/retreats/:id/participants/:participantId/form",
     async ({ request, params }) => {
       const retreatId = params.id as string;
       const participantId = Number(params.participantId);
@@ -307,7 +307,7 @@ export const handlers = [
   ),
 
   http.get(
-    "http://localhost:3001/api/retreats/:id/tents",
+    "http://localhost:5000/api/retreats/:id/tents",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
       const payload = paginate(mockTents, url);
@@ -318,7 +318,7 @@ export const handlers = [
   
   // Update family by ID
   http.put(
-    "http://localhost:3001/api/retreats/:retreatId/families/:familyId",
+    "http://localhost:5000/api/retreats/:retreatId/families/:familyId",
     async ({ params, request }) => {
       const familyId = Number(params.familyId);
       const body = await request.json() as {
@@ -349,7 +349,7 @@ export const handlers = [
   ),
 
    http.get(
-      "http://localhost:3001/api/retreats/:retreatId/families/lock",
+      "http://localhost:5000/api/retreats/:retreatId/families/lock",
       ({ params }) => {
         const retreatId = params.retreatId as string;
         const groups = ensureFamilyGroups(retreatId);
@@ -372,7 +372,7 @@ export const handlers = [
   
 
  http.put(
-    "http://localhost:3001/api/retreats/:id/service/spaces/:spaceId",
+    "http://localhost:5000/api/retreats/:id/service/spaces/:spaceId",
     async ({ params, request }) => {
       const retreatId = params.id as string;
       const spaceId = params.spaceId as string;
@@ -443,7 +443,7 @@ export const handlers = [
   
 
   http.get(
-    "http://localhost:3001/api/retreats/:id/families/rules",
+    "http://localhost:5000/api/retreats/:id/families/rules",
     ({ params }) => {
       const retreatId = params.id as string;
 
@@ -470,7 +470,7 @@ export const handlers = [
 
   // Family configuration endpoints
   http.get(
-    "http://localhost:3001/api/retreats/:id/families/config",
+    "http://localhost:5000/api/retreats/:id/families/config",
     () => {
       return HttpResponse.json({
         success: true,
@@ -487,7 +487,7 @@ export const handlers = [
   ),
 
   http.put(
-    "http://localhost:3001/api/retreats/:id/families/config",
+    "http://localhost:5000/api/retreats/:id/families/config",
     async ({ request }) => {
       const body = await request.json() as {
         defaultFamilySize: number;
@@ -513,7 +513,7 @@ export const handlers = [
 
   // Get available participants for a retreat (legacy endpoint)
   http.get(
-    "http://localhost:3001/api/retreats/:id/participants/available",
+    "http://localhost:5000/api/retreats/:id/participants/available",
     () => {
       const mockParticipants = [
         {
@@ -616,7 +616,7 @@ export const handlers = [
 
   // Add participants to family endpoint
   http.post(
-    "http://localhost:3001/api/retreats/:id/families/add-participants",
+    "http://localhost:5000/api/retreats/:id/families/add-participants",
     async ({ request }) => {
       const body = await request.json() as {
         familyId: string;
@@ -640,7 +640,7 @@ export const handlers = [
 
   // Delete family endpoint
   http.delete(
-    "http://localhost:3001/api/retreats/:retreatId/families/:familyId",
+    "http://localhost:5000/api/retreats/:retreatId/families/:familyId",
     async ({ params }) => {
       const { retreatId, familyId } = params;
       
@@ -656,7 +656,7 @@ export const handlers = [
 
 
   http.get(
-    "http://localhost:3001/api/public/retreats",
+    "http://localhost:5000/api/public/retreats",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
 
@@ -671,7 +671,7 @@ export const handlers = [
         let list = mockRetreats;
 
         if (search) {
-          list = list.filter((r) => r.title.toLowerCase().includes(search));
+          list = list.filter((r) => r.name.toLowerCase().includes(search));
         }
 
         // Optional limit for autocomplete (default 20)
@@ -682,7 +682,7 @@ export const handlers = [
           {
             options: sliced.map((r) => ({
               value: r.id,
-              label: r.title,
+              label: r.name,
               // extra metadata if needed by frontend
               startDate: r.startDate,
               endDate: r.endDate,
@@ -701,7 +701,7 @@ export const handlers = [
 
   // Public retreats endpoint supporting selectAutocomplete variant
 
-  http.get("http://localhost:3001/api/public/retreats/:id", ({ params }) => {
+  http.get("http://localhost:5000/api/public/retreats/:id", ({ params }) => {
     const id = params.id as string;
     const retreat = mockRetreats.find((r) => r.id.toString() === id);
     if (retreat) {
@@ -711,7 +711,7 @@ export const handlers = [
   }),
 
   http.get(
-    "http://localhost:3001/api/public/retreats/:id/form/participant",
+    "http://localhost:5000/api/public/retreats/:id/form/participant",
     ({ params }) => {
       const id = params.id as string;
 
@@ -729,7 +729,7 @@ export const handlers = [
   ),
 
    http.get(
-    "http://localhost:3001/api/public/retreats/:id/form/service-team",
+    "http://localhost:5000/api/public/retreats/:id/form/service-team",
     ({ params }) => {
       const id = params.id as string;
 
@@ -748,7 +748,7 @@ export const handlers = [
 
  
 
-  http.put("http://localhost:3001/api/Registrations/:id", async ({ params, request }) => {
+  http.put("http://localhost:5000/api/Registrations/:id", async ({ params, request }) => {
     const id = Number(params.id);
     const body = await request.json();
     const participant = mockContemplatedParticipants.find(
@@ -774,7 +774,7 @@ export const handlers = [
     );
   }),
 
-  http.delete("http://localhost:3001/api/Registrations/:id", ({ params }) => {
+  http.delete("http://localhost:5000/api/Registrations/:id", ({ params }) => {
     const id = Number(params.id);
     const index = mockContemplatedParticipants.findIndex(
       (p) => p.id === id
@@ -800,14 +800,14 @@ export const handlers = [
 
   
 
-  http.get("http://localhost:3001/api/reports", ({ request }) => {
+  http.get("http://localhost:5000/api/reports", ({ request }) => {
     const url = new URL(request.url);
     const payload = paginate(mockReports, url);
     return HttpResponse.json(payload, { status: 200 });
   }),
 
   // GET - Obter relatório específico
-  http.get("http://localhost:3001/api/reports/:id", ({ params }) => {
+  http.get("http://localhost:5000/api/reports/:id", ({ params }) => {
     const id = params.id as string;
     const report = mockReportDetails.find((r) => {
       const item = r as { id?: unknown };
@@ -853,7 +853,7 @@ export const handlers = [
   }),
 
   // POST - Criar novo relatório
-  http.post("http://localhost:3001/api/reports", async ({ request }) => {
+  http.post("http://localhost:5000/api/reports", async ({ request }) => {
     const newReport = await request.json();
 
     // Garante que newReport é um objeto
@@ -872,7 +872,7 @@ export const handlers = [
 
   // PUT - Atualizar relatório existente
   http.put(
-    "http://localhost:3001/api/reports/:id",
+    "http://localhost:5000/api/reports/:id",
     async ({ params, request }) => {
       const id = params.id as string;
       const updatedData = await request.json();
@@ -901,7 +901,7 @@ export const handlers = [
   ),
 
   // DELETE - Excluir relatório
-  http.delete("http://localhost:3001/api/reports/:id", ({ params }) => {
+  http.delete("http://localhost:5000/api/reports/:id", ({ params }) => {
     const id = params.id as string;
     const reportExists = mockReports.some((r) => r.id === id);
 
@@ -923,11 +923,11 @@ export const handlers = [
   }),
 
   // ---- Endpoints de Notificações ----
-  http.get("http://localhost:3001/api/notifications", () => {
+  http.get("http://localhost:5000/api/notifications", () => {
     return HttpResponse.json(mockNotifications, { status: 200 });
   }),
 
-  http.post("http://localhost:3001/api/notifications/mark-all-read", async ({ request }) => {
+  http.post("http://localhost:5000/api/notifications/mark-all-read", async ({ request }) => {
     try {
       const body = (await request.json()) as { ids?: Array<number | string> };
       const ids = (body?.ids ?? []).map((v) => Number(v));
@@ -945,7 +945,7 @@ export const handlers = [
     }
   }),
 
-  http.post("http://localhost:3001/api/notifications/:id/read", ({ params }) => {
+  http.post("http://localhost:5000/api/notifications/:id/read", ({ params }) => {
     const id = Number(params.id as string);
     const item = mockNotifications.find((n) => n.id === id);
     if (item) {
@@ -956,7 +956,7 @@ export const handlers = [
   }),
 
   // ---- SSE: envia 1 notificação/minuto por 3 vezes ----
-  http.get("http://localhost:3001/api/notifications/stream", ({ request }) => {
+  http.get("http://localhost:5000/api/notifications/stream", ({ request }) => {
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
@@ -1037,7 +1037,7 @@ export const handlers = [
   }),
 
   //fallback handler for unhandled requests
-  http.all("http://localhost:3001/*", ({ request }) => {
+  http.all("http://localhost:5000/*", ({ request }) => {
     console.warn("⚠️ Unhandled request:", request.method, request.url);
     return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });
   }),

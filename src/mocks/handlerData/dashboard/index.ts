@@ -3,8 +3,8 @@ import { Retreat } from "@/src/types/retreats";
 export const mockRetreats: Retreat[] = [
   {
     id: 1,
-    title: "Retiro de Verão 2025",
-    edition: 1,
+    name: "Retiro de Verão 2025",
+    edition: "1",
     state: "São Paulo",
     stateShort: "SP",
     city: "Campinas",
@@ -24,8 +24,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 2,
-    title: "Retiro de Inverno 2025",
-    edition: 1,
+    name: "Retiro de Inverno 2025",
+    edition: "1",
     state: "Minas Gerais",
     stateShort: "MG",
     city: "Belo Horizonte",
@@ -44,8 +44,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 3,
-    title: "Retiro Jovem 2024",
-    edition: 1,
+    name: "Retiro Jovem 2024",
+    edition: "1",
     state: "Rio de Janeiro",
     stateShort: "RJ",
     city: "Niterói",
@@ -65,8 +65,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 4,
-    title: "Retiro de Outono 2025",
-    edition: 1,
+    name: "Retiro de Outono 2025",
+    edition: "1",
     state: "Paraná",
     stateShort: "PR",
     city: "Curitiba",
@@ -85,8 +85,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 5,
-    title: "Retiro Familiar 2025",
-    edition: 1,
+    name: "Retiro Familiar 2025",
+    edition: "1",
     state: "Santa Catarina",
     stateShort: "SC",
     city: "Florianópolis",
@@ -105,8 +105,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 6,
-    title: "Retiro de Silêncio 2025",
-    edition: 1,
+    name: "Retiro de Silêncio 2025",
+    edition: "1",
     state: "Bahia",
     stateShort: "BA",
     city: "Salvador",
@@ -125,8 +125,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 7,
-    title: "Retiro de Cura Interior 2025",
-    edition: 1,
+    name: "Retiro de Cura Interior 2025",
+    edition: "1",
     state: "Pernambuco",
     stateShort: "PE",
     city: "Recife",
@@ -145,8 +145,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 8,
-    title: "Retiro de Casais 2025",
-    edition: 1,
+    name: "Retiro de Casais 2025",
+    edition: "1",
     state: "Rio Grande do Sul",
     stateShort: "RS",
     city: "Porto Alegre",
@@ -165,8 +165,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 9,
-    title: "Retiro de Jovens Adultos 2025",
-    edition: 1,
+    name: "Retiro de Jovens Adultos 2025",
+    edition: "1",
     state: "Goiás",
     stateShort: "GO",
     city: "Goiânia",
@@ -185,8 +185,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 10,
-    title: "Retiro de Oração 2025",
-    edition: 1,
+    name: "Retiro de Oração 2025",
+    edition: "1",
     state: "Ceará",
     stateShort: "CE",
     city: "Fortaleza",
@@ -205,8 +205,8 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 11,
-    title: "Retiro de Advento 2025",
-    edition: 1,
+    name: "Retiro de Advento 2025",
+    edition: "1",
     state: "Espírito Santo",
     stateShort: "ES",
     city: "Vitória",
@@ -225,7 +225,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 12,
-    title: "Retiro de Carnaval 2026",
+    name: "Retiro de Carnaval 2026",
     edition: 2,
     state: "São Paulo",
     stateShort: "SP",
@@ -245,7 +245,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 13,
-    title: "Retiro de Pentecostes 2026",
+    name: "Retiro de Pentecostes 2026",
     edition: 2,
     state: "Minas Gerais",
     stateShort: "MG",
@@ -265,7 +265,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 14,
-    title: "Retiro de Missão 2026",
+    name: "Retiro de Missão 2026",
     edition: 2,
     state: "Pará",
     stateShort: "PA",
@@ -285,7 +285,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 15,
-    title: "Retiro de Espiritualidade 2026",
+    name: "Retiro de Espiritualidade 2026",
     edition: 2,
     state: "Mato Grosso",
     stateShort: "MT",
@@ -305,7 +305,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 16,
-    title: "Retiro de Jovens 2026",
+    name: "Retiro de Jovens 2026",
     edition: 2,
     state: "Rio de Janeiro",
     stateShort: "RJ",
@@ -325,7 +325,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 17,
-    title: "Retiro de Mulheres 2026",
+    name: "Retiro de Mulheres 2026",
     edition: 2,
     state: "Bahia",
     stateShort: "BA",
@@ -345,7 +345,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 18,
-    title: "Retiro de Homens 2026",
+    name: "Retiro de Homens 2026",
     edition: 2,
     state: "Pernambuco",
     stateShort: "PE",
@@ -365,7 +365,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 19,
-    title: "Retiro de Pais e Filhos 2027",
+    name: "Retiro de Pais e Filhos 2027",
     edition: 3,
     state: "Santa Catarina",
     stateShort: "SC",
@@ -385,7 +385,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 20,
-    title: "Retiro de Jovens Universitários 2027",
+    name: "Retiro de Jovens Universitários 2027",
     edition: 3,
     state: "Rio Grande do Sul",
     stateShort: "RS",
@@ -405,7 +405,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 21,
-    title: "Retiro de Espiritualidade Jovem 2027",
+    name: "Retiro de Espiritualidade Jovem 2027",
     edition: 3,
     state: "Goiás",
     stateShort: "GO",
@@ -425,7 +425,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 22,
-    title: "Retiro de Reflexão 2027",
+    name: "Retiro de Reflexão 2027",
     edition: 3,
     state: "Ceará",
     stateShort: "CE",
@@ -445,7 +445,7 @@ export const mockRetreats: Retreat[] = [
   },
   {
     id: 23,
-    title: "Retiro de Jovens Líderes 2027",
+    name: "Retiro de Jovens Líderes 2027",
     edition: 3,
     state: "Espírito Santo",
     stateShort: "ES",
