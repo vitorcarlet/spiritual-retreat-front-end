@@ -9,6 +9,38 @@ interface Retreat {
   femaleSlots: number;
   registrationStart: string;
   registrationEnd: string;
+  feeFazer: number;
+  feeServir: number;
+  westRegionPct: number;
+  otherRegionPct: number;
+  state?: string;
+  stateShort?: string;
+  city?: string;
+  description?: string;
+  capacity?: number;
+  //participationTax?: string;
+  enrolled?: number;
+  location?: string;
+  isActive?: boolean;
+  images?: string[];
+  status: "open" | "closed" | "running" | "ended" | "upcoming";
+  instructor?: string;
+  image?: string;
+}
+
+interface RetreatPost {
+  id: number;
+  name: {
+    value: string;
+  };
+  edition: string;
+  theme: string;
+  startDate: string;
+  endDate: string;
+  maleSlots: number;
+  femaleSlots: number;
+  registrationStart: string;
+  registrationEnd: string;
   feeFazer: {
     amount: number;
     currency: string;

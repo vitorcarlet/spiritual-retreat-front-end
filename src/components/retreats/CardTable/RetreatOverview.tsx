@@ -26,7 +26,7 @@ const RetreatOverview = ({ retreatId }: { retreatId: string }) => {
   useEffect(() => {
     if (retreatData) {
       setBreadCrumbsTitle({
-        title: retreatData.title,
+        title: retreatData.name,
         pathname: `/retreats/${retreatData.id}`,
       });
     }
@@ -101,7 +101,7 @@ const RetreatOverview = ({ retreatId }: { retreatId: string }) => {
                 sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}
               >
                 <Typography variant="h4" component="h1" sx={{ flexGrow: 1 }}>
-                  {retreatData.title}
+                  {retreatData.name}
                 </Typography>
                 <Chip
                   label={retreatData.status}
@@ -270,11 +270,11 @@ const RetreatOverview = ({ retreatId }: { retreatId: string }) => {
                 Inscritos
               </Typography>
               <Typography variant="h6" color="success.main">
-                {retreatData.enrolled} pessoas
+                {retreatData.maleSlots + retreatData.femaleSlots} pessoas
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {retreatData.capacity > 0
-                  ? `${Math.round((retreatData.enrolled / retreatData.capacity) * 100)}% da capacidade`
+                {retreatData.maleSlots > 0
+                  ? `${Math.round((retreatData.maleSlots + retreatData.femaleSlots / retreatData.maleSlots + retreatData.femaleSlots) * 100)}% da capacidade`
                   : ""}
               </Typography>
             </CardContent>
@@ -293,7 +293,7 @@ const RetreatOverview = ({ retreatId }: { retreatId: string }) => {
                 Taxa de Participação
               </Typography>
               <Typography variant="h6" color="success.main">
-                {formatCurrency(retreatData.participationTax)}
+                {formatCurrency(retreatData.feeFazer)}
               </Typography>
             </CardContent>
           </Card>

@@ -16,8 +16,10 @@ import Link from "next/link";
 import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
+  RetreatSimple,
+  RetreatSimpleRequest,
 } from "./types";
-import { Retreat } from "@/src/types/retreats";
+//import { Retreat } from "@/src/types/retreats";
 import { useModal } from "@/src/hooks/useModal";
 import RetreatOverview from "./CardTable/RetreatOverview";
 import apiClient from "@/src/lib/axiosClientInstance";
@@ -42,7 +44,7 @@ const getRetreats = async (
       take: pageLimit,
       filtersFiltered,
     };
-    const response = await apiClient.get("/Retreats", {
+    const response = await apiClient.get<RetreatSimpleRequest>("/Retreats", {
       params,
     });
 
@@ -93,16 +95,16 @@ export default function RetreatsTablePage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const handleEdit = (retreat: Retreat) => {
-    router.push(`/retreats/${retreat.id}`);
+  const handleEdit = (retreatId: string) => {
+    router.push(`/retreats/${retreatId}`);
   };
 
-  const handleView = (retreat: Retreat) => {
+  const handleView = (retreatId: string) => {
     modal.open({
       title: t("overview"),
       size: "lg",
       customRender() {
-        return <RetreatOverview retreatId={String(retreat.id)} />;
+        return <RetreatOverview retreatId={retreatId} />;
       },
     });
   };
@@ -119,9 +121,9 @@ export default function RetreatsTablePage() {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const retreatsDataArray: Retreat[] = Array.isArray(retreatsData?.rows)
-    ? retreatsData?.rows
-    : ([retreatsData?.rows] as unknown as Retreat[]);
+  const retreatsDataArray: RetreatSimple[] = Array.isArray(retreatsData?.items)
+    ? retreatsData?.items
+    : ([retreatsData?.items] as unknown as RetreatSimple[]);
 
   if (isError) return <Typography>No data available.</Typography>;
 
@@ -144,7 +146,7 @@ export default function RetreatsTablePage() {
         />
         {hasCreatePermission && (
           <Button variant="contained">
-            <Link href={{ pathname: "/dashboard/retreats/new" }}>
+            <Link href={{ pathname: "/retreats/create" }}>
               Criar Novo Retiro
             </Link>
           </Button>
@@ -159,7 +161,7 @@ export default function RetreatsTablePage() {
       >
         <RetreatsCardTable
           loading={isLoading}
-          total={retreatsData?.total || 0}
+          total={retreatsData?.totalCount || 0}
           filters={filters}
           data={retreatsDataArray}
           onEdit={handleEdit}

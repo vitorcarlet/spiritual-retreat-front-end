@@ -18,7 +18,7 @@ import axios from "axios";
 const fetchRetreats = async (): Promise<RetreatLite[]> => {
   try {
     const response = await apiClient.get<RetreatOption>(
-      "/retreats?selectAutocomplete=true"
+      "/unhandled/retreats?selectAutocomplete=true"
     );
     return response.data?.options ?? [];
   } catch (error) {
@@ -74,7 +74,7 @@ const DashboardPage = () => {
     async (q: string): Promise<RetreatLite[]> => {
       try {
         const response = await apiClient.get<RetreatOption>(
-          `/retreats?selectAutocomplete=true${q ? `&search=${encodeURIComponent(q)}` : ""}`
+          `/unhandled/retreats?selectAutocomplete=true${q ? `&search=${encodeURIComponent(q)}` : ""}`
         );
         return response.data?.options ?? [];
       } catch (error) {

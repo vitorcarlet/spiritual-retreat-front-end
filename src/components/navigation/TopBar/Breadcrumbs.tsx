@@ -145,7 +145,6 @@ const Breadcrumbs: React.FC = () => {
     return breadcrumbs;
   }, [pathname, routeConfig]);
 
-  console.log(breadcrumbs, noBreadCrumbs, "Breadcrumbs items:", pathname);
   // Se só tem um item (Home), não mostrar breadcrumbs
 
   // const mainIcon = useMemo(() => {
@@ -284,9 +283,7 @@ const Breadcrumbs: React.FC = () => {
                   {/* Label */}
                   {isLast ? (
                     <Chip
-                      label={
-                        typeof item.label === "string" ? item.label : title
-                      }
+                      label={title ?? item.label}
                       size="small"
                       color="primary"
                       variant="outlined"

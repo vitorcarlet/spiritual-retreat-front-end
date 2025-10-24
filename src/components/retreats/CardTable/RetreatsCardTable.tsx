@@ -10,7 +10,7 @@ import {
   Box,
   Typography,
   Button,
-  Chip,
+  //Chip,
   Grid,
   Pagination,
   Stack,
@@ -20,16 +20,15 @@ import {
   ListItemText,
 } from "@mui/material";
 import Iconify from "../../Iconify";
-import { RetreatsCardTableFilters } from "../types";
-import { Retreat } from "@/src/types/retreats";
+import { RetreatsCardTableFilters, RetreatSimple } from "../types";
 
 interface RetreatsCardTableProps {
-  data?: Retreat[];
+  data?: RetreatSimple[];
   total?: number;
   loading: boolean;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
-  onEdit?: (retreat: Retreat) => void;
-  onView?: (retreat: Retreat) => void;
+  onEdit?: (retreatId: string) => void;
+  onView?: (retreatId: string) => void;
   onFiltersChange: (
     filters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => void;
@@ -66,59 +65,59 @@ export default function RetreatsCardTable({
   // Extrair filtros da URL
 
   // Define columns for TanStack Table
-  const columns: ColumnDef<Retreat>[] = [
+  const columns: ColumnDef<RetreatSimple>[] = [
     {
       id: "card",
       cell: (row) => {
         const { original: retreat } = row.cell.row;
 
         // Define status color based on status value
-        const statusColor = {
-          open: {
-            color: "success",
-            sx: {
-              bgcolor: "rgba(27, 73, 23, 0.61)",
-              color: "rgba(72, 255, 0, 0.93)",
-            },
-          },
-          closed: {
-            color: "error",
-            sx: {
-              bgcolor: "rgba(97, 34, 26, 0.4)",
-              color: "rgba(255, 30, 0, 0.93)",
-            },
-          },
-          upcoming: {
-            color: "warning",
-            sx: {
-              bgcolor: "rgba(73, 23, 23, 0.61)",
-              color: "rgba(72, 255, 0, 0.93)",
-            },
-          },
-          running: {
-            color: "default",
-            sx: {
-              bgcolor: "rgba(99, 76, 15, 0.61)",
-              color: "rgba(255, 196, 0, 0.86)",
-            },
-          },
-          ended: {
-            color: "info",
-            sx: {
-              bgcolor: "rgba(27, 73, 23, 0.61)",
-              color: "rgba(101, 107, 106, 0.07)",
-            },
-          },
-        } as const;
+        // const statusColor = {
+        //   open: {
+        //     color: "success",
+        //     sx: {
+        //       bgcolor: "rgba(27, 73, 23, 0.61)",
+        //       color: "rgba(72, 255, 0, 0.93)",
+        //     },
+        //   },
+        //   closed: {
+        //     color: "error",
+        //     sx: {
+        //       bgcolor: "rgba(97, 34, 26, 0.4)",
+        //       color: "rgba(255, 30, 0, 0.93)",
+        //     },
+        //   },
+        //   upcoming: {
+        //     color: "warning",
+        //     sx: {
+        //       bgcolor: "rgba(73, 23, 23, 0.61)",
+        //       color: "rgba(72, 255, 0, 0.93)",
+        //     },
+        //   },
+        //   running: {
+        //     color: "default",
+        //     sx: {
+        //       bgcolor: "rgba(99, 76, 15, 0.61)",
+        //       color: "rgba(255, 196, 0, 0.86)",
+        //     },
+        //   },
+        //   ended: {
+        //     color: "info",
+        //     sx: {
+        //       bgcolor: "rgba(27, 73, 23, 0.61)",
+        //       color: "rgba(101, 107, 106, 0.07)",
+        //     },
+        //   },
+        // } as const;
 
         // Status label text translation
-        const statusText = {
-          open: "open",
-          closed: "closed",
-          upcoming: "upcoming",
-          running: "running",
-          ended: "ended",
-        };
+        // const statusText = {
+        //   open: "open",
+        //   closed: "closed",
+        //   upcoming: "upcoming",
+        //   running: "running",
+        //   ended: "ended",
+        // };
 
         return (
           <Box
@@ -140,7 +139,7 @@ export default function RetreatsCardTable({
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "flex-end",
-                backgroundImage: `url(${retreat.image})`,
+                backgroundImage: `url(${retreat.image || "/public/images/retreats/retreat-1.jpg"})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
@@ -168,7 +167,7 @@ export default function RetreatsCardTable({
                   color: "common.white",
                 }}
               >
-                <Chip
+                {/* <Chip
                   label={statusText[retreat.status]}
                   color={statusColor[retreat.status].color}
                   sx={{
@@ -180,7 +179,7 @@ export default function RetreatsCardTable({
                     borderColor: "common.white",
                     borderWidth: 1,
                   }}
-                />
+                /> */}
                 <Typography variant="h6" component="div" gutterBottom>
                   {retreat.name}
                 </Typography>
@@ -189,9 +188,9 @@ export default function RetreatsCardTable({
                     icon="solar:map-point-bold"
                     sx={{ color: "common.white", mr: 0.5 }}
                   />
-                  <Typography variant="body2" color="common.white">
+                  {/* <Typography variant="body2" color="common.white">
                     {retreat.location}
-                  </Typography>
+                  </Typography> */}
                 </Box>
               </Box>
             </Box>
@@ -220,7 +219,7 @@ export default function RetreatsCardTable({
                     borderColor: "primary.dark",
                   },
                 }}
-                onClick={() => onView?.(retreat)}
+                onClick={() => onView?.(retreat.id)}
               >
                 Visão Geral
               </Button>
@@ -228,7 +227,7 @@ export default function RetreatsCardTable({
                 sx={{ width: 100 }}
                 size="medium"
                 variant="outlined"
-                onClick={() => onEdit?.(retreat)}
+                onClick={() => onEdit?.(retreat.id)}
               >
                 Ver Mais
               </Button>
