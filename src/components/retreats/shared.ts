@@ -73,7 +73,7 @@ const buildRetreatPayload = (data: RetreatPayload) => {
 export const createRetreat = async (
   payload: RetreatPayload,
   files?: File[]
-): Promise<Retreat> => {
+): Promise<{ retreatId: string }> => {
   try {
     const builtPayload = buildRetreatPayload(payload);
 
@@ -85,11 +85,17 @@ export const createRetreat = async (
       );
       files.forEach((file) => body.append("images", file));
 
-      const response = await apiClient.post<Retreat>("/Retreats", body);
+      const response = await apiClient.post<{ retreatId: string }>(
+        "/Retreats",
+        body
+      );
       return response.data;
     }
 
-    const response = await apiClient.post<Retreat>("/Retreats", builtPayload);
+    const response = await apiClient.post<{ retreatId: string }>(
+      "/Retreats",
+      builtPayload
+    );
     return response.data;
   } catch (error) {
     const message = axios.isAxiosError(error)

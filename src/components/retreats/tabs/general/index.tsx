@@ -342,7 +342,7 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
         });
         setImagesToDelete([]);
         setNewImages([]);
-        router.push(`/retreats/${data.id}`);
+        router.push(`/retreats/${data.retreatId}`);
         return;
       }
 
