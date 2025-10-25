@@ -8,15 +8,14 @@ import { useTranslations } from "next-intl";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useRouter } from "next/navigation";
 import {
-  RetreatRequest,
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
 } from "./types";
-import { Retreat } from "@/src/types/retreats";
 import { getFilters } from "./getFilters";
 import PublicRetreatsCardTable from "./table";
 import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
+import { RetreatSimple, RetreatSimpleRequest } from "../../retreats/types";
 
 const getRetreats = async (
   filters: TableDefaultFilters<
@@ -24,11 +23,11 @@ const getRetreats = async (
   >
 ) => {
   try {
-    const response = await apiClient.get<RetreatRequest>("/public/retreats", {
+    const response = await apiClient.get<RetreatSimpleRequest>("/Retreats", {
       params: filters,
     });
 
-    return response.data as RetreatRequest;
+    return response.data;
   } catch (error) {
     console.error("Erro ao reenviar notificação:", error);
     const message = axios.isAxiosError(error)
@@ -64,7 +63,7 @@ export default function PublicRetreatsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const handleView = (retreat: Retreat) => {
+  const handleView = (retreat: RetreatSimple) => {
     router.push(`public/retreats/${retreat.id}`);
   };
 
@@ -80,9 +79,9 @@ export default function PublicRetreatsPage() {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const retreatsDataArray: Retreat[] = Array.isArray(retreatsData?.rows)
-    ? retreatsData?.rows
-    : ([retreatsData?.rows] as unknown as Retreat[]);
+  const retreatsDataArray: RetreatSimple[] = Array.isArray(retreatsData?.items)
+    ? retreatsData?.items
+    : ([retreatsData?.items] as unknown as RetreatSimple[]);
 
   if (isLoading || !retreatsDataArray.length)
     return <Typography>Loading retreats...</Typography>;
@@ -114,7 +113,7 @@ export default function PublicRetreatsPage() {
         }}
       >
         <PublicRetreatsCardTable
-          total={retreatsData?.total || 0}
+          total={retreatsData?.totalCount || 0}
           filters={filters}
           data={retreatsDataArray}
           onView={handleView}

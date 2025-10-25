@@ -188,7 +188,7 @@ export const fetchFormData = async (
 
     return {
       id: `retreat-${retreatId}-participant-form`,
-      title: retreat.title,
+      title: retreat.name,
       description:
         type === RetreatFormType.PARTICIPATE
           ? "Preencha seus dados para participar do retiro"
@@ -210,21 +210,25 @@ export const sendFormData = async (
   type: string
 ): Promise<BackendForm> => {
   try {
+    // Transforma o payload para o formato esperado pela API
+    const transformedBody =
+      type === RetreatFormType.PARTICIPATE
+        ? buildParticipationPayload(body, retreatId)
+        : body;
+
     const url =
-      type == RetreatFormType.PARTICIPATE
-        ? `/retreats/${retreatId}/service/registrations`
-        : "/Registrations";
-    const response = await apiClient.post<BackendForm>(url, {
-      retreatId: retreatId,
-      ...body,
-    });
+      type === RetreatFormType.PARTICIPATE
+        ? "/Registrations"
+        : `/retreats/${retreatId}/service/registrations`;
+
+    const response = await apiClient.post<BackendForm>(url, transformedBody);
 
     if (response.data) {
       return response.data;
     }
     return {} as BackendForm;
   } catch (error) {
-    console.error("Erro ao buscar dados do formulario:", error);
+    console.error("Erro ao enviar dados do formulario:", error);
     throw error;
   }
 };
@@ -526,10 +530,41 @@ export function buildZodSchema(sections: BackendSection[]): z.ZodTypeAny {
 }
 export interface PublicRetreatFormProps {
   id: string;
-  type: string;
+  type: "participate" | "serve";
 }
 
 const RetreatFormType = {
   PARTICIPATE: "participate",
   SERVER: "serve",
+};
+
+/**
+ * Transforma os dados do formulário para o formato esperado pela API
+ * Converte campos simples em objetos com { value: ... }
+ */
+const buildParticipationPayload = (
+  formData: Record<string, unknown>,
+  retreatId: string
+): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {
+    retreatId,
+  };
+
+  Object.entries(formData).forEach(([key, value]) => {
+    // Campos que precisam ser convertidos para { value: ... }
+    const fieldsWithValue = ["name", "cpf", "email"];
+
+    if (
+      fieldsWithValue.includes(key) &&
+      value !== null &&
+      value !== undefined
+    ) {
+      payload[key] = { value };
+    } else {
+      // Outros campos mantêm o valor original
+      payload[key] = value;
+    }
+  });
+
+  return payload;
 };

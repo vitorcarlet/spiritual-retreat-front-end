@@ -21,7 +21,7 @@ import FieldRenderer from "./components/FieldRenderer";
 
 const formCache = new Map<string, Promise<BackendForm>>();
 
-const getFormPromise = (id: string, type: string) => {
+const getFormPromise = (id: string, type: "participate" | "serve") => {
   if (!formCache.has(id)) {
     formCache.set(id, fetchFormData(id, type));
   }

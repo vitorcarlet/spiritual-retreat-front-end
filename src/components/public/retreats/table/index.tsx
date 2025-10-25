@@ -10,7 +10,6 @@ import {
   Box,
   Typography,
   Button,
-  Chip,
   Grid,
   Pagination,
   Stack,
@@ -20,14 +19,14 @@ import {
   ListItemText,
 } from "@mui/material";
 import { RetreatsCardTableFilters } from "../types";
-import { Retreat } from "@/src/types/retreats";
 import Iconify from "@/src/components/Iconify";
+import { RetreatSimple } from "@/src/components/retreats/types";
 
 interface RetreatsCardTableProps {
-  data?: Retreat[];
+  data?: RetreatSimple[];
   total?: number;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
-  onView?: (retreat: Retreat) => void;
+  onView?: (retreat: RetreatSimple) => void;
   onFiltersChange: (
     filters: TableDefaultFilters<RetreatsCardTableFilters>
   ) => void;
@@ -62,59 +61,59 @@ export default function PublicRetreatsCardTable({
   // Extrair filtros da URL
 
   // Define columns for TanStack Table
-  const columns: ColumnDef<Retreat>[] = [
+  const columns: ColumnDef<RetreatSimple>[] = [
     {
       id: "card",
       cell: (row) => {
         const { original: retreat } = row.cell.row;
 
         // Define status color based on status value
-        const statusColor = {
-          open: {
-            color: "success",
-            sx: {
-              bgcolor: "rgba(27, 73, 23, 0.61)",
-              color: "rgba(72, 255, 0, 0.93)",
-            },
-          },
-          closed: {
-            color: "error",
-            sx: {
-              bgcolor: "rgba(97, 34, 26, 0.4)",
-              color: "rgba(255, 30, 0, 0.93)",
-            },
-          },
-          upcoming: {
-            color: "warning",
-            sx: {
-              bgcolor: "rgba(73, 23, 23, 0.61)",
-              color: "rgba(72, 255, 0, 0.93)",
-            },
-          },
-          running: {
-            color: "default",
-            sx: {
-              bgcolor: "rgba(99, 76, 15, 0.61)",
-              color: "rgba(255, 196, 0, 0.86)",
-            },
-          },
-          ended: {
-            color: "info",
-            sx: {
-              bgcolor: "rgba(27, 73, 23, 0.61)",
-              color: "rgba(101, 107, 106, 0.07)",
-            },
-          },
-        } as const;
+        // const statusColor = {
+        //   open: {
+        //     color: "success",
+        //     sx: {
+        //       bgcolor: "rgba(27, 73, 23, 0.61)",
+        //       color: "rgba(72, 255, 0, 0.93)",
+        //     },
+        //   },
+        //   closed: {
+        //     color: "error",
+        //     sx: {
+        //       bgcolor: "rgba(97, 34, 26, 0.4)",
+        //       color: "rgba(255, 30, 0, 0.93)",
+        //     },
+        //   },
+        //   upcoming: {
+        //     color: "warning",
+        //     sx: {
+        //       bgcolor: "rgba(73, 23, 23, 0.61)",
+        //       color: "rgba(72, 255, 0, 0.93)",
+        //     },
+        //   },
+        //   running: {
+        //     color: "default",
+        //     sx: {
+        //       bgcolor: "rgba(99, 76, 15, 0.61)",
+        //       color: "rgba(255, 196, 0, 0.86)",
+        //     },
+        //   },
+        //   ended: {
+        //     color: "info",
+        //     sx: {
+        //       bgcolor: "rgba(27, 73, 23, 0.61)",
+        //       color: "rgba(101, 107, 106, 0.07)",
+        //     },
+        //   },
+        // } as const;
 
         // Status label text translation
-        const statusText = {
-          open: "open",
-          closed: "closed",
-          upcoming: "upcoming",
-          running: "running",
-          ended: "ended",
-        };
+        // const statusText = {
+        //   open: "open",
+        //   closed: "closed",
+        //   upcoming: "upcoming",
+        //   running: "running",
+        //   ended: "ended",
+        // };
 
         return (
           <Box
@@ -164,7 +163,7 @@ export default function PublicRetreatsCardTable({
                   color: "common.white",
                 }}
               >
-                <Chip
+                {/* <Chip
                   label={statusText[retreat.status]}
                   color={statusColor[retreat.status].color}
                   sx={{
@@ -176,18 +175,18 @@ export default function PublicRetreatsCardTable({
                     borderColor: "common.white",
                     borderWidth: 1,
                   }}
-                />
+                /> */}
                 <Typography variant="h6" component="div" gutterBottom>
-                  {retreat.title}
+                  {retreat.name}
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                   <Iconify
                     icon="solar:map-point-bold"
                     sx={{ color: "common.white", mr: 0.5 }}
                   />
-                  <Typography variant="body2" color="common.white">
+                  {/* <Typography variant="body2" color="common.white">
                     {retreat.location}
-                  </Typography>
+                  </Typography> */}
                 </Box>
               </Box>
             </Box>

@@ -13,6 +13,7 @@ import {
   Alert,
 } from "@mui/material";
 import { useModal } from "@/src/hooks/useModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type DeleteConfirmationProps = {
   title?: string;
@@ -44,7 +45,7 @@ export default function DeleteConfirmation({
   const [typed, setTyped] = useState("");
   const [checked, setChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const queryClient = useQueryClient();
   const disabled =
     loading ||
     (requireText ? typed.trim() !== requireText.trim() : false) ||
@@ -60,6 +61,9 @@ export default function DeleteConfirmation({
     setLoading(true);
     try {
       await onConfirm();
+      await queryClient.invalidateQueries({
+        queryKey: ["retreats"],
+      });
       modal.close();
     } catch (e: any) {
       setError(e?.message || "Failed to delete. Try again.");

@@ -1,8 +1,8 @@
-import { IconButton, Paper, Typography, useTheme } from "@mui/material";
+import { IconButton, Paper, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Iconify from "@/src/components/Iconify";
 import { useDrawer } from "@/src/contexts/DrawerContext";
-import Link from "next/link";
+import ModeSwitch from "@/src/components/navbar/mui/ModeSwitch";
 
 const TopBar = () => {
   const { handleDrawerToggle, handleDrawerPersistentToggle } = useDrawer();
@@ -47,7 +47,8 @@ const TopBar = () => {
             justifyContent: "end",
           }}
         >
-          <Typography component="span" variant="body2" sx={{ marginRight: 2 }}>
+          <ModeSwitch />
+          {/* <Typography component="span" variant="body2" sx={{ marginRight: 2 }}>
             Já foi contemplado?{" "}
             <Typography
               component={Link}
@@ -59,7 +60,7 @@ const TopBar = () => {
             >
               Acesse aqui!
             </Typography>
-          </Typography>
+          </Typography> */}
         </Grid>
       </Grid>
     </Paper>
