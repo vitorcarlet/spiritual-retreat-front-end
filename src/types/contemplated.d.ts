@@ -1,8 +1,10 @@
 interface ContemplatedParticipant {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone?: string;
+  cpf: string;
+  region: string;
   status: "contemplated" | "not_contemplated";
   photoUrl?: string;
   activity: string;

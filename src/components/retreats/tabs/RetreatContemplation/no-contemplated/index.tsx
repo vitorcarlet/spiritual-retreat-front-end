@@ -17,28 +17,25 @@ import {
 } from "../types";
 import { useTranslations } from "next-intl";
 import { getSelectedIds as getSelectedIdsFn } from "@/src/components/table/shared";
-import DeleteConfirmation from "@/src/components/confirmations/DeleteConfirmation";
 import { useModal } from "@/src/hooks/useModal";
-import ParticipantForm, { ParticipantFormValues } from "./ParticipantForm";
 import { enqueueSnackbar } from "notistack";
 import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
 import LotteryModal from "../LotteryModal";
 import { RegistrationDTO } from "../types";
+import ParticipantForm, { ParticipantFormValues } from "./ParticipantForm";
+import ParticipantPublicFormTab from "./ParticipantPublicFormTab";
 
 const mapRegistrationToParticipant = (
-  registration: RegistrationDTO,
-  index: number
+  registration: RegistrationDTO
 ): ContemplatedParticipant => {
-  const rawId = registration.id;
-  const parsedId =
-    typeof rawId === "string" ? parseInt(rawId, 10) : Number(rawId);
-
   return {
-    id: Number.isFinite(parsedId) && parsedId > 0 ? parsedId : index,
+    id: registration.id,
     name: registration.name || "Participante sem nome",
     email: "", // Campo não disponível no DTO
     phone: undefined,
+    cpf: registration.cpf,
+    region: registration.region,
     status: "not_contemplated", // Já filtrado na API (NotSelected + Guest)
     photoUrl: undefined,
     activity: "Participante",
@@ -135,8 +132,8 @@ const getContemplated = async (
       return item.status === "NotSelected" && item.category === "Guest";
     });
 
-    const rows = registrations.map((registration, index) =>
-      mapRegistrationToParticipant(registration, index)
+    const rows = registrations.map((registration) =>
+      mapRegistrationToParticipant(registration)
     );
     const total = extractTotal(response.data, rows.length);
 
@@ -173,12 +170,12 @@ const getContemplated = async (
 
 // Definir as colunas da tabela
 const columns: DataTableColumn<ContemplatedParticipant>[] = [
-  {
-    field: "id",
-    headerName: "ID",
-    width: 70,
-    type: "number",
-  },
+  // {
+  //   field: "id",
+  //   headerName: "ID",
+  //   width: 70,
+  //   type: "number",
+  // },
   {
     field: "photo",
     headerName: "Foto",
@@ -207,18 +204,30 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
     flex: 1,
     minWidth: 180,
   },
+  // {
+  //   field: "email",
+  //   headerName: "Email",
+  //   flex: 1,
+  //   minWidth: 220,
+  // },
+  // {
+  //   field: "phone",
+  //   headerName: "Telefone",
+  //   width: 140,
+  //   valueFormatter: (v: { value?: unknown }) =>
+  //     v?.value ? String(v.value) : "",
+  // },
   {
-    field: "email",
-    headerName: "Email",
+    field: "cpf",
+    headerName: "CPF",
     flex: 1,
-    minWidth: 220,
+    minWidth: 140,
   },
   {
-    field: "phone",
-    headerName: "Telefone",
-    width: 140,
-    valueFormatter: (v: { value?: unknown }) =>
-      v?.value ? String(v.value) : "",
+    field: "region",
+    headerName: "Região",
+    flex: 1,
+    minWidth: 140,
   },
   {
     field: "activity",
@@ -317,6 +326,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     GridRowSelectionModel | undefined
   >(undefined);
   const [loading, setLoading] = useState(false);
+
   const filtersConfig = getFilters();
 
   // ✅ Helper para obter IDs selecionados
@@ -328,31 +338,6 @@ export default function NonContemplatedTable({ id }: { id: string }) {
       }),
     [contemplatedData, selectedRows]
   );
-
-  const submitNewParticipant = async (participant: ParticipantFormValues) => {
-    try {
-      await apiClient.post(`/Registrations`, {
-        ...participant,
-        retreatId: id,
-      });
-      enqueueSnackbar("Participante criado com sucesso", {
-        variant: "success",
-        preventDuplicate: true,
-      });
-      await refetch();
-    } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? ((error.response?.data as { error?: string })?.error ?? error.message)
-        : "Ocorreu um erro ao criar o participante";
-      enqueueSnackbar(message, {
-        variant: "error",
-        autoHideDuration: 8000,
-        anchorOrigin: { vertical: "top", horizontal: "center" },
-      });
-    } finally {
-      modal.close();
-    }
-  };
 
   const editParticipant = async (participant: ParticipantFormValues) => {
     try {
@@ -376,51 +361,29 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     }
   };
 
-  const handleOpenParticipantForm = (participantId: string | null) => {
+  const handleOpenParticipantModal = (participantId: string) => {
     modal.open({
       title: "Detalhes do Participante",
       size: "md",
       customRender: () => (
         <ParticipantForm
           participantId={participantId}
-          onSubmit={
-            participantId == null ? submitNewParticipant : editParticipant
-          }
+          onSubmit={editParticipant}
           retreatId={id}
         />
       ),
     });
   };
 
-  const handleDeleteParticipant = (participant: ContemplatedParticipant) => {
+  const handleCreateNewParticipant = (
+    retreatId: string,
+  ) => {
     modal.open({
-      title: "Confirmar exclusão",
-      size: "sm",
+      title: "Criar Novo Participante",
+      size: "md",
       customRender: () => (
-        <DeleteConfirmation
-          title="Excluir participante"
-          resourceName={participant.name}
-          description="Esta ação não pode ser desfeita e removerá permanentemente o participante."
-          requireCheckboxLabel="Eu entendo as consequências."
-          onConfirm={async () => {
-            try {
-              await apiClient.delete(`/Registrations/${participant.id}`);
-              enqueueSnackbar("Participante excluído com sucesso", {
-                variant: "success",
-              });
-              await refetch();
-            } catch (error: unknown) {
-              const message = axios.isAxiosError(error)
-                ? ((error.response?.data as { error?: string })?.error ??
-                  error.message)
-                : "Falha ao excluir participante";
-              enqueueSnackbar(message, {
-                variant: "error",
-              });
-            } finally {
-              modal.close();
-            }
-          }}
+        <ParticipantPublicFormTab
+          retreatId={retreatId}
         />
       ),
     });
@@ -593,7 +556,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => handleOpenParticipantForm(null)}
+          onClick={() => handleCreateNewParticipant(id)}
         >
           {t("contemplations.no-contemplated.create-new-participant")}
         </Button>
@@ -648,7 +611,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
               icon: "lucide:eye",
               label: "Ver Mais",
               onClick: (participant) =>
-                handleOpenParticipantForm(String(participant.id)),
+                handleOpenParticipantModal(String(participant.id)),
               color: "primary",
             },
             {
@@ -657,12 +620,12 @@ export default function NonContemplatedTable({ id }: { id: string }) {
               onClick: handleContemplate,
               color: "secondary",
             },
-            {
-              icon: "lucide:trash-2",
-              label: "Excluir participante",
-              onClick: handleDeleteParticipant,
-              color: "error",
-            },
+            // {
+            //   icon: "lucide:trash-2",
+            //   label: "Excluir participante",
+            //   onClick: handleDeleteParticipant,
+            //   color: "error",
+            // },
           ]}
           // Eventos
           // onRowDoubleClick={(params) => {

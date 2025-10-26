@@ -92,7 +92,7 @@ const getRetreatParticipant: ParticipantLoader = async (
 ) => {
   try {
     const response = await apiClient.get<ContemplatedParticipant>(
-      `/api/Registrations/${participantId}`
+      `/Registrations/${participantId}`
     );
 
     return response.data;
@@ -136,6 +136,10 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
     defaultValues: participant
       ? {
           ...participant,
+          id:
+            typeof participant.id === "string"
+              ? parseInt(participant.id, 10)
+              : participant.id,
           photoUrl: participant.photoUrl ?? null,
         }
       : defaultEmpty,
@@ -167,11 +171,16 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
       participant
         ? {
             ...participant,
+            id:
+              typeof participant.id === "string"
+                ? parseInt(participant.id, 10)
+                : participant.id,
             photoUrl: participant.photoUrl ?? null,
           }
         : defaultEmpty
     );
   }, [participant, reset]);
+
   useEffect(() => {
     setIsEditing(!disabled);
   }, [disabled]);
@@ -202,7 +211,11 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   const submit: SubmitHandler<ParticipantFormValues> = async (data) => {
     // Preserve id if coming as prop but absent in data (optional)
     if (participant?.id && !data.id) {
-      data.id = participant.id;
+      const parsedId =
+        typeof participant.id === "string"
+          ? parseInt(participant.id, 10)
+          : participant.id;
+      data.id = parsedId;
     }
     await onSubmit?.(data);
   };
@@ -260,6 +273,10 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                 participant
                   ? {
                       ...participant,
+                      id:
+                        typeof participant.id === "string"
+                          ? parseInt(participant.id, 10)
+                          : participant.id,
                       photoUrl: participant.photoUrl ?? null,
                     }
                   : defaultEmpty
@@ -473,6 +490,10 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                     participant
                       ? {
                           ...participant,
+                          id:
+                            typeof participant.id === "string"
+                              ? parseInt(participant.id, 10)
+                              : participant.id,
                           photoUrl: participant.photoUrl ?? null,
                         }
                       : defaultEmpty
@@ -494,10 +515,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
       )}
 
       {tab === "form" && participant?.id && (
-        <ParticipantPublicFormTab
-          retreatId={retreatId}
-          participantId={participant.id}
-        />
+        <ParticipantPublicFormTab retreatId={retreatId} />
       )}
     </Stack>
   );

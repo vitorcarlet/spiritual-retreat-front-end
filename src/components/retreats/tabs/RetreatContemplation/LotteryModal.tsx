@@ -18,6 +18,7 @@ import axios from "axios";
 import { enqueueSnackbar } from "notistack";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { useRef } from "react";
+import { useDarkMode } from "@/src/theme/DarkModeContext";
 
 interface LotteryModalProps {
   retreatId: string;
@@ -46,6 +47,7 @@ export default function LotteryModal({
   const t = useTranslations();
   const [isLoading, setIsLoading] = useState(true);
   const [isCommitting, setIsCommitting] = useState(false);
+  const { darkMode } = useDarkMode();
   const [lotteryData, setLotteryData] = useState<LotteryPreviewResponse | null>(
     null
   );
@@ -62,7 +64,7 @@ export default function LotteryModal({
       setError(null);
 
       try {
-        const response = await apiClient.get<LotteryPreviewResponse>(
+        const response = await apiClient.post<LotteryPreviewResponse>(
           `/retreats/${retreatId}/lottery/preview`
         );
 
@@ -215,7 +217,7 @@ export default function LotteryModal({
               sx={{
                 flex: 1,
                 p: 2,
-                bgcolor: "primary.lighter",
+                bgcolor: "background.paper",
                 borderRadius: 2,
               }}
             >
@@ -247,7 +249,7 @@ export default function LotteryModal({
               sx={{
                 flex: 1,
                 p: 2,
-                bgcolor: "secondary.lighter",
+                bgcolor: "background.paper",
                 borderRadius: 2,
               }}
             >
@@ -279,7 +281,7 @@ export default function LotteryModal({
               sx={{
                 flex: 1,
                 p: 2,
-                bgcolor: "success.lighter",
+                bgcolor: "background.paper",
                 borderRadius: 2,
               }}
             >
@@ -323,7 +325,7 @@ export default function LotteryModal({
                   display: "flex",
                   borderBottom: 1,
                   borderColor: "divider",
-                  bgcolor: "grey.50",
+                  bgcolor: "background.default",
                   position: "sticky",
                   top: 0,
                   zIndex: 1,
@@ -482,6 +484,12 @@ export default function LotteryModal({
               isCommitting ? <CircularProgress size={20} /> : undefined
             }
             size="large"
+            sx={{
+              color: darkMode ? "#000" : "#fff",
+              "&:hover": {
+                color: darkMode ? "#fff" : "#000",
+              },
+            }}
           >
             {isCommitting ? t("committing") : t("confirm-lottery")}
           </Button>

@@ -585,5 +585,6 @@
     "no-history": "Nenhum evento registrado.",
     "close": "Fechar"
   },
-  "region": "Região"
+  "region": "Região",
+  "close": "Fechar"
 }
