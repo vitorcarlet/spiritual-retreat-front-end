@@ -23,182 +23,37 @@ import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
 import { enqueueSnackbar } from "notistack";
 import { keysToRemoveFromFilters } from "@/src/components/table/shared";
-
-type ContemplatedDataRequest = {
-  rows: ContemplatedParticipant[];
-  total: number;
-  page: number;
-  pageLimit: number;
-};
-
-type RegistrationMeta = {
-  totalItems?: number;
-  itemCount?: number;
-};
-
-type RegistrationDTO = {
-  id?: string | number | null;
-  status?: number | string | null;
-  participantName?: string | null;
-  participantEmail?: string | null;
-  participantPhone?: string | null;
-  photoUrl?: string | null;
-  avatarUrl?: string | null;
-  activity?: string | null;
-  paymentStatus?: string | null;
-  participation?: boolean | number | string | null;
-  attendance?: boolean | number | string | null;
-  participant?: {
-    id?: string | number | null;
-    fullName?: string | null;
-    name?: string | null;
-    email?: string | null;
-    phone?: string | null;
-    avatarUrl?: string | null;
-    photoUrl?: string | null;
-    activity?: string | null;
-  } | null;
-  registrationStatus?: number | string | null;
-};
-
-type RegistrationApiResponse = {
-  data?: RegistrationDTO[];
-  items?: RegistrationDTO[];
-  rows?: RegistrationDTO[];
-  result?: RegistrationDTO[];
-  registrations?: RegistrationDTO[];
-  total?: number;
-  totalCount?: number;
-  count?: number;
-  meta?: RegistrationMeta;
-};
-
-const normalizePaymentStatus = (
-  value: unknown
-): ContemplatedParticipant["paymentStatus"] => {
-  if (typeof value === "string") {
-    const normalized = value.toLowerCase();
-    if (
-      ["paid", "pago", "completed"].some((item) => normalized.includes(item))
-    ) {
-      return "paid";
-    }
-    if (
-      ["overdue", "late", "atrasado"].some((item) => normalized.includes(item))
-    ) {
-      return "overdue";
-    }
-    if (
-      ["pending", "pendente", "waiting"].some((item) =>
-        normalized.includes(item)
-      )
-    ) {
-      return "pending";
-    }
-  }
-  return "pending";
-};
-
-const normalizeParticipation = (value: unknown): boolean => {
-  if (typeof value === "boolean") {
-    return value;
-  }
-  if (typeof value === "number") {
-    return value === 1;
-  }
-  if (typeof value === "string") {
-    const normalized = value.toLowerCase();
-    return ["true", "1", "yes", "presente", "present"].includes(normalized);
-  }
-  return false;
-};
-
-const getDisplayName = (registration: RegistrationDTO): string => {
-  const nested = registration.participant ?? {};
-  return (
-    nested.fullName ||
-    nested.name ||
-    registration.participantName ||
-    "Participante sem nome"
-  );
-};
-
-const getDisplayEmail = (registration: RegistrationDTO): string => {
-  const nested = registration.participant ?? {};
-  return (
-    nested.email ||
-    registration.participantEmail ||
-    registration.participant?.email ||
-    ""
-  );
-};
-
-const getDisplayPhone = (registration: RegistrationDTO): string | undefined => {
-  const nested = registration.participant ?? {};
-  return nested.phone || registration.participantPhone || undefined;
-};
-
-const getActivity = (registration: RegistrationDTO): string => {
-  const nested = registration.participant ?? {};
-  return (
-    (typeof nested.activity === "string" && nested.activity) ||
-    (typeof registration.activity === "string" && registration.activity) ||
-    "Participante"
-  );
-};
-
-const getPhotoUrl = (registration: RegistrationDTO): string | undefined => {
-  const nested = registration.participant ?? {};
-  const value =
-    nested.avatarUrl ||
-    nested.photoUrl ||
-    registration.avatarUrl ||
-    registration.photoUrl ||
-    undefined;
-  return typeof value === "string" && value.trim().length > 0
-    ? value
-    : undefined;
-};
+import {
+  RegistrationDTO,
+  RegistrationApiResponse,
+  ContemplatedDataRequest,
+} from "../types";
 
 const mapRegistrationToParticipant = (
-  registration: RegistrationDTO
+  registration: RegistrationDTO,
+  index: number
 ): ContemplatedParticipant => {
-  const rawId = registration.id ?? registration.participant?.id ?? 0;
-  const parsedId = Number(rawId);
-  const statusValue =
-    typeof registration.status === "number"
-      ? registration.status
-      : typeof registration.status === "string"
-        ? Number.parseInt(registration.status, 10)
-        : typeof registration.registrationStatus === "number"
-          ? registration.registrationStatus
-          : typeof registration.registrationStatus === "string"
-            ? Number.parseInt(registration.registrationStatus, 10)
-            : undefined;
+  const rawId = registration.id;
+  const parsedId =
+    typeof rawId === "string" ? parseInt(rawId, 10) : Number(rawId);
 
   return {
-    id: Number.isFinite(parsedId) ? parsedId : 0,
-    name: getDisplayName(registration),
-    email: getDisplayEmail(registration),
-    phone: getDisplayPhone(registration),
-    status: statusValue === 1 ? "contemplated" : "not_contemplated",
-    photoUrl: getPhotoUrl(registration),
-    activity: getActivity(registration),
-    paymentStatus: normalizePaymentStatus(registration.paymentStatus),
-    participation: normalizeParticipation(
-      registration.participation ?? registration.attendance
-    ),
+    id: Number.isFinite(parsedId) && parsedId > 0 ? parsedId : index,
+    name: registration.name || "Participante sem nome",
+    email: "", // Campo não disponível no DTO
+    phone: undefined,
+    status: "contemplated", // Já filtrado na API (Selected + Guest)
+    photoUrl: undefined,
+    activity: "Participante",
+    paymentStatus: "pending",
+    participation: false,
   };
 };
 
 const extractRegistrations = (
   payload: RegistrationApiResponse
 ): RegistrationDTO[] => {
-  if (Array.isArray(payload.data)) return payload.data;
   if (Array.isArray(payload.items)) return payload.items;
-  if (Array.isArray(payload.rows)) return payload.rows;
-  if (Array.isArray(payload.result)) return payload.result;
-  if (Array.isArray(payload.registrations)) return payload.registrations;
   return [];
 };
 
@@ -206,17 +61,7 @@ const extractTotal = (
   payload: RegistrationApiResponse,
   fallback: number
 ): number => {
-  if (typeof payload.total === "number") return payload.total;
   if (typeof payload.totalCount === "number") return payload.totalCount;
-  if (typeof payload.count === "number") return payload.count;
-  if (payload.meta) {
-    if (typeof payload.meta.totalItems === "number") {
-      return payload.meta.totalItems;
-    }
-    if (typeof payload.meta.itemCount === "number") {
-      return payload.meta.itemCount;
-    }
-  }
   return fallback;
 };
 
@@ -228,6 +73,24 @@ const getInitials = (name?: string) =>
     .slice(0, 2)
     .map((n) => n[0]?.toUpperCase())
     .join("");
+
+// Helper para formatar data ISO 8601 para formato brasileiro
+const formatDateToBR = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+
+    return date.toLocaleDateString("pt-BR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateString;
+  }
+};
 
 const getContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
@@ -243,31 +106,10 @@ const getContemplated = async (
     );
     const params: Record<string, unknown> = {
       retreatId,
-      status: 1,
       skip,
       take: pageLimit,
       filtersFiltered,
     };
-
-    // if (filters.search) {
-    //   params.search = filters.search;
-    // }
-
-    // if (filters.region) {
-    //   params.region = filters.region;
-    // }
-
-    // if (filters.status) {
-    //   params.status = filters.status;
-    // }
-
-    // if (filters.periodStart) {
-    //   params.periodStart = filters.periodStart;
-    // }
-
-    // if (filters.periodEnd) {
-    //   params.periodEnd = filters.periodEnd;
-    // }
 
     const response = await apiClient.get<RegistrationApiResponse>(
       `/Registrations`,
@@ -277,20 +119,13 @@ const getContemplated = async (
     );
 
     const registrations = extractRegistrations(response.data).filter((item) => {
-      const statusValue =
-        typeof item.status === "number"
-          ? item.status
-          : typeof item.status === "string"
-            ? Number.parseInt(item.status, 10)
-            : typeof item.registrationStatus === "number"
-              ? item.registrationStatus
-              : typeof item.registrationStatus === "string"
-                ? Number.parseInt(item.registrationStatus, 10)
-                : undefined;
-      return statusValue === 1;
+      // Filtrar apenas Selected e Guest
+      return item.status === "Selected" && item.category === "Guest";
     });
 
-    const rows = registrations.map(mapRegistrationToParticipant);
+    const rows = registrations.map((registration, index) =>
+      mapRegistrationToParticipant(registration, index)
+    );
     const total = extractTotal(response.data, rows.length);
 
     return {
@@ -429,6 +264,17 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
         variant="outlined"
       />
     ),
+  },
+  {
+    field: "registrationDate",
+    headerName: "Data de Inscrição",
+    width: 200,
+    valueFormatter: (v: { value?: unknown }) => {
+      if (typeof v?.value === "string") {
+        return formatDateToBR(v.value);
+      }
+      return "";
+    },
   },
 ];
 

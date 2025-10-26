@@ -337,15 +337,6 @@ export default function RetreatServiceTeamTable({
   const isSortingContainer =
     activeId != null ? containers.includes(activeId) : false;
 
-  const handlePopoverOpen = (e: React.MouseEvent<HTMLButtonElement>) =>
-    setAnchorEl(e.currentTarget);
-  const handlePopoverClose = () => setAnchorEl(null);
-  const handlePageLimitChange = (newPageLimit: number) => {
-    onFiltersChange({ pageLimit: newPageLimit });
-    handlePopoverClose();
-  };
-  const open = Boolean(anchorEl);
-
   /**
    * Custom collision detection strategy optimized for multiple containers
    *
@@ -434,7 +425,6 @@ export default function RetreatServiceTeamTable({
           const { original: containerId } = row.cell.row;
           const memberIds = items[containerId] || [];
           const stilyName = stiliesById[containerId] || containerId;
-          console.log({ stilyName });
           return (
             <DroppableContainer
               key={containerId}
@@ -448,23 +438,36 @@ export default function RetreatServiceTeamTable({
               onRemove={() => handleRemove(containerId)}
             >
               <SortableContext items={memberIds} strategy={strategy}>
-                {memberIds.map((memberId, index) => {
-                  const meta = membersById[memberId];
-                  return (
-                    <SortableItem
-                      disabled={isSortingContainer}
-                      key={memberId}
-                      id={memberId}
-                      value={meta?.name || String(memberId)}
-                      index={index}
-                      handle={handle}
-                      style={getItemStyles}
-                      wrapperStyle={wrapperStyle}
-                      containerId={containerId}
-                      getIndex={getIndex}
-                    />
-                  );
-                })}
+                {memberIds.length > 0 ? (
+                  memberIds.map((memberId, index) => {
+                    const meta = membersById[memberId];
+                    return (
+                      <SortableItem
+                        disabled={isSortingContainer}
+                        key={memberId}
+                        id={memberId}
+                        value={meta?.name || String(memberId)}
+                        index={index}
+                        handle={handle}
+                        style={getItemStyles}
+                        wrapperStyle={wrapperStyle}
+                        containerId={containerId}
+                        getIndex={getIndex}
+                      />
+                    );
+                  })
+                ) : (
+                  <Box
+                    sx={{
+                      p: 2,
+                      textAlign: "center",
+                      color: "text.secondary",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    Nenhum membro atribuído
+                  </Box>
+                )}
               </SortableContext>
               <ContainerButtons
                 reorderFlag={reorderFlag || false}
@@ -643,58 +646,6 @@ export default function RetreatServiceTeamTable({
             </Grid>
           </Box>
         </SortableContext>
-        {/* PAGINAÇÃO */}
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          justifyContent="space-between"
-          alignItems="center"
-          mt={4}
-        >
-          <Button
-            variant="outlined"
-            size="small"
-            endIcon={<Iconify icon="solar:alt-arrow-down-linear" />}
-            onClick={handlePopoverOpen}
-            sx={{ minWidth: 120 }}
-          >
-            {filters.pageLimit || 8} por página
-          </Button>
-
-          <Popover
-            open={open}
-            anchorEl={anchorEl}
-            onClose={handlePopoverClose}
-            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            transformOrigin={{ vertical: "top", horizontal: "left" }}
-          >
-            <MenuList>
-              {[4, 8, 12, 16].map((n) => (
-                <MenuItem key={n} onClick={() => handlePageLimitChange(n)}>
-                  <ListItemText primary={`${n} por página`} />
-                </MenuItem>
-              ))}
-            </MenuList>
-          </Popover>
-
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="body2" color="text.secondary" mr={2}>
-              {table.getState().pagination.pageIndex + 1}-
-              {Math.min(
-                table.getState().pagination.pageIndex +
-                  table.getState().pagination.pageSize,
-                total ?? 0
-              )}{" "}
-              de {total ?? 0}
-            </Typography>
-            <Pagination
-              count={table.getPageCount()}
-              page={table.getState().pagination.pageIndex + 1}
-              onChange={(_, page) => onFiltersChange?.({ page: page })}
-              color="primary"
-            />
-          </Box>
-        </Stack>
 
         {createPortal(
           <DragOverlay adjustScale={adjustScale} dropAnimation={dropAnimation}>

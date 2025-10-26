@@ -14,6 +14,9 @@ const NonContemplatedTable = dynamic(() => import("./no-contemplated"), {
 const ServiceUnassigned = dynamic(() => import("./service/unassigned"), {
   loading: () => <Skeleton variant="rectangular" height={160} />,
 });
+const ServiceConfirmed = dynamic(() => import("./service/confirmed"), {
+  loading: () => <Skeleton variant="rectangular" height={160} />,
+});
 
 interface TabConfig {
   value: number;
@@ -40,6 +43,12 @@ const TABS: TabConfig[] = [
     labelKey: "contemplations.service.unassigned.tab-label",
     render: (id: string) => <ServiceUnassigned id={id} />,
     preload: () => import("./service/unassigned"),
+  },
+  {
+    value: 3,
+    labelKey: "contemplations.service.confirmed.tab-label",
+    render: (id: string) => <ServiceConfirmed id={id} />,
+    preload: () => import("./service/confirmed"),
   },
 ];
 

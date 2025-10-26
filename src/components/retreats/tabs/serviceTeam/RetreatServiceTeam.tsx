@@ -41,100 +41,54 @@ interface ServiceSpacesResponse {
   hasPrevPage: boolean;
 }
 
+/**
+ * Converte dados da API (ServiceSpaceApiResponse) para o formato interno (ServiceSpace)
+ */
+const transformApiServiceSpace = (
+  apiSpace: ServiceSpaceApiResponse,
+  retreatId: string
+): ServiceSpace => {
+  return {
+    id: apiSpace.spaceId,
+    retreatId,
+    name: apiSpace.name,
+    description: apiSpace.description || "",
+    color: "#666666", // Cor padrão, pode ser gerada baseada no nome
+    minMembers: apiSpace.minPeople,
+    maxMembers: apiSpace.maxPeople,
+    minMember: apiSpace.minPeople,
+    coordinator: null,
+    viceCoordinator: null,
+    members: [],
+    createdAt: undefined,
+    updatedAt: undefined,
+  };
+};
+
 const getServiceSpaces = async (
   filters: TableDefaultFilters<
     RetreatsCardTableFilters & RetreatsCardTableDateFilters
   >,
   retreatId: string
 ): Promise<ServiceSpacesResponse> => {
-  const page = filters.page && filters.page > 0 ? filters.page : 1;
-  const pageLimit =
-    filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 12;
-
-  const params: Record<string, unknown> = {
-    page,
-    pageSize: pageLimit,
-  };
-
-  if (filters.search) {
-    params.q = filters.search;
-  }
-
-  const { data } = await apiClient.get(
-    `/api/retreats/${retreatId}/service/spaces`,
-    {
-      params,
-    }
+  const { data } = await apiClient.get<ServiceSpacesApiResponse>(
+    `/retreats/${retreatId}/service/spaces`
   );
 
-  const extractRows = (payload: unknown): ServiceSpace[] => {
-    if (!payload) return [];
-    if (Array.isArray(payload)) return payload as ServiceSpace[];
-    if (typeof payload !== "object") return [];
+  // Transforma dados da API para o formato interno
+  const rows = (data.items || []).map((apiSpace) =>
+    transformApiServiceSpace(apiSpace, retreatId)
+  );
 
-    const source = payload as {
-      rows?: ServiceSpace[];
-      items?: ServiceSpace[];
-      data?: ServiceSpace[];
-      result?: ServiceSpace[];
-    };
-
-    if (Array.isArray(source.rows)) return source.rows;
-    if (Array.isArray(source.items)) return source.items;
-    if (Array.isArray(source.data)) return source.data;
-    if (Array.isArray(source.result)) return source.result;
-
-    return [];
-  };
-
-  const rows = extractRows(data);
-
-  const total =
-    (data &&
-      typeof data === "object" &&
-      (data as { total?: number; totalCount?: number; count?: number })
-        .total) ??
-    (data &&
-      typeof data === "object" &&
-      (data as { total?: number; totalCount?: number; count?: number })
-        .totalCount) ??
-    (data &&
-      typeof data === "object" &&
-      (data as { total?: number; totalCount?: number; count?: number })
-        .count) ??
-    rows.length;
-
-  const responsePage =
-    (data && typeof data === "object" && (data as { page?: number }).page) ??
-    page;
-  const responseLimit =
-    (data &&
-      typeof data === "object" &&
-      (data as { pageLimit?: number; pageSize?: number }).pageLimit) ??
-    (data &&
-      typeof data === "object" &&
-      (data as { pageLimit?: number; pageSize?: number }).pageSize) ??
-    pageLimit;
-
-  const hasNextPage =
-    (data &&
-      typeof data === "object" &&
-      (data as { hasNextPage?: boolean }).hasNextPage) ??
-    responsePage * responseLimit < total;
-
-  const hasPrevPage =
-    (data &&
-      typeof data === "object" &&
-      (data as { hasPrevPage?: boolean }).hasPrevPage) ??
-    responsePage > 1;
+  const total = rows.length;
 
   return {
     rows,
     total,
-    page: responsePage,
-    pageLimit: responseLimit,
-    hasNextPage,
-    hasPrevPage,
+    page: 1,
+    pageLimit: "all", // Sem paginação
+    hasNextPage: false,
+    hasPrevPage: false,
   };
 };
 
@@ -308,7 +262,7 @@ export default function RetreatServiceTeam({
           }
         );
 
-        await apiClient.put(`/api/retreats/${retreatId}/service/roster`, {
+        await apiClient.put(`/retreats/${retreatId}/service/roster`, {
           retreatId,
           version: 0,
           spaces: spacesPayload,
@@ -360,7 +314,7 @@ export default function RetreatServiceTeam({
 
       try {
         await apiClient.delete(
-          `/api/retreats/${retreatId}/service/spaces/${spaceKey}`
+          `/retreats/${retreatId}/service/spaces/${spaceKey}`
         );
 
         queryClient.setQueryData<ServiceSpacesResponse | undefined>(

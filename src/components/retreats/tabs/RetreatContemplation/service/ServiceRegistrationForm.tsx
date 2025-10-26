@@ -68,7 +68,7 @@ export default function ServiceRegistrationForm({
     async (retreatIdParam: string, participantId: string) => {
       try {
         const { data } = await apiClient.get<ServiceRegistrationDetail>(
-          `/api/retreats/${retreatIdParam}/service/registrations/${participantId}`
+          `/retreats/${retreatIdParam}/service/registrations/${participantId}`
         );
         detailRef.current = data;
         return mapDetailToParticipant(data, t);
@@ -115,7 +115,7 @@ export default function ServiceRegistrationForm({
 
       try {
         await apiClient.put(
-          `/api/retreats/${retreatId}/service/registrations/${registrationId}`,
+          `/retreats/${retreatId}/service/registrations/${registrationId}`,
           payload
         );
 

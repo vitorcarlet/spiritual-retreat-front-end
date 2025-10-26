@@ -434,6 +434,7 @@ const ParticipantPublicFormTab: React.FC<ParticipantPublicFormTabProps> = ({
             helperText={helperText}
             error={error}
             isSubmitting={submitting}
+            retreatId={retreatId}
           />
           {isActive && hasChildren && (
             <Stack
@@ -458,6 +459,7 @@ const ParticipantPublicFormTab: React.FC<ParticipantPublicFormTabProps> = ({
         helperText={helperText}
         error={error}
         isSubmitting={submitting}
+        retreatId={retreatId}
       />
     );
   };

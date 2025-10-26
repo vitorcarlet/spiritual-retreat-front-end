@@ -76,6 +76,39 @@
           "fallback-name": "Participante de serviço",
           "fallback-activity": "Equipe de serviço"
         }
+      },
+      "confirmed": {
+        "tab-label": "Equipe de serviço confirmada",
+        "title": "Participantes de serviço confirmados",
+        "subtitle": "{count, plural, one {# participante confirmado} other {# participantes confirmados}} na equipe de serviço.",
+        "search-placeholder": "Buscar por nome, e-mail, cidade ou CPF",
+        "refresh": "Atualizar lista",
+        "refreshing": "Atualizando...",
+        "total-count": "{count, plural, one {# participante listado} other {# participantes listados}}",
+        "columns": {
+          "name": "Nome",
+          "email": "E-mail",
+          "city": "Cidade",
+          "cpf": "CPF",
+          "preferredSpaceName": "Espaço preferido"
+        },
+        "no-data": "Nenhum participante de serviço confirmado.",
+        "error": "Não foi possível carregar os participantes de serviço confirmados.",
+        "actions": {
+          "view": "Ver participante"
+        },
+        "modal-title": "Participante de serviço confirmado: {name}",
+        "errors": {
+          "missing-id": "Não foi possível identificar o participante selecionado."
+        },
+        "form": {
+          "submit-label": "Salvar alterações",
+          "success": "Participante de serviço atualizado com sucesso!",
+          "error": "Não foi possível atualizar o participante de serviço.",
+          "fetch-error": "Não foi possível carregar os dados do participante de serviço.",
+          "fallback-name": "Participante de serviço",
+          "fallback-activity": "Equipe de serviço"
+        }
       }
     }
   },

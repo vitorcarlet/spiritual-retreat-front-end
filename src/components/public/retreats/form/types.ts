@@ -16,7 +16,8 @@ export type BackendFieldType =
   | "chips"
   | "photo"
   | "location"
-  | "special";
+  | "special"
+  | "asyncSelect";
 
 export interface BackendOption {
   id: string;
@@ -51,6 +52,7 @@ export interface BackendField {
   grid?: number; // grid layout
   fields?: BackendField[]; // utilizado em campos compostos
   specialType?: "name" | "email" | "phone" | "profilePhoto" | "gender" | null;
+  url?: string; // para asyncSelect - URL da API (pode ter ${retreatId})
 }
 
 export interface BackendSection {

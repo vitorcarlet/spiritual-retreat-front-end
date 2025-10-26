@@ -25,6 +25,8 @@ import TextFieldMasked, {
 import type { BackendField } from "../types";
 import { getOptionLabel } from "../shared";
 import LocationField from "@/src/components/fields/LocalizationFields/LocationField";
+import { AsynchronousAutoComplete } from "@/src/components/select-auto-complete/AsynchronousAutoComplete";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 type FieldRendererProps = {
   field: BackendField;
@@ -32,6 +34,7 @@ type FieldRendererProps = {
   helperText?: string;
   error?: string;
   isSubmitting: boolean;
+  retreatId?: string;
 };
 
 const deriveMask = (
@@ -72,6 +75,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
   helperText,
   error,
   isSubmitting,
+  retreatId,
 }) => {
   const hasError = Boolean(error);
 
@@ -473,6 +477,123 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
                   {helperText}
                 </Typography>
               </Stack>
+            );
+          }}
+        />
+      );
+    }
+
+    case "asyncSelect": {
+      interface ServiceSpaceOption {
+        label: string;
+        value: string;
+        name: string;
+      }
+
+      interface ServiceSpaceApiItem {
+        spaceId: string;
+        name: string;
+        minPeople?: number;
+        maxPeople?: number;
+        allocated?: number;
+        [key: string]: unknown;
+      }
+
+      return (
+        <Controller
+          name={field.name}
+          control={control}
+          render={({ field: rhf }) => {
+            // Construir URL interpolando ${retreatId} se necessário
+            const constructUrl = (baseUrl: string): string => {
+              if (!baseUrl) return "";
+              // Interpolar ${retreatId} com o valor real do retreatId
+              return baseUrl.replace("${retreatId}", retreatId || "");
+            };
+
+            // Estado para armazenar as opções em cache
+            const [optionsCache, setOptionsCache] = React.useState<
+              ServiceSpaceOption[]
+            >([]);
+
+            const fetchServiceSpaces = async (
+              query: string
+            ): Promise<ServiceSpaceOption[]> => {
+              try {
+                if (!field.url) {
+                  throw new Error("URL não configurada para asyncSelect");
+                }
+
+                const url = constructUrl(field.url);
+                console.warn("AsyncSelect URL final:", url);
+                const response = await apiClient.get<{
+                  items?: ServiceSpaceApiItem[];
+                }>(url);
+
+                const items = response.data?.items ?? [];
+
+                // Transformar para formato do AsyncAutoComplete
+                const options = items.map((item) => ({
+                  label: item.name,
+                  value: item.spaceId,
+                  name: item.name,
+                }));
+
+                // Armazenar em cache para uso depois
+                setOptionsCache(options);
+
+                // Filtrar por query se fornecido
+                const filtered = query
+                  ? options.filter((option) =>
+                      option.label.toLowerCase().includes(query.toLowerCase())
+                    )
+                  : options;
+
+                return filtered;
+              } catch (error) {
+                console.error("Erro ao buscar espaços de serviço:", error);
+                return [];
+              }
+            };
+
+            // Encontrar o label correspondente ao value armazenado
+            const getDisplayValue = (): ServiceSpaceOption | null => {
+              if (!rhf.value) return null;
+
+              // Primeiro, procura no cache
+              const cached = optionsCache.find(
+                (opt) => opt.value === rhf.value
+              );
+              if (cached) return cached;
+
+              // Se não encontrar, retorna um objeto com o value como fallback
+              return {
+                label: String(rhf.value),
+                value: String(rhf.value),
+                name: "",
+              };
+            };
+
+            return (
+              <AsynchronousAutoComplete<ServiceSpaceOption>
+                label={field.label}
+                placeholder={field.placeholder || "Selecionar"}
+                disabled={field.disabled || isSubmitting}
+                value={getDisplayValue()}
+                onChange={(value) => {
+                  if (value && typeof value === "object") {
+                    rhf.onChange((value as ServiceSpaceOption).value);
+                  } else {
+                    rhf.onChange(null);
+                  }
+                }}
+                fetchOptions={fetchServiceSpaces}
+                debounceMs={400}
+                getOptionLabel={(o) => o.label}
+                isOptionEqualToValue={(a, b) => a.value === b.value}
+                helperText={helperText || field.helperTextContent}
+                errorText={error}
+              />
             );
           }}
         />

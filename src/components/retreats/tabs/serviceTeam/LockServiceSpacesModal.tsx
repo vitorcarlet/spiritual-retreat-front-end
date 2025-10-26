@@ -97,7 +97,7 @@ export default function LockServiceSpacesModal({
       try {
         setLoading(true);
         const { data } = await apiClient.get<ServiceSpacesLockStatus>(
-          `/api/retreats/${retreatId}/service/spaces/lock`
+          `/retreats/${retreatId}/service/spaces/lock`
         );
 
         setGlobalLock(Boolean(data.locked));
@@ -125,7 +125,7 @@ export default function LockServiceSpacesModal({
 
     try {
       const { data } = await apiClient.post<ServiceSpacesLockStatus>(
-        `/api/retreats/${retreatId}/service/spaces/lock`,
+        `/retreats/${retreatId}/service/spaces/lock`,
         { lock: nextState }
       );
 
@@ -178,7 +178,7 @@ export default function LockServiceSpacesModal({
 
     try {
       const { data } = await apiClient.post<{ locked: boolean }>(
-        `/api/retreats/${retreatId}/service/spaces/${serviceSpaceId}/lock`,
+        `/retreats/${retreatId}/service/spaces/${serviceSpaceId}/lock`,
         { lock: nextState }
       );
 

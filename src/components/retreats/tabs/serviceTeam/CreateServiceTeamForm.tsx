@@ -89,10 +89,7 @@ export default function CreateServiceTeamForm({
     };
 
     try {
-      await apiClient.post(
-        `/api/retreats/${retreatId}/service/spaces`,
-        payload
-      );
+      await apiClient.post(`/retreats/${retreatId}/service/spaces`, payload);
 
       reset();
       enqueueSnackbar(

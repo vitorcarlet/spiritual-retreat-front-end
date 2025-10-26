@@ -1,9 +1,18 @@
 "use client";
 
 import React, { use, useMemo } from "react";
-import { Box, Stack, Skeleton } from "@mui/material";
-import { SubmitHandler, useForm } from "react-hook-form";
+import {
+  Box,
+  Stack,
+  Skeleton,
+  Alert,
+  Paper,
+  Typography,
+  Button,
+} from "@mui/material";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { enqueueSnackbar } from "notistack";
 
 import {
   fetchFormData,
@@ -118,6 +127,10 @@ const applySpecialFieldNaming = (
 
 const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
   const form = use(getFormPromise(id, type));
+  const [submittedData, setSubmittedData] = React.useState<Record<
+    string,
+    unknown
+  > | null>(null);
 
   if (!form || !Array.isArray(form.sections)) {
     return <Skeleton />;
@@ -229,9 +242,27 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
 
   const values = watch();
 
-  const onSubmit: SubmitHandler<Record<string, unknown>> = async (data) => {
-    console.warn("Form submitted:", data);
-    sendFormData(id, data, type);
+  const handleFormSubmit = async (data: Record<string, unknown>) => {
+    try {
+      await sendFormData(id, data, type);
+      // Sucesso: armazena os dados e mostra tela de confirmação
+      setSubmittedData(data);
+      enqueueSnackbar("Inscrição enviada com sucesso!", {
+        variant: "success",
+        autoHideDuration: 4000,
+      });
+    } catch (error) {
+      // Erro: mostra notificação
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erro ao enviar inscrição. Tente novamente.";
+      enqueueSnackbar(errorMessage, {
+        variant: "error",
+        autoHideDuration: 6000,
+      });
+      console.error("Erro ao enviar formulário:", error);
+    }
   };
 
   const renderField = (field: BackendField): React.ReactNode => {
@@ -266,6 +297,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
             helperText={helperText}
             error={error}
             isSubmitting={isSubmitting}
+            retreatId={id}
           />
           {isActive && hasChildren && (
             <Stack
@@ -290,6 +322,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
         helperText={helperText}
         error={error}
         isSubmitting={isSubmitting}
+        retreatId={id}
       />
     );
   };
@@ -311,11 +344,99 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
     setCurrentStep((step) => Math.max(step - 1, 0));
   };
 
+  // Tela de sucesso
+  if (submittedData) {
+    return (
+      <Box sx={{ width: "100%", maxWidth: 720, margin: "0 auto" }}>
+        <Alert severity="success" sx={{ mb: 3, fontSize: "1rem" }}>
+          ✓ Inscrição confirmada com sucesso!
+        </Alert>
+
+        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+          <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold" }}>
+            Resumo da Inscrição
+          </Typography>
+
+          <Stack spacing={2} sx={{ mb: 3 }}>
+            {Object.entries(submittedData).map(([key, value]) => {
+              // Pula campos vazios e nulos
+              if (value === null || value === undefined || value === "") {
+                return null;
+              }
+
+              // Formata a chave para exibição
+              const displayKey = key
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str) => str.toUpperCase())
+                .replace(/Special$/, "");
+
+              // Formata o valor para exibição
+              let displayValue: string;
+              if (typeof value === "object") {
+                displayValue = JSON.stringify(value, null, 2);
+              } else if (typeof value === "boolean") {
+                displayValue = value ? "Sim" : "Não";
+              } else if (Array.isArray(value)) {
+                displayValue = value.join(", ");
+              } else {
+                displayValue = String(value);
+              }
+
+              return (
+                <Box
+                  key={key}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    backgroundColor: "background.default",
+                    borderLeft: "4px solid #1976d2",
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      display: "block",
+                      fontWeight: "bold",
+                      color: "text.secondary",
+                      mb: 0.5,
+                    }}
+                  >
+                    {displayKey}
+                  </Typography>
+                  <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
+                    {displayValue}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Stack>
+
+          {/* <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => window.location.reload()}
+            >
+              Fazer Nova Inscrição
+            </Button>
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={() => window.history.back()}
+            >
+              Voltar
+            </Button>
+          </Stack> */}
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box
       component="form"
       noValidate
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(handleFormSubmit)}
       sx={{ width: "100%", margin: "0 auto", maxWidth: 720 }}
     >
       <FormStepProgress steps={steps} currentStep={currentStep} />

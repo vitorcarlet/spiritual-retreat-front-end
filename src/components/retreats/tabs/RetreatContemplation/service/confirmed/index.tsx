@@ -12,7 +12,7 @@ import apiClient from "@/src/lib/axiosClientInstance";
 import { useModal } from "@/src/hooks/useModal";
 import ServiceRegistrationForm from "../ServiceRegistrationForm";
 
-interface ServiceUnassignedItem {
+interface ServiceConfirmedItem {
   registrationId?: string;
   name?: string;
   city?: string;
@@ -22,21 +22,21 @@ interface ServiceUnassignedItem {
   preferredSpaceName?: string;
 }
 
-type ServiceUnassignedRow = ServiceUnassignedItem & { id: string };
+type ServiceConfirmedRow = ServiceConfirmedItem & { id: string };
 
-type ServiceUnassignedResponse = {
+type ServiceConfirmedResponse = {
   version?: number;
-  items?: ServiceUnassignedItem[];
+  items?: ServiceConfirmedItem[];
 };
 
-const buildRowId = (item: ServiceUnassignedItem, index: number): string =>
+const buildRowId = (item: ServiceConfirmedItem, index: number): string =>
   item.registrationId || item.email || `${item.name ?? "participant"}-${index}`;
 
-const getUnassignedServiceRegistrations = async (
+const getConfirmedServiceRegistrations = async (
   retreatId: string
-): Promise<{ version?: number; rows: ServiceUnassignedRow[] }> => {
-  const { data } = await apiClient.get<ServiceUnassignedResponse>(
-    `/retreats/${retreatId}/service/registrations/roster/unassigned`
+): Promise<{ version?: number; rows: ServiceConfirmedRow[] }> => {
+  const { data } = await apiClient.get<ServiceConfirmedResponse>(
+    `/retreats/${retreatId}/service/registrations/confirmed`
   );
 
   const items = data.items ?? [];
@@ -73,15 +73,15 @@ const NoRowsFallback = ({ message }: { message: string }) => (
   </Box>
 );
 
-export default function ServiceUnassignedTab({ id }: { id: string }) {
+export default function ServiceConfirmedTab({ id }: { id: string }) {
   const t = useTranslations();
   const [search, setSearch] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const modal = useModal();
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["service", "unassigned", id],
-    queryFn: () => getUnassignedServiceRegistrations(id),
+    queryKey: ["service", "confirmed", id],
+    queryFn: () => getConfirmedServiceRegistrations(id),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -94,7 +94,7 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
           ?.message ??
         (error.response?.data as { message?: string; error?: string })?.error ??
         error.message)
-      : t("contemplations.service.unassigned.error");
+      : t("contemplations.service.confirmed.error");
 
     enqueueSnackbar(message, {
       variant: "error",
@@ -124,10 +124,10 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
   };
 
   const handleOpenRegistration = useCallback(
-    (row: ServiceUnassignedRow) => {
+    (row: ServiceConfirmedRow) => {
       if (!row.registrationId) {
         enqueueSnackbar(
-          t("contemplations.service.unassigned.errors.missing-id"),
+          t("contemplations.service.confirmed.errors.missing-id"),
           {
             variant: "warning",
             autoHideDuration: 4000,
@@ -137,7 +137,7 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
       }
 
       modal.open({
-        title: t("contemplations.service.unassigned.modal-title", {
+        title: t("contemplations.service.confirmed.modal-title", {
           name: row.name || "",
         }),
         size: "lg",
@@ -156,35 +156,35 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
     [id, modal, refetch, t]
   );
 
-  const columns = useMemo<DataTableColumn<ServiceUnassignedRow>[]>(
+  const columns = useMemo<DataTableColumn<ServiceConfirmedRow>[]>(
     () => [
       {
         field: "name",
-        headerName: t("contemplations.service.unassigned.columns.name"),
+        headerName: t("contemplations.service.confirmed.columns.name"),
         flex: 1,
         minWidth: 200,
       },
       {
         field: "email",
-        headerName: t("contemplations.service.unassigned.columns.email"),
+        headerName: t("contemplations.service.confirmed.columns.email"),
         flex: 1,
         minWidth: 220,
       },
       {
         field: "city",
-        headerName: t("contemplations.service.unassigned.columns.city"),
+        headerName: t("contemplations.service.confirmed.columns.city"),
         flex: 1,
         minWidth: 160,
       },
       {
         field: "cpf",
-        headerName: t("contemplations.service.unassigned.columns.cpf"),
+        headerName: t("contemplations.service.confirmed.columns.cpf"),
         minWidth: 140,
       },
       {
         field: "preferredSpaceName",
         headerName: t(
-          "contemplations.service.unassigned.columns.preferredSpaceName"
+          "contemplations.service.confirmed.columns.preferredSpaceName"
         ),
         flex: 1,
         minWidth: 200,
@@ -193,7 +193,7 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
     [t]
   );
 
-  const subtitle = t("contemplations.service.unassigned.subtitle", {
+  const subtitle = t("contemplations.service.confirmed.subtitle", {
     count: rows.length,
   });
 
@@ -217,22 +217,20 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
           disabled={isRefreshing}
         >
           {isRefreshing
-            ? t("contemplations.service.unassigned.refreshing")
-            : t("contemplations.service.unassigned.refresh")}
+            ? t("contemplations.service.confirmed.refreshing")
+            : t("contemplations.service.confirmed.refresh")}
         </Button>
 
         <SearchField
           value={search}
           onChange={setSearch}
-          placeholder={t(
-            "contemplations.service.unassigned.search-placeholder"
-          )}
+          placeholder={t("contemplations.service.confirmed.search-placeholder")}
         />
 
         <Chip
           color="primary"
           variant="outlined"
-          label={t("contemplations.service.unassigned.total-count", {
+          label={t("contemplations.service.confirmed.total-count", {
             count: filteredRows.length,
           })}
         />
@@ -242,7 +240,7 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
         {isLoading ? (
           <Skeleton variant="rounded" height={320} />
         ) : (
-          <DataTable<ServiceUnassignedRow, TableDefaultFilters>
+          <DataTable<ServiceConfirmedRow, TableDefaultFilters>
             rows={filteredRows}
             columns={columns}
             loading={isBusy}
@@ -253,11 +251,11 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
             paginationMode="client"
             sortingMode="client"
             filterMode="client"
-            title={t("contemplations.service.unassigned.title")}
+            title={t("contemplations.service.confirmed.title")}
             subtitle={subtitle}
             noRowsOverlay={
               <NoRowsFallback
-                message={t("contemplations.service.unassigned.no-data")}
+                message={t("contemplations.service.confirmed.no-data")}
               />
             }
             rowHeight={68}
@@ -266,14 +264,14 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
             actions={[
               {
                 icon: "lucide:eye",
-                label: t("contemplations.service.unassigned.actions.view"),
+                label: t("contemplations.service.confirmed.actions.view"),
                 onClick: (row) => handleOpenRegistration(row),
                 color: "primary",
                 disabled: (row) => !row.registrationId,
               },
             ]}
             onRowDoubleClick={(params) =>
-              handleOpenRegistration(params.row as ServiceUnassignedRow)
+              handleOpenRegistration(params.row as ServiceConfirmedRow)
             }
           />
         )}

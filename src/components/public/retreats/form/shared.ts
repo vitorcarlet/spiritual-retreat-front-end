@@ -214,7 +214,7 @@ export const sendFormData = async (
     const transformedBody =
       type === RetreatFormType.PARTICIPATE
         ? buildParticipationPayload(body, retreatId)
-        : body;
+        : buildServePayload(body, retreatId);
 
     const url =
       type === RetreatFormType.PARTICIPATE
@@ -229,7 +229,27 @@ export const sendFormData = async (
     return {} as BackendForm;
   } catch (error) {
     console.error("Erro ao enviar dados do formulario:", error);
-    throw error;
+
+    // Tenta extrair mensagem de erro clara
+    if (error instanceof Error) {
+      // Se é um AxiosError, tenta extrair a mensagem da resposta
+      const axiosError = error as unknown as Record<string, unknown>;
+      const response = axiosError?.response as
+        | Record<string, unknown>
+        | undefined;
+      if (response?.data && typeof response.data === "object") {
+        const data = response.data as Record<string, unknown>;
+        if (data.message && typeof data.message === "string") {
+          throw new Error(data.message);
+        }
+        if (data.error && typeof data.error === "string") {
+          throw new Error(data.error);
+        }
+      }
+      throw error;
+    }
+
+    throw new Error("Erro desconhecido ao enviar inscrição");
   }
 };
 
@@ -563,6 +583,49 @@ const buildParticipationPayload = (
     } else {
       // Outros campos mantêm o valor original
       payload[key] = value;
+    }
+  });
+
+  return payload;
+};
+
+/**
+ * Transforma os dados do formulário de serviço para o formato esperado pela API
+ * Converte campos simples em objetos com { value: ... }
+ * Mapeia campos "Special" (nameSpecial, emailSpecial, phoneSpecial) para seus nomes reais
+ */
+const buildServePayload = (
+  formData: Record<string, unknown>,
+  retreatId: string
+): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {
+    retreatId,
+  };
+
+  // Mapa de campos especiais para seus nomes reais
+  const specialFieldMap: Record<string, string> = {
+    nameSpecial: "name",
+    emailSpecial: "email",
+    phoneSpecial: "phone",
+  };
+
+  // Campos que precisam ser convertidos para { value: ... }
+  const fieldsWithValue = ["name", "cpf", "email"];
+
+  Object.entries(formData).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    // Mapear campo especial para seu nome real
+    const mappedKey = specialFieldMap[key] || key;
+
+    // Se é um campo que precisa de { value: ... }
+    if (fieldsWithValue.includes(mappedKey)) {
+      payload[mappedKey] = { value };
+    } else {
+      // Outros campos mantêm o valor original
+      payload[mappedKey] = value;
     }
   });
 
