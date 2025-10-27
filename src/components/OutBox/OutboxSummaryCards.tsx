@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Box,
-  Card,
-  CardContent,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Card, Skeleton, Stack, Typography } from "@mui/material";
 import { useMemo } from "react";
 import { OutboxSummary } from "./types";
 import Iconify from "@/src/components/Iconify";
@@ -48,9 +41,6 @@ export function OutboxSummaryCards({
         value: formatNumber(summary?.pending),
         icon: "solar:clock-circle-bold-duotone",
         color: "warning.main",
-        helperText: t("pending-helper", {
-          defaultMessage: "Mensagens aguardando processamento.",
-        }),
       },
       {
         key: "processed",
@@ -58,9 +48,6 @@ export function OutboxSummaryCards({
         value: formatNumber(summary?.processed),
         icon: "solar:check-circle-bold-duotone",
         color: "success.main",
-        helperText: t("processed-helper", {
-          defaultMessage: "Mensagens finalizadas com sucesso.",
-        }),
       },
       {
         key: "failed",
@@ -68,9 +55,6 @@ export function OutboxSummaryCards({
         value: formatNumber(summary?.failed),
         icon: "solar:shield-cross-bold-duotone",
         color: "error.main",
-        helperText: t("failed-helper", {
-          defaultMessage: "Mensagens que precisam de intervenção.",
-        }),
       },
       {
         key: "lastRun",
@@ -78,9 +62,6 @@ export function OutboxSummaryCards({
         value: formatDateTime(summary?.lastRunAt),
         icon: "solar:sunrise-bold-duotone",
         color: "primary.main",
-        helperText:
-          formatDateTime(summary?.lastSuccessAt ?? null) ||
-          t("last-success", { defaultMessage: "Sem registros" }),
       },
     ],
     [summary, t]
@@ -90,8 +71,8 @@ export function OutboxSummaryCards({
     <Box
       sx={{
         display: "grid",
-        gap: 2,
-        mb: 3,
+        gap: 1.5,
+        mb: 2,
         gridTemplateColumns: {
           xs: "1fr",
           sm: "repeat(2, minmax(0, 1fr))",
@@ -100,39 +81,43 @@ export function OutboxSummaryCards({
       }}
     >
       {cards.map((card) => (
-        <Box key={card.key}>
-          <Card variant="outlined" sx={{ height: "100%" }}>
-            <CardContent>
-              {isLoading ? (
-                <Stack spacing={1}>
-                  <Skeleton variant="circular" width={32} height={32} />
-                  <Skeleton
-                    variant="text"
-                    sx={{ fontSize: "1.5rem", width: "60%" }}
-                  />
-                  <Skeleton variant="text" sx={{ width: "80%" }} />
-                </Stack>
-              ) : (
-                <Stack spacing={1.5}>
-                  <Iconify
-                    icon={card.icon}
-                    width={28}
-                    sx={{ color: card.color }}
-                  />
-                  <Stack spacing={0.5}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      {card.label}
-                    </Typography>
-                    <Typography variant="h4">{card.value}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {card.helperText}
-                    </Typography>
-                  </Stack>
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
-        </Box>
+        <Card
+          key={card.key}
+          variant="outlined"
+          sx={{
+            p: 1.5,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            height: "100%",
+          }}
+        >
+          {isLoading ? (
+            <>
+              <Skeleton variant="circular" width={24} height={24} />
+              <Stack spacing={0.5} sx={{ flex: 1 }}>
+                <Skeleton variant="text" sx={{ width: "70%" }} />
+                <Skeleton variant="text" sx={{ width: "50%" }} />
+              </Stack>
+            </>
+          ) : (
+            <>
+              <Iconify
+                icon={card.icon}
+                width={24}
+                sx={{ color: card.color, flexShrink: 0 }}
+              />
+              <Stack spacing={0} sx={{ minWidth: 0 }}>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {card.label}
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                  {card.value}
+                </Typography>
+              </Stack>
+            </>
+          )}
+        </Card>
       ))}
     </Box>
   );

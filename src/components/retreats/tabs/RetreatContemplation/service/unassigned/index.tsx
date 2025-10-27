@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Button, Chip, Skeleton, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Skeleton, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import axios from "axios";
@@ -11,6 +11,7 @@ import SearchField from "@/src/components/filters/SearchField";
 import apiClient from "@/src/lib/axiosClientInstance";
 import { useModal } from "@/src/hooks/useModal";
 import ServiceRegistrationForm from "../ServiceRegistrationForm";
+import ParticipantPublicFormTabCreate from "../../no-contemplated/ParticipantPublicFormTabCreate";
 
 interface ServiceUnassignedItem {
   registrationId?: string;
@@ -123,6 +124,16 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
     }
   };
 
+  const handleCreateNewParticipant = (retreatId: string) => {
+    modal.open({
+      title: t("contemplations.no-contemplated.create-new-participant"),
+      size: "md",
+      customRender: () => (
+        <ParticipantPublicFormTabCreate retreatId={retreatId} />
+      ),
+    });
+  };
+
   const handleOpenRegistration = useCallback(
     (row: ServiceUnassignedRow) => {
       if (!row.registrationId) {
@@ -203,14 +214,25 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
     <Box
       sx={{
         p: 2,
+        height: "100%",
+        minWidth: "100%",
         display: "flex",
         flexDirection: "column",
+        maxWidth: "100%",
+        overflowY: "hidden",
+        boxSizing: "border-box",
         gap: 2,
-        height: "100%",
-        minHeight: 400,
       }}
     >
-      <Stack direction="row" spacing={2} alignItems="center">
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          flexWrap: "wrap",
+          alignItems: "center",
+          minHeight: 40,
+        }}
+      >
         <Button
           variant="contained"
           onClick={handleRefresh}
@@ -236,9 +258,17 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
             count: filteredRows.length,
           })}
         />
-      </Stack>
 
-      <Box sx={{ flexGrow: 1, minHeight: 300 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => handleCreateNewParticipant(id)}
+        >
+          {t("contemplations.no-contemplated.create-new-participant")}
+        </Button>
+      </Box>
+
+      <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
         {isLoading ? (
           <Skeleton variant="rounded" height={320} />
         ) : (
@@ -246,6 +276,7 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
             rows={filteredRows}
             columns={columns}
             loading={isBusy}
+            showToolbar={false}
             page={0}
             pageSize={10}
             pageSizeOptions={[10, 25, 50, 100]}

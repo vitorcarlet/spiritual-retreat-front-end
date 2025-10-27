@@ -1,9 +1,9 @@
 "use client";
 import axios from "axios";
-import { getSession } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -34,9 +34,10 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // Token expirado - redirecionar para login
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
+      await signOut({
+        callbackUrl: "/login", // Redirecionar para login
+        redirect: true,
+      });
     }
     console.error("API Client Error:", error.response?.data || error.message);
     return Promise.reject(error);

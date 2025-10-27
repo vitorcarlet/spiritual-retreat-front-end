@@ -23,74 +23,14 @@ import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
 import { enqueueSnackbar } from "notistack";
 import { keysToRemoveFromFilters } from "@/src/components/table/shared";
+import { RegistrationApiResponse, ContemplatedDataRequest } from "../types";
 import {
-  RegistrationDTO,
-  RegistrationApiResponse,
-  ContemplatedDataRequest,
-} from "../types";
-
-const mapRegistrationToParticipant = (
-  registration: RegistrationDTO,
-  index: number
-): ContemplatedParticipant => {
-  const rawId = registration.id;
-  const parsedId =
-    typeof rawId === "string" ? parseInt(rawId, 10) : Number(rawId);
-
-  return {
-    id: Number.isFinite(parsedId) && parsedId > 0 ? parsedId : index,
-    name: registration.name || "Participante sem nome",
-    email: "", // Campo não disponível no DTO
-    phone: undefined,
-    status: "contemplated", // Já filtrado na API (Selected + Guest)
-    photoUrl: undefined,
-    activity: "Participante",
-    paymentStatus: "pending",
-    participation: false,
-  };
-};
-
-const extractRegistrations = (
-  payload: RegistrationApiResponse
-): RegistrationDTO[] => {
-  if (Array.isArray(payload.items)) return payload.items;
-  return [];
-};
-
-const extractTotal = (
-  payload: RegistrationApiResponse,
-  fallback: number
-): number => {
-  if (typeof payload.totalCount === "number") return payload.totalCount;
-  return fallback;
-};
-
-// Helper para iniciais (caso não haja foto)
-const getInitials = (name?: string) =>
-  (name || "")
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((n) => n[0]?.toUpperCase())
-    .join("");
-
-// Helper para formatar data ISO 8601 para formato brasileiro
-const formatDateToBR = (dateString: string): string => {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-
-    return date.toLocaleDateString("pt-BR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return dateString;
-  }
-};
+  extractRegistrations,
+  mapRegistrationToParticipant,
+  extractTotal,
+  getInitials,
+  formatDateToBR,
+} from "../shared";
 
 const getContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
@@ -123,8 +63,8 @@ const getContemplated = async (
       return item.status === "Selected" && item.category === "Guest";
     });
 
-    const rows = registrations.map((registration, index) =>
-      mapRegistrationToParticipant(registration, index)
+    const rows = registrations.map((registration) =>
+      mapRegistrationToParticipant(registration)
     );
     const total = extractTotal(response.data, rows.length);
 

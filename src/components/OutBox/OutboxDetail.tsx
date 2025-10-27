@@ -58,7 +58,8 @@ export function OutboxDetailView({
     queryKey: ["admin-outbox-detail", outboxId],
     queryFn: async () => {
       const response = await apiClient.get<OutboxDetail>(
-        `/admin/outbox/${outboxId}`
+        `/admin/outbox/${outboxId}`,
+        { baseURL: "http://localhost:5000" }
       );
       return response.data;
     },
@@ -67,7 +68,9 @@ export function OutboxDetailView({
 
   const requeueMutation = useMutation({
     mutationFn: async () => {
-      await apiClient.post(`/admin/outbox/${outboxId}/requeue`);
+      await apiClient.post(`/admin/outbox/${outboxId}/requeue`, {
+        baseURL: "http://localhost:5000",
+      });
     },
     onSuccess: async () => {
       enqueueSnackbar(translate("requeue-success", "Mensagem reenfileirada."), {

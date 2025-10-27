@@ -15,34 +15,34 @@ import {
   TextField,
   Chip,
   IconButton,
-  Checkbox,
-  FormControlLabel,
-  Link,
-  Divider,
+  // Checkbox,
+  //  FormControlLabel,
+  //  Link,
+  // Divider,
   Paper,
   Collapse,
-  Fade,
+  // Fade,
 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
-import SmsRoundedIcon from "@mui/icons-material/SmsRounded";
+// import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+// import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
+// import SmsRoundedIcon from "@mui/icons-material/SmsRounded";
 
 // TipTap / mui-tiptap
 // yarn add mui-tiptap @tiptap/react @tiptap/starter-kit @tiptap/extension-mention
-import {
-  RichTextField,
-  RichTextEditorProvider,
-  MenuButtonBold,
-  MenuButtonItalic,
-  MenuControlsContainer,
-  MenuDivider,
-  MenuSelectHeading,
-} from "mui-tiptap";
+// import {
+//   RichTextField,
+//   RichTextEditorProvider,
+//   MenuButtonBold,
+//   MenuButtonItalic,
+//   MenuControlsContainer,
+//   MenuDivider,
+//   MenuSelectHeading,
+// } from "mui-tiptap";
 import StarterKit from "@tiptap/starter-kit";
 import Mention from "@tiptap/extension-mention";
 import { Editor, useEditor } from "@tiptap/react";
@@ -207,7 +207,7 @@ export const SendMessage: React.FC<SendMessageProps> = ({
 }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [selected, setSelected] = useState<MessageParticipant[]>([]);
-  const [channels, setChannels] = useState({
+  const [channels, _setChannels] = useState({
     whatsapp: true,
     email: true,
     sms: false,
@@ -262,8 +262,8 @@ export const SendMessage: React.FC<SendMessageProps> = ({
 
   const overflowCount = chipsSource.length - visibleChips.length;
 
-  const toggleChannel = (key: keyof typeof channels) =>
-    setChannels((c) => ({ ...c, [key]: !c[key] }));
+  // const toggleChannel = (key: keyof typeof channels) =>
+  //   setChannels((c) => ({ ...c, [key]: !c[key] }));
 
   const handleSubmit = useCallback(async () => {
     if (!editor) return;
@@ -300,17 +300,16 @@ export const SendMessage: React.FC<SendMessageProps> = ({
       if (mode === "all") {
         await apiClient.post(
           `/admin/notifications/retreats/${retreatId}/notify-selected`,
-          payload
+          {},
+          { baseURL: "http://localhost:5000" }
+          // payload
         );
       } else {
         const registrationId = allSelectedIds[0];
         await apiClient.post(
           `/admin/notifications/registrations/${registrationId}/notify`,
-          {
-            messageHtml: html,
-            messageText: text,
-            channels,
-          }
+          {},
+          { baseURL: "http://localhost:5000" }
         );
       }
 
@@ -343,22 +342,22 @@ export const SendMessage: React.FC<SendMessageProps> = ({
     onSuccess,
   ]);
 
-  const insertVariable = (key: string) => {
-    if (!editor) return;
-    editor
-      .chain()
-      .focus()
-      .insertContent([
-        {
-          type: "mention",
-          attrs: { id: key, label: key },
-        },
-        { type: "text", text: " " },
-      ])
-      .run();
-  };
+  // const insertVariable = (key: string) => {
+  //   if (!editor) return;
+  //   editor
+  //     .chain()
+  //     .focus()
+  //     .insertContent([
+  //       {
+  //         type: "mention",
+  //         attrs: { id: key, label: key },
+  //       },
+  //       { type: "text", text: " " },
+  //     ])
+  //     .run();
+  // };
 
-  const allVariablesRef = useRef<HTMLDivElement | null>(null);
+  // const allVariablesRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <Paper
@@ -504,7 +503,7 @@ export const SendMessage: React.FC<SendMessageProps> = ({
       </Box>
 
       {/* MESSAGE FIELD */}
-      <Stack spacing={1}>
+      {/*  <Stack spacing={1}>
         <Typography
           variant="caption"
           sx={{ fontWeight: 600, color: "text.secondary" }}
@@ -544,7 +543,7 @@ export const SendMessage: React.FC<SendMessageProps> = ({
                     <MenuDivider />
                     <MenuButtonBold />
                     <MenuButtonItalic />
-                    {/* Add more controls of your choosing here */}
+                     Add more controls of your choosing here 
                   </MenuControlsContainer>
                 }
               />
@@ -565,10 +564,10 @@ export const SendMessage: React.FC<SendMessageProps> = ({
             Ou clique aqui para ver todas as variáveis.
           </Link>
         </Typography>
-      </Stack>
+      </Stack> */}
 
       {/* LISTA DE VARIÁVEIS */}
-      <Collapse in timeout={300}>
+      {/*  <Collapse in timeout={300}>
         <Fade in timeout={400}>
           <Stack
             ref={allVariablesRef}
@@ -599,12 +598,12 @@ export const SendMessage: React.FC<SendMessageProps> = ({
             ))}
           </Stack>
         </Fade>
-      </Collapse>
+      </Collapse> */}
 
-      <Divider />
+      {/* <Divider /> */}
 
       {/* CHANNELS */}
-      <Stack spacing={0.5}>
+      {/*   <Stack spacing={0.5}>
         <Typography
           variant="caption"
           sx={{ fontWeight: 600, color: "text.secondary" }}
@@ -656,8 +655,8 @@ export const SendMessage: React.FC<SendMessageProps> = ({
           />
         </Stack>
       </Stack>
-
-      <Divider />
+*/}
+      {/* <Divider /> */}
 
       {/* ACTIONS */}
       <Stack direction="row" justifyContent="flex-end" spacing={1.5}>

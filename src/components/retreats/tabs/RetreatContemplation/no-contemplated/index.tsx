@@ -22,67 +22,15 @@ import { enqueueSnackbar } from "notistack";
 import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
 import LotteryModal from "../LotteryModal";
-import { RegistrationDTO } from "../types";
 import ParticipantForm, { ParticipantFormValues } from "./ParticipantForm";
-import ParticipantPublicFormTab from "./ParticipantPublicFormTab";
-
-const mapRegistrationToParticipant = (
-  registration: RegistrationDTO
-): ContemplatedParticipant => {
-  return {
-    id: registration.id,
-    name: registration.name || "Participante sem nome",
-    email: "", // Campo não disponível no DTO
-    phone: undefined,
-    cpf: registration.cpf,
-    region: registration.region,
-    status: "not_contemplated", // Já filtrado na API (NotSelected + Guest)
-    photoUrl: undefined,
-    activity: "Participante",
-    paymentStatus: "pending",
-    participation: false,
-  };
-};
-
-const extractRegistrations = (
-  payload: Record<string, unknown>
-): RegistrationDTO[] => {
-  if (Array.isArray(payload.items)) return payload.items as RegistrationDTO[];
-  if (Array.isArray(payload.data)) return payload.data as RegistrationDTO[];
-  if (Array.isArray(payload.rows)) return payload.rows as RegistrationDTO[];
-  if (Array.isArray(payload.result)) return payload.result as RegistrationDTO[];
-  if (Array.isArray(payload.registrations))
-    return payload.registrations as RegistrationDTO[];
-  return [];
-};
-
-const extractTotal = (
-  payload: Record<string, unknown>,
-  fallback: number
-): number => {
-  if (typeof payload.totalCount === "number") return payload.totalCount;
-  if (typeof payload.total === "number") return payload.total;
-  if (typeof payload.count === "number") return payload.count;
-  if (payload.meta && typeof payload.meta === "object") {
-    const meta = payload.meta as Record<string, unknown>;
-    if (typeof meta.totalItems === "number") {
-      return meta.totalItems;
-    }
-    if (typeof meta.itemCount === "number") {
-      return meta.itemCount;
-    }
-  }
-  return fallback;
-};
-
-// Helper para iniciais (caso não haja foto)
-const getInitials = (name?: string) =>
-  (name || "")
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((n) => n[0]?.toUpperCase())
-    .join("");
+import {
+  extractRegistrations,
+  mapRegistrationToParticipant,
+  extractTotal,
+  getInitials,
+  formatDateToBR,
+} from "../shared";
+import ParticipantPublicFormTabCreate from "./ParticipantPublicFormTabCreate";
 
 const getContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
@@ -170,12 +118,12 @@ const getContemplated = async (
 
 // Definir as colunas da tabela
 const columns: DataTableColumn<ContemplatedParticipant>[] = [
-  // {
-  //   field: "id",
-  //   headerName: "ID",
-  //   width: 70,
-  //   type: "number",
-  // },
+  {
+    field: "id",
+    headerName: "ID",
+    width: 70,
+    type: "number",
+  },
   {
     field: "photo",
     headerName: "Foto",
@@ -204,30 +152,18 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
     flex: 1,
     minWidth: 180,
   },
-  // {
-  //   field: "email",
-  //   headerName: "Email",
-  //   flex: 1,
-  //   minWidth: 220,
-  // },
-  // {
-  //   field: "phone",
-  //   headerName: "Telefone",
-  //   width: 140,
-  //   valueFormatter: (v: { value?: unknown }) =>
-  //     v?.value ? String(v.value) : "",
-  // },
   {
-    field: "cpf",
-    headerName: "CPF",
+    field: "email",
+    headerName: "Email",
     flex: 1,
-    minWidth: 140,
+    minWidth: 220,
   },
   {
-    field: "region",
-    headerName: "Região",
-    flex: 1,
-    minWidth: 140,
+    field: "phone",
+    headerName: "Telefone",
+    width: 140,
+    valueFormatter: (v: { value?: unknown }) =>
+      v?.value ? String(v.value) : "",
   },
   {
     field: "activity",
@@ -297,6 +233,17 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
         variant="outlined"
       />
     ),
+  },
+  {
+    field: "registrationDate",
+    headerName: "Data de Inscrição",
+    width: 200,
+    valueFormatter: (v: { value?: unknown }) => {
+      if (typeof v?.value === "string") {
+        return formatDateToBR(v.value);
+      }
+      return "";
+    },
   },
 ];
 
@@ -375,16 +322,12 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     });
   };
 
-  const handleCreateNewParticipant = (
-    retreatId: string,
-  ) => {
+  const handleCreateNewParticipant = (retreatId: string) => {
     modal.open({
       title: "Criar Novo Participante",
       size: "md",
       customRender: () => (
-        <ParticipantPublicFormTab
-          retreatId={retreatId}
-        />
+        <ParticipantPublicFormTabCreate retreatId={retreatId} />
       ),
     });
   };

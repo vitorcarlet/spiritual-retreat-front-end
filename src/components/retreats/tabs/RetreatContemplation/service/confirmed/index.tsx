@@ -244,6 +244,7 @@ export default function ServiceConfirmedTab({ id }: { id: string }) {
             rows={filteredRows}
             columns={columns}
             loading={isBusy}
+            showToolbar={false}
             page={0}
             pageSize={10}
             pageSizeOptions={[10, 25, 50, 100]}

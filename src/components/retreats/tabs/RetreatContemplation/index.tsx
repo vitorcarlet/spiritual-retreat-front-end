@@ -77,7 +77,13 @@ export default function RetreatContemplation({ id }: { id: string }) {
 
   return (
     <Box
-      sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 2 }}
+      sx={{
+        width: "100%",
+        display: "flex",
+        height: "100%",
+        flexDirection: "column",
+        gap: 2,
+      }}
     >
       <Tabs
         value={tabValue}

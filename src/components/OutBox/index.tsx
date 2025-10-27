@@ -96,7 +96,8 @@ export default function RetreatOutboxTab() {
     queryKey: ["admin-outbox-summary"],
     queryFn: async () => {
       const response = await apiClient.get<OutboxSummary>(
-        "/admin/outbox/summary"
+        "/admin/outbox/summary",
+        { baseURL: "http://localhost:5000" }
       );
       return response.data;
     },
@@ -136,11 +137,30 @@ export default function RetreatOutboxTab() {
           params.endDate = filters.endDate;
         }
 
-        const response = await apiClient.get<OutboxListResponse>(
-          "/admin/outbox",
-          { params }
-        );
-        return response.data;
+        const response = await apiClient.get<
+          OutboxListResponse | OutboxMessage[]
+        >("/admin/outbox", { params, baseURL: "http://localhost:5000" });
+        const data = response.data;
+
+        if (Array.isArray(data)) {
+          return {
+            items: data,
+            total: data.length,
+            page: filters.page,
+            pageLimit: filters.pageLimit,
+          } satisfies OutboxListResponse;
+        }
+
+        if (data && Array.isArray(data.items)) {
+          return data;
+        }
+
+        return {
+          items: [],
+          total: 0,
+          page: filters.page,
+          pageLimit: filters.pageLimit,
+        } satisfies OutboxListResponse;
       } catch (error) {
         const message = axios.isAxiosError(error)
           ? ((error.response?.data as { error?: string })?.error ??
@@ -155,7 +175,30 @@ export default function RetreatOutboxTab() {
     },
   });
 
-  const rows = useMemo(() => tableData?.items ?? [], [tableData]);
+  const rows = useMemo(() => {
+    if (!tableData?.items) return [];
+
+    return tableData.items.map((item) => {
+      const derivedStatus = item.status
+        ? item.status
+        : ((item.processedAt
+            ? "processed"
+            : item.attempts > 0
+              ? "processing"
+              : "pending") as OutboxMessage["status"]);
+
+      const processedValue =
+        typeof item.processed === "boolean"
+          ? item.processed
+          : Boolean(item.processedAt);
+
+      return {
+        ...item,
+        status: derivedStatus,
+        processed: processedValue,
+      } satisfies OutboxMessage;
+    });
+  }, [tableData]);
 
   const columns = useMemo<DataTableColumn<OutboxMessage>[]>(
     () => [
@@ -267,10 +310,6 @@ export default function RetreatOutboxTab() {
         gap: 3,
       }}
     >
-      <Typography variant="h5">
-        {translate("page-title", "Fila de mensagens (Outbox)")}
-      </Typography>
-
       <OutboxSummaryCards summary={summary} isLoading={isSummaryLoading} />
 
       <Stack
@@ -354,6 +393,8 @@ export default function RetreatOutboxTab() {
           )}
           autoHeight={false}
           height="100%"
+          rowBuffer={200}
+          columnBuffer={200}
           pagination
           showToolbar={false}
           paginationMode="server"

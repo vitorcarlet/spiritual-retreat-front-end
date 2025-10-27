@@ -297,11 +297,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
         sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}
       >
         <Tab value="details" label="Dados do participante" />
-        <Tab
-          value="form"
-          label="Formulário respondido"
-          disabled={!hasParticipant}
-        />
+        <Tab value="form" label="Formulário respondido" disabled={true} />
       </Tabs>
 
       {tab === "details" && (
@@ -514,9 +510,9 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
         </Box>
       )}
 
-      {tab === "form" && participant?.id && (
+      {/* {tab === "form" && participant?.id && (
         <ParticipantPublicFormTab retreatId={retreatId} />
-      )}
+      )} */}
     </Stack>
   );
 };

@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, CircularProgress, Stack, Typography } from "@mui/material";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,15 +14,12 @@ import {
   buildZodSchema,
   defaultValues as baseDefaultValues,
   fetchFormData,
+  sendFormData,
 } from "@/src/components/public/retreats/form/shared";
 import type {
   BackendField,
   BackendSection,
 } from "@/src/components/public/retreats/form/types";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import { enqueueSnackbar } from "notistack";
 
 const flattenSectionFields = (sections: BackendSection[]): BackendField[] => {
@@ -167,87 +157,13 @@ const collectFieldsForValidation = (
   return result;
 };
 
-const fetchParticipantFormAnswers = async (
-  retreatId: string,
-  participantId: number
-): Promise<Record<string, unknown>> => {
-  const response = await handleApiResponse<{
-    success?: boolean;
-    data?: {
-      retreatId: string;
-      participantId: number;
-      answers?: Record<string, unknown>;
-      error?: string;
-    };
-    answers?: Record<string, unknown>;
-    error?: string;
-  }>(
-    await sendRequestServerVanilla.get(
-      `/retreats/${retreatId}/participants/${participantId}/form`
-    )
-  );
-
-  if (!response.success || !response.data) {
-    throw new Error(
-      response.error || "Não foi possível carregar o formulário preenchido."
-    );
-  }
-
-  const payload = response.data;
-
-  if (payload?.error) {
-    throw new Error(payload.error);
-  }
-
-  if (payload?.data?.error) {
-    throw new Error(payload.data.error);
-  }
-
-  return (payload?.data?.answers || payload?.answers || {}) as Record<
-    string,
-    unknown
-  >;
-};
-
-const saveParticipantFormAnswers = async (
-  retreatId: string,
-  participantId: number,
-  data: Record<string, unknown>
-): Promise<Record<string, unknown>> => {
-  const response = await handleApiResponse<{
-    success?: boolean;
-    message?: string;
-    data?: {
-      retreatId: string;
-      participantId: number;
-      answers: Record<string, unknown>;
-    };
-  }>(
-    await sendRequestServerVanilla.put(
-      `/retreats/${retreatId}/participants/${participantId}/form`,
-      {
-        answers: data,
-      }
-    )
-  );
-
-  if (!response.success || !response.data?.data) {
-    throw new Error(
-      response.error || "Não foi possível salvar o formulário do participante."
-    );
-  }
-
-  return response.data.data.answers;
-};
-
 type ParticipantPublicFormTabProps = {
   retreatId: string;
-  participantId: string;
 };
 
 const ParticipantPublicFormTabCreate: React.FC<
   ParticipantPublicFormTabProps
-> = ({ retreatId, participantId }) => {
+> = ({ retreatId }) => {
   const queryClient = useQueryClient();
 
   const {
@@ -259,17 +175,6 @@ const ParticipantPublicFormTabCreate: React.FC<
     queryFn: () => fetchFormData(retreatId, "participate"),
     enabled: Boolean(retreatId),
     staleTime: 5 * 60 * 1000,
-  });
-
-  const {
-    data: answers,
-    isLoading: loadingAnswers,
-    error: answersError,
-  } = useQuery({
-    queryKey: ["participant-form-answers", retreatId, participantId],
-    queryFn: () => fetchParticipantFormAnswers(retreatId, participantId),
-    enabled: Boolean(retreatId) && Boolean(participantId),
-    staleTime: 60 * 1000,
   });
 
   const schema = useMemo(
@@ -307,6 +212,7 @@ const ParticipantPublicFormTabCreate: React.FC<
 
   const totalSteps = steps.length || 1;
   const [currentStep, setCurrentStep] = useState(0);
+  const [isValidatingStep, setIsValidatingStep] = useState(false);
 
   const {
     control,
@@ -318,73 +224,63 @@ const ParticipantPublicFormTabCreate: React.FC<
   } = useForm<Record<string, unknown>>({
     resolver: zodResolver(schema),
     defaultValues: {},
-    mode: "onChange",
+    mode: "onBlur",
   });
 
   const mutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
-      saveParticipantFormAnswers(retreatId, participantId, payload),
-    onSuccess: (savedAnswers, submittedValues) => {
-      if (!formData) {
-        return;
-      }
-
-      const baseAnswers =
-        savedAnswers && Object.keys(savedAnswers).length
-          ? savedAnswers
-          : submittedValues;
-
-      const nextValues = buildInitialValues(
-        formData.sections ?? [],
-        baseAnswers
-      );
-
-      reset(nextValues, { keepDirty: false, keepValues: false });
-      queryClient.setQueryData(
-        ["participant-form-answers", retreatId, participantId],
-        baseAnswers
-      );
-      enqueueSnackbar("Formulário atualizado com sucesso!", {
+      sendFormData(retreatId, payload, "participate"),
+    onSuccess: () => {
+      enqueueSnackbar("Participante criado com sucesso!", {
         variant: "success",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["NonContemplated", retreatId],
       });
     },
     onError: (error: unknown) => {
       const message =
         error instanceof Error
           ? error.message
-          : "Não foi possível salvar o formulário.";
+          : "Não foi possível criar o participante.";
       enqueueSnackbar(message, { variant: "error" });
     },
   });
 
   useEffect(() => {
     setCurrentStep(0);
-  }, [retreatId, participantId, formData?.sections?.length]);
+  }, [retreatId, formData?.sections?.length]);
 
   useEffect(() => {
-    if (!formData || !answers) {
+    if (!formData) {
       return;
     }
 
-    const initialValues = buildInitialValues(formData.sections ?? [], answers);
+    const initialValues = buildInitialValues(formData.sections ?? [], {});
     reset(initialValues, { keepDirty: false, keepValues: false });
-  }, [formData, answers, reset]);
+  }, [formData, reset]);
 
   const values = watch();
   const submitting = isSubmitting || mutation.isPending;
 
   const handleNext = async () => {
-    if (submitting) {
+    if (submitting || isValidatingStep) {
       return;
     }
 
-    const fieldsToValidate = collectFieldsForValidation(
-      steps[currentStep]?.fields ?? [],
-      values
-    );
-    const isValid = await trigger(fieldsToValidate as string[]);
-    if (isValid) {
-      setCurrentStep((step) => Math.min(step + 1, totalSteps - 1));
+    setIsValidatingStep(true);
+
+    try {
+      const fieldsToValidate = collectFieldsForValidation(
+        steps[currentStep]?.fields ?? [],
+        values
+      );
+      const isValid = await trigger(fieldsToValidate as string[]);
+      if (isValid) {
+        setCurrentStep((step) => Math.min(step + 1, totalSteps - 1));
+      }
+    } finally {
+      setIsValidatingStep(false);
     }
   };
 
@@ -395,13 +291,24 @@ const ParticipantPublicFormTabCreate: React.FC<
     setCurrentStep((step) => Math.max(step - 1, 0));
   };
 
-  const onSubmit: SubmitHandler<Record<string, unknown>> = async (data) => {
+  const onSubmit: SubmitHandler<Record<string, unknown>> = async (
+    data,
+    event
+  ) => {
+    if (currentStep < totalSteps - 1) {
+      event?.preventDefault();
+      await handleNext();
+      return;
+    }
+
     if (!formData) {
       return;
     }
 
     await mutation.mutateAsync(data);
   };
+
+  const submitForm = () => handleSubmit(onSubmit)();
 
   const renderField = (field: BackendField): React.ReactNode => {
     if (!field || field.type === "section") {
@@ -463,7 +370,7 @@ const ParticipantPublicFormTabCreate: React.FC<
     );
   };
 
-  if (loadingForm || loadingAnswers) {
+  if (loadingForm) {
     return (
       <Stack
         alignItems="center"
@@ -473,28 +380,24 @@ const ParticipantPublicFormTabCreate: React.FC<
       >
         <CircularProgress />
         <Typography variant="body2" color="text.secondary">
-          Carregando formulário preenchido...
+          Carregando formulário...
         </Typography>
       </Stack>
     );
   }
 
-  if (formError || answersError) {
+  if (formError) {
     const errorMessage =
       formError instanceof Error
         ? formError.message
-        : answersError instanceof Error
-          ? answersError.message
-          : "Não foi possível carregar o formulário preenchido.";
+        : "Não foi possível carregar o formulário.";
 
     return <Alert severity="error">{errorMessage}</Alert>;
   }
 
-  if (!formData || !answers) {
+  if (!formData) {
     return (
-      <Alert severity="info">
-        Este participante ainda não possui um formulário preenchido.
-      </Alert>
+      <Alert severity="info">Não foi possível carregar o formulário.</Alert>
     );
   }
 
@@ -504,7 +407,10 @@ const ParticipantPublicFormTabCreate: React.FC<
     <Box
       component="form"
       noValidate
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submitForm();
+      }}
       sx={{ maxHeight: "70vh", overflowY: "auto", pr: 1 }}
     >
       <Stack spacing={3}>
@@ -513,15 +419,6 @@ const ParticipantPublicFormTabCreate: React.FC<
           subtitle={formData.subtitle}
           description={formData.description}
         />
-
-        <Button
-          type="submit"
-          variant="contained"
-          disabled={submitting || !isDirty}
-          sx={{ alignSelf: "flex-end" }}
-        >
-          {submitting ? "Salvando..." : "Salvar alterações"}
-        </Button>
 
         <FormStepProgress steps={steps} currentStep={currentStep} />
 
@@ -544,8 +441,9 @@ const ParticipantPublicFormTabCreate: React.FC<
           isSubmitting={submitting}
           onNext={handleNext}
           onBack={handleBack}
-          submitLabel="Salvar alterações"
+          submitLabel="Criar Participante"
           disableSubmit={!isDirty}
+          onSubmit={submitForm}
         />
       </Stack>
     </Box>
