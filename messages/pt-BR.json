@@ -223,6 +223,7 @@
     "fetch-error": "Não foi possível carregar as regras de composição das famílias."
   },
   "family-details": {
+    "delete": "Deletar Família",
     "title": "Família: {family}",
     "cancel-edit": "Cancelar",
     "save": "Salvar",

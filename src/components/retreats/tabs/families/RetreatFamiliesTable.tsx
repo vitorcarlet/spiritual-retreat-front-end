@@ -67,10 +67,6 @@ import {
 } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
 import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import {
   Items,
   RetreatFamiliesProps,
   MembersById,
@@ -296,20 +292,20 @@ export default function RetreatFamiliesTable({
     };
   }, [retreatId, t]);
 
-  const [familiesStructure, setFamiliesStructure] = useState<{
-    items: Items;
-    membersById: MembersById;
-    memberToContainer: MemberToContainer;
-    familiesById: Record<
-      string,
-      { name: string; color: string; locked?: boolean }
-    >;
-  }>({
-    items: {},
-    membersById: {},
-    memberToContainer: {},
-    familiesById: {},
-  });
+  // const [familiesStructure, setFamiliesStructure] = useState<{
+  //   items: Items;
+  //   membersById: MembersById;
+  //   memberToContainer: MemberToContainer;
+  //   familiesById: Record<
+  //     string,
+  //     { name: string; color: string; locked?: boolean }
+  //   >;
+  // }>({
+  //   items: {},
+  //   membersById: {},
+  //   memberToContainer: {},
+  //   familiesById: {},
+  // });
 
   const [items, setItems] = useState<Items>({});
   const [membersById, setMembersById] = useState<MembersById>({});
@@ -331,20 +327,21 @@ export default function RetreatFamiliesTable({
       const memberToContainer: MemberToContainer = {};
 
       InitialItems?.forEach((fam) => {
-        const fid = String(fam.id);
+        const fid = String(fam.familyId);
         familiesById[fid] = {
           name: fam.name,
-          color: fam.color,
+          color: fam.color || "",
           locked: fam.locked,
         };
         items[fid] =
           fam.members?.map((m) => {
-            const mid = String(m.id);
+            const mid = String(m.registrationId);
             membersById[mid] = {
-              id: mid,
+              registrationId: mid,
               name: m.name as string,
               gender: m.gender,
               city: m.city,
+              position: m.position,
               //realFamilyId: m.realFamilyId,
             };
             memberToContainer[mid] = fid;
@@ -352,12 +349,12 @@ export default function RetreatFamiliesTable({
           }) || [];
       });
 
-      setFamiliesStructure({
-        items,
-        membersById,
-        memberToContainer,
-        familiesById,
-      });
+      // setFamiliesStructure({
+      //   items,
+      //   membersById,
+      //   memberToContainer,
+      //   familiesById,
+      // });
       setItems(items);
       setMembersById(membersById);
       setFamiliesById(familiesById);

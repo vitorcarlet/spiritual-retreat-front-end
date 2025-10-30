@@ -51,11 +51,11 @@ export interface RetreatFamiliesProps {
 export type Items = Record<string, UniqueIdentifier[]>;
 
 export interface MembersMapEntry {
-  id: UniqueIdentifier;
+  registrationId: UniqueIdentifier;
   name: string;
-  gender?: string;
-  city?: string;
-  //realFamilyId?: string;
+  gender: string;
+  city: string;
+  position: number;
 }
 
 export type MembersById = Record<UniqueIdentifier, MembersMapEntry>;

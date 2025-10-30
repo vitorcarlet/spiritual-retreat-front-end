@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import {
   Box,
   Stack,
@@ -37,25 +44,25 @@ import ResetFamiliesModal from "./ResetFamiliesModal";
 import apiClient from "@/src/lib/axiosClientInstance";
 
 interface RetreatFamilyRequest {
-  rows: RetreatFamily[];
-  total: number;
-  page: number;
-  pageLimit: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
+  families: RetreatFamily[];
+  version: number;
 }
 
 const getRetreatFamilies = async (
   filters: TableDefaultFilters<
     RetreatsCardTableFilters & RetreatsCardTableDateFilters
   >,
-  retreatId: string
+  retreatId: string,
+  setFamiliesVersion: Dispatch<SetStateAction<number | null>>
 ) => {
-  const response = await apiClient.get(`/retreats/${retreatId}/families`, {
-    //params: filters,
-  });
-
-  return response.data as unknown as RetreatFamilyRequest;
+  const response = await apiClient.get<RetreatFamilyRequest>(
+    `/retreats/${retreatId}/families`,
+    {
+      //params: filters,
+    }
+  );
+  setFamiliesVersion(response.data.version);
+  return response.data;
 };
 
 interface RetreatFamiliesProps {
@@ -78,6 +85,7 @@ export default function RetreatFamilies({
 
   const session = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
+  const [familiesVersion, setFamiliesVersion] = useState<number | null>(null);
   const [familiesReorderFlag, setFamiliesReorderFlag] =
     useState<boolean>(false);
   const modal = useModal();
@@ -103,7 +111,7 @@ export default function RetreatFamilies({
     isError,
   } = useQuery({
     queryKey: ["retreat-families", filters],
-    queryFn: () => getRetreatFamilies(filters, retreatId),
+    queryFn: () => getRetreatFamilies(filters, retreatId, setFamiliesVersion),
     staleTime: 60_000,
   });
 
@@ -112,13 +120,13 @@ export default function RetreatFamilies({
       return [];
     }
 
-    const { rows } = familiesData;
+    const { families } = familiesData;
 
-    if (Array.isArray(rows)) {
-      return rows;
+    if (Array.isArray(families)) {
+      return families;
     }
 
-    return rows ? [rows] : [];
+    return families ? [families] : [];
   }, [familiesData]);
 
   const canEditFamily = useMemo(() => {
@@ -139,13 +147,13 @@ export default function RetreatFamilies({
   //     // Persistir ordenação / mudanças de membros
   //     // Ajustar endpoint conforme backend
   //     try {
-  //       await sendRequestServerVanilla.put(
+  //       await apiClient.put(
   //         `/retreats/${retreatId}/families/reorder`,
   //         {
   //           families: updated.map((f) => ({
   //             id: f.id,
-  //             memberIds: f.members.map((m) => m.id),
-  //             order: updated.findIndex((ff) => ff.id === f.id),
+  //             memberIds: f.members.map((m) => m.registrationId) || [],
+  //             position: updated.findIndex((ff) => ff.id === f.id),
   //           })),
   //         }
   //       );
@@ -177,14 +185,14 @@ export default function RetreatFamilies({
                       return previous;
                     }
 
-                    if (!Array.isArray(previous.rows)) {
+                    if (!Array.isArray(previous.families)) {
                       return previous;
                     }
 
                     return {
                       ...previous,
-                      rows: previous.rows.map((row) =>
-                        row.id === updatedFamily.id
+                      rows: previous.families.map((row) =>
+                        row.familyId === updatedFamily.familyId
                           ? { ...row, ...updatedFamily }
                           : row
                       ),
@@ -207,7 +215,7 @@ export default function RetreatFamilies({
   const handleDelete = useCallback(
     (familyId: UniqueIdentifier) => {
       const family = familiesDataArray.find(
-        (item) => String(item.id) === String(familyId)
+        (item) => String(item.familyId) === String(familyId)
       );
 
       modal.open({
@@ -314,7 +322,7 @@ export default function RetreatFamilies({
           .map(([familyId, memberIds]) => {
             // Find the original family data
             const originalFamily = familiesDataArray.find(
-              (f) => String(f.id) === String(familyId)
+              (f) => String(f.familyId) === String(familyId)
             );
 
             if (!originalFamily) {
@@ -338,7 +346,7 @@ export default function RetreatFamilies({
 
         const payload = {
           retreatId: retreatId,
-          version: 0, // You may want to track version from familiesData if available
+          version: familiesVersion || 0, // You may want to track version from familiesData if available
           families,
           ignoreWarnings: true,
         };
@@ -448,7 +456,6 @@ export default function RetreatFamilies({
   ) => {
     updateFilters({ ...filters, ...newFilters });
   };
-
   if (isLoading) return <Typography>Loading retreats...</Typography>;
   if (isError) return <Typography>No data available.</Typography>;
 
@@ -464,16 +471,6 @@ export default function RetreatFamilies({
       }}
     >
       <Stack direction="row" spacing={2} alignItems="center" mb={3}>
-        <FilterButton<
-          TableDefaultFilters<RetreatsCardTableFilters>,
-          RetreatsCardTableDateFilters
-        >
-          filters={filtersConfig}
-          defaultValues={filters}
-          onApplyFilters={handleApplyFilters}
-          onReset={resetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
         {hasCreatePermission && (
           <>
             <Button
@@ -547,7 +544,7 @@ export default function RetreatFamilies({
             loading={isFetching}
             setFamiliesReorderFlag={setFamiliesReorderFlag}
             onSaveReorder={handleSaveReorder}
-            total={familiesData?.total || 0}
+            total={familiesData?.families.length || 0}
             filters={filters}
             items={familiesDataArray}
             onEdit={handleEdit}
