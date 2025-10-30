@@ -134,6 +134,7 @@ export interface DataTableProps<
   noResultsOverlay?: React.ReactNode;
 
   // Virtualização
+  disableBuffer?: boolean;
   rowBuffer?: number; // Número de linhas extras para renderizar fora da viewport
   columnBuffer?: number; // Número de colunas extras para renderizar fora da viewport
 
@@ -275,6 +276,7 @@ export function DataTable<
   noRowsOverlay,
   noResultsOverlay,
   // Virtualização
+  disableBuffer,
   rowBuffer = 2,
   columnBuffer = 2,
   serverFilters,
@@ -494,8 +496,8 @@ export function DataTable<
         disableColumnMenu={disableColumnMenu}
         disableColumnResize={disableColumnResize}
         // Virtualização - otimizações de performance
-        rowBufferPx={rowBuffer}
-        columnBufferPx={columnBuffer}
+        rowBufferPx={disableBuffer ? rowBuffer : 50000000}
+        columnBufferPx={disableBuffer ? columnBuffer : 50000000}
         // Slots customizados
         slots={slots}
         slotProps={{

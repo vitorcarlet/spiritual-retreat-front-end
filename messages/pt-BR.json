@@ -586,5 +586,9 @@
     "close": "Fechar"
   },
   "region": "Região",
-  "close": "Fechar"
+  "close": "Fechar",
+  "send-messages": "Enviar Mensagens",
+  "number-of-families": "Número de Famílias",
+  "clear-existing-families": "Limpar famílias existentes"
+
 }

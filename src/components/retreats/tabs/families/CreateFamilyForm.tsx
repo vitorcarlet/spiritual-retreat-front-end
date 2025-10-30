@@ -45,9 +45,14 @@ export default function CreateFamilyForm({
 
   const onSubmit = async (data: CreateFamilyData) => {
     try {
+      const body = {
+        name: data.name,
+        memberIds: [],
+        ignoreWarnings: true,
+      };
       const response = await apiClient.post(
-        `/retreats/${retreatId}/families/generate`,
-        data
+        `/retreats/${retreatId}/create/families`,
+        body
       );
 
       if (response.data) {

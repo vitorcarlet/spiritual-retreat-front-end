@@ -18,6 +18,11 @@ export const mapRegistrationToParticipant = (
   };
 };
 
+export const DEFAULT_FILTERS = {
+  page: 1,
+  pageLimit: 10,
+};
+
 export const extractRegistrations = (
   payload: Record<string, unknown>
 ): RegistrationDTO[] => {

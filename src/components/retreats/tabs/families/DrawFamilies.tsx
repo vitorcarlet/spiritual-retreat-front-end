@@ -7,32 +7,32 @@ import {
   Button,
   CircularProgress,
   Divider,
+  FormControlLabel,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
   Stack,
+  TextField,
   Typography,
+  Checkbox,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import Iconify from "@/src/components/Iconify";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 interface ParticipantWithoutFamily {
-  id: string;
+  registrationId: string;
   name: string;
   email?: string;
-  phone?: string;
-  group?: string;
+  gender?: string;
+  city?: string;
 }
 
 interface DrawFamiliesResponse {
-  participants: ParticipantWithoutFamily[];
+  items: ParticipantWithoutFamily[];
 }
 
 interface DrawFamiliesProps {
@@ -43,25 +43,25 @@ interface DrawFamiliesProps {
 const fetchParticipantsWithoutFamily = async (
   retreatId: string
 ): Promise<ParticipantWithoutFamily[]> => {
-  const response = await handleApiResponse<DrawFamiliesResponse>(
-    await sendRequestServerVanilla.get(`/retreats/${retreatId}/lottery/preview`)
+  const response = await apiClient.get<DrawFamiliesResponse>(
+    `/retreats/${retreatId}/families/unassigned`
   );
-  console.log({ response }, response.data, response.data?.participants);
-  if (!response.success) {
-    throw new Error(response.error ?? "Failed to load participants");
-  }
 
-  return response.data?.participants ?? [];
+  return response.data?.items ?? [];
 };
 
-const drawFamiliesRequest = async (retreatId: string) => {
-  const response = await handleApiResponse(
-    await sendRequestServerVanilla.post(`/retreats/${retreatId}/families/draw`)
+const drawFamiliesRequest = async (
+  retreatId: string,
+  count: number,
+  clearExisting: boolean
+) => {
+  const response = await apiClient.post(
+    `/retreats/${retreatId}/families/generate`,
+    {
+      count,
+      clearExisting,
+    }
   );
-
-  if (!response.success) {
-    throw new Error(response.error ?? "Failed to draw families");
-  }
 
   return response.data;
 };
@@ -72,6 +72,8 @@ export default function DrawFamilies({
 }: DrawFamiliesProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const [count, setCount] = useState(50);
+  const [clearExisting, setClearExisting] = useState(true);
 
   const {
     data: participants,
@@ -86,7 +88,7 @@ export default function DrawFamilies({
   });
 
   const drawMutation = useMutation({
-    mutationFn: () => drawFamiliesRequest(retreatId),
+    mutationFn: () => drawFamiliesRequest(retreatId, count, clearExisting),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["retreat-families-unassigned", retreatId],
@@ -97,7 +99,6 @@ export default function DrawFamilies({
   });
 
   const totalParticipants = participants?.length ?? 0;
-  console.log({ totalParticipants }, participants);
   const isDrawDisabled = totalParticipants === 0 || drawMutation.isPending;
 
   const title = useMemo(() => {
@@ -162,7 +163,7 @@ export default function DrawFamilies({
             ) : (
               <List disablePadding>
                 {participants?.map((participant, index) => (
-                  <Fragment key={participant.id}>
+                  <Fragment key={participant.registrationId}>
                     <ListItem alignItems="flex-start">
                       <ListItemAvatar>
                         <Avatar>
@@ -186,20 +187,12 @@ export default function DrawFamilies({
                                 {participant.email}
                               </Typography>
                             )}
-                            {participant.phone && (
+                            {participant.email && (
                               <Typography
                                 variant="caption"
                                 color="text.secondary"
                               >
-                                {participant.phone}
-                              </Typography>
-                            )}
-                            {participant.group && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                {t("group-label", { group: participant.group })}
+                                {participant.email}
                               </Typography>
                             )}
                           </Stack>
@@ -215,6 +208,31 @@ export default function DrawFamilies({
             )}
           </Box>
         )}
+
+        <Stack spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <TextField
+              type="number"
+              label={t("number-of-families")}
+              value={count}
+              onChange={(e) =>
+                setCount(Math.max(1, parseInt(e.target.value) || 1))
+              }
+              inputProps={{ min: 1 }}
+              size="small"
+              sx={{ width: { xs: "100%", sm: 200 } }}
+            />
+          </Stack>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={clearExisting}
+                onChange={(e) => setClearExisting(e.target.checked)}
+              />
+            }
+            label={t("clear-existing-families")}
+          />
+        </Stack>
 
         <Stack
           direction="row"

@@ -45,6 +45,7 @@ export interface RetreatFamiliesProps {
   onSaveReorder?: (items: Items) => Promise<void>;
   retreatId: string;
   canEditFamily: boolean;
+  loading: boolean;
 }
 
 export type Items = Record<string, UniqueIdentifier[]>;

@@ -99,6 +99,7 @@ export default function RetreatFamilies({
   const {
     data: familiesData,
     isLoading,
+    isFetching,
     isError,
   } = useQuery({
     queryKey: ["retreat-families", filters],
@@ -543,6 +544,7 @@ export default function RetreatFamilies({
         )}
         {!isLoading && !isError && (
           <RetreatFamiliesTable
+            loading={isFetching}
             setFamiliesReorderFlag={setFamiliesReorderFlag}
             onSaveReorder={handleSaveReorder}
             total={familiesData?.total || 0}

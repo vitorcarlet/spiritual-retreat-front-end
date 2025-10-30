@@ -26,13 +26,13 @@ import ParticipantForm, { ParticipantFormValues } from "./ParticipantForm";
 import {
   extractRegistrations,
   mapRegistrationToParticipant,
-  extractTotal,
   getInitials,
   formatDateToBR,
+  DEFAULT_FILTERS,
 } from "../shared";
 import ParticipantPublicFormTabCreate from "./ParticipantPublicFormTabCreate";
 
-const getContemplated = async (
+const getNoContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
   retreatId: string
 ) => {
@@ -46,6 +46,8 @@ const getContemplated = async (
       retreatId,
       skip,
       take: pageLimit,
+      status: "NotSelected",
+      category: "Guest",
     };
 
     if (filters.search) {
@@ -83,8 +85,8 @@ const getContemplated = async (
     const rows = registrations.map((registration) =>
       mapRegistrationToParticipant(registration)
     );
-    const total = extractTotal(response.data, rows.length);
-
+    // const total = extractTotal(response.data, rows.length);
+    const total = rows.length;
     return {
       rows,
       total,
@@ -252,20 +254,18 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   const modal = useModal();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
-      defaultFilters: {
-        page: 1,
-        pageLimit: 10,
-      },
+      defaultFilters: DEFAULT_FILTERS,
       excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
     });
   const {
     data: contemplatedData,
     isLoading,
+    isFetching,
     refetch,
   } = useQuery({
     queryKey: ["NonContemplated", id, filters],
-    queryFn: () => getContemplated(filters, id),
-    staleTime: 5 * 60 * 1000, // 5 minutes,
+    queryFn: () => getNoContemplated(filters, id),
+    //staleTime: 5 * 60 * 1000, // 5 minutes,
   });
   const session = useSession();
 
@@ -353,6 +353,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   const handleApplyFilters = (
     newFilters: Partial<TableDefaultFilters<ContemplatedTableFilters>>
   ) => {
+    setSelectedRows(undefined); // Reseta seleção
     updateFilters({ ...filters, ...newFilters });
   };
 
@@ -517,7 +518,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           rows={contemplatedDataArray}
           rowCount={contemplatedData?.total || 0}
           columns={columns}
-          loading={isLoading || loading}
+          loading={isFetching || isLoading || loading}
           rowHeight={200}
           // Configurações de aparência
           title="Gerenciamento de Usuários"
@@ -546,8 +547,9 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
           // Virtualização otimizada
-          rowBuffer={500}
-          columnBuffer={2}
+          disableBuffer={true}
+          // rowBuffer={500}
+          // columnBuffer={500}
           // Ações personalizadas
           actions={[
             {

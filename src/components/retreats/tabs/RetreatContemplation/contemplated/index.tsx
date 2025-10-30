@@ -27,9 +27,9 @@ import { RegistrationApiResponse, ContemplatedDataRequest } from "../types";
 import {
   extractRegistrations,
   mapRegistrationToParticipant,
-  extractTotal,
   getInitials,
   formatDateToBR,
+  DEFAULT_FILTERS,
 } from "../shared";
 
 const getContemplated = async (
@@ -49,6 +49,8 @@ const getContemplated = async (
       skip,
       take: pageLimit,
       filtersFiltered,
+      status: "Selected",
+      category: "Guest",
     };
 
     const response = await apiClient.get<RegistrationApiResponse>(
@@ -66,7 +68,7 @@ const getContemplated = async (
     const rows = registrations.map((registration) =>
       mapRegistrationToParticipant(registration)
     );
-    const total = extractTotal(response.data, rows.length);
+    const total = rows.length;
 
     return {
       rows,
@@ -222,20 +224,18 @@ export default function ContemplatedTable({ id }: { id: string }) {
   const modal = useModal();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
-      defaultFilters: {
-        page: 1,
-        pageLimit: 20,
-      },
+      defaultFilters: DEFAULT_FILTERS,
       excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
     });
   const {
     data: contemplatedData,
+    isFetching,
     isLoading,
     refetch,
   } = useQuery({
     queryKey: ["Contemplated", id, filters],
     queryFn: () => getContemplated(filters, id),
-    staleTime: 5 * 60 * 1000, // 5 minutes,
+    // staleTime: 5 * 60 * 1000, // 5 minutes,
   });
   const session = useSession();
 
@@ -275,7 +275,9 @@ export default function ContemplatedTable({ id }: { id: string }) {
   const handleApplyFilters = (
     newFilters: Partial<TableDefaultFilters<Record<string, unknown>>>
   ) => {
+    setSelectedRows(undefined);
     updateFilters({ ...filters, ...newFilters });
+    refetch();
   };
 
   const contemplatedDataArray: ContemplatedParticipant[] =
@@ -480,7 +482,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
           rows={contemplatedDataArray}
           rowCount={contemplatedData?.total || 0}
           columns={columns}
-          loading={isLoading || loading}
+          loading={isFetching || isLoading || loading}
           // Configurações de aparência
           title="Gerenciamento de Usuários"
           subtitle="Lista completa de usuários do sistema"
@@ -509,6 +511,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
           // Virtualização otimizada
+          disableBuffer={true}
           rowBuffer={500}
           columnBuffer={2}
           // Ações personalizadas

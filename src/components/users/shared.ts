@@ -31,7 +31,6 @@ export const getPermissionByPathname = (pathname: string): string => {
   const parts = cleanPath.replace(/^\/+|\/+$/g, "").split("/");
 
   //  /user/123 → ["user", "123"]
-  console.log(parts, "parts");
   if (parts.length === 2 && parts[0] === "users" && parts[1]) {
     return "users.update";
   }

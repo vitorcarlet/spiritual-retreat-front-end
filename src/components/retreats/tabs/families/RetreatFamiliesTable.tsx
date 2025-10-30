@@ -233,6 +233,7 @@ export default function RetreatFamiliesTable({
   onSaveReorder,
   retreatId,
   canEditFamily,
+  loading,
 }: RetreatFamiliesProps) {
   const t = useTranslations("family-validation");
 
@@ -749,7 +750,7 @@ export default function RetreatFamiliesTable({
     },
   });
 
-  if (Object.keys(items).length === 0) return <LoadingScreen />;
+  if (loading) return <LoadingScreen />;
 
   return (
     <Box

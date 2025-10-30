@@ -121,11 +121,11 @@ export function useMenuAccess() {
 
   const debugUserAccess = () => {
     if (process.env.NODE_ENV === "development") {
-      console.log("🔍 User Access Debug:", {
-        status,
-        user: user ? { id: user.id, role: user.role } : null,
-        accessibleMenus: getAccessibleMenus().map((m) => m.label),
-      });
+      // console.log("🔍 User Access Debug:", {
+      //   status,
+      //   user: user ? { id: user.id, role: user.role } : null,
+      //   accessibleMenus: getAccessibleMenus().map((m) => m.label),
+      // });
     }
   };
 
