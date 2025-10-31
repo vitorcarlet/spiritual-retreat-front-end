@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Box, Tab, Tabs, useMediaQuery, useTheme } from "@mui/material";
 import SendMessageToFamilyForm from "./SendMessageToFamilyForm";
 import FamilyGroupsManager from "./FamilyGroupsManager";
+import CreateGroupsForm from "./CreateGroupsForm";
 
 interface FamilyCommunicationTabsProps {
   retreatId: string;
@@ -11,7 +12,7 @@ interface FamilyCommunicationTabsProps {
   onSuccess?: () => void;
 }
 
-type TabOption = "message" | "groups";
+type TabOption = "groups" | "message" | "create-groups";
 
 export default function FamilyCommunicationTabs({
   retreatId,
@@ -20,7 +21,7 @@ export default function FamilyCommunicationTabs({
 }: FamilyCommunicationTabsProps) {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const [activeTab, setActiveTab] = useState<TabOption>("message");
+  const [activeTab, setActiveTab] = useState<TabOption>("create-groups");
   const handleSuccess = useMemo(
     () => onSuccess ?? (() => undefined),
     [onSuccess]
@@ -28,8 +29,9 @@ export default function FamilyCommunicationTabs({
 
   const tabs = useMemo(
     () => [
-      { label: "Enviar mensagem", value: "message" as const },
-      { label: "Gerenciar grupos", value: "groups" as const },
+      { label: "Criar Grupos", value: "create-groups" as const },
+      { label: "Gerenciar Grupos", value: "groups" as const },
+      // { label: "Enviar Mensagem", value: "message" as const },
     ],
     []
   );
@@ -47,14 +49,16 @@ export default function FamilyCommunicationTabs({
       </Tabs>
 
       <Box sx={{ mt: 3 }}>
-        {activeTab === "message" ? (
+        {activeTab === "create-groups" ? (
+          <CreateGroupsForm retreatId={retreatId} onSuccess={handleSuccess} />
+        ) : activeTab === "groups" ? (
+          <FamilyGroupsManager retreatId={retreatId} />
+        ) : (
           <SendMessageToFamilyForm
             retreatId={retreatId}
             families={families}
             onSuccess={handleSuccess}
           />
-        ) : (
-          <FamilyGroupsManager retreatId={retreatId} />
         )}
       </Box>
     </Box>

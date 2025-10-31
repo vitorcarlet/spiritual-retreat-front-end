@@ -23,7 +23,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Iconify from "@/src/components/Iconify";
 import apiClient from "@/src/lib/axiosClientInstance";
 
-interface ParticipantWithoutFamily {
+export interface ParticipantWithoutFamily {
   registrationId: string;
   name: string;
   email?: string;
@@ -31,7 +31,7 @@ interface ParticipantWithoutFamily {
   city?: string;
 }
 
-interface DrawFamiliesResponse {
+export interface DrawFamiliesResponse {
   items: ParticipantWithoutFamily[];
 }
 
@@ -53,13 +53,15 @@ const fetchParticipantsWithoutFamily = async (
 const drawFamiliesRequest = async (
   retreatId: string,
   count: number,
-  clearExisting: boolean
+  clearExisting: boolean,
+  fillExistingFirst: boolean
 ) => {
   const response = await apiClient.post(
     `/retreats/${retreatId}/families/generate`,
     {
-      count,
-      clearExisting,
+      capacity: count,
+      replaceExisting: clearExisting,
+      fillExistingFirst,
     }
   );
 
@@ -74,6 +76,7 @@ export default function DrawFamilies({
   const queryClient = useQueryClient();
   const [count, setCount] = useState(50);
   const [clearExisting, setClearExisting] = useState(true);
+  const [fillExistingFirst, setFillExistingFirst] = useState(true);
 
   const {
     data: participants,
@@ -88,7 +91,8 @@ export default function DrawFamilies({
   });
 
   const drawMutation = useMutation({
-    mutationFn: () => drawFamiliesRequest(retreatId, count, clearExisting),
+    mutationFn: () =>
+      drawFamiliesRequest(retreatId, count, clearExisting, fillExistingFirst),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["retreat-families-unassigned", retreatId],
@@ -213,7 +217,7 @@ export default function DrawFamilies({
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <TextField
               type="number"
-              label={t("number-of-families")}
+              label={t("family-capacity")}
               value={count}
               onChange={(e) =>
                 setCount(Math.max(1, parseInt(e.target.value) || 1))
@@ -231,6 +235,15 @@ export default function DrawFamilies({
               />
             }
             label={t("clear-existing-families")}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={fillExistingFirst}
+                onChange={(e) => setFillExistingFirst(e.target.checked)}
+              />
+            }
+            label={t("fill-existing-first")}
           />
         </Stack>
 

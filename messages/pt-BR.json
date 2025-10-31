@@ -170,7 +170,7 @@
   "lock-families": "Bloquear Famílias",
   "reset-families": "Resetar Famílias",
   "reset-families-warning-title": "⚠️ ATENÇÃO: Esta ação é irreversível!",
-  "reset-families-warning-description": "Você está prestes a deletar TODAS as famílias e seus membros. Esta ação NÃO pode ser desfeita.",
+  "reset-families-warning-description": "Você está prestes a deletar TODAS as famílias. Esta ação NÃO pode ser desfeita. Os membros voltarão ao estado de \"sem família\".",
   "current-statistics": "Estatísticas Atuais",
   "total-families": "Total de famílias",
   "total-members": "Total de membros",
@@ -590,6 +590,13 @@
   "close": "Fechar",
   "send-messages": "Enviar Mensagens",
   "number-of-families": "Número de Famílias",
-  "clear-existing-families": "Limpar famílias existentes"
-
+  "clear-existing-families": "Limpar famílias existentes",
+  "family-capacity": "Capacidade da Família",
+  "fill-existing-first": "Preencher as famílias existentes primeiro",
+  "search-by-name-or-email": "Encontre pelo nome ou e-mail",
+  "family-deleted-successfully": "Família Deletada com Sucesso!",
+  "delete-family-warning": "Ao deletar essa família, os membros voltam ao estado de \"sem família\"",
+  "delete-family-confirmation": "Tem certeza que deseja continuar?",
+  "deleting": "Deletando",
+  "delete-family": "Deletar Família"
 }

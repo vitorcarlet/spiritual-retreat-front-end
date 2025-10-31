@@ -96,7 +96,7 @@ export default function FamilyGroupsManager({
       const params = statusFilter ? { status: statusFilter } : undefined;
       const response = await apiClient.get<RetreatGroupListResponse>(
         `/admin/retreats/${retreatId}/groups`,
-        { params }
+        { params, baseURL: "http://localhost:5000" }
       );
       return response.data;
     },
@@ -110,7 +110,8 @@ export default function FamilyGroupsManager({
     queryKey: ["retreat-groups-status", retreatId],
     queryFn: async () => {
       const response = await apiClient.get<GroupStatusSummary>(
-        `/admin/retreats/${retreatId}/groups/status`
+        `/admin/retreats/${retreatId}/groups/status`,
+        { baseURL: "http://localhost:5000" }
       );
       return response.data;
     },
@@ -140,7 +141,9 @@ export default function FamilyGroupsManager({
 
   const handleRetryFailed = async () => {
     try {
-      await apiClient.post(`/admin/retreats/${retreatId}/groups/retry-failed`);
+      await apiClient.post(`/admin/retreats/${retreatId}/groups/retry-failed`, {
+        baseURL: "http://localhost:5000",
+      });
       enqueueSnackbar("Reenvio de grupos falhos enfileirado.", {
         variant: "info",
         autoHideDuration: 3000,

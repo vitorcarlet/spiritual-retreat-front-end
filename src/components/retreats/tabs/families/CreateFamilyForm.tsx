@@ -9,6 +9,9 @@ import { MuiColorInput } from "mui-color-input";
 import apiClient from "@/src/lib/axiosClientInstance";
 import { enqueueSnackbar } from "notistack";
 import axios from "axios";
+import { useCallback } from "react"; // Importado
+import { ParticipantWithoutFamily, DrawFamiliesResponse } from "./DrawFamilies"; // Ajuste o caminho se necessário
+import { AsynchronousAutoComplete } from "@/src/components/select-auto-complete/AsynchronousAutoComplete";
 
 interface CreateFamilyFormProps {
   retreatId: string;
@@ -17,9 +20,39 @@ interface CreateFamilyFormProps {
 
 const HEX_REGEX = /^#(?:[0-9a-fA-F]{3}){1,2}$/;
 
+// Nova função de fetch para o autocomplete
+// Ela assume que sua API /unassigned aceita um parâmetro de query 'q'
+const fetchUnassignedForAutocomplete = async (
+  retreatId: string,
+  query: string,
+  signal?: AbortSignal
+): Promise<ParticipantWithoutFamily[]> => {
+  const response = await apiClient.get<DrawFamiliesResponse>(
+    `/retreats/${retreatId}/families/unassigned`,
+    {
+      params: { q: query || undefined }, // Envia 'q' se houver query
+      signal,
+    }
+  );
+  return response.data?.items ?? [];
+};
+
+// Esquema Zod para validar o participante (usado no array)
+const participantSchema = z
+  .object({
+    registrationId: z.string(),
+    name: z.string(),
+    email: z.string().optional(),
+    gender: z.string().optional(),
+    city: z.string().optional(),
+  })
+  .passthrough(); // Permite outros campos
+
+// Esquema Zod atualizado para incluir 'members'
 const createFamilySchema = z.object({
   name: z.string().min(1, "Nome da família é obrigatório"),
   color: z.string().regex(HEX_REGEX, "Cor inválida"),
+  members: z.array(participantSchema).default([]), // Novo campo
 });
 
 type CreateFamilyData = z.infer<typeof createFamilySchema>;
@@ -36,20 +69,33 @@ export default function CreateFamilyForm({
     formState: { errors, isSubmitting },
     reset,
   } = useForm<CreateFamilyData>({
+    // @ts-ignore
     resolver: zodResolver(createFamilySchema),
     defaultValues: {
       name: "",
       color: "#1976d2",
+      members: [], // Valor padrão para o novo campo
     },
   });
+
+  // Criamos uma função de fetch "amarrada" ao retreatId
+  // para passar ao AsynchronousAutoComplete
+  const boundFetchOptions = useCallback(
+    (query: string, signal?: AbortSignal) => {
+      return fetchUnassignedForAutocomplete(retreatId, query, signal);
+    },
+    [retreatId]
+  );
 
   const onSubmit = async (data: CreateFamilyData) => {
     try {
       const body = {
         name: data.name,
-        memberIds: [],
+        color: data.color, // Adicionado (parecia faltar no seu original)
+        memberIds: data.members.map((p) => p.registrationId), // Mapeia os IDs
         ignoreWarnings: true,
       };
+
       const response = await apiClient.post(
         `/retreats/${retreatId}/create/families`,
         body
@@ -81,6 +127,7 @@ export default function CreateFamilyForm({
         width: "100%",
       }}
     >
+      {/* @ts-ignore */}
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 1 }}>
         <Stack spacing={3}>
           <Controller
@@ -115,6 +162,42 @@ export default function CreateFamilyForm({
                 placeholder="Ex: Família São Francisco"
                 error={!!errors.name}
                 helperText={errors.name?.message}
+              />
+            )}
+          />
+
+          {/* NOVO COMPONENTE AUTOCPLETE */}
+          <Controller
+            name="members"
+            control={control}
+            render={({ field }) => (
+              <AsynchronousAutoComplete<ParticipantWithoutFamily>
+                multiple
+                label={t("add-participants")}
+                placeholder={t("search-by-name-or-email")}
+                value={field.value ?? []} // Garante que o valor seja sempre um array
+                //@ts-ignore
+                onChange={(newValue) => {
+                  field.onChange(newValue ?? []); // Garante que o onChange envie um array
+                }}
+                fetchOptions={boundFetchOptions}
+                //@ts-ignore
+                getOptionLabel={(option) => option.name} // Pega o nome do participante
+                //@ts-ignore
+                isOptionEqualToValue={(opt, val) =>
+                  opt.registrationId === val.registrationId
+                }
+                //@ts-ignore
+                renderOption={(props, option) => (
+                  <li {...props} key={option.registrationId}>
+                    {option.name}
+                  </li>
+                )}
+                textFieldProps={{
+                  //@ts-ignore
+                  error: !!errors.members,
+                  helperText: (errors.members as any)?.message, // Helper para erros de array
+                }}
               />
             )}
           />
