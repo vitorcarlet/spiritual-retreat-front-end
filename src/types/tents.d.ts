@@ -8,14 +8,28 @@ interface TentParticipant {
   age?: number;
 }
 
-interface RetreatTent {
-  id: string;
-  retreatId: string;
+interface RetreatTentLite {
+  tentId: string;
   number: string;
+  category: string;
   capacity: number;
-  gender: "male" | "female" | "mixed";
-  notes?: string;
-  participants: TentParticipant[];
+  assignedCount
+  gender?: "male" | "female" | "mixed";
+  participants?: TentParticipant[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+
+interface RetreatTent {
+  tentId: string;
+  number: string;
+  category: string;
+  capacity: number;
+  assignedCount
+  gender?: "male" | "female" | "mixed";
+  notes: string;
+  participants?: TentParticipant[];
   createdAt?: string;
   updatedAt?: string;
 }

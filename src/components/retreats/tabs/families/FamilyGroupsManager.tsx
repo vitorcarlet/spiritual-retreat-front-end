@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
 import { useSnackbar } from "notistack";
+import { getApiUrl } from "@/src/lib/apiConfig";
 
 interface RetreatGroup {
   familyId: string;
@@ -96,7 +97,7 @@ export default function FamilyGroupsManager({
       const params = statusFilter ? { status: statusFilter } : undefined;
       const response = await apiClient.get<RetreatGroupListResponse>(
         `/admin/retreats/${retreatId}/groups`,
-        { params, baseURL: "http://localhost:5000" }
+        { params, baseURL: getApiUrl("admin") }
       );
       return response.data;
     },
@@ -111,7 +112,7 @@ export default function FamilyGroupsManager({
     queryFn: async () => {
       const response = await apiClient.get<GroupStatusSummary>(
         `/admin/retreats/${retreatId}/groups/status`,
-        { baseURL: "http://localhost:5000" }
+        { baseURL: getApiUrl("admin") }
       );
       return response.data;
     },
@@ -142,7 +143,7 @@ export default function FamilyGroupsManager({
   const handleRetryFailed = async () => {
     try {
       await apiClient.post(`/admin/retreats/${retreatId}/groups/retry-failed`, {
-        baseURL: "http://localhost:5000",
+        baseURL: getApiUrl("admin"),
       });
       enqueueSnackbar("Reenvio de grupos falhos enfileirado.", {
         variant: "info",

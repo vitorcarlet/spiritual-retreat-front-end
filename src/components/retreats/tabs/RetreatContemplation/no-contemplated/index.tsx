@@ -492,11 +492,11 @@ export default function NonContemplatedTable({ id }: { id: string }) {
         />
 
         {/* ✅ CORREÇÃO: Usar helper para contar */}
-        {selectedIds.length > 0 && (
+        {/* {selectedIds.length > 0 && (
           <Button variant="outlined" color="primary" onClick={handleBulkAction}>
             Contemplar em lote ({selectedIds.length})
           </Button>
-        )}
+        )} */}
         <Button
           variant="contained"
           color="primary"

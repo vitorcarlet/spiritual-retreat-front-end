@@ -22,29 +22,48 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { enqueueSnackbar } from "notistack";
+import axios from "axios";
 import Iconify from "@/src/components/Iconify";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 interface TentDetailsProps {
-  tent: RetreatTent;
+  tentId: string;
   retreatId: string;
   canEdit: boolean;
   startInEdit?: boolean;
   onClose?: () => void;
-  onUpdated?: (tent: RetreatTent) => void;
+  onUpdated?: (tent: RetreatTentDetails) => void;
+}
+
+interface RetreatTentDetails {
+  tentId: string;
+  retreatId: string;
+  number: string;
+  category: number;
+  capacity: number;
+  isActive: boolean;
+  isLocked: boolean;
+  notes?: string;
+  assignedCount: number;
+  gender?: "male" | "female";
+  participants?: Array<{
+    id: string;
+    name?: string;
+    email?: string;
+    city?: string;
+    phone?: string;
+  }>;
 }
 
 interface UpdateTentPayload {
-  gender: "male" | "female";
+  gender?: "male" | "female";
   capacity: number;
   notes?: string;
 }
 
 export default function TentDetails({
-  tent,
+  tentId,
   retreatId,
   canEdit,
   startInEdit = false,
@@ -52,42 +71,72 @@ export default function TentDetails({
   onUpdated,
 }: TentDetailsProps) {
   const t = useTranslations("tent-details");
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(startInEdit && canEdit);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [tentState, setTentState] = useState<RetreatTent>(tent);
+  const [tentState, setTentState] = useState<RetreatTentDetails | null>(null);
   const [formValues, setFormValues] = useState<UpdateTentPayload>({
-    gender: tent.gender === "female" ? "female" : "male",
-    capacity: tent.capacity,
-    notes: tent.notes ?? "",
+    gender: "male",
+    capacity: 0,
+    notes: "",
   });
 
+  // Fetch tent details on component mount
   useEffect(() => {
-    setTentState(tent);
-    setFormValues({
-      gender: tent.gender === "female" ? "female" : "male",
-      capacity: tent.capacity,
-      notes: tent.notes ?? "",
-    });
-    setIsEditing(startInEdit && canEdit);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-  }, [tent, startInEdit, canEdit]);
+    const fetchTentDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get<RetreatTentDetails>(
+          `/retreats/${retreatId}/tents/${tentId}`
+        );
+
+        const tent = response.data;
+        setTentState(tent);
+        setFormValues({
+          gender: tent.gender ?? "male",
+          capacity: tent.capacity,
+          notes: tent.notes ?? "",
+        });
+        setIsEditing(startInEdit && canEdit);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+      } catch (error) {
+        console.error("Error fetching tent details:", error);
+        const message = axios.isAxiosError(error)
+          ? ((error.response?.data as { error?: string })?.error ??
+            error.message)
+          : t("load-error");
+        setErrorMessage(message);
+        enqueueSnackbar(message, { variant: "error" });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTentDetails();
+  }, [tentId, retreatId, startInEdit, canEdit, t]);
 
   const handleToggleEdit = () => {
-    if (!canEdit) return;
+    if (!canEdit || !tentState) return;
     setIsEditing((prev) => !prev);
     setErrorMessage(null);
     setSuccessMessage(null);
-    setFormValues({
-      gender: tentState.gender === "female" ? "female" : "male",
-      capacity: tentState.capacity,
-      notes: tentState.notes ?? "",
-    });
+
+    if (isEditing) {
+      // Resetting form when canceling edit
+      setFormValues({
+        gender: tentState.gender ?? "male",
+        capacity: tentState.capacity,
+        notes: tentState.notes ?? "",
+      });
+    }
   };
 
   const handleSave = async () => {
+    if (!tentState) return;
+
     setIsSaving(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -99,38 +148,34 @@ export default function TentDetails({
         notes: formValues.notes?.trim() || undefined,
       };
 
-      const response = await handleApiResponse<RetreatTent>(
-        await sendRequestServerVanilla.put(
-          `/retreats/${retreatId}/tents/${tentState.id}`,
-          payload
-        )
+      const response = await apiClient.put<RetreatTentDetails>(
+        `/retreats/${retreatId}/tents/${tentId}`,
+        payload
       );
-
-      if (!response?.success || !response.data) {
-        throw new Error(response.error || t("update-error"));
-      }
 
       const updatedTent = response.data;
 
       setTentState(updatedTent);
       setFormValues({
-        gender: updatedTent.gender === "female" ? "female" : "male",
+        gender: updatedTent.gender ?? "male",
         capacity: updatedTent.capacity,
         notes: updatedTent.notes ?? "",
       });
       setSuccessMessage(t("update-success"));
       setIsEditing(false);
       onUpdated?.(updatedTent);
+
+      enqueueSnackbar(t("update-success"), { variant: "success" });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : t("update-error");
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : t("update-error");
       setErrorMessage(message);
+      enqueueSnackbar(message, { variant: "error" });
     } finally {
       setIsSaving(false);
     }
   };
-
-  const participants = tentState.participants ?? [];
 
   const initialsFromName = (name?: string | null) => {
     if (!name) return "?";
@@ -145,6 +190,32 @@ export default function TentDetails({
 
     return initials || "?";
   };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          width: "100%",
+          minHeight: 300,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!tentState) {
+    return (
+      <Box sx={{ width: "100%", minHeight: 300 }}>
+        <Alert severity="error">{t("load-error")}</Alert>
+      </Box>
+    );
+  }
+
+  const participants = tentState.participants ?? [];
 
   return (
     <Box sx={{ width: "100%", minHeight: 300 }}>
@@ -239,6 +310,24 @@ export default function TentDetails({
                   value={tentState.notes || t("no-notes")}
                 />
               )}
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <InfoRow
+                label={t("assigned-count-label", {
+                  defaultMessage: "Assigned",
+                })}
+                value={String(tentState.assignedCount)}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <InfoRow
+                label={t("active-label", { defaultMessage: "Status" })}
+                value={
+                  tentState.isActive
+                    ? t("active", { defaultMessage: "Active" })
+                    : t("inactive", { defaultMessage: "Inactive" })
+                }
+              />
             </Grid>
           </Grid>
         </Box>

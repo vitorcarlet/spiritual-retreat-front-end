@@ -20,6 +20,7 @@ import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
 import OutboxSummaryCards from "./OutboxSummaryCards";
 import OutboxDetailView from "./OutboxDetail";
 import { OutboxListResponse, OutboxMessage, OutboxSummary } from "./types";
+import { getApiUrl } from "@/src/lib/apiConfig";
 
 type TableFilters = {
   page: number;
@@ -97,7 +98,7 @@ export default function RetreatOutboxTab() {
     queryFn: async () => {
       const response = await apiClient.get<OutboxSummary>(
         "/admin/outbox/summary",
-        { baseURL: "http://localhost:5000" }
+        { baseURL: getApiUrl("admin") }
       );
       return response.data;
     },
@@ -139,7 +140,7 @@ export default function RetreatOutboxTab() {
 
         const response = await apiClient.get<
           OutboxListResponse | OutboxMessage[]
-        >("/admin/outbox", { params, baseURL: "http://localhost:5000" });
+        >("/admin/outbox", { params, baseURL: getApiUrl("admin") });
         const data = response.data;
 
         if (Array.isArray(data)) {

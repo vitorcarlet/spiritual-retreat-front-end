@@ -52,3 +52,13 @@ export type Items = Record<string, UniqueIdentifier[]>;
 export type MembersById = Record<UniqueIdentifier, ServiceSpaceMember>;
 
 export type MemberToContainer = Record<UniqueIdentifier, string>;
+
+export type ServantUnassigned = {
+  registrationId: string;
+  name: string;
+  city: string;
+  email: string;
+  cpf: string;
+  referredSpaceId: string;
+  preferredSpaceName: string;
+};

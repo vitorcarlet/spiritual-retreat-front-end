@@ -24,7 +24,7 @@ export interface RetreatTentsTableProps {
   }): React.CSSProperties;
   wrapperStyle?(args: { index: number }): React.CSSProperties;
   itemCount?: number;
-  items?: RetreatTent[];
+  items?: RetreatTentLite[];
   handle?: boolean;
   renderItem?: unknown;
   strategy?: SortingStrategy;

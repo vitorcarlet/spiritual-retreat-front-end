@@ -300,7 +300,7 @@ export const SendMessage: React.FC<SendMessageProps> = ({
 
       if (mode === "all") {
         await apiClient.post(
-          `/admin/notifications/retreats/${retreatId}/notify-selected`,
+          `/admin/notifications/service/retreats/${retreatId}/notify-selected`,
           {},
           { baseURL: getApiUrl("admin") }
           // payload
@@ -308,7 +308,7 @@ export const SendMessage: React.FC<SendMessageProps> = ({
       } else {
         const registrationId = allSelectedIds[0];
         await apiClient.post(
-          `/admin/notifications/registrations/${registrationId}/notify`,
+          `/admin/notifications/service/registrations/${registrationId}/notify`,
           {},
           { baseURL: getApiUrl("admin") }
         );

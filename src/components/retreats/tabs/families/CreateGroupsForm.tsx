@@ -26,6 +26,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
 import apiClient from "@/src/lib/axiosClientInstance";
+import { getApiUrl } from "@/src/lib/apiConfig";
 
 interface RetreatFamily {
   familyId: string;
@@ -56,7 +57,7 @@ interface CreateGroupsFormProps {
 const fetchFamilies = async (retreatId: string): Promise<RetreatFamily[]> => {
   const response = await apiClient.get<{ items: RetreatFamily[] }>(
     `/admin/retreats/${retreatId}/groups`,
-    { baseURL: "http://localhost:5000" }
+    { baseURL: getApiUrl("admin") }
   );
   return response.data?.items ?? [];
 };
@@ -73,7 +74,7 @@ const createGroups = async (
       forceRecreate,
       dryRun,
     },
-    { baseURL: "http://localhost:5000" }
+    { baseURL: getApiUrl("admin") }
   );
   return response.data;
 };
@@ -90,7 +91,7 @@ const notifyFamily = async (
       familyId,
       forceRecreate: forceRecreate ?? false,
     },
-    { baseURL: "http://localhost:5000" }
+    { baseURL: getApiUrl("admin") }
   );
 };
 

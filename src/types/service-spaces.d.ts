@@ -8,7 +8,8 @@ interface ServiceSpaceMember {
 }
 
 interface ServiceSpace {
-  id: string;
+  spaceId: string;
+  isLocked: boolean;
   retreatId: string;
   name: string;
   description: string;

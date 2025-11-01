@@ -21,6 +21,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 interface ResetFamiliesModalProps {
   retreatId: string;
   families: RetreatFamily[];
+  familiesLocked: boolean | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -34,6 +35,7 @@ interface ResetFamiliesResponse {
 export default function ResetFamiliesModal({
   retreatId,
   families,
+  familiesLocked,
   onSuccess,
   onCancel,
 }: ResetFamiliesModalProps) {
@@ -45,7 +47,7 @@ export default function ResetFamiliesModal({
 
   // Check if there are locked families
   const lockedFamilies = families.filter((family) => family.locked);
-  const hasLockedFamilies = lockedFamilies.length > 0;
+  const hasLockedFamilies = familiesLocked || lockedFamilies.length > 0;
 
   const handleReset = async () => {
     // Validate confirmations

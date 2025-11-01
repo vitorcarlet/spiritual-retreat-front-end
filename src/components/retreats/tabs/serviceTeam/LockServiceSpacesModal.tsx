@@ -35,7 +35,7 @@ interface ServiceSpaceLockStatusEntry {
   serviceSpaceId?: string;
   spaceId?: string;
   name?: string;
-  locked: boolean;
+  isLocked: boolean;
 }
 
 interface ServiceSpacesLockStatus {
@@ -57,19 +57,30 @@ const buildServiceSpaceLocks = (
     entries.forEach((entry) => {
       const key = entry.serviceSpaceId ?? entry.spaceId ?? entry.id;
       if (key) {
-        locks[String(key)] = Boolean(entry.locked);
+        // Verifica ambas as chaves: isLocked e locked
+        locks[String(key)] = Boolean(entry.isLocked);
       }
     });
   }
 
   serviceSpaces.forEach((space) => {
-    const key = String(space.id);
+    const key = String(space.spaceId);
     if (!(key in locks)) {
       locks[key] = false;
     }
   });
 
   return locks;
+};
+
+const areAllServiceSpacesLocked = (
+  serviceSpaceLocks: Record<string, boolean>,
+  serviceSpaces: ServiceSpace[]
+): boolean => {
+  return serviceSpaces.every((space) => {
+    const key = String(space.spaceId);
+    return serviceSpaceLocks[key] === true;
+  });
 };
 
 export default function LockServiceSpacesModal({
@@ -92,6 +103,11 @@ export default function LockServiceSpacesModal({
     [serviceSpaceLocks]
   );
 
+  const allSpacesLocked = useMemo(
+    () => areAllServiceSpacesLocked(serviceSpaceLocks, serviceSpaces),
+    [serviceSpaceLocks, serviceSpaces]
+  );
+
   useEffect(() => {
     const fetchLockStatus = async () => {
       try {
@@ -100,8 +116,15 @@ export default function LockServiceSpacesModal({
           `/retreats/${retreatId}/service/spaces/lock`
         );
 
-        setGlobalLock(Boolean(data.locked));
-        setServiceSpaceLocks(buildServiceSpaceLocks(data, serviceSpaces));
+        // Determina o estado do lock global verificando se todos estão bloqueados
+        const locks = buildServiceSpaceLocks(data, serviceSpaces);
+        const isGloballyLocked = areAllServiceSpacesLocked(
+          locks,
+          serviceSpaces
+        );
+
+        setGlobalLock(isGloballyLocked);
+        setServiceSpaceLocks(locks);
       } catch (error) {
         const message = axios.isAxiosError(error)
           ? ((error.response?.data as { error?: string })?.error ??
@@ -130,15 +153,11 @@ export default function LockServiceSpacesModal({
       );
 
       setGlobalLock(Boolean(data.locked));
-      const locks = buildServiceSpaceLocks(data, serviceSpaces);
-      if (nextState) {
-        const allLocked = Object.fromEntries(
-          serviceSpaces.map((space) => [String(space.id), true])
-        );
-        setServiceSpaceLocks(allLocked);
-      } else {
-        setServiceSpaceLocks(locks);
-      }
+      const newLocks = Object.fromEntries(
+        serviceSpaces.map((space) => [String(space.spaceId), nextState])
+      );
+      setServiceSpaceLocks(newLocks);
+      setGlobalLock(nextState);
 
       enqueueSnackbar(
         nextState
@@ -184,11 +203,11 @@ export default function LockServiceSpacesModal({
 
       setServiceSpaceLocks((prev) => ({
         ...prev,
-        [serviceSpaceId]: Boolean(data.locked),
+        [serviceSpaceId]: Boolean(nextState),
       }));
 
       const space = serviceSpaces.find(
-        (item) => String(item.id) === serviceSpaceId
+        (item) => String(item.spaceId) === serviceSpaceId
       );
 
       enqueueSnackbar(
@@ -310,7 +329,7 @@ export default function LockServiceSpacesModal({
 
           <List sx={{ maxHeight: 400, overflow: "auto" }}>
             {serviceSpaces.map((space) => {
-              const serviceSpaceId = String(space.id);
+              const serviceSpaceId = String(space.spaceId);
               const isLocked = Boolean(serviceSpaceLocks[serviceSpaceId]);
 
               return (

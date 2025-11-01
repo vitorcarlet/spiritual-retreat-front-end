@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Stack,
@@ -24,32 +24,84 @@ import axios from "axios";
 interface LockFamiliesModalProps {
   retreatId: string;
   families: RetreatFamily[];
+  familiesLocked?: boolean;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
 interface FamilyLockStatus {
   familyId: string;
-  familyName: string;
-  locked: boolean;
+  familyName?: string;
+  name?: string;
+  locked?: boolean;
+  isLocked?: boolean;
 }
 
 interface RetreatLockStatus {
-  version: number;
-  locked: boolean;
+  version?: number;
+  locked?: boolean;
+  isLocked?: boolean;
   families?: FamilyLockStatus[];
 }
+
+// Helper para construir o mapa de locks das famílias
+const buildFamilyLocks = (
+  payload: RetreatLockStatus | null | undefined,
+  families: RetreatFamily[]
+): Record<string, boolean> => {
+  const locks: Record<string, boolean> = {};
+
+  if (payload?.families && Array.isArray(payload.families)) {
+    payload.families.forEach((family) => {
+      const key = String(family.familyId);
+      locks[key] = Boolean(family.locked ?? family.isLocked);
+    });
+  }
+
+  // Inicializa famílias não encontradas como desbloqueadas
+  families.forEach((family) => {
+    const key = String(family.familyId);
+    if (!(key in locks)) {
+      locks[key] = false;
+    }
+  });
+
+  return locks;
+};
+
+// Helper para verificar se todas as famílias estão bloqueadas
+const areAllFamiliesLocked = (
+  familyLocks: Record<string, boolean>,
+  families: RetreatFamily[]
+): boolean => {
+  return families.every((family) => {
+    const key = String(family.familyId);
+    return familyLocks[key] === true;
+  });
+};
 
 export default function LockFamiliesModal({
   retreatId,
   families,
+  familiesLocked,
   onSuccess,
   onCancel,
 }: LockFamiliesModalProps) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [globalLock, setGlobalLock] = useState(false);
   const [familyLocks, setFamilyLocks] = useState<Record<string, boolean>>({});
+
+  const totalCount = families.length;
+  const lockedCount = useMemo(
+    () => Object.values(familyLocks).filter(Boolean).length,
+    [familyLocks]
+  );
+
+  // Verifica se todas as famílias estão bloqueadas
+  const allFamiliesLocked = useMemo(
+    () => areAllFamiliesLocked(familyLocks, families),
+    [familyLocks, families]
+  );
 
   // Fetch current lock status
   useEffect(() => {
@@ -60,20 +112,8 @@ export default function LockFamiliesModal({
           `/retreats/${retreatId}/families/lock`
         );
 
-        setGlobalLock(response.data.locked);
-
-        // Initialize family locks from response or from families prop
-        const locks: Record<string, boolean> = {};
-        if (response.data.families) {
-          response.data.families.forEach((family) => {
-            locks[family.familyId] = family.locked;
-          });
-        } else {
-          // Initialize all families as unlocked
-          families.forEach((family) => {
-            locks[String(family.id)] = false;
-          });
-        }
+        // Constrói o mapa de locks baseado na resposta
+        const locks = buildFamilyLocks(response.data, families);
         setFamilyLocks(locks);
       } catch (error) {
         console.error("Error fetching lock status:", error);
@@ -85,12 +125,8 @@ export default function LockFamiliesModal({
           variant: "error",
         });
 
-        // Initialize with unlocked state on error
-        const locks: Record<string, boolean> = {};
-        families.forEach((family) => {
-          locks[String(family.id)] = false;
-        });
-        setFamilyLocks(locks);
+        // Inicializa com todas desbloqueadas em caso de erro
+        setFamilyLocks(buildFamilyLocks(undefined, families));
       } finally {
         setLoading(false);
       }
@@ -102,26 +138,22 @@ export default function LockFamiliesModal({
   const handleGlobalLockToggle = async () => {
     setSubmitting(true);
     try {
-      const newLockState = !globalLock;
+      const nextState = !allFamiliesLocked;
 
-      const response = await apiClient.post<RetreatLockStatus>(
+      // Usa a rota de lock global das famílias
+      const { data } = await apiClient.post<RetreatLockStatus>(
         `/retreats/${retreatId}/families/lock`,
-        { lock: newLockState }
+        { lock: nextState }
       );
 
-      setGlobalLock(response.data.locked);
-
-      // If locking globally, lock all families
-      if (response.data.locked) {
-        const allLocked: Record<string, boolean> = {};
-        families.forEach((family) => {
-          allLocked[String(family.id)] = true;
-        });
-        setFamilyLocks(allLocked);
-      }
+      // Atualiza o estado local com base no novo estado
+      const newLocks = Object.fromEntries(
+        families.map((family) => [String(family.familyId), nextState])
+      );
+      setFamilyLocks(newLocks);
 
       enqueueSnackbar(
-        newLockState
+        nextState
           ? "Todas as famílias foram bloqueadas"
           : "Todas as famílias foram desbloqueadas",
         { variant: "success" }
@@ -130,17 +162,15 @@ export default function LockFamiliesModal({
       const message = axios.isAxiosError(error)
         ? ((error.response?.data as { error?: string })?.error ?? error.message)
         : "Erro ao alterar bloqueio global.";
-      enqueueSnackbar(message, {
-        variant: "error",
-      });
+      enqueueSnackbar(message, { variant: "error" });
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleFamilyLockToggle = async (familyId: string) => {
-    // Don't allow individual lock changes if global lock is enabled
-    if (globalLock) {
+    // Não permite alterar bloqueios individuais se o global está ativo
+    if (allFamiliesLocked) {
       enqueueSnackbar(
         "Desative o bloqueio global para alterar famílias individuais",
         { variant: "warning" }
@@ -149,24 +179,33 @@ export default function LockFamiliesModal({
     }
 
     setSubmitting(true);
-    try {
-      const newLockState = !familyLocks[familyId];
+    const nextState = !familyLocks[familyId];
 
-      const response = await apiClient.post<{
-        version: number;
-        locked: boolean;
-      }>(`/retreats/${retreatId}/families/${familyId}/lock`, {
-        lock: newLockState,
+    try {
+      await apiClient.post(`/retreats/${retreatId}/families/${familyId}/lock`, {
+        lock: nextState,
       });
 
       setFamilyLocks((prev) => ({
         ...prev,
-        [familyId]: response.data.locked,
+        [familyId]: nextState,
       }));
 
-      const family = families.find((f) => String(f.id) === familyId);
+      // Verifica se todas agora estão bloqueadas (para atualizar o global)
+      const updatedLocks = {
+        ...familyLocks,
+        [familyId]: nextState,
+      };
+      const allNowLocked = areAllFamiliesLocked(updatedLocks, families);
+
+      // Se todas estão bloqueadas, atualiza o estado visual
+      if (allNowLocked) {
+        // Pode fazer uma chamada à API para sincronizar o estado global se necessário
+      }
+
+      const family = families.find((f) => String(f.familyId) === familyId);
       enqueueSnackbar(
-        `Família "${family?.name || familyId}" ${newLockState ? "bloqueada" : "desbloqueada"}`,
+        `Família "${family?.name || familyId}" ${nextState ? "bloqueada" : "desbloqueada"}`,
         { variant: "success" }
       );
     } catch (error) {
@@ -193,9 +232,6 @@ export default function LockFamiliesModal({
     );
   }
 
-  const lockedCount = Object.values(familyLocks).filter(Boolean).length;
-  const totalCount = families.length;
-
   return (
     <Box sx={{ p: 2, minWidth: 500 }}>
       <Stack spacing={3}>
@@ -212,7 +248,7 @@ export default function LockFamiliesModal({
             justifyContent="space-between"
             sx={{
               p: 2,
-              bgcolor: globalLock ? "error.lighter" : "background.paper",
+              bgcolor: allFamiliesLocked ? "error.lighter" : "background.paper",
               borderRadius: 1,
             }}
           >
@@ -221,7 +257,7 @@ export default function LockFamiliesModal({
                 Bloqueio Global
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {globalLock
+                {allFamiliesLocked
                   ? "Todas as famílias estão bloqueadas para edição"
                   : "Bloquear todas as famílias de uma vez"}
               </Typography>
@@ -229,13 +265,13 @@ export default function LockFamiliesModal({
             <FormControlLabel
               control={
                 <Switch
-                  checked={globalLock}
+                  checked={allFamiliesLocked}
                   onChange={handleGlobalLockToggle}
                   disabled={submitting}
-                  color={globalLock ? "error" : "primary"}
+                  color={allFamiliesLocked ? "error" : "primary"}
                 />
               }
-              label={globalLock ? "Bloqueado" : "Desbloqueado"}
+              label={allFamiliesLocked ? "Bloqueado" : "Desbloqueado"}
             />
           </Stack>
         </Box>
@@ -258,7 +294,7 @@ export default function LockFamiliesModal({
             />
           </Stack>
 
-          {globalLock && (
+          {allFamiliesLocked && (
             <Alert severity="warning" sx={{ mb: 2 }}>
               O bloqueio global está ativo. Desative-o para gerenciar famílias
               individualmente.
@@ -267,7 +303,7 @@ export default function LockFamiliesModal({
 
           <List sx={{ maxHeight: 400, overflow: "auto" }}>
             {families.map((family) => {
-              const familyId = String(family.id);
+              const familyId = String(family.familyId);
               const isLocked = familyLocks[familyId];
 
               return (
@@ -288,7 +324,7 @@ export default function LockFamiliesModal({
                       edge="end"
                       checked={isLocked}
                       onChange={() => handleFamilyLockToggle(familyId)}
-                      disabled={submitting || globalLock}
+                      disabled={submitting || allFamiliesLocked}
                       color={isLocked ? "error" : "primary"}
                     />
                   </ListItemSecondaryAction>

@@ -459,7 +459,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
         />
 
         {/* ✅ CORREÇÃO: Usar helper para contar */}
-        {getSelectedIds().length === 1 && (
+        {/* {getSelectedIds().length === 1 && (
           <Button
             variant="outlined"
             color="primary"
@@ -467,7 +467,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
           >
             Enviar mensagem para o contemplado selecionado
           </Button>
-        )}
+        )} */}
         <Button
           variant="outlined"
           color="primary"

@@ -31,6 +31,7 @@ import {
 } from "../../types";
 import AddParticipantToServiceTeamForm from "./AddParticipantToServiceTeamForm";
 import LockServiceSpacesModal from "./LockServiceSpacesModal";
+import ConfigureServiceSpace from "./ConfigureServiceSpace";
 
 interface ServiceSpacesResponse {
   rows: ServiceSpace[] | ServiceSpace;
@@ -49,7 +50,7 @@ const transformApiServiceSpace = (
   retreatId: string
 ): ServiceSpace => {
   return {
-    id: apiSpace.spaceId,
+    spaceId: apiSpace.spaceId,
     retreatId,
     name: apiSpace.name,
     description: apiSpace.description || "",
@@ -62,6 +63,7 @@ const transformApiServiceSpace = (
     members: [],
     createdAt: undefined,
     updatedAt: undefined,
+    isLocked: apiSpace.isLocked,
   };
 };
 
@@ -170,7 +172,7 @@ export default function RetreatServiceTeam({
 
   const openServiceSpaceDetails = useCallback(
     (spaceId: string, startInEdit = false) => {
-      const space = serviceSpaces.find((item) => item.id === spaceId);
+      const space = serviceSpaces.find((item) => item.spaceId === spaceId);
 
       if (!space) {
         return;
@@ -201,7 +203,9 @@ export default function RetreatServiceTeam({
                     return {
                       ...previous,
                       rows: previous.rows.map((row) =>
-                        row.id === updatedSpace.id ? updatedSpace : row
+                        row.spaceId === updatedSpace.spaceId
+                          ? updatedSpace
+                          : row
                       ),
                     };
                   }
@@ -230,7 +234,7 @@ export default function RetreatServiceTeam({
   const handleSaveReorder = useCallback(
     async (items: Items) => {
       const serviceSpacesById = new Map(
-        serviceSpaces.map((space) => [String(space.id), space])
+        serviceSpaces.map((space) => [String(space.spaceId), space])
       );
 
       const membersIndex = new Map<string, ServiceSpaceMember>();
@@ -285,6 +289,12 @@ export default function RetreatServiceTeam({
     [queryClient, retreatId, serviceSpaces, setSpacesReorderFlag]
   );
 
+  const invalidateServiceSpacesQuery = () => {
+    queryClient.invalidateQueries({
+      queryKey: ["retreat-service-spaces"],
+    });
+  };
+
   const handleView = useCallback(
     (spaceId: UniqueIdentifier) => {
       openServiceSpaceDetails(String(spaceId), false);
@@ -326,7 +336,7 @@ export default function RetreatServiceTeam({
 
             return {
               ...previous,
-              rows: previous.rows.filter((row) => row.id !== spaceKey),
+              rows: previous.rows.filter((row) => row.spaceId !== spaceKey),
               total: Math.max(0, (previous.total || 0) - 1),
             };
           }
@@ -422,6 +432,24 @@ export default function RetreatServiceTeam({
     [filters, updateFilters]
   );
 
+  const handleOpenConfigure = useCallback(() => {
+    modal.open({
+      title: t("family-configuration"),
+      size: "md",
+      customRender() {
+        return (
+          <ConfigureServiceSpace
+            retreatId={retreatId}
+            onSuccess={() => {
+              modal.close?.();
+              invalidateServiceSpacesQuery();
+            }}
+          />
+        );
+      },
+    });
+  }, [modal, t, retreatId, invalidateServiceSpacesQuery]);
+
   if (isLoading && !serviceSpacesResponse) {
     return (
       <Typography>
@@ -470,12 +498,19 @@ export default function RetreatServiceTeam({
             >
               {tDetails("create-new-team")}
             </Button>
-            <Button
+            {/* <Button
               variant="contained"
               onClick={handleAddNewParticipant}
               disabled={isFetching || spacesReorderFlag}
             >
               {tDetails("add-new-participant")}
+            </Button> */}
+            <Button
+              variant="contained"
+              onClick={handleOpenConfigure}
+              disabled={spacesReorderFlag}
+            >
+              {t("family-config")}
             </Button>
             <Button
               variant="contained"

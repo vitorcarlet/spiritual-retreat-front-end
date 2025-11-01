@@ -512,20 +512,20 @@
       "coordinator": "Coordenador",
       "viceCoordinator": "Vice-coordenador"
     },
-    "addParticipant": {
-      "formTitle": "Adicionar participantes a uma equipe de serviço",
+    "addServant": {
+      "formTitle": "Adicionar servidores a uma equipe de serviço",
       "selectServiceSpace": "Selecionar equipe de serviço",
       "currentTeamSize": "Membros atuais: {count}",
       "memberRole": "Função do participante",
-      "selectParticipants": "Selecionar participantes",
-      "loadingParticipants": "Carregando participantes",
-      "searchPlaceholder": "Buscar participantes",
-      "helperText": "Você pode selecionar vários participantes para adicionar",
+      "selectParticipants": "Selecionar servidores",
+      "loadingParticipants": "Carregando servidores",
+      "searchPlaceholder": "Buscar servidores",
+      "helperText": "Você pode selecionar vários servidores para adicionar",
       "noParticipants": "Nenhum participante disponível",
       "minMembersWarning": "Esta equipe ainda precisa de pelo menos {remaining} membro(s) para atingir o mínimo",
       "maxMembersWarning": "Esta equipe atingiu a capacidade máxima",
       "selectTeamHint": "Selecione uma equipe para ver os integrantes atuais e limites",
-      "submit": "Adicionar participantes",
+      "submit": "Adicionar servidores",
       "submitting": "Adicionando..."
     }
   },

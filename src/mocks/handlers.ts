@@ -306,14 +306,7 @@ export const handlers = [
     }
   ),
 
-  http.get(
-    "http://localhost:5000/api/retreats/:id/tents",
-    ({ request /*, params */ }) => {
-      const url = new URL(request.url);
-      const payload = paginate(mockTents, url);
-      return HttpResponse.json(payload, { status: 200 });
-    }
-  ),
+ 
 
   
   // Update family by ID

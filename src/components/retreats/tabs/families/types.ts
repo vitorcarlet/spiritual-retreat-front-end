@@ -7,6 +7,24 @@ import {
 import { SortingStrategy } from "@dnd-kit/sortable";
 import { RetreatsCardTableFilters } from "../../types";
 
+export interface RetreatFamilyRequest {
+  families: RetreatFamily[];
+  version: number;
+  familiesLocked: boolean;
+}
+
+export interface FamiliesModalAction {
+  type:
+    | "create"
+    | "message"
+    | "addParticipant"
+    | "configure"
+    | "draw"
+    | "lock"
+    | "reset";
+  familyId?: string;
+}
+
 export interface RetreatFamiliesProps {
   adjustScale?: boolean;
   cancelDrop?: CancelDrop;

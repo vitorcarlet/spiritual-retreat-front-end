@@ -16,6 +16,7 @@ import axios from "axios";
 import { useSnackbar } from "notistack";
 import { OutboxDetail } from "./types";
 import { useTranslations } from "next-intl";
+import { getApiUrl } from "@/src/lib/apiConfig";
 
 interface OutboxDetailProps {
   outboxId: string;
@@ -59,7 +60,7 @@ export function OutboxDetailView({
     queryFn: async () => {
       const response = await apiClient.get<OutboxDetail>(
         `/admin/outbox/${outboxId}`,
-        { baseURL: "http://localhost:5000" }
+        { baseURL: getApiUrl("admin") }
       );
       return response.data;
     },
@@ -69,7 +70,7 @@ export function OutboxDetailView({
   const requeueMutation = useMutation({
     mutationFn: async () => {
       await apiClient.post(`/admin/outbox/${outboxId}/requeue`, {
-        baseURL: "http://localhost:5000",
+        baseURL: getApiUrl("admin"),
       });
     },
     onSuccess: async () => {
