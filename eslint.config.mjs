@@ -20,7 +20,7 @@ export default defineConfig([
       "react/jsx-uses-vars": "error",
       "@typescript-eslint/no-explicit-any": "warn",
       "react/react-in-jsx-scope": "off",
-      "@typescript-eslint/ban-ts-comment": "warning",
+      "@typescript-eslint/ban-ts-comment": "warn",
     },
   },
 ]);

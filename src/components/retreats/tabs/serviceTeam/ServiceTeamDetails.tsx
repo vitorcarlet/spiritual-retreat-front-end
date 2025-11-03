@@ -11,49 +11,102 @@ import {
   CircularProgress,
   Chip,
   Divider,
+  IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useTranslations } from "next-intl";
+import { enqueueSnackbar } from "notistack";
+import axios from "axios";
 import Iconify from "@/src/components/Iconify";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import type { RequestResponse } from "@/src/lib/requestServer";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 interface ServiceTeamDetailsProps {
-  space: ServiceSpace;
+  spaceId: string;
   retreatId: string;
   canEdit: boolean;
   startInEdit?: boolean;
   onClose?: () => void;
-  onUpdated?: (space: ServiceSpace) => void;
+  onUpdated?: (space: ServiceSpaceDetail) => void;
 }
 
-interface UpdateServiceSpacePayload {
-  name?: string;
-  description?: string;
-  minMembers?: number;
-  coordinator?: ServiceSpaceMember | null;
-  viceCoordinator?: ServiceSpaceMember | null;
+interface ServiceSpaceDetail {
+  version: number;
+  space: {
+    spaceId: string;
+    name: string;
+    description: string | null;
+    isActive: boolean;
+    isLocked: boolean;
+    minPeople: number;
+    maxPeople: number;
+    hasCoordinator: boolean;
+    hasVice: boolean;
+    allocated: number;
+  };
+  totalMembers: number;
+  page: number;
+  pageSize: number;
+  members: Array<{
+    registrationId: string;
+    name: string;
+    email: string;
+    cpf: string;
+    role: "Coordinator" | "Vice" | "Member";
+  }>;
 }
 
 interface ServiceSpaceFormState {
   name: string;
   description: string;
-  minMembers: string;
+  minPeople: number;
+  maxPeople: number;
   coordinatorId: string | null;
   viceCoordinatorId: string | null;
+  memberIds: string[]; // IDs dos membros a manter
 }
 
+interface ServiceRosterMember {
+  registrationId: string;
+  name: string;
+  role: number;
+  position: number;
+  city?: string;
+}
+
+interface ServiceRosterPayload {
+  version: number;
+  spaces: Array<{
+    spaceId: string;
+    name: string;
+    description: string | null;
+    minPeople: number;
+    maxPeople: number;
+    isLocked: boolean;
+    isActive: boolean;
+    members: ServiceRosterMember[];
+  }>;
+}
+
+const roleStringToNumber = (role: string): number => {
+  switch (role.toLowerCase()) {
+    case "coordinator":
+      return 1;
+    case "vice":
+      return 2;
+    default:
+      return 0;
+  }
+};
+
 export default function ServiceTeamDetails({
-  space,
+  spaceId,
   retreatId,
   canEdit,
   startInEdit = false,
@@ -61,151 +114,301 @@ export default function ServiceTeamDetails({
   onUpdated,
 }: ServiceTeamDetailsProps) {
   const t = useTranslations("service-team-details");
-  const [isEditing, setIsEditing] = useState(startInEdit && canEdit);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [spaceState, setSpaceState] = useState<ServiceSpace>(space);
-  const [formValues, setFormValues] = useState<ServiceSpaceFormState>(() => ({
-    name: space.name,
-    description: space.description ?? "",
-    minMembers: String(space.minMembers ?? 1),
-    coordinatorId: space.coordinator?.id ?? null,
-    viceCoordinatorId: space.viceCoordinator?.id ?? null,
-  }));
+  const [spaceState, setSpaceState] = useState<ServiceSpaceDetail | null>(null);
+  const [formValues, setFormValues] = useState<ServiceSpaceFormState>({
+    name: "",
+    description: "",
+    minPeople: 0,
+    maxPeople: 0,
+    coordinatorId: null,
+    viceCoordinatorId: null,
+    memberIds: [],
+  });
 
+  // Fetch space details on mount
   useEffect(() => {
-    setSpaceState(space);
-    setFormValues({
-      name: space.name,
-      description: space.description ?? "",
-      minMembers: String(space.minMembers ?? 1),
-      coordinatorId: space.coordinator?.id ?? null,
-      viceCoordinatorId: space.viceCoordinator?.id ?? null,
-    });
-    setIsEditing(startInEdit && canEdit);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-  }, [space, startInEdit, canEdit]);
+    const fetchSpaceDetails = async () => {
+      try {
+        setIsLoading(true);
+        setErrorMessage(null);
 
-  const members = useMemo(() => spaceState.members ?? [], [spaceState.members]);
-  const membersById = useMemo(() => {
-    const map = new Map<string, ServiceSpaceMember>();
-    members.forEach((member) => map.set(member.id, member));
-    return map;
-  }, [members]);
+        const response = await apiClient.get<ServiceSpaceDetail>(
+          `/retreats/${retreatId}/service/spaces/${spaceId}`
+        );
+
+        const space = response.data;
+        setSpaceState(space);
+
+        // Inicializar form com dados da API
+        const coordinator = space.members.find((m) => m.role === "Coordinator");
+        const viceCoordinator = space.members.find((m) => m.role === "Vice");
+
+        setFormValues({
+          name: space.space.name,
+          description: space.space.description ?? "",
+          minPeople: space.space.minPeople ?? 0,
+          maxPeople: space.space.maxPeople ?? 0,
+          coordinatorId: coordinator?.registrationId ?? null,
+          viceCoordinatorId: viceCoordinator?.registrationId ?? null,
+          memberIds: space.members.map((m) => m.registrationId),
+        });
+
+        setIsEditing(startInEdit && canEdit);
+      } catch (error) {
+        const message = axios.isAxiosError(error)
+          ? ((error.response?.data as { error?: string })?.error ??
+            error.message)
+          : error instanceof Error
+            ? error.message
+            : t("errors.load", {
+                defaultMessage: "Erro ao carregar equipe de serviço",
+              });
+
+        setErrorMessage(message);
+        enqueueSnackbar(message, { variant: "error" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSpaceDetails();
+  }, [spaceId, retreatId, startInEdit, canEdit, t]);
+
+  const members = useMemo(
+    () => spaceState?.members ?? [],
+    [spaceState?.members]
+  );
+
+  // Filtrar membros baseado no state de memberIds
+  const activeMembers = useMemo(
+    () =>
+      members.filter((m) => formValues.memberIds.includes(m.registrationId)),
+    [members, formValues.memberIds]
+  );
 
   const coordinatorName = useMemo(() => {
+    const coordinator = activeMembers.find((m) => m.role === "Coordinator");
     return (
-      spaceState.coordinator?.name ??
-      t("coordinator.unassigned", { defaultMessage: "Not assigned" })
+      coordinator?.name ??
+      t("coordinator.unassigned", { defaultMessage: "Não atribuído" })
     );
-  }, [spaceState.coordinator, t]);
+  }, [activeMembers, t]);
 
   const viceCoordinatorName = useMemo(() => {
+    const viceCoordinator = activeMembers.find((m) => m.role === "Vice");
     return (
-      spaceState.viceCoordinator?.name ??
-      t("viceCoordinator.unassigned", { defaultMessage: "Not assigned" })
+      viceCoordinator?.name ??
+      t("viceCoordinator.unassigned", { defaultMessage: "Não atribuído" })
     );
-  }, [spaceState.viceCoordinator, t]);
+  }, [activeMembers, t]);
 
   const handleToggleEdit = () => {
-    if (!canEdit) return;
+    if (!canEdit || !spaceState) return;
     setIsEditing((prev) => !prev);
     setErrorMessage(null);
     setSuccessMessage(null);
-    setFormValues({
-      name: spaceState.name,
-      description: spaceState.description ?? "",
-      minMembers: String(spaceState.minMembers ?? 1),
-      coordinatorId: spaceState.coordinator?.id ?? null,
-      viceCoordinatorId: spaceState.viceCoordinator?.id ?? null,
-    });
+
+    if (isEditing) {
+      // Reset form ao cancelar edição
+      const coordinator = members.find((m) => m.role === "Coordinator");
+      const viceCoordinator = members.find((m) => m.role === "Vice");
+
+      setFormValues({
+        name: spaceState.space.name,
+        description: spaceState.space.description ?? "",
+        minPeople: spaceState.space.minPeople ?? 0,
+        maxPeople: spaceState.space.maxPeople ?? 0,
+        coordinatorId: coordinator?.registrationId ?? null,
+        viceCoordinatorId: viceCoordinator?.registrationId ?? null,
+        memberIds: members.map((m) => m.registrationId),
+      });
+    }
   };
 
   const handleTextChange =
     (field: keyof ServiceSpaceFormState) =>
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = event.target.value;
-      setFormValues((prev) => ({ ...prev, [field]: value }));
+
+      // Para campos numéricos, converter para número
+      if (field === "minPeople" || field === "maxPeople") {
+        setFormValues((prev) => ({
+          ...prev,
+          [field]: Number(value) || 0,
+        }));
+      } else {
+        setFormValues((prev) => ({ ...prev, [field]: value }));
+      }
     };
 
   const handleCoordinatorChange = (
     field: "coordinatorId" | "viceCoordinatorId",
-    member: ServiceSpaceMember | null
+    member: (typeof members)[0] | null
   ) => {
-    setFormValues((prev) => ({ ...prev, [field]: member?.id ?? null }));
+    setFormValues((prev) => ({
+      ...prev,
+      [field]: member?.registrationId ?? null,
+    }));
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    setFormValues((prev) => ({
+      ...prev,
+      memberIds: prev.memberIds.filter((id) => id !== memberId),
+      // Remover coordenador se for removido
+      coordinatorId:
+        prev.coordinatorId === memberId ? null : prev.coordinatorId,
+      // Remover vice-coordenador se for removido
+      viceCoordinatorId:
+        prev.viceCoordinatorId === memberId ? null : prev.viceCoordinatorId,
+    }));
   };
 
   const handleSave = async () => {
+    if (!spaceState) return;
+
     setIsSaving(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
-      const payload: UpdateServiceSpacePayload = {
-        name: formValues.name.trim(),
-        description: formValues.description.trim(),
-      };
-
-      const minMembersNumber = Number(formValues.minMembers);
-      if (!Number.isNaN(minMembersNumber) && minMembersNumber > 0) {
-        payload.minMembers = minMembersNumber;
+      // Validar que maxPeople >= minPeople
+      if (formValues.maxPeople < formValues.minPeople) {
+        setErrorMessage(
+          t("errors.maxLessThanMin", {
+            defaultMessage: "Máximo de pessoas não pode ser menor que o mínimo",
+          })
+        );
+        setIsSaving(false);
+        return;
       }
 
-      if (formValues.coordinatorId !== undefined) {
-        payload.coordinator = formValues.coordinatorId
-          ? (membersById.get(formValues.coordinatorId) ?? null)
-          : null;
-      }
+      // Construir payload com os dados atualizados
+      const updatedMembers: ServiceRosterMember[] = activeMembers.map(
+        (member, index) => {
+          let role = roleStringToNumber(member.role); // Converter string para número
 
-      if (formValues.viceCoordinatorId !== undefined) {
-        payload.viceCoordinator = formValues.viceCoordinatorId
-          ? (membersById.get(formValues.viceCoordinatorId) ?? null)
-          : null;
-      }
+          // Atualizar role baseado na seleção
+          if (member.registrationId === formValues.coordinatorId) {
+            role = 1; // Coordenador
+          } else if (member.registrationId === formValues.viceCoordinatorId) {
+            role = 2; // Vice-coordenador
+          } else {
+            role = 0; // Membro normal
+          }
 
-      const response = await handleApiResponse<RequestResponse<ServiceSpace>>(
-        await sendRequestServerVanilla.put(
-          `/retreats/${retreatId}/service-spaces/${spaceState.id}`,
-          payload
-        )
+          return {
+            registrationId: member.registrationId,
+            name: member.name,
+            role,
+            position: index,
+            city: undefined,
+          };
+        }
       );
 
-      if (!response?.success || !response.data?.data) {
+      const payload: ServiceRosterPayload = {
+        version: spaceState.version,
+        spaces: [
+          {
+            spaceId: spaceState.space.spaceId,
+            name: formValues.name.trim(),
+            description: formValues.description.trim() || null,
+            minPeople: formValues.minPeople,
+            maxPeople: formValues.maxPeople,
+            isLocked: spaceState.space.isLocked,
+            isActive: spaceState.space.isActive,
+            members: updatedMembers,
+          },
+        ],
+      };
+
+      const response = await apiClient.put<any>(
+        `/retreats/${retreatId}/service/roster`,
+        payload
+      );
+
+      if (!response.data) {
         throw new Error(
-          response.error ||
-            t("errors.update", {
-              defaultMessage: "Unable to update service space",
-            })
+          t("errors.update", {
+            defaultMessage: "Erro ao atualizar equipe de serviço",
+          })
         );
       }
 
-      const updatedSpace = response.data.data;
+      // Atualizar estado local
+      const updatedSpace: ServiceSpaceDetail = {
+        ...spaceState,
+        version: response.data.version ?? spaceState.version,
+        space: {
+          ...spaceState.space,
+          name: formValues.name.trim(),
+          description: formValues.description.trim() || null,
+          minPeople: formValues.minPeople,
+          maxPeople: formValues.maxPeople,
+          hasCoordinator: updatedMembers.some((m) => m.role === 1),
+          hasVice: updatedMembers.some((m) => m.role === 2),
+        },
+        members: activeMembers.map((member) => ({
+          ...member,
+          role:
+            member.registrationId === formValues.coordinatorId
+              ? "Coordinator"
+              : member.registrationId === formValues.viceCoordinatorId
+                ? "Vice"
+                : "Member",
+        })),
+      };
 
       setSpaceState(updatedSpace);
+
+      const coordinator = updatedSpace.members.find(
+        (m) => m.role === "Coordinator"
+      );
+      const viceCoordinator = updatedSpace.members.find(
+        (m) => m.role === "Vice"
+      );
+
       setFormValues({
-        name: updatedSpace.name,
-        description: updatedSpace.description ?? "",
-        minMembers: String(updatedSpace.minMembers ?? 1),
-        coordinatorId: updatedSpace.coordinator?.id ?? null,
-        viceCoordinatorId: updatedSpace.viceCoordinator?.id ?? null,
+        name: updatedSpace.space.name,
+        description: updatedSpace.space.description ?? "",
+        minPeople: updatedSpace.space.minPeople,
+        maxPeople: updatedSpace.space.maxPeople,
+        coordinatorId: coordinator?.registrationId ?? null,
+        viceCoordinatorId: viceCoordinator?.registrationId ?? null,
+        memberIds: updatedSpace.members.map((m) => m.registrationId),
       });
+
       setSuccessMessage(
         t("messages.updateSuccess", {
-          defaultMessage: "Service space updated successfully",
+          defaultMessage: "Equipe de serviço atualizada com sucesso",
         })
       );
       setIsEditing(false);
       onUpdated?.(updatedSpace);
+
+      enqueueSnackbar(
+        t("messages.updateSuccess", {
+          defaultMessage: "Equipe de serviço atualizada com sucesso",
+        }),
+        { variant: "success" }
+      );
     } catch (error) {
-      const message =
-        error instanceof Error
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : error instanceof Error
           ? error.message
           : t("errors.update", {
-              defaultMessage: "Unable to update service space",
+              defaultMessage: "Erro ao atualizar equipe de serviço",
             });
+
       setErrorMessage(message);
+      enqueueSnackbar(message, { variant: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -225,6 +428,48 @@ export default function ServiceTeamDetails({
     return initials || "?";
   };
 
+  const getRoleName = (role: "Coordinator" | "Vice" | "Member") => {
+    switch (role) {
+      case "Coordinator":
+        return t("roles.coordinator", { defaultMessage: "Coordenador" });
+      case "Vice":
+        return t("roles.viceCoordinator", {
+          defaultMessage: "Vice-coordenador",
+        });
+      default:
+        return t("roles.member", { defaultMessage: "Membro" });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          width: "100%",
+          minHeight: 300,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!spaceState) {
+    return (
+      <Box sx={{ width: "100%", minHeight: 300 }}>
+        <Alert severity="error">
+          {errorMessage ||
+            t("errors.load", {
+              defaultMessage: "Erro ao carregar equipe de serviço",
+            })}
+        </Alert>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ width: "100%", minHeight: 300 }}>
       <Stack spacing={1} mt={2}>
@@ -238,14 +483,14 @@ export default function ServiceTeamDetails({
             gutterBottom
             marginBottom={2}
           >
-            {t("sections.general", { defaultMessage: "General information" })}
+            {t("sections.general", { defaultMessage: "Informações gerais" })}
           </Typography>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <Box flex={1}>
               {isEditing ? (
                 <TextField
                   label={t("fields.name", {
-                    defaultMessage: "Service space name",
+                    defaultMessage: "Nome da equipe de serviço",
                   })}
                   fullWidth
                   value={formValues.name}
@@ -255,29 +500,51 @@ export default function ServiceTeamDetails({
               ) : (
                 <InfoRow
                   label={t("fields.name", {
-                    defaultMessage: "Service space name",
+                    defaultMessage: "Nome da equipe de serviço",
                   })}
-                  value={spaceState.name}
+                  value={spaceState.space.name}
                 />
               )}
             </Box>
             <Box flex={1}>
               {isEditing ? (
                 <TextField
-                  label={t("fields.minMembers", {
-                    defaultMessage: "Minimum members",
+                  label={t("fields.minPeople", {
+                    defaultMessage: "Pessoas mínimas",
                   })}
                   fullWidth
-                  inputProps={{ inputMode: "numeric", pattern: "\\d*", min: 1 }}
-                  value={formValues.minMembers}
-                  onChange={handleTextChange("minMembers")}
+                  type="number"
+                  inputProps={{ min: 0 }}
+                  value={formValues.minPeople}
+                  onChange={handleTextChange("minPeople")}
                 />
               ) : (
                 <InfoRow
-                  label={t("fields.minMembers", {
-                    defaultMessage: "Minimum members",
+                  label={t("fields.minPeople", {
+                    defaultMessage: "Pessoas mínimas",
                   })}
-                  value={String(spaceState.minMembers ?? 1)}
+                  value={String(spaceState.space.minPeople ?? 0)}
+                />
+              )}
+            </Box>
+            <Box flex={1}>
+              {isEditing ? (
+                <TextField
+                  label={t("fields.maxPeople", {
+                    defaultMessage: "Pessoas máximas",
+                  })}
+                  fullWidth
+                  type="number"
+                  inputProps={{ min: 0 }}
+                  value={formValues.maxPeople}
+                  onChange={handleTextChange("maxPeople")}
+                />
+              ) : (
+                <InfoRow
+                  label={t("fields.maxPeople", {
+                    defaultMessage: "Pessoas máximas",
+                  })}
+                  value={String(spaceState.space.maxPeople ?? 0)}
                 />
               )}
             </Box>
@@ -286,7 +553,7 @@ export default function ServiceTeamDetails({
             {isEditing ? (
               <TextField
                 label={t("fields.description", {
-                  defaultMessage: "Description",
+                  defaultMessage: "Descrição",
                 })}
                 fullWidth
                 multiline
@@ -297,12 +564,12 @@ export default function ServiceTeamDetails({
             ) : (
               <InfoRow
                 label={t("fields.description", {
-                  defaultMessage: "Description",
+                  defaultMessage: "Descrição",
                 })}
                 value={
-                  spaceState.description ||
+                  spaceState.space.description ||
                   t("messages.noDescription", {
-                    defaultMessage: "No description provided",
+                    defaultMessage: "Nenhuma descrição fornecida",
                   })
                 }
               />
@@ -315,19 +582,20 @@ export default function ServiceTeamDetails({
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <Box flex={1}>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              {t("sections.coordinator", { defaultMessage: "Coordinator" })}
+              {t("sections.coordinator", { defaultMessage: "Coordenador" })}
             </Typography>
             {isEditing ? (
               <Autocomplete
-                options={members}
+                options={activeMembers}
                 getOptionLabel={(option) => option.name}
                 value={
-                  members.find(
-                    (member) => member.id === formValues.coordinatorId
+                  activeMembers.find(
+                    (member) =>
+                      member.registrationId === formValues.coordinatorId
                   ) ?? null
                 }
                 isOptionEqualToValue={(option, value) =>
-                  value ? option.id === value.id : false
+                  value ? option.registrationId === value.registrationId : false
                 }
                 onChange={(_, member) =>
                   handleCoordinatorChange("coordinatorId", member)
@@ -336,18 +604,18 @@ export default function ServiceTeamDetails({
                   <TextField
                     {...params}
                     placeholder={t("placeholders.selectMember", {
-                      defaultMessage: "Select a member",
+                      defaultMessage: "Selecione um membro",
                     })}
                   />
                 )}
                 noOptionsText={t("messages.noMembers", {
-                  defaultMessage: "No members available",
+                  defaultMessage: "Nenhum membro disponível",
                 })}
               />
             ) : (
               <InfoRow
                 label={t("fields.coordinator", {
-                  defaultMessage: "Coordinator",
+                  defaultMessage: "Coordenador",
                 })}
                 value={coordinatorName}
               />
@@ -356,20 +624,21 @@ export default function ServiceTeamDetails({
           <Box flex={1}>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               {t("sections.viceCoordinator", {
-                defaultMessage: "Vice coordinator",
+                defaultMessage: "Vice-coordenador",
               })}
             </Typography>
             {isEditing ? (
               <Autocomplete
-                options={members}
+                options={activeMembers}
                 getOptionLabel={(option) => option.name}
                 value={
-                  members.find(
-                    (member) => member.id === formValues.viceCoordinatorId
+                  activeMembers.find(
+                    (member) =>
+                      member.registrationId === formValues.viceCoordinatorId
                   ) ?? null
                 }
                 isOptionEqualToValue={(option, value) =>
-                  value ? option.id === value.id : false
+                  value ? option.registrationId === value.registrationId : false
                 }
                 onChange={(_, member) =>
                   handleCoordinatorChange("viceCoordinatorId", member)
@@ -378,18 +647,18 @@ export default function ServiceTeamDetails({
                   <TextField
                     {...params}
                     placeholder={t("placeholders.selectMember", {
-                      defaultMessage: "Select a member",
+                      defaultMessage: "Selecione um membro",
                     })}
                   />
                 )}
                 noOptionsText={t("messages.noMembers", {
-                  defaultMessage: "No members available",
+                  defaultMessage: "Nenhum membro disponível",
                 })}
               />
             ) : (
               <InfoRow
                 label={t("fields.viceCoordinator", {
-                  defaultMessage: "Vice coordinator",
+                  defaultMessage: "Vice-coordenador",
                 })}
                 value={viceCoordinatorName}
               />
@@ -407,28 +676,48 @@ export default function ServiceTeamDetails({
             mb={1}
           >
             <Typography variant="subtitle2" color="text.secondary">
-              {t("sections.members", { defaultMessage: "Members" })}
+              {t("sections.members", { defaultMessage: "Membros" })}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {t("labels.memberCount", {
-                defaultMessage: "{count} members",
-                count: members.length,
+                defaultMessage: "{count} membros",
+                count: activeMembers.length,
               })}
             </Typography>
           </Stack>
-          {members.length === 0 ? (
+          {activeMembers.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               {t("messages.noMembers", {
-                defaultMessage: "No members assigned yet",
+                defaultMessage: "Nenhum membro atribuído",
               })}
             </Typography>
           ) : (
             <List disablePadding>
-              {members.map((member) => (
+              {activeMembers.map((member) => (
                 <ListItem
-                  key={member.id}
+                  key={member.registrationId}
                   alignItems="flex-start"
                   disableGutters
+                  secondaryAction={
+                    isEditing ? (
+                      <Tooltip
+                        title={t("actions.remove-member", {
+                          defaultMessage: "Remover membro",
+                        })}
+                      >
+                        <IconButton
+                          edge="end"
+                          color="error"
+                          size="small"
+                          onClick={() =>
+                            handleRemoveMember(member.registrationId)
+                          }
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" />
+                        </IconButton>
+                      </Tooltip>
+                    ) : undefined
+                  }
                 >
                   <ListItemAvatar>
                     <Avatar>{initialsFromName(member.name)}</Avatar>
@@ -442,26 +731,22 @@ export default function ServiceTeamDetails({
                             {member.email}
                           </Typography>
                         )}
-                        {member.phone && (
+                        {member.cpf && (
                           <Typography variant="caption" color="text.secondary">
-                            {member.phone}
+                            CPF: {member.cpf}
                           </Typography>
                         )}
-                        {member.role && (
-                          <Chip
-                            label={t(`roles.${member.role}`, {
-                              defaultMessage:
-                                member.role === "support"
-                                  ? "Support"
-                                  : member.role === "vice"
-                                    ? "Vice coordinator"
-                                    : member.role === "coordinator"
-                                      ? "Coordinator"
-                                      : "Member",
-                            })}
-                            size="small"
-                          />
-                        )}
+                        <Chip
+                          label={getRoleName(member.role)}
+                          size="small"
+                          color={
+                            member.role === "Coordinator"
+                              ? "primary"
+                              : member.role === "Vice"
+                                ? "secondary"
+                                : "default"
+                          }
+                        />
                       </Stack>
                     }
                   />
@@ -479,7 +764,7 @@ export default function ServiceTeamDetails({
             onClick={() => onClose?.()}
             startIcon={<Iconify icon="solar:arrow-left-bold" />}
           >
-            {t("actions.close", { defaultMessage: "Close" })}
+            {t("actions.close", { defaultMessage: "Fechar" })}
           </Button>
           {canEdit && (
             <Stack direction="row" spacing={1}>
@@ -490,7 +775,7 @@ export default function ServiceTeamDetails({
                   startIcon={<Iconify icon="solar:close-circle-bold" />}
                   disabled={isSaving}
                 >
-                  {t("actions.cancel", { defaultMessage: "Cancel" })}
+                  {t("actions.cancel", { defaultMessage: "Cancelar" })}
                 </Button>
               )}
               <Button
@@ -515,8 +800,8 @@ export default function ServiceTeamDetails({
                 disabled={isSaving || formValues.name.trim().length === 0}
               >
                 {isEditing
-                  ? t("actions.save", { defaultMessage: "Save" })
-                  : t("actions.edit", { defaultMessage: "Edit" })}
+                  ? t("actions.save", { defaultMessage: "Salvar" })
+                  : t("actions.edit", { defaultMessage: "Editar" })}
               </Button>
             </Stack>
           )}

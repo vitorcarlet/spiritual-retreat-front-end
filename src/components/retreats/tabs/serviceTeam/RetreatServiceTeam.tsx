@@ -1,98 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Container } from "@mui/material";
 
 import { useModal } from "@/src/hooks/useModal";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
-import getPermission from "@/src/utils/getPermission";
 import apiClient from "@/src/lib/axiosClientInstance";
 
-import FilterButton from "../../../filters/FilterButton";
-import { getFilters } from "./getFilters";
-import RetreatServiceTeamTable from "./RetreatServiceTeamTable";
 import ServiceTeamDetails from "./ServiceTeamDetails";
 import CreateServiceTeamForm from "./CreateServiceTeamForm";
-import type { Items } from "./types";
-import {
-  RetreatsCardTableDateFilters,
-  RetreatsCardTableFilters,
-} from "../../types";
-import AddParticipantToServiceTeamForm from "./AddParticipantToServiceTeamForm";
 import LockServiceSpacesModal from "./LockServiceSpacesModal";
 import ConfigureServiceSpace from "./ConfigureServiceSpace";
 
-interface ServiceSpacesResponse {
-  rows: ServiceSpace[] | ServiceSpace;
-  total: number;
-  page: number;
-  pageLimit: number | "all";
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-}
-
-/**
- * Converte dados da API (ServiceSpaceApiResponse) para o formato interno (ServiceSpace)
- */
-const transformApiServiceSpace = (
-  apiSpace: ServiceSpaceApiResponse,
-  retreatId: string
-): ServiceSpace => {
-  return {
-    spaceId: apiSpace.spaceId,
-    retreatId,
-    name: apiSpace.name,
-    description: apiSpace.description || "",
-    color: "#666666", // Cor padrão, pode ser gerada baseada no nome
-    minMembers: apiSpace.minPeople,
-    maxMembers: apiSpace.maxPeople,
-    minMember: apiSpace.minPeople,
-    coordinator: null,
-    viceCoordinator: null,
-    members: [],
-    createdAt: undefined,
-    updatedAt: undefined,
-    isLocked: apiSpace.isLocked,
-  };
-};
-
-const getServiceSpaces = async (
-  filters: TableDefaultFilters<
-    RetreatsCardTableFilters & RetreatsCardTableDateFilters
-  >,
-  retreatId: string
-): Promise<ServiceSpacesResponse> => {
-  const { data } = await apiClient.get<ServiceSpacesApiResponse>(
-    `/retreats/${retreatId}/service/spaces`
-  );
-
-  // Transforma dados da API para o formato interno
-  const rows = (data.items || []).map((apiSpace) =>
-    transformApiServiceSpace(apiSpace, retreatId)
-  );
-
-  const total = rows.length;
-
-  return {
-    rows,
-    total,
-    page: 1,
-    pageLimit: "all", // Sem paginação
-    hasNextPage: false,
-    hasPrevPage: false,
-  };
-};
+import type { Items } from "./types";
+import type { RetreatsCardTableFilters } from "@/src/components/retreats/types";
+import { useServiceSpacesPermissions } from "./hooks/usePermissions";
+import { useServiceSpacesQuery } from "./hooks/useQuery";
+import ServiceTeamActionBar from "./ServiceSpacesActionBar";
+import ServiceSpaceContent from "./ServiceSpacesContent";
+import AddMemberToServiceTeamForm from "./AddMemberToServiceTeamForm";
 
 interface RetreatServiceTeamProps {
   id: string;
@@ -101,11 +29,8 @@ interface RetreatServiceTeamProps {
 export default function RetreatServiceTeam({
   id: retreatId,
 }: RetreatServiceTeamProps) {
-  const t = useTranslations();
-  const tDetails = useTranslations("service-team-details");
+  const t = useTranslations("service-team-details");
   const modal = useModal();
-  const session = useSession();
-  const queryClient = useQueryClient();
 
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
@@ -116,70 +41,93 @@ export default function RetreatServiceTeam({
       excludeFromCount: ["page", "pageLimit"],
     });
 
-  const [hasCreatePermission, setHasCreatePermission] = useState(false);
-  const [spacesReorderFlag, setSpacesReorderFlag] = useState(false);
-
-  useEffect(() => {
-    if (session.data?.user) {
-      setHasCreatePermission(
-        getPermission({
-          permissions: session.data.user.permissions,
-          permission: "retreats.update",
-          role: session.data.user.role,
-        })
-      );
-    }
-  }, [session.data]);
-
-  const filtersConfig = getFilters();
-
+  const { hasCreatePermission, canEditServiceSpace } =
+    useServiceSpacesPermissions();
   const {
-    data: serviceSpacesResponse,
+    serviceSpaceVersion,
+    // serviceSpacesData,
+    serviceSpacesArray,
     isLoading,
-    isError,
     isFetching,
-  } = useQuery({
-    queryKey: ["retreat-service-spaces", retreatId, filters],
-    queryFn: () => getServiceSpaces(filters, retreatId),
-    staleTime: 60_000,
-  });
+    isError,
+    invalidateServiceSpacesQuery,
+    queryClient,
+  } = useServiceSpacesQuery(retreatId, filters);
 
-  const serviceSpaces: ServiceSpace[] = useMemo(() => {
-    if (!serviceSpacesResponse) {
-      return [];
-    }
+  const [isReordering, setIsReordering] = useState(false);
+  // const filtersConfig = useMemo(() => getFilters(), []);
 
-    const { rows } = serviceSpacesResponse;
-
-    if (Array.isArray(rows)) {
-      return rows;
-    }
-
-    return rows ? [rows] : [];
-  }, [serviceSpacesResponse]);
-
-  const canEditServiceSpace = useMemo(() => {
-    const user = session.data?.user;
-    if (!user) {
-      return false;
-    }
-    return getPermission({
-      permissions: user.permissions,
-      permission: "retreats.update",
-      role: user.role,
+  // ===== Modal Handlers =====
+  const handleOpenCreateTeam = useCallback(() => {
+    modal.open({
+      title: t("createSpace.title", {
+        defaultMessage: "Create service space",
+      }),
+      size: "md",
+      customRender() {
+        return (
+          <CreateServiceTeamForm
+            retreatId={retreatId}
+            onSuccess={() => {
+              modal.close?.();
+              invalidateServiceSpacesQuery();
+            }}
+          />
+        );
+      },
     });
-  }, [session.data]);
+  }, [modal, t, retreatId, invalidateServiceSpacesQuery]);
 
-  const openServiceSpaceDetails = useCallback(
-    (spaceId: string, startInEdit = false) => {
-      const space = serviceSpaces.find((item) => item.spaceId === spaceId);
+  const handleOpenConfigure = useCallback(() => {
+    modal.open({
+      title: t("service-space-configurations"),
+      size: "md",
+      customRender() {
+        return (
+          <ConfigureServiceSpace
+            retreatId={retreatId}
+            onSuccess={() => {
+              modal.close?.();
+              invalidateServiceSpacesQuery();
+            }}
+          />
+        );
+      },
+    });
+  }, [modal, t, retreatId, invalidateServiceSpacesQuery]);
 
-      if (!space) {
-        return;
-      }
+  const handleOpenLock = useCallback(() => {
+    modal.open({
+      title: t("lock.title", {
+        defaultMessage: "Lock service teams",
+      }),
+      size: "md",
+      customRender() {
+        return (
+          <LockServiceSpacesModal
+            retreatId={retreatId}
+            serviceSpaces={serviceSpacesArray}
+            onCancel={modal.close}
+            onSuccess={() => {
+              modal.close?.();
+              invalidateServiceSpacesQuery();
+            }}
+          />
+        );
+      },
+    });
+  }, [modal, t, retreatId, serviceSpacesArray, invalidateServiceSpacesQuery]);
+
+  const handleOpenServiceSpaceDetails = useCallback(
+    (spaceId: UniqueIdentifier, startInEdit = false) => {
+      const space = serviceSpacesArray.find(
+        (item) => item.spaceId === String(spaceId)
+      );
+
+      if (!space) return;
 
       modal.open({
-        title: tDetails("title", {
+        title: t("title", {
           defaultMessage: "Service space {space}",
           space: space.name,
         }),
@@ -187,23 +135,22 @@ export default function RetreatServiceTeam({
         customRender() {
           return (
             <ServiceTeamDetails
-              space={space}
+              spaceId={space.spaceId}
               retreatId={retreatId}
               canEdit={canEditServiceSpace}
               startInEdit={startInEdit && canEditServiceSpace}
               onClose={modal.close}
               onUpdated={(updatedSpace) => {
-                queryClient.setQueryData<ServiceSpacesResponse | undefined>(
+                queryClient.setQueryData<any>(
                   ["retreat-service-spaces", retreatId, filters],
-                  (previous) => {
-                    if (!previous || !Array.isArray(previous.rows)) {
+                  (previous: any) => {
+                    if (!previous || !Array.isArray(previous.rows))
                       return previous;
-                    }
 
                     return {
                       ...previous,
-                      rows: previous.rows.map((row) =>
-                        row.spaceId === updatedSpace.spaceId
+                      rows: previous.rows.map((row: any) =>
+                        row.spaceId === updatedSpace.space.spaceId
                           ? updatedSpace
                           : row
                       ),
@@ -222,91 +169,48 @@ export default function RetreatServiceTeam({
     },
     [
       modal,
-      tDetails,
+      t,
       retreatId,
       canEditServiceSpace,
       queryClient,
       filters,
-      serviceSpaces,
+      serviceSpacesArray,
     ]
   );
 
-  const handleSaveReorder = useCallback(
-    async (items: Items) => {
-      const serviceSpacesById = new Map(
-        serviceSpaces.map((space) => [String(space.spaceId), space])
-      );
-
-      const membersIndex = new Map<string, ServiceSpaceMember>();
-      serviceSpaces.forEach((space) => {
-        space.members?.forEach((member) => {
-          membersIndex.set(String(member.id), member);
-        });
-      });
-
-      try {
-        const spacesPayload = Object.entries(items).map(
-          ([serviceSpaceId, memberIds]) => {
-            const originalSpace = serviceSpacesById.get(serviceSpaceId);
-
-            const members = memberIds.map((memberId, index) => {
-              const member = membersIndex.get(String(memberId));
-              return {
-                registrationId: String(memberId),
-                role: member?.role ?? "member",
-                position: index,
-              };
-            });
-
-            return {
-              spaceId: serviceSpaceId,
-              name: originalSpace?.name ?? serviceSpaceId,
-              members,
-            };
-          }
+  const handleOpenAddMember = useCallback(() => {
+    modal.open({
+      title: t("sections.add-members", {
+        defaultMessage: "Adicionar membros à equipe de serviço",
+      }),
+      size: "md",
+      customRender() {
+        return (
+          <AddMemberToServiceTeamForm
+            retreatId={retreatId}
+            serviceSpaces={serviceSpacesArray}
+            onSuccess={() => {
+              modal.close?.();
+              invalidateServiceSpacesQuery();
+            }}
+          />
         );
-
-        await apiClient.put(`/retreats/${retreatId}/service/roster`, {
-          retreatId,
-          version: 0,
-          spaces: spacesPayload,
-          ignoreWarnings: true,
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: ["retreat-service-spaces", retreatId],
-        });
-      } catch (error) {
-        console.error("Failed to save service space reorder", error);
-        queryClient.invalidateQueries({
-          queryKey: ["retreat-service-spaces", retreatId],
-        });
-        throw error;
-      } finally {
-        setSpacesReorderFlag(false);
-      }
-    },
-    [queryClient, retreatId, serviceSpaces, setSpacesReorderFlag]
-  );
-
-  const invalidateServiceSpacesQuery = () => {
-    queryClient.invalidateQueries({
-      queryKey: ["retreat-service-spaces"],
+      },
     });
-  };
-
-  const handleView = useCallback(
-    (spaceId: UniqueIdentifier) => {
-      openServiceSpaceDetails(String(spaceId), false);
-    },
-    [openServiceSpaceDetails]
-  );
+  }, [modal, t, retreatId, serviceSpacesArray, invalidateServiceSpacesQuery]);
 
   const handleEdit = useCallback(
     (spaceId: UniqueIdentifier) => {
-      openServiceSpaceDetails(String(spaceId), true);
+      handleOpenServiceSpaceDetails(spaceId, true);
     },
-    [openServiceSpaceDetails]
+    [handleOpenServiceSpaceDetails]
+  );
+
+  const handleView = useCallback(
+    (spaceId: UniqueIdentifier) => {
+      handleOpenServiceSpaceDetails(spaceId, false);
+    },
+    [handleOpenServiceSpaceDetails]
   );
 
   const handleDelete = useCallback(
@@ -318,25 +222,23 @@ export default function RetreatServiceTeam({
         })
       );
 
-      if (!confirmed) {
-        return;
-      }
+      if (!confirmed) return;
 
       try {
         await apiClient.delete(
           `/retreats/${retreatId}/service/spaces/${spaceKey}`
         );
 
-        queryClient.setQueryData<ServiceSpacesResponse | undefined>(
+        queryClient.setQueryData<any>(
           ["retreat-service-spaces", retreatId, filters],
-          (previous) => {
-            if (!previous || !Array.isArray(previous.rows)) {
-              return previous;
-            }
+          (previous: any) => {
+            if (!previous || !Array.isArray(previous.rows)) return previous;
 
             return {
               ...previous,
-              rows: previous.rows.filter((row) => row.spaceId !== spaceKey),
+              rows: previous.rows.filter(
+                (row: any) => row.spaceId !== spaceKey
+              ),
               total: Math.max(0, (previous.total || 0) - 1),
             };
           }
@@ -352,71 +254,56 @@ export default function RetreatServiceTeam({
     [t, retreatId, queryClient, filters]
   );
 
-  const handleAddNewParticipant = () => {
-    modal.open({
-      title: t("add-participant-in-service-team"),
-      size: "md",
-      customRender() {
-        return (
-          <AddParticipantToServiceTeamForm
-            retreatId={retreatId}
-            serviceSpaces={serviceSpaces}
-            onSuccess={() => {
-              modal.close?.();
-              // Refetch families data
-              // queryClient.invalidateQueries(["retreat-families", filters]);
-            }}
-          />
-        );
-      },
-    });
-  };
+  const handleSaveReorder = useCallback(
+    async (items: Items) => {
+      const serviceSpacesById = new Map(
+        serviceSpacesArray.map((space) => [String(space.spaceId), space])
+      );
 
-  const handleCreate = useCallback(() => {
-    modal.open({
-      title: t("createSpace.title", {
-        defaultMessage: "Create service space",
-      }),
-      size: "md",
-      customRender() {
-        return (
-          <CreateServiceTeamForm
-            retreatId={retreatId}
-            onSuccess={() => {
-              modal.close?.();
-              queryClient.invalidateQueries({
-                queryKey: ["retreat-service-spaces", retreatId],
-              });
-            }}
-          />
-        );
-      },
-    });
-  }, [modal, queryClient, retreatId, t]);
+      const membersIndex = new Map<string, any>();
+      serviceSpacesArray.forEach((space) => {
+        space.members?.forEach((member) => {
+          membersIndex.set(String(member.registrationId), member);
+        });
+      });
 
-  const handleLockServiceSpaces = useCallback(() => {
-    modal.open({
-      title: tDetails("lock.title", {
-        defaultMessage: "Lock service teams",
-      }),
-      size: "md",
-      customRender() {
-        return (
-          <LockServiceSpacesModal
-            retreatId={retreatId}
-            serviceSpaces={serviceSpaces}
-            onCancel={modal.close}
-            onSuccess={() => {
-              modal.close?.();
-              queryClient.invalidateQueries({
-                queryKey: ["retreat-service-spaces", retreatId],
-              });
-            }}
-          />
+      try {
+        const spacesPayload = Object.entries(items).map(
+          ([serviceSpaceId, memberIds]) => {
+            const originalSpace = serviceSpacesById.get(serviceSpaceId);
+
+            const members = memberIds.map((memberId, index) => ({
+              registrationId: String(memberId),
+              role: membersIndex.get(String(memberId))?.role ?? "member",
+              position: index,
+            }));
+
+            return {
+              spaceId: serviceSpaceId,
+              name: originalSpace?.name ?? serviceSpaceId,
+              members,
+            };
+          }
         );
-      },
-    });
-  }, [modal, queryClient, retreatId, serviceSpaces, tDetails]);
+
+        // Uncomment when API is ready
+        await apiClient.put(`/retreats/${retreatId}/service/roster`, {
+          retreatId,
+          version: serviceSpaceVersion,
+          spaces: spacesPayload,
+          ignoreWarnings: true,
+        });
+
+        setIsReordering(false);
+        invalidateServiceSpacesQuery();
+      } catch (error) {
+        console.error("Failed to save service space reorder", error);
+        invalidateServiceSpacesQuery();
+        throw error;
+      }
+    },
+    [serviceSpacesArray, retreatId, invalidateServiceSpacesQuery]
+  );
 
   const handleFiltersChange = useCallback(
     (newFilters: TableDefaultFilters<RetreatsCardTableFilters>) => {
@@ -432,40 +319,6 @@ export default function RetreatServiceTeam({
     [filters, updateFilters]
   );
 
-  const handleOpenConfigure = useCallback(() => {
-    modal.open({
-      title: t("family-configuration"),
-      size: "md",
-      customRender() {
-        return (
-          <ConfigureServiceSpace
-            retreatId={retreatId}
-            onSuccess={() => {
-              modal.close?.();
-              invalidateServiceSpacesQuery();
-            }}
-          />
-        );
-      },
-    });
-  }, [modal, t, retreatId, invalidateServiceSpacesQuery]);
-
-  if (isLoading && !serviceSpacesResponse) {
-    return (
-      <Typography>
-        {t("loading", { defaultMessage: "Loading service spaces..." })}
-      </Typography>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Typography color="error">
-        {t("error", { defaultMessage: "Unable to load service spaces." })}
-      </Typography>
-    );
-  }
-
   return (
     <Container
       maxWidth="xl"
@@ -477,90 +330,37 @@ export default function RetreatServiceTeam({
         flexDirection: "column",
       }}
     >
-      <Stack direction="row" spacing={2} alignItems="center" mb={3}>
-        <FilterButton<
-          TableDefaultFilters<RetreatsCardTableFilters>,
-          RetreatsCardTableDateFilters
-        >
-          filters={filtersConfig}
-          defaultValues={filters}
-          onApplyFilters={handleApplyFilters}
-          onReset={resetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
+      <ServiceTeamActionBar
+        hasCreatePermission={hasCreatePermission}
+        isReordering={isReordering}
+        filters={filters}
+        activeFiltersCount={activeFiltersCount}
+        //filtersConfig={filtersConfig}
+        onCreateTeam={handleOpenCreateTeam}
+        onAddParticipant={handleOpenAddMember}
+        onConfigure={handleOpenConfigure}
+        onLock={handleOpenLock}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={resetFilters}
+      />
 
-        {hasCreatePermission && (
-          <>
-            <Button
-              variant="contained"
-              onClick={handleCreate}
-              disabled={isFetching || spacesReorderFlag}
-            >
-              {tDetails("create-new-team")}
-            </Button>
-            {/* <Button
-              variant="contained"
-              onClick={handleAddNewParticipant}
-              disabled={isFetching || spacesReorderFlag}
-            >
-              {tDetails("add-new-participant")}
-            </Button> */}
-            <Button
-              variant="contained"
-              onClick={handleOpenConfigure}
-              disabled={spacesReorderFlag}
-            >
-              {t("family-config")}
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleLockServiceSpaces}
-              disabled={isFetching || spacesReorderFlag}
-            >
-              {tDetails("lock.button", {
-                defaultMessage: "Lock service teams",
-              })}
-            </Button>
-          </>
-        )}
-      </Stack>
-
-      <Box sx={{ flex: 1, minHeight: 0, position: "relative" }}>
-        {serviceSpacesResponse && (
-          <RetreatServiceTeamTable
-            items={serviceSpaces}
-            retreatId={retreatId}
-            canEditServiceTeam={canEditServiceSpace}
-            setServiceTeamReorderFlag={setSpacesReorderFlag}
-            total={serviceSpacesResponse.total}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onView={handleView}
-            onEdit={handleEdit}
-            onDelete={canEditServiceSpace ? handleDelete : undefined}
-            canEdit={canEditServiceSpace}
-            onSaveReorder={canEditServiceSpace ? handleSaveReorder : undefined}
-            setReorderFlag={
-              canEditServiceSpace ? setSpacesReorderFlag : undefined
-            }
-          />
-        )}
-
-        {isFetching && (
-          <Stack
-            alignItems="center"
-            justifyContent="center"
-            sx={{
-              position: "absolute",
-              inset: 0,
-              backgroundColor: (theme) => `${theme.palette.background.paper}CC`,
-              zIndex: (theme) => theme.zIndex.modal - 1,
-            }}
-          >
-            <CircularProgress />
-          </Stack>
-        )}
-      </Box>
+      <ServiceSpaceContent
+        isLoading={isLoading}
+        isError={isError}
+        isFetching={isFetching}
+        serviceSpacesArray={serviceSpacesArray}
+        total={serviceSpacesArray.length}
+        filters={filters}
+        isReordering={isReordering}
+        canEditServiceSpace={canEditServiceSpace}
+        retreatId={retreatId}
+        onSaveReorder={handleSaveReorder}
+        onSetReordering={setIsReordering}
+        onEdit={handleEdit}
+        onView={handleView}
+        onDelete={canEditServiceSpace ? handleDelete : undefined}
+        onFiltersChange={handleFiltersChange}
+      />
     </Container>
   );
 }

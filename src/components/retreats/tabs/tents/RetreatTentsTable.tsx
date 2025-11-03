@@ -209,13 +209,13 @@ export default function RetreatTentsTable({
       const nextMemberToContainer: MemberToContainer = {};
 
       initialItems?.forEach((tent) => {
-        const tentId = String(tent.id);
-        const color = genderColorMap[tent.gender] ?? genderColorMap.male;
+        const tentId = String(tent.tentId);
+        //const color = genderColorMap[tent.gender] ?? genderColorMap.male;
         nextTentsById[tentId] = {
           number: tent.number,
-          gender: tent.gender,
+          // gender: tent.gender,
           capacity: tent.capacity,
-          color,
+          // color,
         };
 
         nextItems[tentId] =

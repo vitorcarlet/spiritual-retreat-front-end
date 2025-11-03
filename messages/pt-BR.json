@@ -1,4 +1,5 @@
 {
+  "error": "Algo deu errado",
   "HomePage": {
     "title": "Olá mundo!"
   },
@@ -306,41 +307,78 @@
     }
   },
   "service-team-details": {
+    "title": "Espaço de serviço {space}",
     "confirmDelete": "Confirmar Remoção",
+    "service-space-configurations": "Configurações das equipes de serviço",
     "createSpace": {
       "title": "Criar Nova Equipe",
       "cta": "Criar Nova Equipe"
     },
+    "roles": {
+      "1": "Coordenador",
+      "2": "Vice-Coordenador",
+      "coordinator": "Coordenador Da Equipe de Serviço",
+      "viceCoordinator": "Vice-Coordenador da Equipe de Serviço",
+      "member": "Membro"
+    },
+    "validation": {
+      "all-good": "Todos os requisitos foram atendidos",
+      "issues-found": "Problemas encontrados em {space}",
+      "missing-coordinator": "Coordenador não atribuído",
+      "missing-vice-coordinator": "Vice-coordenador não atribuído",
+      "no-members": "Nenhum membro atribuído",
+      "missing-members": "Sem Membros"
+    },
     "fields": {
-      "minMembers": "Número Mínimo de Membros",
+      "minPeople": "Número Mínimo de Membros",
+      "maxPeople": "Número Máximo de Membros",
       "name": "Nome da Equipe de Serviço",
       "description": "Descrição",
       "maxMembers": "Número Máximo de Membros",
       "color": "Cor do Marcador",
       "isActive": "Equipe ativa",
       "coordinator": "Coordenador",
-      "viceCoordinator": "Vice-Coordenador"
+      "viceCoordinator": "Vice-Coordenador",
+      "select-team": "Selecione uma equipe",
+      "role": "Função",
+      "select-members": "Selecione os membros:",
+      "team": "Equipe"
     },
     "sections": {
       "coordinator": "Coordenador Da Equipe de Serviço",
       "vice-coordinator": "Vice-Coordenador da Equipe de Serviço",
       "members": "Membros da Equipe de Servio",
       "viceCoordinator": "Vice-Coordenador da Equipe de Serviço",
-      "general": "Informações Gerais"
+      "general": "Informações Gerais",
+      "add-members": "Adicionar Membros",
+      "summary": "Resumo"
     },
     "loading": "Carregando",
     "error": "Erro",
     "labels": {
-      "memberCount": "{count, plural, one {# membro} other {# membros}}"
+      "memberCount": "{count, plural, one {# membro} other {# membros}}",
+      "members": "membros",
+      "members-to-add": "Membros a adicionar"
     },
     "placeholders": {
-      "selectMember": "Selecionar Membros"
+      "selectMember": "Selecionar Membros",
+      "memberCount": "{count, plural, one {# membro} other {# membros}}",
+      "members": "membros",
+      "members-to-add": "Membros a adicionar",
+      "search-members": "Procure por nome ou email..."
     },
     "messages": {
       "noMembers": "Sem Membros",
       "noDescription": "Sem Descrição",
       "updateSuccess": "Atualização do espaço de serviço realizada com sucesso!",
-      "createSuccess": "Equipe de serviço criada com sucesso!"
+      "createSuccess": "Equipe de serviço criada com sucesso!",
+      "adding": "Adicionando...",
+      "members-added-successfully": "Membros adicionados com sucesso",
+      "loading-members": "Carregando membros...",
+      "no-members-available": "Nenhum membro disponível"
+    },
+    "helpers": {
+      "select-members": "Selecione um ou mais membros"
     },
     "hints": {
       "memberLimit": "Use os valores mínimo e máximo para controlar o tamanho da equipe."
@@ -369,12 +407,25 @@
         "globalUnlocked": "Todas as equipes foram desbloqueadas.",
         "disableGlobal": "Desative o bloqueio global para gerenciar equipes individualmente.",
         "spaceLocked": "Equipe \"{name}\" bloqueada.",
-        "spaceUnlocked": "Equipe \"{name}\" desbloqueada."
+        "spaceUnlocked": "Equipe \"{name}\" desbloqueada.",
+        "noMembers": "Sem Membros",
+        "noDescription": "Sem Descrição",
+        "updateSuccess": "Atualização do espaço de serviço realizada com sucesso!",
+        "createSuccess": "Equipe de serviço criada com sucesso!",
+        "adding": "Adicionando...",
+        "members-added-successfully": "Membros adicionados com sucesso",
+        "loading-members": "Carregando membros...",
+        "no-members-available": "Nenhum membro disponível"
       },
       "errors": {
         "fetch": "Não foi possível carregar o status de bloqueio.",
         "global": "Não foi possível atualizar o bloqueio global.",
-        "individual": "Não foi possível atualizar o bloqueio da equipe."
+        "individual": "Não foi possível atualizar o bloqueio da equipe.",
+        "update": "Erro ao atualizar o espaço de serviço",
+        "create": "Erro ao criar o espaço de serviço",
+        "load-members": "Erro ao carregar membros",
+        "add-members": "Erro ao adicionar membros",
+        "maxLessThanMin": "Máximo de pessoas não pode ser menor que o mínimo"
       },
       "buttons": {
         "cancel": "Cancelar",
@@ -385,11 +436,14 @@
       "close": "Fechar",
       "cancel": "Cancelar",
       "save": "Salvar",
-      "edit": "Editar"
+      "edit": "Editar",
+      "add-members": "Adicionando Membros"
     },
     "errors": {
       "update": "Erro ao atualizar o espaço de serviço",
-      "create": "Erro ao criar o espaço de serviço"
+      "create": "Erro ao criar o espaço de serviço",
+      "add-members": "Erro ao adicionar membros",
+      "load-members": "Erro ao carregar membros"
     },
     "viceCoordinator": {
       "unassigned": "Não Alocado"
@@ -399,7 +453,8 @@
     },
     "create-new-team": "Criar Nova Equipe",
     "add-new-participant": "Adicionar Novo Participante",
-    "add-participant-in-service-team": "Adicionar Participante à Equipe de Serviço"
+    "add-participant-in-service-team": "Adicionar Participante à Equipe de Serviço",
+    "add-member-to-team": "Adicionar Membro à Equipe de Serviço"
   },
   "family-report-refresh": "Atualizar dados",
   "family-report-refresh-loading": "Atualizando...",
@@ -506,6 +561,8 @@
     "actions": {
       "cancel": "Cancelar"
     },
+    "no-members": "Essa equipe ainda não possui membros",
+    "team-label": "Equipe {name}",
     "roles": {
       "member": "Membro",
       "support": "Apoio",
@@ -527,7 +584,8 @@
       "selectTeamHint": "Selecione uma equipe para ver os integrantes atuais e limites",
       "submit": "Adicionar servidores",
       "submitting": "Adicionando..."
-    }
+    },
+    "save-reorder": "Salvar Reordenação das Equipes"
   },
   "retreat-outbox": {
     "page-title": "Fila de mensagens (Outbox)",

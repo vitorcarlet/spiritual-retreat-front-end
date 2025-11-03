@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client";
 import React, {
   useCallback,
   useEffect,
@@ -67,27 +67,14 @@ import {
 } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
 import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import {
   Items,
   ServiceSpaceTableProps,
   MembersById,
   MemberToContainer,
 } from "./types";
-import {
-  //findContainer,
-  onDragEnd,
-  onDragOver,
-  PLACEHOLDER_ID,
-  TRASH_ID,
-} from "./shared";
+import { onDragEnd, onDragOver, PLACEHOLDER_ID, TRASH_ID } from "./shared";
 import { LoadingScreen } from "@/src/components/loading-screen";
-
-// export default {
-//   title: "Presets/Sortable/Multiple Containers",
-// };
+import { useServiceTeamValidation } from "./hooks/useRulesValidations";
 
 const animateLayoutChanges: AnimateLayoutChanges = (args) =>
   defaultAnimateLayoutChanges({ ...args, wasDragging: true });
@@ -211,9 +198,7 @@ export default function RetreatServiceTeamTable({
   retreatId,
   canEditServiceTeam,
 }: ServiceSpaceTableProps) {
-  //const t = useTranslations();
-
-  // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
+  const t = useTranslations("service-team");
 
   useEffect(() => {
     if (!retreatId) {
@@ -256,18 +241,16 @@ export default function RetreatServiceTeamTable({
       const memberToContainer: MemberToContainer = {};
 
       InitialItems?.forEach((st) => {
-        const fid = String(st.id);
+        const fid = String(st.spaceId);
         stiliesById[fid] = { name: st.name, color: st.color };
         items[fid] =
           st.members?.map((m) => {
-            const mid = String(m.id);
+            const mid = String(m.registrationId);
             membersById[mid] = {
-              id: mid,
+              registrationId: mid,
               name: m.name as string,
               gender: m.gender,
               role: m.role,
-              //city: m.city,
-              //realFamilyId: m.realFamilyId,
             };
             memberToContainer[mid] = fid;
             return mid;
@@ -297,7 +280,6 @@ export default function RetreatServiceTeamTable({
 
   const [containers, setContainers] = useState<UniqueIdentifier[]>([]);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  //console.log({ items, containers });
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
@@ -307,6 +289,8 @@ export default function RetreatServiceTeamTable({
     items: Items;
     memberToContainer: MemberToContainer;
   } | null>(null);
+
+  const validation = useServiceTeamValidation(InitialItems, membersById);
 
   const handleSaveReorder = useCallback(async () => {
     if (!onSaveReorder) return;
@@ -331,7 +315,13 @@ export default function RetreatServiceTeamTable({
         setServiceTeamReorderFlag(false);
       }
     }
-  }, [items, onSaveReorder, memberToContainer, savedSnapshot]);
+  }, [
+    items,
+    onSaveReorder,
+    memberToContainer,
+    savedSnapshot,
+    setServiceTeamReorderFlag,
+  ]);
 
   const recentlyMovedToNewContainer = useRef(false);
   const isSortingContainer =
@@ -425,11 +415,24 @@ export default function RetreatServiceTeamTable({
           const { original: containerId } = row.cell.row;
           const memberIds = items[containerId] || [];
           const stilyName = stiliesById[containerId] || containerId;
+
+          // Encontrar erro de validação para este container
+          const validationError = validation.errors.find(
+            (e) => e.spaceId === String(containerId)
+          );
+
           return (
             <DroppableContainer
               key={containerId}
               id={containerId}
-              label={minimal ? undefined : `Família ${stilyName.name}`}
+              label={
+                minimal
+                  ? undefined
+                  : t("team-label", {
+                      defaultMessage: "Service team {name}",
+                      name: stilyName.name,
+                    })
+              }
               color={stilyName.color}
               items={memberIds}
               scrollable={scrollable}
@@ -465,7 +468,9 @@ export default function RetreatServiceTeamTable({
                       fontSize: "0.875rem",
                     }}
                   >
-                    Nenhum membro atribuído
+                    {t("no-members", {
+                      defaultMessage: "No members assigned",
+                    })}
                   </Box>
                 )}
               </SortableContext>
@@ -475,6 +480,7 @@ export default function RetreatServiceTeamTable({
                 onView={onView}
                 familyId={containerId}
                 canEdit={canEditServiceTeam}
+                validationError={validationError}
               />
             </DroppableContainer>
           );
@@ -495,6 +501,9 @@ export default function RetreatServiceTeamTable({
       onEdit,
       onView,
       canEditServiceTeam,
+      t,
+      stiliesById,
+      validation,
     ]
   );
 
@@ -565,7 +574,7 @@ export default function RetreatServiceTeamTable({
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
-        position: "relative", // For absolute positioned save button
+        position: "relative",
       }}
     >
       <DndContext
@@ -673,6 +682,7 @@ export default function RetreatServiceTeamTable({
             right: 24,
             zIndex: 1000,
           }}
+          title={t("save-reorder", { defaultMessage: "Save reorder" })}
         >
           <Iconify icon="solar:diskette-bold" />
         </Fab>
@@ -709,7 +719,10 @@ export default function RetreatServiceTeamTable({
     const stilyName = stiliesById[containerId] || containerId;
     return (
       <Container
-        label={`Família ${stilyName}`}
+        label={t("team-label", {
+          defaultMessage: "Service team {name}",
+          name: stilyName.name,
+        })}
         columns={memberIds.length}
         style={{ height: "100%" }}
         shadow
@@ -863,20 +876,11 @@ function SortableItem({
       handleProps={handle ? { ref: setActivatorNodeRef } : undefined}
       index={index}
       wrapperStyle={wrapperStyle({ index })}
-      // style={style({
-      //   index,
-      //   value: id,
-      //   isDragging,
-      //   isSorting,
-      //   overIndex: over ? getIndex(over.id) : overIndex,
-      //   containerId,
-      // })}
       color={getColor(id)}
       transition={transition}
       transform={transform}
       fadeIn={mountedWhileDragging}
       listeners={listeners}
-      //renderItem={renderItem}
     />
   );
 }

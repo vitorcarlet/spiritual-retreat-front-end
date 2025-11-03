@@ -19,6 +19,7 @@ import {
   MockServiceSpace,
   mockServiceSpaces,
 } from "./handlerData/retreats/serviceSpaces";
+import { mockTents } from "./handlerData/retreats/tents";
 
 export const handlersApi = [
   // Send message to families endpoint
@@ -317,7 +318,7 @@ export const handlersApi = [
     "http://localhost:5000/api/retreats/:retreatId/families/:familyId",
     ({ params }) => {
       const familyId = Number(params.familyId);
-      const family = mockFamilies.find((f) => f.id === familyId);
+      const family = mockFamilies.find((f) => f.familyId === familyId);
 
       if (family) {
         return HttpResponse.json(family, { status: 200 });
@@ -335,7 +336,7 @@ export const handlersApi = [
     "http://localhost:5000/api/retreats/:retreatId/families/:familyId",
     ({ params }) => {
       const familyId = Number(params.familyId);
-      const family = mockFamilies.find((f) => f.id === familyId);
+      const family = mockFamilies.find((f) => f.familyId === familyId);
 
       if (family) {
         return HttpResponse.json("familia deletada com sucesso", {
@@ -387,7 +388,7 @@ export const handlersApi = [
       const familyId = Number(params.familyId);
       const body = (await request.json()) as { lock: boolean };
 
-      const family = mockFamilies.find((f) => f.id === familyId);
+      const family = mockFamilies.find((f) => f.familyId === familyId);
 
       if (!family) {
         return HttpResponse.json(
@@ -1526,6 +1527,15 @@ export const handlersApi = [
         },
         { status: 200 }
       );
+    }
+  ),
+
+  http.get(
+    "http://localhost:5000/api/retreats/:id/tents",
+    ({ request /*, params */ }) => {
+      const url = new URL(request.url);
+      const payload = paginate(mockTents, url);
+      return HttpResponse.json(payload, { status: 200 });
     }
   ),
 ];

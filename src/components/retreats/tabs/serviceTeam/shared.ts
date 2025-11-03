@@ -190,3 +190,28 @@ export const findContainer = (
   if (memberToContainer && memberToContainer[id]) return memberToContainer[id];
   return Object.keys(items).find((key) => items[key].includes(id));
 };
+
+/**
+ * Converte dados da API (ServiceSpaceApiResponse) para o formato interno (ServiceSpace)
+ */
+export const transformApiServiceSpace = (
+  apiSpace: ServiceSpaceLite,
+  retreatId: string
+): ServiceSpace => {
+  return {
+    spaceId: apiSpace.spaceId,
+    retreatId,
+    name: apiSpace.name,
+    description: apiSpace.description || "",
+    color: "#666666", // Cor padrão, pode ser gerada baseada no nome
+    minMembers: apiSpace.minPeople,
+    maxMembers: apiSpace.maxPeople,
+    minMember: apiSpace.minPeople,
+    coordinator: null,
+    viceCoordinator: null,
+    members: apiSpace.members,
+    createdAt: undefined,
+    updatedAt: undefined,
+    isLocked: apiSpace.isLocked,
+  };
+};

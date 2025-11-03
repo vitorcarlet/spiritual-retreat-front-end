@@ -62,3 +62,12 @@ export type ServantUnassigned = {
   referredSpaceId: string;
   preferredSpaceName: string;
 };
+
+// export interface ServiceSpacesResponse {
+//   rows: ServiceSpace[] | ServiceSpace;
+//   total: number;
+//   page: number;
+//   pageLimit: number | "all";
+//   hasNextPage: boolean;
+//   hasPrevPage: boolean;
+// }
