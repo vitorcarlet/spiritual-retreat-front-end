@@ -2,11 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Button, Stack } from "@mui/material";
-import FilterButton from "@/src/components/filters/FilterButton";
-import type {
-  RetreatsCardTableFilters,
-  RetreatsCardTableDateFilters,
-} from "@/src/components/retreats/types";
+import type { RetreatsCardTableFilters } from "@/src/components/retreats/types";
 
 interface TentsActionBarProps {
   hasCreatePermission: boolean;
@@ -14,7 +10,7 @@ interface TentsActionBarProps {
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
   activeFiltersCount: number;
   //filtersConfig: any;
-  onCreateTeam: () => void;
+  onCreateTent: () => void;
   onAddParticipant: () => void;
   onConfigure: () => void;
   onLock: () => void;
@@ -27,15 +23,10 @@ interface TentsActionBarProps {
 export default function TentsActionBar({
   hasCreatePermission,
   isReordering,
-  filters,
-  activeFiltersCount,
-  //filtersConfig,
-  onCreateTeam,
+  onCreateTent,
   onAddParticipant,
   onConfigure,
   onLock,
-  onApplyFilters,
-  onResetFilters,
 }: TentsActionBarProps) {
   const t = useTranslations("tent-details");
 
@@ -45,7 +36,7 @@ export default function TentsActionBar({
         <>
           <Button
             variant="contained"
-            onClick={onCreateTeam}
+            onClick={onCreateTent}
             disabled={isReordering}
           >
             {t("create-new-tent")}

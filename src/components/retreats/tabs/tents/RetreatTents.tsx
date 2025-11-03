@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import apiClient from "@/src/lib/axiosClientInstance";
-import RetreatsTable from "./RetreatsTable";
 import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
@@ -23,12 +22,12 @@ import { getFilters } from "./getFilters";
 import { useTranslations } from "next-intl";
 import { UniqueIdentifier } from "@dnd-kit/core";
 import { useModal } from "@/src/hooks/useModal";
-import CreateTentForm from "./CreateTentForm";
 import CreateTentBulkForm from "./CreateTentBulkForm";
 import { Items } from "./types";
 import TentDetails from "./TentDetails";
 import LockTentsModal from "./LockTentsModal";
 import TentsActionBar from "./TentsActionBar";
+import RetreatTentsTable from "./RetreatTentsTable";
 
 interface RetreatRequest {
   tents: RetreatLite[];
@@ -60,7 +59,7 @@ interface RetreatsProps {
   id: string;
 }
 
-export default function Retreats({ id: retreatId }: RetreatsProps) {
+export default function RetreatTents({ id: retreatId }: RetreatsProps) {
   const t = useTranslations("tents");
   // const t = useTranslations("tent-details");
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
@@ -74,7 +73,7 @@ export default function Retreats({ id: retreatId }: RetreatsProps) {
 
   const session = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
-  const [tentsReorderFlag, setsReorderFlag] = useState<boolean>(false);
+  const [tentsReorderFlag, setTentsReorderFlag] = useState<boolean>(false);
   const modal = useModal();
 
   useEffect(() => {
@@ -277,7 +276,7 @@ export default function Retreats({ id: retreatId }: RetreatsProps) {
           data: reorderData,
         });
 
-        setsReorderFlag(false);
+        setTentsReorderFlag(false);
 
         // Refetch tents data to get updated order
         queryClient.invalidateQueries({ queryKey: ["retreat-tents"] });
@@ -327,7 +326,7 @@ export default function Retreats({ id: retreatId }: RetreatsProps) {
           isReordering={tentsReorderFlag}
           filters={filters}
           activeFiltersCount={activeFiltersCount}
-          onCreateTent={handleOpenCreateTent}
+          onCreateTent={createIndividualTent}
           onAddParticipant={handleAddParticipantInTent}
           onLock={handleOpenLock}
           onApplyFilters={handleApplyFilters}
@@ -348,8 +347,8 @@ export default function Retreats({ id: retreatId }: RetreatsProps) {
           <Typography color="error">Erro ao carregar barracas.</Typography>
         )}
         {!isLoading && !isError && (
-          <RetreatsTable
-            setsReorderFlag={setsReorderFlag}
+          <RetreatTentsTable
+            setTentsReorderFlag={setTentsReorderFlag}
             onSaveReorder={handleSaveReorder}
             total={tentsData?.tents.length || 0}
             filters={filters}

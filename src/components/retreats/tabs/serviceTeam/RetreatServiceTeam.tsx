@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
-import { useTranslations } from "next-intl";
+
 import { Container } from "@mui/material";
 
 import { useModal } from "@/src/hooks/useModal";
@@ -21,6 +21,7 @@ import { useServiceSpacesQuery } from "./hooks/useQuery";
 import ServiceTeamActionBar from "./ServiceSpacesActionBar";
 import ServiceSpaceContent from "./ServiceSpacesContent";
 import AddMemberToServiceTeamForm from "./AddMemberToServiceTeamForm";
+import { useTranslations } from "next-intl";
 
 interface RetreatServiceTeamProps {
   id: string;
