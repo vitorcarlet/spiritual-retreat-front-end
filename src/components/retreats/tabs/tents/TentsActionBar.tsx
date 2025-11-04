@@ -11,6 +11,7 @@ interface TentsActionBarProps {
   activeFiltersCount: number;
   //filtersConfig: any;
   onCreateTent: () => void;
+  onCreateTentBulk: () => void;
   onAddParticipant: () => void;
   onConfigure: () => void;
   onLock: () => void;
@@ -24,6 +25,7 @@ export default function TentsActionBar({
   hasCreatePermission,
   isReordering,
   onCreateTent,
+  onCreateTentBulk,
   onAddParticipant,
   onConfigure,
   onLock,
@@ -43,6 +45,13 @@ export default function TentsActionBar({
           </Button>
           <Button
             variant="contained"
+            onClick={onCreateTentBulk}
+            disabled={isReordering}
+          >
+            {t("create-new-tent-bulk")}
+          </Button>
+          <Button
+            variant="contained"
             onClick={onAddParticipant}
             disabled={isReordering}
           >
@@ -53,15 +62,10 @@ export default function TentsActionBar({
             onClick={onConfigure}
             disabled={isReordering}
           >
-            {t("service-space-configurations")}
+            {t("tent-configurations")}
           </Button>
           <Button variant="contained" onClick={onLock} disabled={isReordering}>
             {t("lock-tents")}
-          </Button>
-          <Button variant="contained" onClick={onLock} disabled={isReordering}>
-            {t("lock.button", {
-              defaultMessage: "Lock service teams",
-            })}
           </Button>
         </>
       )}

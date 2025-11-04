@@ -20,40 +20,58 @@ import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+import apiClient from "@/src/lib/axiosClientInstance";
+import axios from "axios";
+import { enqueueSnackbar } from "notistack";
 
 interface AddParticipantToFamilyFormProps {
   retreatId: string;
-  families: RetreatFamily[];
+  tentsDataArray: RetreatTentRoster[];
   onSuccess: () => void;
 }
 
+interface ParticipantRequest {
+  retreatId: string;
+  items: Participant[];
+}
+
 interface Participant {
-  id: number;
+  registrationId: string;
   name: string;
-  email: string;
-  phone?: string;
-  age?: number;
-  location?: string;
-  isAssigned?: boolean;
+  gender: "Male" | "Female";
+  city: string;
+}
+
+interface TentRosterResponse {
+  version: number;
+  tents: Array<{
+    tentId: string;
+    number: string;
+    category: string;
+    capacity: number;
+    isLocked: boolean;
+    members: Array<{
+      registrationId: string;
+      name: string;
+      gender: string;
+      city: string;
+      position: number;
+    }>;
+  }>;
 }
 
 const addParticipantSchema = z.object({
-  familyId: z.string().min(1, "Selecione uma família"),
+  tentId: z.string().min(1, "Selecione uma barraca"),
   participantIds: z
-    .array(z.number())
+    .array(z.string())
     .min(1, "Selecione pelo menos um participante"),
-  role: z.enum(["leader", "member"]),
 });
 
 type AddParticipantData = z.infer<typeof addParticipantSchema>;
 
 export default function AddParticipantToFamilyForm({
   retreatId,
-  families,
+  tentsDataArray: tents,
   onSuccess,
 }: AddParticipantToFamilyFormProps) {
   const t = useTranslations();
@@ -69,27 +87,23 @@ export default function AddParticipantToFamilyForm({
   } = useForm<AddParticipantData>({
     resolver: zodResolver(addParticipantSchema),
     defaultValues: {
-      familyId: "",
+      tentId: "",
       participantIds: [],
-      role: "member",
     },
   });
 
-  const familyId = watch("familyId");
+  const tentId = watch("tentId");
 
   // Buscar participantes disponíveis
   useEffect(() => {
     const fetchParticipants = async () => {
       setLoadingParticipants(true);
       try {
-        const response = await handleApiResponse<Participant[]>(
-          await sendRequestServerVanilla.get(
-            `/retreats/${retreatId}/participants/available`
-          )
+        const response = await apiClient.get<ParticipantRequest>(
+          `/retreats/${retreatId}/tents/roster/unassigned`
         );
-        if (response.success && response.data) {
-          setParticipants(response.data || []);
-        }
+
+        setParticipants(response.data.items || []);
       } catch (error) {
         console.error("Erro ao buscar participantes:", error);
         setParticipants([]);
@@ -101,32 +115,65 @@ export default function AddParticipantToFamilyForm({
     fetchParticipants();
   }, [retreatId]);
 
-  const selectedFamily = families.find((f) => String(f.id) === familyId);
-  const availableParticipants = participants.filter((p) => !p.isAssigned);
+  const selectedTent = tents.find((f) => String(f.tentId) === tentId);
+  const availableParticipants = participants;
 
   const onSubmit = async (data: AddParticipantData) => {
     try {
-      const payload = {
-        familyId: data.familyId,
-        participantIds: data.participantIds,
-        role: data.role,
-      };
-
-      const response = await handleApiResponse(
-        await sendRequestServerVanilla.post(
-          `/retreats/${retreatId}/families/add-participants`,
-          payload
-        )
+      // Fetch current tent roster to get existing members
+      const rosterResponse = await apiClient.get<TentRosterResponse>(
+        `/retreats/${retreatId}/tents/roster`
       );
 
-      if (response.success) {
-        reset();
-        onSuccess();
-      } else {
-        console.error("Erro ao adicionar participantes:", response.error);
+      const tentData = rosterResponse.data.tents.find(
+        (tent) => String(tent.tentId) === data.tentId
+      );
+
+      if (!tentData) {
+        enqueueSnackbar("Barraca não encontrada", { variant: "error" });
+        return;
       }
+
+      // Combine existing members with new participant IDs
+      const existingMembers = tentData.members.map((member) => ({
+        registrationId: member.registrationId,
+        position: member.position,
+      }));
+
+      const newMembers = data.participantIds
+        .filter((id) => !existingMembers.some((m) => m.registrationId === id))
+        .map((registrationId, index) => ({
+          registrationId,
+          position: existingMembers.length + index,
+        }));
+
+      const allMembers = [...existingMembers, ...newMembers];
+
+      const payload = {
+        retreatId,
+        version: rosterResponse.data.version,
+        tents: [
+          {
+            tentId: data.tentId,
+            members: allMembers,
+          },
+        ],
+      };
+
+      await apiClient.put(`/retreats/${retreatId}/tents/roster`, payload);
+
+      enqueueSnackbar("Participantes adicionados com sucesso!", {
+        variant: "success",
+      });
+
+      reset();
+      onSuccess();
     } catch (error) {
       console.error("Erro ao adicionar participantes:", error);
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Erro ao adicionar participantes.";
+      enqueueSnackbar(message, { variant: "error" });
     }
   };
 
@@ -138,14 +185,14 @@ export default function AddParticipantToFamilyForm({
         </Typography>
 
         <Controller
-          name="familyId"
+          name="tentId"
           control={control}
           render={({ field }) => (
-            <FormControl fullWidth required error={!!errors.familyId}>
-              <InputLabel>{t("select-family")}</InputLabel>
-              <Select {...field} label={t("select-family")}>
-                {families.map((family) => (
-                  <MenuItem key={family.id} value={String(family.id)}>
+            <FormControl fullWidth required error={!!errors.tentId}>
+              <InputLabel>{t("select-tent")}</InputLabel>
+              <Select {...field} label={t("select-tent")}>
+                {tents.map((tent) => (
+                  <MenuItem key={tent.tentId} value={String(tent.tentId)}>
                     <Box
                       sx={{
                         display: "flex",
@@ -153,45 +200,29 @@ export default function AddParticipantToFamilyForm({
                         width: "100%",
                       }}
                     >
-                      <Typography>{family.name}</Typography>
+                      <Typography>{tent.number}</Typography>
                       <Chip
                         size="small"
-                        label={`${family.members?.length || 0}/6`}
+                        label={`${tent.members?.length || 0}/6`}
                         color={
-                          (family.members?.length || 0) >= 6
-                            ? "error"
-                            : "default"
+                          (tent.members?.length || 0) >= 6 ? "error" : "default"
                         }
                       />
                     </Box>
                   </MenuItem>
                 ))}
               </Select>
-              {selectedFamily && (
+              {selectedTent && (
                 <Typography variant="caption" sx={{ mt: 1 }}>
-                  {t("family-current-members")}:{" "}
-                  {selectedFamily.members?.length || 0} / 6
+                  {t("tent-current-members")}:{" "}
+                  {selectedTent.members?.length || 0} / 6
                 </Typography>
               )}
-              {errors.familyId && (
+              {errors.tentId && (
                 <Typography variant="caption" color="error" sx={{ mt: 1 }}>
-                  {errors.familyId.message}
+                  {errors.tentId.message}
                 </Typography>
               )}
-            </FormControl>
-          )}
-        />
-
-        <Controller
-          name="role"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth>
-              <InputLabel>{t("participant-role")}</InputLabel>
-              <Select {...field} label={t("participant-role")}>
-                <MenuItem value="member">{t("member")}</MenuItem>
-                <MenuItem value="leader">{t("leader")}</MenuItem>
-              </Select>
             </FormControl>
           )}
         />
@@ -216,13 +247,13 @@ export default function AddParticipantToFamilyForm({
                   multiple
                   options={availableParticipants}
                   getOptionLabel={(option) =>
-                    `${option.name} (${option.email})`
+                    `${option.name} (${option.gender})`
                   }
                   value={availableParticipants.filter((p) =>
-                    field.value.includes(p.id)
+                    field.value.includes(p.registrationId)
                   )}
                   onChange={(_, newValue) =>
-                    field.onChange(newValue.map((p) => p.id))
+                    field.onChange(newValue.map((p) => p.registrationId))
                   }
                   renderInput={(params) => (
                     <TextField
@@ -243,10 +274,8 @@ export default function AddParticipantToFamilyForm({
                       <Box>
                         <Typography variant="body2">{option.name}</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {option.email}
-                          {option.age &&
-                            ` • ${option.age} anos •` &&
-                            option.location}
+                          {option.gender}
+                          {option.city}
                         </Typography>
                       </Box>
                     </Box>
@@ -255,7 +284,7 @@ export default function AddParticipantToFamilyForm({
                     tagValue.map((option, index) => (
                       <Chip
                         {...getTagProps({ index })}
-                        key={option.id}
+                        key={option.registrationId}
                         label={option.name}
                         avatar={
                           <Avatar>{option.name.charAt(0).toUpperCase()}</Avatar>
@@ -263,7 +292,7 @@ export default function AddParticipantToFamilyForm({
                       />
                     ))
                   }
-                  disabled={!familyId}
+                  disabled={!tentId}
                   noOptionsText={t("no-participants-available")}
                 />
               )}
@@ -271,9 +300,9 @@ export default function AddParticipantToFamilyForm({
           )}
         </Box>
 
-        {selectedFamily && (selectedFamily.members?.length || 0) >= 6 && (
+        {selectedTent && (selectedTent.members?.length || 0) >= 6 && (
           <Typography variant="body2" color="warning.main">
-            ⚠️ {t("family-full-warning")}
+            ⚠️ {t("tent-full-warning")}
           </Typography>
         )}
 

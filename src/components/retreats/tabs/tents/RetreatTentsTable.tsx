@@ -156,8 +156,8 @@ function cloneItems(source: Items): Items {
 }
 
 const genderColorMap: Record<string, string> = {
-  male: "#1976d2",
-  female: "#d81b60",
+  Male: "#1976d2",
+  Female: "#d81b60",
 };
 
 export default function RetreatTentsTable({
@@ -191,7 +191,7 @@ export default function RetreatTentsTable({
   const [tentsById, setTentsById] = useState<
     Record<
       string,
-      { number: string; gender: string; capacity: number; color: string }
+      { number: string; category: string; capacity: number; color: string }
     >
   >({});
   const [memberToContainer, setMemberToContainer] = useState<MemberToContainer>(
@@ -204,7 +204,7 @@ export default function RetreatTentsTable({
       const nextMembersById: MembersById = {};
       const nextTentsById: Record<
         string,
-        { number: string; gender: string; capacity: number; color: string }
+        { number: string; category: string; capacity: number; color: string }
       > = {};
       const nextMemberToContainer: MemberToContainer = {};
 
@@ -213,14 +213,14 @@ export default function RetreatTentsTable({
         //const color = genderColorMap[tent.gender] ?? genderColorMap.male;
         nextTentsById[tentId] = {
           number: tent.number,
-          // gender: tent.gender,
+          category: tent.category,
           capacity: tent.capacity,
-          // color,
+          color: genderColorMap[tent.category] ?? genderColorMap.male,
         };
 
         nextItems[tentId] =
-          tent.participants?.map((participant) => {
-            const participantId = String(participant.id);
+          tent.members?.map((participant) => {
+            const participantId = String(participant.registrationId);
             nextMembersById[participantId] = {
               id: participantId,
               name: participant.name ?? t("unknown-participant"),
@@ -437,7 +437,7 @@ export default function RetreatTentsTable({
                 <Stack spacing={0.5} mt={1} alignItems="center">
                   <Typography variant="caption" color="text.secondary">
                     {t("tent-info", {
-                      gender: t(`gender.${tentMeta.gender}` as const),
+                      gender: t(`gender.${tentMeta.category}` as const),
                       capacity: tentMeta.capacity,
                       current: memberIds.length,
                     })}

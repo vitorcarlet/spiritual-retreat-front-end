@@ -1,13 +1,19 @@
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import {
   Box,
   Stack,
   Typography,
   CircularProgress,
   Container,
-  Button,
 } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import apiClient from "@/src/lib/axiosClientInstance";
@@ -18,7 +24,6 @@ import {
 import getPermission from "@/src/utils/getPermission";
 import { useSession } from "next-auth/react";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
-import { getFilters } from "./getFilters";
 import { useTranslations } from "next-intl";
 import { UniqueIdentifier } from "@dnd-kit/core";
 import { useModal } from "@/src/hooks/useModal";
@@ -28,17 +33,20 @@ import TentDetails from "./TentDetails";
 import LockTentsModal from "./LockTentsModal";
 import TentsActionBar from "./TentsActionBar";
 import RetreatTentsTable from "./RetreatTentsTable";
+import CreateTentForm from "./CreateTentForm";
+import AddParticipantToTentForm from "./AddParticipantToTentForm";
 
 interface RetreatRequest {
-  tents: RetreatLite[];
+  tents: RetreatTentRoster[];
   version: number;
 }
 
-const getRetreats = async (
+const getTents = async (
   filters: TableDefaultFilters<
     RetreatsCardTableFilters & RetreatsCardTableDateFilters
   >,
-  retreatId: string
+  retreatId: string,
+  setTentsVersion: Dispatch<SetStateAction<number>>
 ): Promise<RetreatRequest> => {
   try {
     const response = await apiClient.get<RetreatRequest>(
@@ -47,7 +55,7 @@ const getRetreats = async (
         params: filters,
       }
     );
-
+    setTentsVersion(response.data.version);
     return response.data;
   } catch (error) {
     console.error("Error fetching retreat tents:", error);
@@ -74,6 +82,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
   const session = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
   const [tentsReorderFlag, setTentsReorderFlag] = useState<boolean>(false);
+  const [tentsVersion, setTentsVersion] = useState<number>(0);
   const modal = useModal();
 
   useEffect(() => {
@@ -88,7 +97,6 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     }
   }, [session.data]);
 
-  const filtersConfig = getFilters();
   const queryClient = useQueryClient();
   const {
     data: tentsData,
@@ -96,7 +104,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     isError,
   } = useQuery({
     queryKey: ["retreat-tents", filters],
-    queryFn: () => getRetreats(filters, retreatId),
+    queryFn: () => getTents(filters, retreatId, setTentsVersion),
     staleTime: 60_000,
   });
 
@@ -106,29 +114,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     });
   };
 
-  const handleOpenLock = useCallback(() => {
-    modal.open({
-      title: t("lock.title", {
-        defaultMessage: "Lock service tents",
-      }),
-      size: "md",
-      customRender() {
-        return (
-          <LockTentsModal
-            retreatId={retreatId}
-            serviceSpaces={serviceSpacesArray}
-            onCancel={modal.close}
-            onSuccess={() => {
-              modal.close?.();
-              invalidateTentsQuery();
-            }}
-          />
-        );
-      },
-    });
-  }, [modal, t, retreatId, serviceSpacesArray, invalidateServiceSpacesQuery]);
-
-  const tentsDataArray: RetreatLite[] = useMemo(() => {
+  const tentsDataArray: RetreatTentRoster[] = useMemo(() => {
     if (!tentsData) {
       return [];
     }
@@ -155,6 +141,27 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     });
   }, [session.data]);
 
+  const handleOpenLock = useCallback(() => {
+    modal.open({
+      title: t("lock.title", {
+        defaultMessage: "Lock service tents",
+      }),
+      size: "md",
+      customRender() {
+        return (
+          <LockTentsModal
+            retreatId={retreatId}
+            onCancel={modal.close}
+            onSuccess={() => {
+              modal.close?.();
+              invalidateTentsQuery();
+            }}
+          />
+        );
+      },
+    });
+  }, [modal, t, retreatId, tentsDataArray, invalidateTentsQuery]);
+
   const openTentDetails = useCallback(
     (tentId: UniqueIdentifier, startInEdit = false) => {
       const tent = tentsDataArray.find(
@@ -172,6 +179,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
           return (
             <TentDetails
               tentId={tent.tentId}
+              tent={tent}
               retreatId={retreatId}
               canEdit={canEdit}
               startInEdit={startInEdit && canEdit}
@@ -189,7 +197,17 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
                         ...previous,
                         tents: previous.tents.map((row) =>
                           row.tentId === updatedTent.tentId
-                            ? { ...row, ...updatedTent }
+                            ? {
+                                ...row,
+                                number: updatedTent.number,
+                                capacity: updatedTent.capacity,
+                                notes: updatedTent.notes,
+                                gender: updatedTent.gender,
+                                isLocked: updatedTent.isLocked,
+                                isActive: updatedTent.isActive,
+                                assignedCount: updatedTent.assignedCount,
+                                members: updatedTent.members,
+                              }
                             : row
                         ),
                       };
@@ -223,6 +241,27 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
       openTentDetails(tentId, false);
     },
     [openTentDetails]
+  );
+
+  const handleAddParticipantInTent = useCallback(
+    () =>
+      modal.open({
+        title: t("addParticipantToTent"),
+        size: "md",
+        customRender() {
+          return (
+            <AddParticipantToTentForm
+              retreatId={retreatId}
+              tentsDataArray={tentsDataArray}
+              onSuccess={() => {
+                modal.close?.();
+                invalidateTentsQuery();
+              }}
+            />
+          );
+        },
+      }),
+    []
   );
 
   const createIndividualTent = () => {
@@ -265,16 +304,21 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     async (items: Items) => {
       try {
         // Transform items to the format expected by the API
-        const reorderData = Object.entries(items).map(
-          ([tentId, participantIds]) => ({
-            tentId,
-            participantIds: participantIds.map((id) => String(id)),
-          })
-        );
+        const tents = Object.entries(items).map(([tentId, participantIds]) => ({
+          tentId,
+          members: participantIds.map((registrationId, position) => ({
+            registrationId: String(registrationId),
+            position,
+          })),
+        }));
 
-        await apiClient.put(`/retreats/${retreatId}/tents/reorder`, {
-          data: reorderData,
-        });
+        const payload = {
+          retreatId,
+          version: tentsVersion,
+          tents,
+        };
+
+        await apiClient.put(`/retreats/${retreatId}/tents/roster`, payload);
 
         setTentsReorderFlag(false);
 
@@ -328,6 +372,8 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
           activeFiltersCount={activeFiltersCount}
           onCreateTent={createIndividualTent}
           onAddParticipant={handleAddParticipantInTent}
+          onConfigure={() => {}}
+          onCreateTentBulk={createTentBulk}
           onLock={handleOpenLock}
           onApplyFilters={handleApplyFilters}
           onResetFilters={resetFilters}
@@ -357,7 +403,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
             onView={handleView}
             onFiltersChange={handleFiltersChange}
             retreatId={retreatId}
-            canEdit={canEdit}
+            canEditTent={canEdit}
           />
         )}
       </Box>

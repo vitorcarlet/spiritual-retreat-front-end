@@ -249,6 +249,7 @@
     "delete-family": "Deletar Família"
   },
   "tents": {
+    "addParticipantToTent":"Adicionar Participante à Tenda",
     "createIndividual": "Cadastro individual",
     "createBulk": "Cadastro em lote",
     "per-page": "por página",
@@ -257,6 +258,8 @@
     "unknown-participant": "Participante desconhecido",
     "tent-info": "{gender} • {current}/{capacity}",
     "gender": {
+      "Male": "Masculina",
+      "Female": "Feminina",
       "male": "Masculina",
       "female": "Feminina",
       "mixed": "Mista"
@@ -300,11 +303,32 @@
     "edit": "Editar",
     "update-success": "Barraca atualizada com sucesso!",
     "update-error": "Não foi possível atualizar a barraca. Tente novamente.",
+    "remove": "Remover",
+    "confirm-remove-participant": "Remover participante?",
+    "participant-removed": "removido da barraca.",
+    "remove-error": "Não foi possível remover o participante. Tente novamente.",
     "gender": {
       "male": "Masculina",
       "female": "Feminina",
       "mixed": "Mista"
-    }
+    },
+    "lock": {
+      "title": "Bloqueio de Barracas"
+    },
+    "createBulk": "Criar Barracas Em Lote",
+    "create-new-tent-bulk": "Criar Barracas em Lote",
+    "create-new-tent": "Criar nova Barraca",
+    "add-member-to-team": "Adicionar membro à Barraca",
+    "createIndividual": "Criar Tenda Individualmente",
+    "addParticipantToTent": "Adicionar Participante à Tenda",
+    "lock-tents": "Trancar Barracas",
+    "tent-configurations": "Configurações das Barracas",
+    "view": "Visualizar",
+    "load-error": "Erro ao carregar Barraca",
+    "assigned-count-label": "Alocados",
+    "active-label": "Ativo",
+    "active": "Ativo",
+    "inactive": "Inativo"
   },
   "service-team-details": {
     "title": "Espaço de serviço {space}",
@@ -430,7 +454,8 @@
       "buttons": {
         "cancel": "Cancelar",
         "finish": "Concluir"
-      }
+      },
+      "load-error": "Erro ao carregar barracas"
     },
     "actions": {
       "close": "Fechar",
@@ -656,5 +681,8 @@
   "delete-family-warning": "Ao deletar essa família, os membros voltam ao estado de \"sem família\"",
   "delete-family-confirmation": "Tem certeza que deseja continuar?",
   "deleting": "Deletando",
-  "delete-family": "Deletar Família"
+  "delete-family": "Deletar Família",
+  "tent-current-members": "Membros atuais",
+  "tent-full-warning": "Barraca Cheia!",
+  "select-tent": "Selecione a Barraca"
 }

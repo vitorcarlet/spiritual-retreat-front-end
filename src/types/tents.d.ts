@@ -1,35 +1,35 @@
 interface TentParticipant {
-  id: string;
+  registrationId: string;
   name: string;
   email?: string;
   phone?: string;
-  gender?: "male" | "female" | "other" | "na";
-  city?: string;
+  position: number;
+  gender?: "Male" | "Female";
+  city: string;
   age?: number;
 }
 
-interface RetreatTentLite {
+interface RetreatTentRoster {
   tentId: string;
   number: string;
   category: string;
   capacity: number;
-  assignedCount
-  gender?: "male" | "female" | "mixed";
-  participants?: TentParticipant[];
+  assignedCount;
+  gender: "male" | "female" | "mixed";
+  members?: TentParticipant[];
   createdAt?: string;
   updatedAt?: string;
 }
 
-
 interface RetreatTent {
   tentId: string;
   number: string;
-  category: string;
+  category: "Male" | "Female";
   capacity: number;
-  assignedCount
-  gender?: "male" | "female" | "mixed";
+  assignedCount;
+  //gender?: "male" | "female" | "mixed";
   notes: string;
-  participants?: TentParticipant[];
+  members?: TentParticipant[];
   createdAt?: string;
   updatedAt?: string;
 }

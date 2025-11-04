@@ -103,21 +103,18 @@ export default function LockServiceSpacesModal({
     [serviceSpaceLocks]
   );
 
-  const allSpacesLocked = useMemo(
-    () => areAllServiceSpacesLocked(serviceSpaceLocks, serviceSpaces),
-    [serviceSpaceLocks, serviceSpaces]
-  );
+  // const allSpacesLocked = useMemo(
+  //   () => areAllServiceSpacesLocked(serviceSpaceLocks, serviceSpaces),
+  //   [serviceSpaceLocks, serviceSpaces]
+  // );
 
   useEffect(() => {
     const fetchLockStatus = async () => {
       try {
         setLoading(true);
-        const { data } = await apiClient.get<ServiceSpacesLockStatus>(
-          `/retreats/${retreatId}/service/spaces/lock`
-        );
 
         // Determina o estado do lock global verificando se todos estão bloqueados
-        const locks = buildServiceSpaceLocks(data, serviceSpaces);
+        const locks = buildServiceSpaceLocks(undefined, serviceSpaces);
         const isGloballyLocked = areAllServiceSpacesLocked(
           locks,
           serviceSpaces
@@ -196,7 +193,7 @@ export default function LockServiceSpacesModal({
     const nextState = !serviceSpaceLocks[serviceSpaceId];
 
     try {
-      const { data } = await apiClient.post<{ locked: boolean }>(
+      await apiClient.post<{ locked: boolean }>(
         `/retreats/${retreatId}/service/spaces/${serviceSpaceId}/lock`,
         { lock: nextState }
       );

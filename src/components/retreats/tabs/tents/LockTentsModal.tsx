@@ -22,10 +22,10 @@ import { enqueueSnackbar } from "notistack";
 import { useTranslations } from "next-intl";
 
 import apiClient from "@/src/lib/axiosClientInstance";
+import { RetreatTentLite } from "./types";
 
 interface LockTentsModalProps {
   retreatId: string;
-  serviceSpaces: ServiceSpace[];
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -45,47 +45,46 @@ interface ServiceSpacesLockStatus {
   serviceSpaces?: ServiceSpaceLockStatusEntry[];
 }
 
-const buildServiceSpaceLocks = (
-  payload: ServiceSpacesLockStatus | null | undefined,
-  serviceSpaces: ServiceSpace[]
-): Record<string, boolean> => {
-  const locks: Record<string, boolean> = {};
+// const buildServiceSpaceLocks = (
+//   payload: ServiceSpacesLockStatus | null | undefined,
+//   serviceSpaces: ServiceSpace[]
+// ): Record<string, boolean> => {
+//   const locks: Record<string, boolean> = {};
 
-  const entries = payload?.spaces ?? payload?.serviceSpaces;
+//   const entries = payload?.spaces ?? payload?.serviceSpaces;
 
-  if (Array.isArray(entries)) {
-    entries.forEach((entry) => {
-      const key = entry.serviceSpaceId ?? entry.spaceId ?? entry.id;
-      if (key) {
-        // Verifica ambas as chaves: isLocked e locked
-        locks[String(key)] = Boolean(entry.isLocked);
-      }
-    });
-  }
+//   if (Array.isArray(entries)) {
+//     entries.forEach((entry) => {
+//       const key = entry.serviceSpaceId ?? entry.spaceId ?? entry.id;
+//       if (key) {
+//         // Verifica ambas as chaves: isLocked e locked
+//         locks[String(key)] = Boolean(entry.isLocked);
+//       }
+//     });
+//   }
 
-  serviceSpaces.forEach((space) => {
-    const key = String(space.spaceId);
-    if (!(key in locks)) {
-      locks[key] = false;
-    }
-  });
+//   serviceSpaces.forEach((space) => {
+//     const key = String(space.spaceId);
+//     if (!(key in locks)) {
+//       locks[key] = false;
+//     }
+//   });
 
-  return locks;
-};
+//   return locks;
+// };
 
-const areAllServiceSpacesLocked = (
-  serviceSpaceLocks: Record<string, boolean>,
-  serviceSpaces: ServiceSpace[]
-): boolean => {
-  return serviceSpaces.every((space) => {
-    const key = String(space.spaceId);
-    return serviceSpaceLocks[key] === true;
-  });
-};
+// const areAllServiceSpacesLocked = (
+//   serviceSpaceLocks: Record<string, boolean>,
+//   serviceSpaces: ServiceSpace[]
+// ): boolean => {
+//   return serviceSpaces.every((space) => {
+//     const key = String(space.spaceId);
+//     return serviceSpaceLocks[key] === true;
+//   });
+// };
 
 export default function LockTentsModal({
   retreatId,
-  serviceSpaces,
   onSuccess,
   onCancel,
 }: LockTentsModalProps) {
@@ -94,53 +93,51 @@ export default function LockTentsModal({
   const [submitting, setSubmitting] = useState(false);
   const [globalLock, setGlobalLock] = useState(false);
   const [serviceSpaceLocks, setServiceSpaceLocks] = useState<
-    Record<string, boolean>
+    Record<string, { name: string; isLocked: boolean }>
   >({});
 
-  const totalCount = serviceSpaces.length;
-  const lockedCount = useMemo(
-    () => Object.values(serviceSpaceLocks).filter(Boolean).length,
-    [serviceSpaceLocks]
-  );
-
-  const allSpacesLocked = useMemo(
-    () => areAllServiceSpacesLocked(serviceSpaceLocks, serviceSpaces),
-    [serviceSpaceLocks, serviceSpaces]
-  );
-
   useEffect(() => {
-    const fetchLockStatus = async () => {
+    const fetchTentDetails = async () => {
       try {
         setLoading(true);
-        const { data } = await apiClient.get<ServiceSpacesLockStatus>(
-          `/retreats/${retreatId}/service/spaces/lock`
+        const response = await apiClient.get<RetreatTentLite[]>(
+          `/retreats/${retreatId}/tents/`
         );
 
-        // Determina o estado do lock global verificando se todos estão bloqueados
-        const locks = buildServiceSpaceLocks(data, serviceSpaces);
-        const isGloballyLocked = areAllServiceSpacesLocked(
-          locks,
-          serviceSpaces
+        const tent = response.data;
+        setServiceSpaceLocks(
+          Object.fromEntries(
+            tent.map((t) => [
+              String(t.tentId),
+              { name: t.number || `Tent ${t.tentId}`, isLocked: t.isLocked },
+            ])
+          )
         );
-
-        setGlobalLock(isGloballyLocked);
-        setServiceSpaceLocks(locks);
       } catch (error) {
+        console.error("Error fetching tent details:", error);
         const message = axios.isAxiosError(error)
           ? ((error.response?.data as { error?: string })?.error ??
             error.message)
-          : t("errors.fetch", {
-              defaultMessage: "Unable to load lock status.",
-            });
+          : t("load-error");
         enqueueSnackbar(message, { variant: "error" });
-        setServiceSpaceLocks(buildServiceSpaceLocks(undefined, serviceSpaces));
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLockStatus();
-  }, [retreatId, serviceSpaces, t]);
+    fetchTentDetails();
+  }, [retreatId]);
+
+  const totalCount = Object.keys(serviceSpaceLocks).length;
+  const lockedCount = useMemo(
+    () => Object.values(serviceSpaceLocks).filter(Boolean).length,
+    [serviceSpaceLocks]
+  );
+
+  // const allSpacesLocked = useMemo(
+  //   () => areAllServiceSpacesLocked(serviceSpaceLocks, serviceSpaces),
+  //   [serviceSpaceLocks, serviceSpaces]
+  // );
 
   const handleGlobalLockToggle = async () => {
     const nextState = !globalLock;
@@ -154,10 +151,12 @@ export default function LockTentsModal({
 
       setGlobalLock(Boolean(data.locked));
       const newLocks = Object.fromEntries(
-        serviceSpaces.map((space) => [String(space.spaceId), nextState])
+        Object.entries(serviceSpaceLocks).map(([spaceId, space]) => [
+          spaceId,
+          { ...space, isLocked: nextState },
+        ])
       );
       setServiceSpaceLocks(newLocks);
-      setGlobalLock(nextState);
 
       enqueueSnackbar(
         nextState
@@ -193,22 +192,23 @@ export default function LockTentsModal({
     }
 
     setSubmitting(true);
-    const nextState = !serviceSpaceLocks[serviceSpaceId];
+    const nextState = !serviceSpaceLocks[serviceSpaceId]?.isLocked;
 
     try {
-      const { data } = await apiClient.post<{ locked: boolean }>(
+      await apiClient.post<{ locked: boolean }>(
         `/retreats/${retreatId}/service/spaces/${serviceSpaceId}/lock`,
         { lock: nextState }
       );
 
       setServiceSpaceLocks((prev) => ({
         ...prev,
-        [serviceSpaceId]: Boolean(nextState),
+        [serviceSpaceId]: {
+          ...prev[serviceSpaceId],
+          isLocked: nextState,
+        },
       }));
 
-      const space = serviceSpaces.find(
-        (item) => String(item.spaceId) === serviceSpaceId
-      );
+      const space = serviceSpaceLocks[serviceSpaceId];
 
       enqueueSnackbar(
         nextState
@@ -328,13 +328,12 @@ export default function LockTentsModal({
           )}
 
           <List sx={{ maxHeight: 400, overflow: "auto" }}>
-            {serviceSpaces.map((space) => {
-              const serviceSpaceId = String(space.spaceId);
-              const isLocked = Boolean(serviceSpaceLocks[serviceSpaceId]);
+            {Object.entries(serviceSpaceLocks).map(([spaceId, space]) => {
+              const isLocked = Boolean(space.isLocked);
 
               return (
                 <ListItem
-                  key={serviceSpaceId}
+                  key={spaceId}
                   sx={{
                     bgcolor: isLocked ? "error.lighter" : "transparent",
                     borderRadius: 1,
@@ -345,14 +344,14 @@ export default function LockTentsModal({
                     primary={space.name}
                     secondary={t("individual.members", {
                       defaultMessage: "{count} members",
-                      count: space.members?.length ?? 0,
+                      count: 0,
                     })}
                   />
                   <ListItemSecondaryAction>
                     <Switch
                       edge="end"
                       checked={isLocked}
-                      onChange={() => handleServiceSpaceToggle(serviceSpaceId)}
+                      onChange={() => handleServiceSpaceToggle(spaceId)}
                       disabled={submitting || globalLock}
                       color={isLocked ? "error" : "primary"}
                     />

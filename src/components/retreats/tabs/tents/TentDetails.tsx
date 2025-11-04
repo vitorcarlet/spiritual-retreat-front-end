@@ -30,6 +30,7 @@ import apiClient from "@/src/lib/axiosClientInstance";
 interface TentDetailsProps {
   tentId: string;
   retreatId: string;
+  tent: RetreatTentRoster;
   canEdit: boolean;
   startInEdit?: boolean;
   onClose?: () => void;
@@ -46,9 +47,9 @@ interface RetreatTentDetails {
   isLocked: boolean;
   notes?: string;
   assignedCount: number;
-  gender?: "male" | "female";
-  participants?: Array<{
-    id: string;
+  gender?: "Male" | "Female";
+  members?: Array<{
+    registrationId: string;
     name?: string;
     email?: string;
     city?: string;
@@ -64,6 +65,7 @@ interface UpdateTentPayload {
 
 export default function TentDetails({
   tentId,
+  tent: tentProp,
   retreatId,
   canEdit,
   startInEdit = false,
@@ -93,7 +95,7 @@ export default function TentDetails({
         );
 
         const tent = response.data;
-        setTentState(tent);
+        setTentState({ ...tent, members: tentProp.members || [] });
         setFormValues({
           gender: tent.gender ?? "male",
           capacity: tent.capacity,
@@ -191,6 +193,50 @@ export default function TentDetails({
     return initials || "?";
   };
 
+  const handleRemoveParticipant = async (
+    participantId: string,
+    participantName?: string
+  ) => {
+    const confirmed = confirm(
+      `${t("confirm-remove-participant", { defaultMessage: "Remove participant?" })} "${participantName}"`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await apiClient.post(`/retreats/${retreatId}/tents/roster/unassign`, {
+        registrationId: participantId,
+      });
+
+      // Remove participant immediately from state
+      setTentState((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          members: (prev.members ?? []).filter(
+            (m) => m.registrationId !== participantId
+          ),
+          assignedCount: Math.max(0, (prev.assignedCount ?? 0) - 1),
+        };
+      });
+
+      enqueueSnackbar(
+        `${participantName} ${t("participant-removed", { defaultMessage: "removed from tent." })}`,
+        { variant: "success" }
+      );
+
+      // Notify parent component to invalidate queries
+      onUpdated?.(tentState!);
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : t("remove-error", {
+            defaultMessage: "Failed to remove participant.",
+          });
+      enqueueSnackbar(message, { variant: "error" });
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -215,7 +261,7 @@ export default function TentDetails({
     );
   }
 
-  const participants = tentState.participants ?? [];
+  const members = tentState.members ?? [];
 
   return (
     <Box sx={{ width: "100%", minHeight: 300 }}>
@@ -313,14 +359,6 @@ export default function TentDetails({
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <InfoRow
-                label={t("assigned-count-label", {
-                  defaultMessage: "Assigned",
-                })}
-                value={String(tentState.assignedCount)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <InfoRow
                 label={t("active-label", { defaultMessage: "Status" })}
                 value={
                   tentState.isActive
@@ -345,20 +383,41 @@ export default function TentDetails({
               {t("participants-title")}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {t("participant-count", { count: participants.length })}
+              {t("participant-count", { count: members.length })}
             </Typography>
           </Stack>
-          {participants.length === 0 ? (
+          {members.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               {t("no-participants")}
             </Typography>
           ) : (
             <List disablePadding>
-              {participants.map((participant) => (
+              {members.map((participant) => (
                 <ListItem
-                  key={participant.id}
+                  key={participant.registrationId}
                   alignItems="flex-start"
                   disableGutters
+                  secondaryAction={
+                    canEdit &&
+                    isEditing && (
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={
+                          <Iconify icon="solar:trash-bin-trash-bold" />
+                        }
+                        onClick={() =>
+                          handleRemoveParticipant(
+                            participant.registrationId,
+                            participant.name
+                          )
+                        }
+                        sx={{ minWidth: "auto" }}
+                      >
+                        {t("remove")}
+                      </Button>
+                    )
+                  }
                 >
                   <ListItemAvatar>
                     <Avatar>{initialsFromName(participant.name)}</Avatar>

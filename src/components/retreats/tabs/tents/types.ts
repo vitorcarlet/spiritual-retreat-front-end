@@ -24,7 +24,7 @@ export interface RetreatTentsTableProps {
   }): React.CSSProperties;
   wrapperStyle?(args: { index: number }): React.CSSProperties;
   itemCount?: number;
-  items?: RetreatTentLite[];
+  items?: RetreatTentRoster[];
   handle?: boolean;
   renderItem?: unknown;
   strategy?: SortingStrategy;
@@ -58,3 +58,14 @@ export interface MembersMapEntry {
 
 export type MembersById = Record<UniqueIdentifier, MembersMapEntry>;
 export type MemberToContainer = Record<UniqueIdentifier, UniqueIdentifier>;
+
+export type RetreatTentLite = {
+  tentId: UniqueIdentifier;
+  number: string; // string in source JSON, keep as string for display-friendly IDs
+  category: number;
+  capacity: number;
+  isActive: boolean;
+  isLocked: boolean;
+  notes?: string | null;
+  assignedCount: number;
+};
