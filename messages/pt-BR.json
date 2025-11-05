@@ -249,17 +249,15 @@
     "delete-family": "Deletar Família"
   },
   "tents": {
-    "addParticipantToTent":"Adicionar Participante à Tenda",
-    "createIndividual": "Cadastro individual",
-    "createBulk": "Cadastro em lote",
+    "add-participant-to-tent": "Adicionar Participante à Tenda",
+    "create-individual": "Cadastro individual",
+    "create-bulk": "Cadastro em lote",
     "per-page": "por página",
     "of-total": "de {total}",
     "card-label": "Barraca {number}",
     "unknown-participant": "Participante desconhecido",
     "tent-info": "{gender} • {current}/{capacity}",
     "gender": {
-      "Male": "Masculina",
-      "Female": "Feminina",
       "male": "Masculina",
       "female": "Feminina",
       "mixed": "Mista"
@@ -269,21 +267,21 @@
       "gender": "Tipo da barraca",
       "capacity": "Capacidade máxima",
       "notes": "Observações",
-      "notesPlaceholder": "Anote detalhes importantes sobre essa barraca",
+      "notes-placeholder": "Anote detalhes importantes sobre essa barraca",
       "cancel": "Cancelar",
       "submit": "Cadastrar",
       "submitting": "Cadastrando..."
     },
-    "bulkForm": {
-      "startingNumber": "Número inicial",
-      "quantity": "Quantidade de barracas",
-      "capacity": "Capacidade por barraca",
-      "gender": "Tipo das barracas",
-      "notes": "Observações",
-      "notesPlaceholder": "Ex.: Barracas extras para participantes atrasados",
-      "cancel": "Cancelar",
-      "submit": "Cadastrar em lote",
-      "submitting": "Cadastrando..."
+    "bulk-form": {
+      "number": "Número da barraca",
+      "gender": "Gênero",
+      "capacity": "Capacidade",
+      "note": "Nota",
+      "add-tent": "Adicionar barraca",
+      "create-tents": "Criar barracas",
+      "creating": "Criando...",
+      "success": "Barracas criadas com sucesso",
+      "error": "Erro ao criar barracas"
     }
   },
   "tent-details": {
@@ -328,12 +326,20 @@
     "assigned-count-label": "Alocados",
     "active-label": "Ativo",
     "active": "Ativo",
-    "inactive": "Inativo"
+    "inactive": "Inativo",
+    "delete": "Deletar Barraca",
+    "delete-tent": "Remoção de Barraca"
   },
   "service-team-details": {
     "title": "Espaço de serviço {space}",
     "confirmDelete": "Confirmar Remoção",
     "service-space-configurations": "Configurações das equipes de serviço",
+    "delete-service-team-success": "Equipe de serviço \"{name}\" deletada com sucesso!",
+    "delete-service-team-warning": "Ao deletar a equipe de serviço \"{name}\", todos os membros serão desalocados da equipe.",
+    "delete-service-team-confirmation": "Tem certeza que deseja continuar?",
+    "delete-service-team": "Deletar Equipe",
+    "cancel": "Cancelar",
+    "deleting": "Deletando...",
     "createSpace": {
       "title": "Criar Nova Equipe",
       "cta": "Criar Nova Equipe"
@@ -684,5 +690,13 @@
   "delete-family": "Deletar Família",
   "tent-current-members": "Membros atuais",
   "tent-full-warning": "Barraca Cheia!",
-  "select-tent": "Selecione a Barraca"
+  "select-tent": "Selecione a Barraca",
+  "tent": {
+    "tent-deleted-successfully": "Barraca Deletada com Sucesso",
+    "delete-tent-warning": "Você tem certeza que deseja deletar esta barraca?",
+    "cancel": "Cancelar",
+    "deleting": "Deletando",
+    "delete-tent": "Deletar Barraca",
+    "delete-tent-confirmation": "Confirmaçção de deleção da barraca"
+  }
 }

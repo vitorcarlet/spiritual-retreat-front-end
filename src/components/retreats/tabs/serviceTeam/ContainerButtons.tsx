@@ -8,6 +8,7 @@ import ServiceTeamStatus from "./ContainerButtons/ServiceTeamStatus";
 interface ContainerButtonsProps {
   onEdit: (id: UniqueIdentifier) => void;
   onView: (id: UniqueIdentifier) => void;
+  onDelete: (id: UniqueIdentifier) => void;
   familyId: UniqueIdentifier;
   canEdit: boolean;
   reorderFlag: boolean;
@@ -17,6 +18,7 @@ interface ContainerButtonsProps {
 export default function ContainerButtons({
   onEdit,
   onView,
+  onDelete,
   familyId,
   canEdit,
   reorderFlag,
@@ -41,16 +43,28 @@ export default function ContainerButtons({
         </Button>
 
         {canEdit && (
-          <Button
-            size="small"
-            variant="contained"
-            onClick={() => onEdit(familyId)}
-            disabled={reorderFlag}
-            fullWidth
-            startIcon={<Iconify icon="solar:pen-bold" />}
-          >
-            Editar
-          </Button>
+          <>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => onEdit(familyId)}
+              disabled={reorderFlag}
+              fullWidth
+              startIcon={<Iconify icon="solar:pen-bold" />}
+            >
+              Editar
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="error"
+              startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+              onClick={() => onDelete(familyId)}
+              sx={{ minWidth: "auto" }}
+            >
+              Deletar
+            </Button>
+          </>
         )}
       </Stack>
     </Stack>

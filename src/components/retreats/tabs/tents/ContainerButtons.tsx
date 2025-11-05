@@ -8,6 +8,7 @@ interface ContainerButtonsProps {
   tentId: UniqueIdentifier;
   onEdit: (tentId: UniqueIdentifier) => void;
   onView: (tentId: UniqueIdentifier) => void;
+  onDelete: (tentId: UniqueIdentifier) => void;
   canEdit: boolean;
 }
 
@@ -15,6 +16,7 @@ export default function ContainerButtons({
   tentId,
   onEdit,
   onView,
+  onDelete,
   canEdit,
 }: ContainerButtonsProps) {
   const t = useTranslations("tent-details");
@@ -30,15 +32,27 @@ export default function ContainerButtons({
         {t("view")}
       </Button>
       {canEdit && (
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<Iconify icon="solar:pen-bold" />}
-          onClick={() => onEdit(tentId)}
-          sx={{ minWidth: "auto" }}
-        >
-          {t("edit")}
-        </Button>
+        <>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Iconify icon="solar:pen-bold" />}
+            onClick={() => onEdit(tentId)}
+            sx={{ minWidth: "auto" }}
+          >
+            {t("edit")}
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="error"
+            startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+            onClick={() => onDelete(tentId)}
+            sx={{ minWidth: "auto" }}
+          >
+            {t("delete")}
+          </Button>
+        </>
       )}
     </Stack>
   );

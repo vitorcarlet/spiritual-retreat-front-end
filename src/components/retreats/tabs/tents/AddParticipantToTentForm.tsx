@@ -77,7 +77,7 @@ export default function AddParticipantToFamilyForm({
   const t = useTranslations();
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
-
+  console.log("Tents data array:", tents);
   const {
     control,
     handleSubmit,

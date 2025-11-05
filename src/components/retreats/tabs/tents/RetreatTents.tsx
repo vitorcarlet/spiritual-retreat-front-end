@@ -27,7 +27,6 @@ import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useTranslations } from "next-intl";
 import { UniqueIdentifier } from "@dnd-kit/core";
 import { useModal } from "@/src/hooks/useModal";
-import CreateTentBulkForm from "./CreateTentBulkForm";
 import { Items } from "./types";
 import TentDetails from "./TentDetails";
 import LockTentsModal from "./LockTentsModal";
@@ -35,6 +34,8 @@ import TentsActionBar from "./TentsActionBar";
 import RetreatTentsTable from "./RetreatTentsTable";
 import CreateTentForm from "./CreateTentForm";
 import AddParticipantToTentForm from "./AddParticipantToTentForm";
+import { CreateTentBulkForm } from "./CreateTentBulkForm";
+import DeleteTentForm from "./DeleteTentForm";
 
 interface RetreatRequest {
   tents: RetreatTentRoster[];
@@ -108,9 +109,10 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     staleTime: 60_000,
   });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const invalidateTentsQuery = () => {
     queryClient.invalidateQueries({
-      queryKey: ["retreat-tents", retreatId],
+      queryKey: ["retreat-tents"],
     });
   };
 
@@ -160,7 +162,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
         );
       },
     });
-  }, [modal, t, retreatId, tentsDataArray, invalidateTentsQuery]);
+  }, [modal, t, retreatId, invalidateTentsQuery]);
 
   const openTentDetails = useCallback(
     (tentId: UniqueIdentifier, startInEdit = false) => {
@@ -187,6 +189,8 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
               onUpdated={(updatedTent) => {
                 queryClient.setQueryData<RetreatRequest | undefined>(
                   ["retreat-tents", filters],
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  //@ts-ignore
                   (previous) => {
                     if (!previous) {
                       return previous;
@@ -243,6 +247,34 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     [openTentDetails]
   );
 
+  const handleDelete = useCallback(
+    (tentId: UniqueIdentifier) => {
+      const tent = tentsDataArray.find(
+        (item) => String(item.tentId) === String(tentId)
+      );
+
+      modal.open({
+        title: t("delete-tent"),
+        size: "sm",
+        customRender() {
+          return (
+            <DeleteTentForm
+              retreatId={retreatId}
+              tentId={String(tentId)}
+              tentNumber={tent?.number}
+              onSuccess={() => {
+                modal.close?.();
+                invalidateTentsQuery();
+              }}
+              onCancel={() => modal.close?.()}
+            />
+          );
+        },
+      });
+    },
+    [tentsDataArray, modal, t, invalidateTentsQuery]
+  );
+
   const handleAddParticipantInTent = useCallback(
     () =>
       modal.open({
@@ -261,7 +293,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
           );
         },
       }),
-    []
+    [tentsDataArray, modal, t, retreatId, invalidateTentsQuery]
   );
 
   const createIndividualTent = () => {
@@ -335,7 +367,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
         throw error;
       }
     },
-    [retreatId, queryClient]
+    [retreatId, tentsVersion, queryClient]
   );
 
   const handleFiltersChange = (
@@ -401,6 +433,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
             items={tentsDataArray}
             onEdit={handleEdit}
             onView={handleView}
+            onDelete={handleDelete}
             onFiltersChange={handleFiltersChange}
             retreatId={retreatId}
             canEditTent={canEdit}

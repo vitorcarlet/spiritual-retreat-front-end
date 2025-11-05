@@ -13,6 +13,7 @@ import ServiceTeamDetails from "./ServiceTeamDetails";
 import CreateServiceTeamForm from "./CreateServiceTeamForm";
 import LockServiceSpacesModal from "./LockServiceSpacesModal";
 import ConfigureServiceSpace from "./ConfigureServiceSpace";
+import DeleteServiceTeamForm from "./DeleteServiceTeamForm";
 
 import type { Items } from "./types";
 import type { RetreatsCardTableFilters } from "@/src/components/retreats/types";
@@ -215,44 +216,52 @@ export default function RetreatServiceTeam({
   );
 
   const handleDelete = useCallback(
-    async (spaceId: UniqueIdentifier) => {
-      const spaceKey = String(spaceId);
-      const confirmed = window.confirm(
-        t("confirmDelete", {
-          defaultMessage: "Are you sure you want to delete this service space?",
-        })
+    (spaceId: UniqueIdentifier) => {
+      const space = serviceSpacesArray.find(
+        (item) => item.spaceId === String(spaceId)
       );
 
-      if (!confirmed) return;
+      if (!space) return;
 
-      try {
-        await apiClient.delete(
-          `/retreats/${retreatId}/service/spaces/${spaceKey}`
-        );
+      modal.open({
+        title: t("delete-service-team"),
+        size: "sm",
+        customRender() {
+          return (
+            <DeleteServiceTeamForm
+              retreatId={retreatId}
+              spaceId={String(spaceId)}
+              spaceName={space.name}
+              onCancel={modal.close}
+              onSuccess={() => {
+                const spaceKey = String(spaceId);
 
-        queryClient.setQueryData<any>(
-          ["retreat-service-spaces", retreatId, filters],
-          (previous: any) => {
-            if (!previous || !Array.isArray(previous.rows)) return previous;
+                queryClient.setQueryData<any>(
+                  ["retreat-service-spaces", retreatId, filters],
+                  (previous: any) => {
+                    if (!previous || !Array.isArray(previous.rows))
+                      return previous;
 
-            return {
-              ...previous,
-              rows: previous.rows.filter(
-                (row: any) => row.spaceId !== spaceKey
-              ),
-              total: Math.max(0, (previous.total || 0) - 1),
-            };
-          }
-        );
-
-        queryClient.invalidateQueries({
-          queryKey: ["retreat-service-spaces", retreatId],
-        });
-      } catch (error) {
-        console.error("Failed to delete service space", error);
-      }
+                    return {
+                      ...previous,
+                      rows: previous.rows.filter(
+                        (row: any) => row.spaceId !== spaceKey
+                      ),
+                      total: Math.max(0, (previous.total || 0) - 1),
+                    };
+                  }
+                );
+                queryClient.invalidateQueries({
+                  queryKey: ["retreat-service-spaces", retreatId],
+                });
+                modal.close?.();
+              }}
+            />
+          );
+        },
+      });
     },
-    [t, retreatId, queryClient, filters]
+    [modal, t, retreatId, queryClient, filters, serviceSpacesArray]
   );
 
   const handleSaveReorder = useCallback(
@@ -303,7 +312,12 @@ export default function RetreatServiceTeam({
         throw error;
       }
     },
-    [serviceSpacesArray, retreatId, invalidateServiceSpacesQuery]
+    [
+      serviceSpacesArray,
+      retreatId,
+      serviceSpaceVersion,
+      invalidateServiceSpacesQuery,
+    ]
   );
 
   const handleFiltersChange = useCallback(

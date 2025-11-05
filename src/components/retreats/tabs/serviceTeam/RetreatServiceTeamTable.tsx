@@ -51,20 +51,7 @@ import {
   useReactTable,
   CellContext,
 } from "@tanstack/react-table";
-import {
-  Box,
-  Button,
-  Grid,
-  ListItemText,
-  MenuItem,
-  MenuList,
-  Pagination,
-  Popover,
-  Stack,
-  Typography,
-  Fab,
-  Fade,
-} from "@mui/material";
+import { Box, Grid, Fab, Fade } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
 import {
   Items,
@@ -149,22 +136,6 @@ const dropAnimation: DropAnimation = {
   }),
 };
 
-function findDuplicateValues(values: Array<string | undefined>): string[] {
-  const counts = new Map<string, number>();
-
-  values.forEach((value) => {
-    if (!value) {
-      return;
-    }
-
-    counts.set(value, (counts.get(value) ?? 0) + 1);
-  });
-
-  return Array.from(counts.entries())
-    .filter(([, count]) => count > 1)
-    .map(([value]) => value);
-}
-
 // Helper para clonar Items profundamente (arrays por container)
 function cloneItems(source: Items): Items {
   return Object.fromEntries(
@@ -191,38 +162,14 @@ export default function RetreatServiceTeamTable({
   filters,
   onView,
   onEdit,
+  onDelete,
   total,
   setServiceTeamReorderFlag,
   reorderFlag,
   onSaveReorder,
-  retreatId,
   canEditServiceTeam,
 }: ServiceSpaceTableProps) {
   const t = useTranslations("service-team");
-
-  useEffect(() => {
-    if (!retreatId) {
-      return;
-    }
-
-    let isActive = true;
-
-    return () => {
-      isActive = false;
-    };
-  }, [retreatId]);
-
-  const [stiliesStructure, setServiceTeamStructure] = useState<{
-    items: Items;
-    membersById: MembersById;
-    memberToContainer: MemberToContainer;
-    stiliesById: Record<string, { name: string; color: string }>;
-  }>({
-    items: {},
-    membersById: {},
-    memberToContainer: {},
-    stiliesById: {},
-  });
 
   const [items, setItems] = useState<Items>({});
   const [membersById, setMembersById] = useState<MembersById>({});
@@ -257,12 +204,6 @@ export default function RetreatServiceTeamTable({
           }) || [];
       });
 
-      setServiceTeamStructure({
-        items,
-        membersById,
-        memberToContainer,
-        stiliesById,
-      });
       setItems(items);
       setMembersById(membersById);
       setServiceTeamById(stiliesById);
@@ -279,7 +220,6 @@ export default function RetreatServiceTeamTable({
   }, [InitialItems]);
 
   const [containers, setContainers] = useState<UniqueIdentifier[]>([]);
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
@@ -406,7 +346,21 @@ export default function RetreatServiceTeamTable({
     })
   );
 
+  // getIndex agora trabalha só com IDs
+  const getIndex = useCallback(
+    (id: UniqueIdentifier) => {
+      const container = memberToContainer[id];
+      if (!container) return -1;
+      return items[container].indexOf(id);
+    },
+    [items, memberToContainer]
+  );
+
   // Ajuste: onde antes iterava objetos com {id,name}, agora ids
+  const handleDeleteDefault = useCallback(() => {
+    console.warn("Delete not implemented");
+  }, []);
+
   const columnDefs: ColumnDef<UniqueIdentifier>[] = useMemo(
     () => [
       {
@@ -452,10 +406,7 @@ export default function RetreatServiceTeamTable({
                         value={meta?.name || String(memberId)}
                         index={index}
                         handle={handle}
-                        style={getItemStyles}
                         wrapperStyle={wrapperStyle}
-                        containerId={containerId}
-                        getIndex={getIndex}
                       />
                     );
                   })
@@ -478,6 +429,7 @@ export default function RetreatServiceTeamTable({
                 reorderFlag={reorderFlag || false}
                 onEdit={onEdit}
                 onView={onView}
+                onDelete={onDelete || handleDeleteDefault}
                 familyId={containerId}
                 canEdit={canEditServiceTeam}
                 validationError={validationError}
@@ -489,30 +441,25 @@ export default function RetreatServiceTeamTable({
     ],
     [
       items,
-      membersById,
+      stiliesById,
+      validation.errors,
       minimal,
+      t,
       scrollable,
       containerStyle,
-      handle,
       strategy,
-      isSortingContainer,
-      getItemStyles,
-      wrapperStyle,
+      reorderFlag,
       onEdit,
       onView,
+      onDelete,
+      handleDeleteDefault,
       canEditServiceTeam,
-      t,
-      stiliesById,
-      validation,
+      membersById,
+      isSortingContainer,
+      handle,
+      wrapperStyle,
     ]
   );
-
-  // getIndex agora trabalha só com IDs
-  const getIndex = (id: UniqueIdentifier) => {
-    const container = memberToContainer[id];
-    if (!container) return -1;
-    return items[container].indexOf(id);
-  };
 
   const onDragCancel = () => {
     if (clonedItems) {
@@ -756,6 +703,7 @@ export default function RetreatServiceTeamTable({
           familyId={containerId}
           canEdit={canEditServiceTeam}
           reorderFlag={reorderFlag || false}
+          onDelete={onDelete || handleDeleteDefault}
         />
       </Container>
     );
@@ -819,23 +767,11 @@ function Trash({ id }: { id: UniqueIdentifier }) {
 }
 
 interface SortableItemProps {
-  containerId: UniqueIdentifier;
   id: UniqueIdentifier;
   value: string;
   index: number;
   handle: boolean;
   disabled?: boolean;
-  style(args: {
-    value: UniqueIdentifier;
-    index: number;
-    overIndex: number;
-    isDragging: boolean;
-    containerId: UniqueIdentifier;
-    isSorting: boolean;
-    isDragOverlay: boolean;
-  }): React.CSSProperties;
-  getIndex(id: UniqueIdentifier): number;
-  renderItem?(): React.ReactElement;
   wrapperStyle({ index }: { index: number }): React.CSSProperties;
 }
 
@@ -845,10 +781,6 @@ function SortableItem({
   index,
   handle,
   value,
-  renderItem,
-  style,
-  containerId,
-  getIndex,
   wrapperStyle,
 }: SortableItemProps) {
   const {
@@ -857,8 +789,6 @@ function SortableItem({
     listeners,
     isDragging,
     isSorting,
-    over,
-    overIndex,
     transform,
     transition,
   } = useSortable({

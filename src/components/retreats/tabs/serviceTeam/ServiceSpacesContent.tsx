@@ -5,6 +5,7 @@ import { UniqueIdentifier } from "@dnd-kit/core";
 import type { RetreatsCardTableFilters } from "@/src/components/retreats/types";
 import { Items } from "./types";
 import RetreatServiceTeamTable from "./RetreatServiceTeamTable";
+import { useTranslations } from "next-intl";
 
 interface ServiceSpaceContentProps {
   isLoading: boolean;
@@ -43,7 +44,7 @@ export default function ServiceSpaceContent({
   onDelete,
   onFiltersChange,
 }: ServiceSpaceContentProps) {
-  const t = require("next-intl").useTranslations("service-team-details");
+  const t = useTranslations("service-team-details");
 
   if (isLoading && !serviceSpacesArray.length) {
     return (

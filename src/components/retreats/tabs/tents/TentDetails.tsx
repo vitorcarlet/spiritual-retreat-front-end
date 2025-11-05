@@ -58,7 +58,7 @@ interface RetreatTentDetails {
 }
 
 interface UpdateTentPayload {
-  gender?: "male" | "female";
+  gender?: "Male" | "Female";
   capacity: number;
   notes?: string;
 }
@@ -80,7 +80,7 @@ export default function TentDetails({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [tentState, setTentState] = useState<RetreatTentDetails | null>(null);
   const [formValues, setFormValues] = useState<UpdateTentPayload>({
-    gender: "male",
+    gender: "Male",
     capacity: 0,
     notes: "",
   });
@@ -97,7 +97,7 @@ export default function TentDetails({
         const tent = response.data;
         setTentState({ ...tent, members: tentProp.members || [] });
         setFormValues({
-          gender: tent.gender ?? "male",
+          gender: tent.gender ?? "Male",
           capacity: tent.capacity,
           notes: tent.notes ?? "",
         });
@@ -129,7 +129,7 @@ export default function TentDetails({
     if (isEditing) {
       // Resetting form when canceling edit
       setFormValues({
-        gender: tentState.gender ?? "male",
+        gender: tentState.gender ?? "Male",
         capacity: tentState.capacity,
         notes: tentState.notes ?? "",
       });
@@ -159,7 +159,7 @@ export default function TentDetails({
 
       setTentState(updatedTent);
       setFormValues({
-        gender: updatedTent.gender ?? "male",
+        gender: updatedTent.gender ?? "Male",
         capacity: updatedTent.capacity,
         notes: updatedTent.notes ?? "",
       });
@@ -293,21 +293,21 @@ export default function TentDetails({
                       setFormValues((prev) => ({
                         ...prev,
                         gender:
-                          event.target.value === "female" ? "female" : "male",
+                          event.target.value === "Female" ? "Female" : "Male",
                       }))
                     }
                   >
-                    <MenuItem value="male">{t("gender.male")}</MenuItem>
-                    <MenuItem value="female">{t("gender.female")}</MenuItem>
+                    <MenuItem value="Male">{t("gender.male")}</MenuItem>
+                    <MenuItem value="Female">{t("gender.female")}</MenuItem>
                   </Select>
                 </FormControl>
               ) : (
                 <InfoRow
                   label={t("gender-label")}
                   value={t(
-                    formValues.gender === "female"
-                      ? "gender.female"
-                      : "gender.male"
+                    formValues.gender === "Female"
+                      ? "gender.Female"
+                      : "gender.Male"
                   )}
                 />
               )}

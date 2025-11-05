@@ -179,6 +179,7 @@ export default function RetreatTentsTable({
   filters,
   onView,
   onEdit,
+  onDelete,
   total,
   setTentsReorderFlag,
   onSaveReorder,
@@ -430,6 +431,7 @@ export default function RetreatTentsTable({
               <ContainerButtons
                 onEdit={onEdit}
                 onView={onView}
+                onDelete={onDelete}
                 tentId={containerId}
                 canEdit={canEditTent}
               />
@@ -731,6 +733,7 @@ export default function RetreatTentsTable({
           onView={onView}
           tentId={containerId}
           canEdit={canEditTent}
+          onDelete={onDelete}
         />
       </Container>
     );

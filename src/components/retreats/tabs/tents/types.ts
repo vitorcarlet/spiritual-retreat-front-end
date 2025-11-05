@@ -39,6 +39,7 @@ export interface RetreatTentsTableProps {
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
   onEdit: (tentId: UniqueIdentifier) => void;
   onView: (tentId: UniqueIdentifier) => void;
+  onDelete: (tentId: UniqueIdentifier) => void;
   total: number;
   setTentsReorderFlag: (flag: boolean) => void;
   onSaveReorder?: (items: Items) => Promise<void>;
