@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useSnackbar } from "notistack";
 import {
   loadNotificationSettings,
@@ -15,11 +15,11 @@ import type { FloatingNotificationData } from "../notistack/FloatingNotification
 export default function NotificationListener() {
   const { enqueueSnackbar } = useSnackbar();
   const { addNotification } = useNotifications();
-  const sseRef = useRef<EventSource | null>(null);
+  //const sseRef = useRef<EventSource | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001/api";
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api";
 
   const playNotificationSound = (soundId: string) => {
     const sound = NOTIFICATION_SOUNDS.find((s) => s.id === soundId);
@@ -36,39 +36,42 @@ export default function NotificationListener() {
     });
   };
 
-  const showFloatingNotification = (notification: NotificationItem) => {
-    const settings = loadNotificationSettings();
+  const showFloatingNotification = useCallback(
+    (notification: NotificationItem) => {
+      const settings = loadNotificationSettings();
 
-    // Only show floating notification if enabled in settings
-    if (!settings.floating) return;
+      // Only show floating notification if enabled in settings
+      if (!settings.floating) return;
 
-    const notificationData: FloatingNotificationData = {
-      title: notification.title,
-      description: notification.description,
-      origin: notification.origin,
-      date: notification.date,
-    };
+      const notificationData: FloatingNotificationData = {
+        title: notification.title,
+        description: notification.description,
+        origin: notification.origin,
+        date: notification.date,
+      };
 
-    enqueueSnackbar(JSON.stringify(notificationData), {
-      variant: "default",
-      persist: false,
-      autoHideDuration: 3000,
-      anchorOrigin: {
-        vertical: "top",
-        horizontal: "right",
-      },
-    });
+      enqueueSnackbar(JSON.stringify(notificationData), {
+        variant: "default",
+        persist: false,
+        autoHideDuration: 3000,
+        anchorOrigin: {
+          vertical: "top",
+          horizontal: "right",
+        },
+      });
 
-    // Play sound if enabled
-    if (settings.sound && settings.sound !== "none") {
-      playNotificationSound(settings.sound);
-    }
-  };
+      // Play sound if enabled
+      if (settings.sound && settings.sound !== "none") {
+        playNotificationSound(settings.sound);
+      }
+    },
+    [enqueueSnackbar]
+  );
 
   useEffect(() => {
     const url = `${API_BASE}/notifications/stream`;
     const es = new EventSource(url);
-    sseRef.current = es;
+    // sseRef.current = es;
 
     const onNotification = (e: MessageEvent) => {
       try {
@@ -95,9 +98,9 @@ export default function NotificationListener() {
     return () => {
       es.removeEventListener("notification", onNotification);
       es.close();
-      sseRef.current = null;
+      // sseRef.current = null;
     };
-  }, [API_BASE, enqueueSnackbar]);
+  }, [API_BASE, addNotification, enqueueSnackbar, showFloatingNotification]);
 
   // This component doesn't render anything
   return null;

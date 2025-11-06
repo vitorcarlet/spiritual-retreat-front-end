@@ -272,7 +272,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
         },
       });
     },
-    [tentsDataArray, modal, t, invalidateTentsQuery]
+    [tentsDataArray, modal, t, retreatId, invalidateTentsQuery]
   );
 
   const handleAddParticipantInTent = useCallback(

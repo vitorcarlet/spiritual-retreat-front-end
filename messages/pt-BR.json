@@ -249,6 +249,7 @@
     "delete-family": "Deletar Família"
   },
   "tents": {
+     "title": "Barraca {number}",
     "add-participant-to-tent": "Adicionar Participante à Tenda",
     "create-individual": "Cadastro individual",
     "create-bulk": "Cadastro em lote",
@@ -258,9 +259,12 @@
     "unknown-participant": "Participante desconhecido",
     "tent-info": "{gender} • {current}/{capacity}",
     "gender": {
-      "male": "Masculina",
+       "male": "Masculina",
       "female": "Feminina",
-      "mixed": "Mista"
+      "mixed": "Mista",
+       "Male": "Masculina",
+      "Female": "Feminina",
+      "Mixed": "Mista"
     },
     "form": {
       "number": "Número da barraca",
@@ -308,7 +312,10 @@
     "gender": {
       "male": "Masculina",
       "female": "Feminina",
-      "mixed": "Mista"
+      "mixed": "Mista",
+       "Male": "Masculina",
+      "Female": "Feminina",
+      "Mixed": "Mista"
     },
     "lock": {
       "title": "Bloqueio de Barracas"

@@ -9,7 +9,6 @@ import { mockReportDetails, mockReports } from "./handlerData/reports";
 import { mockUsers } from "./handlerData/users";
 import { mockContemplatedParticipants } from "./handlerData/retreats/contemplated";
 import { mockFamilies } from "./handlerData/retreats/families";
-import { mockTents } from "./handlerData/retreats/tents";
 import { columnsMock } from "./handlerData/reports/columns";
 import { createByOrigin, MockNotification, mockNotifications } from "./handlerData/notifications";
 import { sections2 as sections } from "./handlerData/formData";
@@ -985,7 +984,7 @@ export const handlers = [
               controller.close();
             } catch {}
           }
-        }, 10_000); // 10s
+        }, 3_000); // 3s
 
         // Abort/cancel
 
@@ -1010,7 +1009,54 @@ export const handlers = [
         Connection: "keep-alive",
       },
     });
-  })
+  }),
+
+   http.get(
+      "http://localhost:5000/api/unhandled/retreats",
+      ({ request /*, params */ }) => {
+        const url = new URL(request.url);
+  
+        const isSelectAutocomplete =
+          url.searchParams.get("selectAutocomplete") === "true";
+        //url.searchParams.get("variant") === "selectAutocomplete" ||
+        // url.searchParams.get("type") === "selectAutocomplete";
+  
+        if (isSelectAutocomplete) {
+          const search = (url.searchParams.get("search") || "").toLowerCase();
+  
+          let list = mockRetreats;
+  
+          if (search) {
+            list = list.filter((r) => r.name.toLowerCase().includes(search));
+          }
+  
+          // Optional limit for autocomplete (default 20)
+          const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+          const sliced = list.slice(0, isNaN(limit) ? 20 : limit);
+  
+          return HttpResponse.json(
+            {
+              options: sliced.map((r) => ({
+                value: r.id,
+                label: r.name,
+                // extra metadata if needed by frontend
+                // isActive: r.status === "running" || r.status === "open",
+                isActive: true,
+                startDate: r.startDate,
+                endDate: r.endDate,
+                location: r.location,
+              })),
+              total: list.length,
+            },
+            { status: 200 }
+          );
+        }
+  
+        // Fallback to normal paginated payload
+        const payload = paginate(mockRetreats, url);
+        return HttpResponse.json(payload, { status: 200 });
+      }
+    ),
 
   //fallback handler for unhandled requests
   // http.all("http://localhost:5000/*", ({ request }) => {
