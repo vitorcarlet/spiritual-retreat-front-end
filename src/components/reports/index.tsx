@@ -268,6 +268,7 @@ const ReportPage = () => {
 
       <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
         <DataTable<Report, ReportsAllFilters>
+          disableBuffer={true}
           rows={reportsArray}
           rowCount={reportsData?.total || 0}
           columns={columns}

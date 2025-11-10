@@ -76,8 +76,8 @@ export default function AddParticipantToFamilyForm({
 }: AddParticipantToFamilyFormProps) {
   const t = useTranslations();
   const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [loadingAutoAssign, setLoadingAutoAssign] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  console.log("Tents data array:", tents);
   const {
     control,
     handleSubmit,
@@ -174,6 +174,30 @@ export default function AddParticipantToFamilyForm({
         ? ((error.response?.data as { error?: string })?.error ?? error.message)
         : "Erro ao adicionar participantes.";
       enqueueSnackbar(message, { variant: "error" });
+    }
+  };
+
+  const handleAutoAssign = async () => {
+    try {
+      setLoadingAutoAssign(true);
+      await apiClient.post(`/retreats/${retreatId}/tents/roster/auto-assign`, {
+        respectLocked: true,
+      });
+
+      enqueueSnackbar("Participantes atribuídos automaticamente com sucesso!", {
+        variant: "success",
+      });
+
+      reset();
+      onSuccess();
+    } catch (error) {
+      console.error("Erro ao fazer auto-assign:", error);
+      const message = axios.isAxiosError(error)
+        ? ((error.response?.data as { error?: string })?.error ?? error.message)
+        : "Erro ao fazer auto-assign.";
+      enqueueSnackbar(message, { variant: "error" });
+    } finally {
+      setLoadingAutoAssign(false);
     }
   };
 
@@ -310,14 +334,27 @@ export default function AddParticipantToFamilyForm({
           <Button
             variant="outlined"
             onClick={onSuccess}
-            disabled={isSubmitting}
+            disabled={isSubmitting || loadingAutoAssign}
           >
             {t("cancel")}
           </Button>
           <Button
+            variant="outlined"
+            color="success"
+            onClick={handleAutoAssign}
+            disabled={isSubmitting || loadingAutoAssign}
+            startIcon={
+              loadingAutoAssign ? <CircularProgress size={16} /> : undefined
+            }
+          >
+            {loadingAutoAssign
+              ? "Atribuindo..."
+              : "Adicionar membros não alocados em tendas automaticamente"}
+          </Button>
+          <Button
             type="submit"
             variant="contained"
-            disabled={isSubmitting || loadingParticipants}
+            disabled={isSubmitting || loadingAutoAssign}
             startIcon={
               isSubmitting ? <CircularProgress size={16} /> : undefined
             }

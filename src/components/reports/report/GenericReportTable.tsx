@@ -1,32 +1,33 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Box, Button } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { ColumnDef } from "@tanstack/react-table";
 import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
-import {
-  GridRowSelectionModel,
-  GridValidRowModel,
-} from "@mui/x-data-grid/models";
 import FilterButton from "../../filters/FilterButton";
-import { DataTable } from "../../table";
+import { TanStackTable } from "../../table";
 import {
   ReportsAllFilters,
   ReportsTableFilters,
   ReportsTableDateFilters,
 } from "../types";
-import { buildReportColumns, type ColumnDescriptor } from "./columnsBuilder";
+import {
+  buildTanStackReportColumns,
+  type ColumnDescriptor,
+} from "./tanStackColumnsBuilder";
 import { fetchReport } from "./api";
+
+interface ReportRow extends Record<string, unknown> {
+  id: string | number;
+}
 
 const GenericReportTable = ({ reportId }: { reportId: string }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<
-    GridRowSelectionModel | undefined
-  >(undefined);
-  const filtersConfig = getFilters(reportId);
+  const filtersConfig = getFilters();
 
   const handleRefresh = () => {
     setLoading(true);
@@ -51,15 +52,15 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
   };
 
   const { data: reportData, isLoading } = useQuery({
-    queryKey: ["reports", reportId],
-    queryFn: () => fetchReport(reportId),
+    queryKey: ["reports", reportId, filters],
+    queryFn: () => fetchReport(reportId, filters),
     staleTime: 5 * 60 * 1000,
   });
 
   const dynamicColumns = useMemo(() => {
     const fromApi = reportData?.columns;
     if (fromApi && fromApi.length) {
-      return buildReportColumns({ descriptors: fromApi });
+      return buildTanStackReportColumns({ descriptors: fromApi });
     }
     const fallback: ColumnDescriptor[] = [
       { field: "id", type: "string", width: 80 },
@@ -68,18 +69,16 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
       { field: "dateCreation", type: "date", width: 160 },
       { field: "retreatName", type: "string", minWidth: 160, flex: 1 },
     ];
-    return buildReportColumns({ descriptors: fallback });
+    return buildTanStackReportColumns({ descriptors: fallback });
   }, [reportData?.columns]);
 
-  const reportsArray: GridValidRowModel[] = Array.isArray(
-    reportData?.report.rows
-  )
-    ? (reportData!.report.rows as GridValidRowModel[])
+  const reportsArray: ReportRow[] = Array.isArray(reportData?.report.rows)
+    ? (reportData!.report.rows as ReportRow[])
     : reportData?.report.rows
-      ? ([reportData.report.rows] as GridValidRowModel[])
+      ? ([reportData.report.rows] as ReportRow[])
       : [];
 
-  const handleViewReport = (report: any) => {
+  const handleViewReport = (report: ReportRow) => {
     router.push(`/reports/${report.id}`);
   };
 
@@ -115,46 +114,25 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
         />
       </Box>
 
-      <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
-        <DataTable<GridValidRowModel, ReportsAllFilters>
-          rows={reportsArray}
-          rowCount={reportData?.total || 0}
-          columns={dynamicColumns}
+      <Box sx={{ flexGrow: 1, height: "calc(100% - 40px)" }}>
+        <TanStackTable
+          data={reportsArray}
+          columns={dynamicColumns as ColumnDef<ReportRow>[]}
           loading={isLoading || loading}
-          title="Gerenciamento de Relatórios"
-          subtitle="Lista completa de relatórios do sistema"
-          autoWidth
-          autoHeight
-          toolbar
-          width={1200}
-          height={600}
-          pagination
-          showToolbar
-          paginationMode="server"
-          page={filters.page ? filters.page - 1 : 0}
-          pageSize={filters.pageLimit || 10}
-          pageSizeOptions={[10, 25, 50, 100]}
-          onPaginationModelChange={(newModel) => {
-            updateFilters({
-              ...filters,
-              page: newModel.page + 1,
-              pageLimit: newModel.pageSize,
-            });
-          }}
-          serverFilters={filters}
-          checkboxSelection
-          rowSelectionModel={selectedRows}
-          onRowSelectionModelChange={setSelectedRows}
-          rowBuffer={500}
-          columnBuffer={2}
-          actions={[
-            {
-              icon: "lucide:eye",
-              label: "Acessar relatório",
-              onClick: (report) => handleViewReport(report),
-              color: "info",
-            },
-          ]}
+          //title="Gerenciamento de Relatórios"
+          //subtitle={`${reportData?.total || 0} relatórios encontrados`}
+          enablePagination
+          pageSize={50}
+          pageSizeOptions={[10, 50, 100]}
+          enableRowSelection
+          enableGlobalFilter
+          enableColumnFilters
+          enableSorting
+          enableColumnVisibility
+          enableExport
+          onRowDoubleClick={handleViewReport}
+          maxHeight="calc(100% - 124px)"
+          stickyHeader
         />
       </Box>
     </Box>

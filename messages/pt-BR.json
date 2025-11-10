@@ -1,4 +1,21 @@
 {
+  "breadcrumbs": {
+    "home": "Início",
+    "retreats": "Retiros",
+    "Tents": "Barracas",
+    "Relatórios": "Relatórios",
+    "Ajuda": "Ajuda",
+    "Pagamento": "Pagamento",
+    "Configurações": "Configurações",
+    "Usuários": "Usuários",
+    "participants": "Participantes",
+    "Participant": "Participantes",
+    "Dashboard": "Dashboard",
+    "Retiros": "Retiros",
+    "Service-teams": "Equipes de Serviço",
+    "Families": "Famílias",
+    "Contemplations": "Contemplações" 
+  },
   "error": "Algo deu errado",
   "HomePage": {
     "title": "Olá mundo!"
@@ -249,8 +266,10 @@
     "delete-family": "Deletar Família"
   },
   "tents": {
-     "title": "Barraca {number}",
+    "title": "Barraca {number}",
     "add-participant-to-tent": "Adicionar Participante à Tenda",
+    "addParticipantToTent": "Adicionar Participante à Tenda",
+    "auto-assign": "Adicionar membros não alocados em tendas automaticamente",
     "create-individual": "Cadastro individual",
     "create-bulk": "Cadastro em lote",
     "per-page": "por página",
@@ -259,10 +278,10 @@
     "unknown-participant": "Participante desconhecido",
     "tent-info": "{gender} • {current}/{capacity}",
     "gender": {
-       "male": "Masculina",
+      "male": "Masculina",
       "female": "Feminina",
       "mixed": "Mista",
-       "Male": "Masculina",
+      "Male": "Masculina",
       "Female": "Feminina",
       "Mixed": "Mista"
     },
@@ -274,7 +293,8 @@
       "notes-placeholder": "Anote detalhes importantes sobre essa barraca",
       "cancel": "Cancelar",
       "submit": "Cadastrar",
-      "submitting": "Cadastrando..."
+      "submitting": "Cadastrando...",
+      "notesPlaceholder": "Adicione detalhes importantes sobre esta barraca"
     },
     "bulk-form": {
       "number": "Número da barraca",
@@ -286,6 +306,19 @@
       "creating": "Criando...",
       "success": "Barracas criadas com sucesso",
       "error": "Erro ao criar barracas"
+    },
+    "createIndividual": "Criar barraca",
+    "createBulk": "Crie em massa",
+    "bulkForm": {
+      "startingNumber": "Número inicial",
+      "quantity": "Número de barracas",
+      "capacity": "Capacidade por barraca",
+      "gender": "Tipo de barraca",
+      "notes": "Notas",
+      "notesPlaceholder": "por exemplo, tendas de reserva para chegadas tardias",
+      "cancel": "Cancelar",
+      "submit": "Crie tendas",
+      "submitting": "Criando..."
     }
   },
   "tent-details": {
@@ -313,7 +346,7 @@
       "male": "Masculina",
       "female": "Feminina",
       "mixed": "Mista",
-       "Male": "Masculina",
+      "Male": "Masculina",
       "Female": "Feminina",
       "Mixed": "Mista"
     },
@@ -379,7 +412,8 @@
       "select-team": "Selecione uma equipe",
       "role": "Função",
       "select-members": "Selecione os membros:",
-      "team": "Equipe"
+      "team": "Equipe",
+      "minMembers": "Membros mínimos"
     },
     "sections": {
       "coordinator": "Coordenador Da Equipe de Serviço",

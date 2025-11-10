@@ -79,7 +79,7 @@ const getNoContemplated = async (
 
     const registrations = extractRegistrations(response.data).filter((item) => {
       // Filtrar apenas NotSelected e Guest
-      return item.status === "NotSelected" && item.category === "Guest";
+      return item.status === "NotSelected";
     });
 
     const rows = registrations.map((registration) =>
@@ -277,14 +277,14 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   const filtersConfig = getFilters();
 
   // ✅ Helper para obter IDs selecionados
-  const selectedIds = useMemo(
-    () =>
-      getSelectedIdsFn<ContemplatedParticipant>({
-        data: contemplatedData,
-        selectedRows: selectedRows,
-      }),
-    [contemplatedData, selectedRows]
-  );
+  // const selectedIds = useMemo(
+  //   () =>
+  //     getSelectedIdsFn<ContemplatedParticipant>({
+  //       data: contemplatedData,
+  //       selectedRows: selectedRows,
+  //     }),
+  //   [contemplatedData, selectedRows]
+  // );
 
   const editParticipant = async (participant: ParticipantFormValues) => {
     try {
@@ -332,15 +332,6 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     });
   };
 
-  const handleBulkAction = () => {
-    if (!selectedIds.length) {
-      return;
-    }
-    enqueueSnackbar("Ação em lote ainda não implementada.", {
-      variant: "info",
-    });
-  };
-
   const handleRefresh = async () => {
     setLoading(true);
     try {
@@ -361,7 +352,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     Array.isArray(contemplatedData?.rows) && contemplatedData.rows.length > 0
       ? contemplatedData.rows
       : [];
-
+  console.log({ contemplatedDataArray, contemplatedData });
   if (isLoading || session.status === "loading" || !session.data?.user) {
     return (
       <Box
@@ -547,9 +538,9 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
           // Virtualização otimizada
-          disableBuffer={true}
-          // rowBuffer={500}
-          // columnBuffer={500}
+          //isableBuffer={true}
+          rowBuffer={50000}
+          columnBuffer={50000}
           // Ações personalizadas
           actions={[
             {

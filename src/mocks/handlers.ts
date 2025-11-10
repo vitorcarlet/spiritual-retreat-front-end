@@ -786,7 +786,7 @@ export const handlers = [
     const id = params.id as string;
     const report = mockReportDetails.find((r) => {
       const item = r as { id?: unknown };
-      return item.id === id;
+      return item.id == id;
     });
 
     if (report) {

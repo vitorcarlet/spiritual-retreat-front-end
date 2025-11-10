@@ -382,9 +382,6 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  if (isLoading) return <Typography>Loading tents...</Typography>;
-  if (isError) return <Typography>No data available.</Typography>;
-
   return (
     <Container
       maxWidth="xl"

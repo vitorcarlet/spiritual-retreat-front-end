@@ -299,7 +299,7 @@ export function DataTable<
       }));
       setFirstFiltersTrigger(true);
     }
-  }, [serverFilters]);
+  }, [firstFiltersTrigger, serverFilters]);
 
   const [density, setDensity] = useState<
     "compact" | "standard" | "comfortable"
@@ -496,8 +496,10 @@ export function DataTable<
         disableColumnMenu={disableColumnMenu}
         disableColumnResize={disableColumnResize}
         // Virtualização - otimizações de performance
-        rowBufferPx={disableBuffer ? rowBuffer : 50000000}
-        columnBufferPx={disableBuffer ? columnBuffer : 50000000}
+        //rowBuffer={disableBuffer ? 0 : rowBuffer}
+        // columnBuffer={disableBuffer ? 0 : columnBuffer}
+        rowBufferPx={disableBuffer ? 50000000 : rowBuffer}
+        columnBufferPx={disableBuffer ? 50000000 : columnBuffer}
         // Slots customizados
         slots={slots}
         slotProps={{

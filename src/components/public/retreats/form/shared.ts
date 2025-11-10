@@ -3,13 +3,18 @@ import z from "zod";
 
 import type { BackendField } from "./types";
 import apiClient from "@/src/lib/axiosClientInstance";
-import { sections2, sectionsServe } from "@/src/mocks/handlerData/formData";
+import {
+  sections2,
+  sections3,
+  sectionsServe,
+} from "@/src/mocks/handlerData/formData";
 import { Retreat } from "@/src/types/retreats";
 
 const MASK_REGEX: Record<string, RegExp> = {
   cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
   cnpj: /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
-  phone: /^\+\d{2} \(\d{2}\) \d{5}-\d{4}$/, // aceita formato +55 (11) 99999-9999
+  // phone: /^\+\d{2} \(\d{2}\) \d{5}-\d{4}$/, // aceita formato +55 (11) 99999-9999
+  phone: /^\d{10,11}$/, // aceita de 10 a 11 números
   cep: /^\d{5}-\d{3}$/,
   num: /^-?\d+$/, // aceita números negativos e positivos
   city: /^[a-zA-ZÀ-ÿ\s]+$/,
@@ -196,7 +201,7 @@ export const fetchFormData = async (
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       sections:
-        type === RetreatFormType.PARTICIPATE ? sections2 : sectionsServe,
+        type === RetreatFormType.PARTICIPATE ? sections3 : sectionsServe,
     } as BackendForm;
   } catch (error) {
     console.error("Erro ao buscar dados do formulario:", error);
@@ -586,7 +591,14 @@ const buildParticipationPayload = (
     }
   });
 
-  return payload;
+  // Gera a data de hoje no formato YYYY-MM-DD
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const termsVersion = `${year}-${month}-${day}`;
+
+  return { termsVersion, ...payload };
 };
 
 /**

@@ -375,6 +375,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
               error={hasError}
               disabled={field.disabled || isSubmitting}
               variant="standard"
+              defaultValue={field.defaultValue as string}
               sx={{ m: 0 }}
             >
               <FormControlLabel
@@ -512,6 +513,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
             };
 
             // Estado para armazenar as opções em cache
+            // eslint-disable-next-line react-hooks/rules-of-hooks
             const [optionsCache, setOptionsCache] = React.useState<
               ServiceSpaceOption[]
             >([]);

@@ -47,7 +47,9 @@ export default function DynamicFilters<T, F>({
   onClose,
 }: DynamicFiltersProps<T, F>) {
   const t = useTranslations();
-  const [activeTab, setActiveTab] = useState<"date" | "filters">("date");
+  const [activeTab, setActiveTab] = useState<"date" | "filters">(
+    filters.date && filters.date.length > 0 ? "date" : "filters"
+  );
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Partial<F>>(defaultValues);
 
@@ -61,9 +63,12 @@ export default function DynamicFilters<T, F>({
     const map = new Map<string, { multiple?: boolean; primaryKey?: string }>();
     filters.items?.forEach((cat: FilterItem) => {
       (cat.fields ?? []).forEach((field: FilterField) => {
-        if (field?.typeField === "selectAutocomplete") {
+        if (
+          field?.typeField === "selectAutocomplete" ||
+          field?.typeField === "selectMultiple"
+        ) {
           map.set(field.name, {
-            multiple: field.isMultiple,
+            multiple: field.isMultiple || field?.typeField === "selectMultiple",
             primaryKey: field.primaryKey || "value",
           });
         }
@@ -88,11 +93,11 @@ export default function DynamicFilters<T, F>({
     const pk = getPrimaryKey(name);
     const optVal =
       typeof option === "object" && option
-        ? option[pk] ?? option.value ?? option.id
+        ? (option[pk] ?? option.value ?? option.id)
         : option;
     const valVal =
       typeof value === "object" && value
-        ? value[pk] ?? value.value ?? value.id
+        ? (value[pk] ?? value.value ?? value.id)
         : value;
     return String(optVal) === String(valVal);
   };
@@ -113,7 +118,7 @@ export default function DynamicFilters<T, F>({
   const serializeFromOption = (v: any, name: string) => {
     const pk = getPrimaryKey(name);
     if (v == null) return v;
-    return typeof v === "object" ? v?.[pk] ?? v?.value ?? v?.id ?? null : v;
+    return typeof v === "object" ? (v?.[pk] ?? v?.value ?? v?.id ?? null) : v;
   };
 
   // Normalize incoming defaults from URL into local state shape (e.g., map `period` => `periodStart`/`periodEnd`)
@@ -266,8 +271,8 @@ export default function DynamicFilters<T, F>({
             const arr = Array.isArray(value)
               ? value
               : value == null
-              ? []
-              : [value];
+                ? []
+                : [value];
             cleaned[name] = arr
               .map((v) => serializeFromOption(v, name))
               .filter((v) => v !== null && v !== undefined);
@@ -328,6 +333,40 @@ export default function DynamicFilters<T, F>({
   // Render fields based on their type
   const renderField = (field: FilterField) => {
     switch (field.typeField) {
+      case "text":
+        return (
+          <TextField
+            key={field.name}
+            fullWidth
+            size="small"
+            label={field.label}
+            placeholder={field.placeholder}
+            value={(filterValues as any)[field.name] || ""}
+            onChange={(e) => handleFilterChange(field.name, e.target.value)}
+            margin="normal"
+          />
+        );
+
+      case "number":
+        return (
+          <TextField
+            key={field.name}
+            fullWidth
+            size="small"
+            type="number"
+            label={field.label}
+            placeholder={field.placeholder}
+            value={(filterValues as any)[field.name] || ""}
+            onChange={(e) =>
+              handleFilterChange(
+                field.name,
+                e.target.value ? Number(e.target.value) : ""
+              )
+            }
+            margin="normal"
+          />
+        );
+
       case "input":
         return (
           <TextField
@@ -342,11 +381,15 @@ export default function DynamicFilters<T, F>({
           />
         );
 
+      case "selectMultiple":
       case "selectAutocomplete": {
         const name = field.name as string;
         const options = field.options || [];
         const raw = (filterValues as any)[name];
-        if (field.isMultiple) {
+        const isMultiple =
+          field?.typeField === "selectMultiple" || (field as any).isMultiple;
+
+        if (isMultiple) {
           const value = (
             Array.isArray(raw) ? raw : raw == null ? [] : [raw]
           ).map((v: any) => normalizeToOption(v, options, name));
@@ -620,25 +663,27 @@ export default function DynamicFilters<T, F>({
         </Box>
 
         {/* Toggle between Date and Filters */}
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-          <ToggleButtonGroup
-            value={activeTab}
-            exclusive
-            onChange={handleTabChange}
-            aria-label="filter tabs"
-            fullWidth
-            size="small"
-          >
-            <ToggleButton value="date" aria-label="date filters">
-              <Iconify icon="solar:calendar-mark-bold" sx={{ mr: 1 }} />
-              {t("date")}
-            </ToggleButton>
-            <ToggleButton value="filters" aria-label="other filters">
-              <Iconify icon="solar:filter-bold" sx={{ mr: 1 }} />
-              {t("filters")}
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
+        {filters.date && filters.date.length > 0 && (
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+            <ToggleButtonGroup
+              value={activeTab}
+              exclusive
+              onChange={handleTabChange}
+              aria-label="filter tabs"
+              fullWidth
+              size="small"
+            >
+              <ToggleButton value="date" aria-label="date filters">
+                <Iconify icon="solar:calendar-mark-bold" sx={{ mr: 1 }} />
+                {t("date")}
+              </ToggleButton>
+              <ToggleButton value="filters" aria-label="other filters">
+                <Iconify icon="solar:filter-bold" sx={{ mr: 1 }} />
+                {t("filters")}
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+        )}
 
         {/* Content - Either Date filters or Other filters */}
         <Box sx={{ flexGrow: 1, overflow: "hidden" }}>

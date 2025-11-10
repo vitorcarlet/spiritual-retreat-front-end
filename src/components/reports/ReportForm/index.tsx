@@ -8,80 +8,71 @@ import {
   Paper,
   TextField,
   Typography,
-  ToggleButtonGroup,
-  ToggleButton,
   Select,
   MenuItem,
   InputLabel,
   FormControl,
-  Chip,
 } from "@mui/material";
 import { HexColorPicker } from "react-colorful";
 import Iconify from "@/src/components/Iconify";
 import IconSearchField from "../../fields/IconSearchField";
+import { AsynchronousAutoComplete } from "../../select-auto-complete/AsynchronousAutoComplete";
+import apiClient from "@/src/lib/axiosClientInstance";
 
-// For the multiselect with chips
-interface ChipOption {
-  key: string;
+interface RetreatOption {
+  label: string;
+  value: string;
+  id: string;
+}
+
+interface ReportType {
+  value: string;
   label: string;
 }
 
-const reportDataOptions: ChipOption[] = [
-  { key: "usuario", label: "Usuário" },
-  { key: "contemplado", label: "Contemplado" },
-  { key: "participante", label: "Participante" },
-  { key: "pagamento", label: "Pagamento" },
+const reportTypes: ReportType[] = [
+  { value: "participant", label: "Participantes" },
+  { value: "families", label: "Famílias" },
+  { value: "fiveMinutesCard", label: "Cartões 5 Minutos" },
+  { value: "botafora", label: "Bota Fora" },
+  { value: "tents", label: "Barracas" },
+  { value: "ribbons", label: "Fitas" },
 ];
 
-const customFieldOptions: ChipOption[] = [
-  { key: "conhecidos", label: "Conhecidos" },
-  { key: "animal_preferido", label: "Animal Preferido" },
-  { key: "hobby", label: "Hobby" },
-  { key: "comida_favorita", label: "Comida Favorita" },
-];
+const fetchRetreats = async (query: string): Promise<RetreatOption[]> => {
+  try {
+    const response = await apiClient.get("/Retreats", {
+      params: {
+        status: 1,
+        skip: 0,
+        take: 50,
+        search: query || undefined,
+      },
+    });
+
+    const retreats = response.data?.data || [];
+    return retreats.map((retreat: { id: string; name?: string }) => ({
+      label: retreat.name || `Retiro ${retreat.id}`,
+      value: retreat.id,
+      id: retreat.id,
+    }));
+  } catch (error) {
+    console.error("Error fetching retreats:", error);
+    return [];
+  }
+};
 
 export default function ReportForm() {
-  // State for form values
   const [formValues, setFormValues] = useState({
-    name: "Camisetas",
-    retreat: "Retiro Frai 2025",
-    icon: "mdi:tshirt-crew",
+    name: "",
+    retreat: null as RetreatOption | null,
+    reportType: "",
+    icon: "mdi:file-document",
     iconColor: "#179B0B",
-    period: "current-month",
-    reportData: ["usuario", "contemplado"],
-    customFields: ["conhecidos", "animal_preferido"],
   });
 
-  // State for color picker open/close
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
 
-  // Handle period button changes
-  const handlePeriodChange = (
-    _event: React.MouseEvent<HTMLElement>,
-    newPeriod: string | null
-  ) => {
-    if (newPeriod !== null) {
-      setFormValues({ ...formValues, period: newPeriod });
-    }
-  };
-
-  // Handle multi-select changes
-  const handleMultiSelectChange = (field: string) => (event: any) => {
-    setFormValues({
-      ...formValues,
-      [field]: event.target.value,
-    });
-  };
-
-  // Handle text input changes
-  const handleInputChange = (field: string) => (event: any) => {
-    setFormValues({
-      ...formValues,
-      [field]: event.target.value,
-    });
-  };
-
-  // Handle color change
   const handleColorChange = (color: string) => {
     setFormValues({
       ...formValues,
@@ -98,40 +89,80 @@ export default function ReportForm() {
         <Box sx={{ mb: 4, display: "flex", alignItems: "center" }}>
           <Iconify icon="solar:document-bold" width={24} height={24} />
           <Typography variant="h6" sx={{ ml: 1 }}>
-            Novo Modelo
+            Novo Modelo de Relatório
           </Typography>
         </Box>
 
         <Grid container spacing={3}>
-          {/* Name and Retreat fields */}
+          {/* Name */}
           <Grid size={{ xs: 12, md: 6 }}>
             <InputLabel shrink sx={{ mb: 1, fontSize: "0.875rem" }}>
-              Nome
+              Nome do Relatório
             </InputLabel>
             <TextField
               fullWidth
               value={formValues.name}
-              onChange={handleInputChange("name")}
+              onChange={(e) =>
+                setFormValues({ ...formValues, name: e.target.value })
+              }
               variant="outlined"
               size="small"
-              sx={{ bgcolor: "background.default" }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <InputLabel shrink sx={{ mb: 1, fontSize: "0.875rem" }}>
-              Retiro
-            </InputLabel>
-            <TextField
-              fullWidth
-              value={formValues.retreat}
-              onChange={handleInputChange("retreat")}
-              variant="outlined"
-              size="small"
+              placeholder="Ex: Camisetas, Lista de Presença"
               sx={{ bgcolor: "background.default" }}
             />
           </Grid>
 
-          {/* Icon and Color fields */}
+          {/* Report Type */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <InputLabel shrink sx={{ mb: 1, fontSize: "0.875rem" }}>
+              Tipo de Relatório
+            </InputLabel>
+            <FormControl fullWidth size="small">
+              <Select
+                value={formValues.reportType}
+                onChange={(e) =>
+                  setFormValues({ ...formValues, reportType: e.target.value })
+                }
+                displayEmpty
+                sx={{ bgcolor: "background.default" }}
+              >
+                <MenuItem value="" disabled>
+                  Selecione o tipo
+                </MenuItem>
+                {reportTypes.map((type) => (
+                  <MenuItem key={type.value} value={type.value}>
+                    {type.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Retreat */}
+          <Grid size={{ xs: 12 }}>
+            <InputLabel shrink sx={{ mb: 1, fontSize: "0.875rem" }}>
+              Retiro
+            </InputLabel>
+            <AsynchronousAutoComplete<RetreatOption>
+              fetchOptions={fetchRetreats}
+              value={formValues.retreat}
+              onChange={(value) =>
+                setFormValues({
+                  ...formValues,
+                  retreat: value as RetreatOption | null,
+                })
+              }
+              label=""
+              placeholder="Buscar retiro..."
+              getOptionLabel={(option) => option.label}
+              isOptionEqualToValue={(a, b) => a.value === b.value}
+              textFieldProps={{
+                size: "small",
+              }}
+            />
+          </Grid>
+
+          {/* Icon */}
           <Grid size={{ xs: 12, md: 6 }}>
             <InputLabel shrink sx={{ mb: 1, fontSize: "0.875rem" }}>
               Ícone
@@ -141,6 +172,8 @@ export default function ReportForm() {
               onChange={(icon) => setFormValues({ ...formValues, icon })}
             />
           </Grid>
+
+          {/* Icon Color */}
           <Grid size={{ xs: 12, md: 6 }}>
             <InputLabel shrink sx={{ mb: 1, fontSize: "0.875rem" }}>
               Cor do Ícone
@@ -177,7 +210,7 @@ export default function ReportForm() {
                   }}
                   onClick={() => setColorPickerOpen(!colorPickerOpen)}
                 >
-                  Edite a cor do ícone
+                  Editar Cor
                 </Button>
               </Box>
               {colorPickerOpen && (
@@ -189,157 +222,6 @@ export default function ReportForm() {
                 </Box>
               )}
             </Box>
-          </Grid>
-
-          {/* Period selector */}
-          <Grid size={{ xs: 12 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Período
-            </Typography>
-            <ToggleButtonGroup
-              value={formValues.period}
-              exclusive
-              onChange={handlePeriodChange}
-              aria-label="period selection"
-              fullWidth
-              sx={{
-                bgcolor: "background.default",
-                "& .MuiToggleButton-root": {
-                  border: "1px solid #ddd",
-                  borderRadius: "0 !important",
-                  textTransform: "none",
-                  py: 1.5,
-                },
-              }}
-            >
-              <ToggleButton value="previous-month" aria-label="previous month">
-                Mês Anterior
-              </ToggleButton>
-              <ToggleButton value="previous-day" aria-label="previous day">
-                Dia Anterior
-              </ToggleButton>
-              <ToggleButton value="current-day" aria-label="current day">
-                Dia Atual
-              </ToggleButton>
-              <ToggleButton value="current-month" aria-label="current month">
-                Mês Atual
-              </ToggleButton>
-              <ToggleButton
-                value="current-month-2"
-                aria-label="current month 2"
-              >
-                Mês Atual
-              </ToggleButton>
-              <ToggleButton value="select" aria-label="select custom">
-                Selecionar
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Grid>
-
-          {/* Report Data section */}
-          <Grid size={{ xs: 12 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Dados do Relatório
-            </Typography>
-            <FormControl
-              fullWidth
-              sx={{ bgcolor: "background.default" }}
-              size="small"
-            >
-              <InputLabel
-                shrink
-                sx={{
-                  position: "absolute",
-                  top: -6,
-                  left: 8,
-                  bgcolor: "background.default",
-                  px: 0.5,
-                  fontSize: "0.75rem",
-                }}
-              >
-                Label
-              </InputLabel>
-              <Select
-                multiple
-                value={formValues.reportData}
-                onChange={handleMultiSelectChange("reportData")}
-                renderValue={(selected) => (
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                    {selected.map((value) => {
-                      const option = reportDataOptions.find(
-                        (opt) => opt.key === value
-                      );
-                      return (
-                        <Chip
-                          key={value}
-                          label={option ? option.label : value}
-                          size="small"
-                        />
-                      );
-                    })}
-                  </Box>
-                )}
-              >
-                {reportDataOptions.map((option) => (
-                  <MenuItem key={option.key} value={option.key}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Custom Fields section */}
-          <Grid size={{ xs: 12 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Campos Personalizados
-            </Typography>
-            <FormControl
-              fullWidth
-              sx={{ bgcolor: "background.default" }}
-              size="small"
-            >
-              <InputLabel
-                shrink
-                sx={{
-                  position: "absolute",
-                  top: -6,
-                  left: 8,
-                  bgcolor: "background.default",
-                  px: 0.5,
-                  fontSize: "0.75rem",
-                }}
-              >
-                Label
-              </InputLabel>
-              <Select
-                multiple
-                value={formValues.customFields}
-                onChange={handleMultiSelectChange("customFields")}
-                renderValue={(selected) => (
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                    {selected.map((value) => {
-                      const option = customFieldOptions.find(
-                        (opt) => opt.key === value
-                      );
-                      return (
-                        <Chip
-                          key={value}
-                          label={option ? option.label : value}
-                          size="small"
-                        />
-                      );
-                    })}
-                  </Box>
-                )}
-              >
-                {customFieldOptions.map((option) => (
-                  <MenuItem key={option.key} value={option.key}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
           </Grid>
         </Grid>
 

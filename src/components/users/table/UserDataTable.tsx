@@ -7,10 +7,7 @@ import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/src/hooks/useModal";
 import UserSummaryModal from "../userSummaryModal";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+import apiClient from "@/src/lib/axiosClientInstance";
 import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useQuery } from "@tanstack/react-query";
@@ -23,7 +20,6 @@ import { useSession } from "next-auth/react";
 import { User } from "../types";
 import { RetreatsCardTableFilters } from "../../retreats/types";
 import Loading from "../../loading";
-import { useTranslations } from "next-intl";
 
 type UserRequest = {
   rows: User[];
@@ -36,14 +32,13 @@ type UserRequest = {
 const getUsers = async (
   filters: TableDefaultFilters<UsersTableFiltersWithDates>
 ) => {
-  const response = await handleApiResponse<UserRequest>(
-    await sendRequestServerVanilla.get("/users", { params: filters })
-  );
+  const response = await apiClient.get<UserRequest>("/users", {
+    params: filters,
+  });
 
-  if (!response || response.error) {
+  if (!response) {
     throw new Error("Failed to fetch users");
   }
-  console.log("Fetched users:", response);
   return response.data as UserRequest;
 };
 
@@ -99,7 +94,6 @@ const columns: DataTableColumn<User>[] = [
     width: 150,
     type: "date",
     valueGetter: (params: string | Date) => {
-      console.log(params, "params");
       const v = params;
       if (v == null) return null;
 
@@ -112,7 +106,7 @@ const columns: DataTableColumn<User>[] = [
 ];
 
 export default function UserDataTable() {
-  const t = useTranslations();
+  // const t = useTranslations();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<UsersTableFiltersWithDates>>({
       defaultFilters: {
@@ -177,25 +171,20 @@ export default function UserDataTable() {
           requireCheckboxLabel="I understand the consequences."
           onConfirm={async () => {
             try {
-              const res = await sendRequestServerVanilla.delete(
-                `/users/${user.id}`
-              );
-              const result = await handleApiResponse(res);
-              if (result.error) {
-                throw new Error(result.error || "Server error");
-              }
-              // Optionally trigger a refetch outside
+              await apiClient.delete(`/users/${user.id}`);
               if (typeof window !== "undefined") {
                 const { enqueueSnackbar } = await import("notistack");
                 enqueueSnackbar("User deleted successfully", {
                   variant: "success",
                 });
               }
-            } catch (err: any) {
+            } catch (err: unknown) {
               if (typeof window !== "undefined") {
                 const { enqueueSnackbar } = await import("notistack");
-                enqueueSnackbar(err.message || "Failed to delete user", {
-                  variant: "errorMUI",
+                const errorMessage =
+                  err instanceof Error ? err.message : "Failed to delete user";
+                enqueueSnackbar(errorMessage, {
+                  variant: "error",
                 });
               }
             }
@@ -222,8 +211,7 @@ export default function UserDataTable() {
   };
 
   const handleBulkAction = () => {
-    const selectedIds = getSelectedIds();
-    console.log("Ação em lote para:", selectedIds);
+    // Handle bulk action
   };
 
   const handleRefresh = () => {
@@ -248,8 +236,6 @@ export default function UserDataTable() {
   const usersDataArray: User[] | undefined = Array.isArray(usersData?.rows)
     ? usersData?.rows
     : ([usersData?.rows] as unknown as User[]);
-
-  console.log("selectedRows:", selectedRows);
 
   if (isLoading || session.status === "loading" || !session.data?.user) {
     return <Loading text="Carregando usuários..." />;
@@ -319,6 +305,7 @@ export default function UserDataTable() {
           rowCount={usersData?.total || 0}
           columns={columns}
           loading={isLoading || !session.data?.user || loading}
+          disableBuffer={true}
           // Configurações de aparência
           title="Gerenciamento de Usuários"
           subtitle="Lista completa de usuários do sistema"
@@ -346,8 +333,6 @@ export default function UserDataTable() {
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
           // Virtualização otimizada
-          rowBuffer={500}
-          columnBuffer={2}
           // Ações personalizadas
           actions={[
             {
@@ -371,8 +356,8 @@ export default function UserDataTable() {
             },
           ]}
           // Eventos
-          onRowClick={(params) => {
-            console.log("Linha clicada:", params.row);
+          onRowClick={() => {
+            // Row click handler
           }}
           onRowDoubleClick={(params) => {
             handleView(params.row);

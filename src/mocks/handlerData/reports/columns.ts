@@ -2,14 +2,68 @@ import { DataTableColumn } from "@/src/components/table/DataTable";
 
 export const columnsMock: DataTableColumn[] = [
   {
-    field: "nome_completo",
-    headerName: "Nome Completo",
+    field: "id",
+    headerName: "ID",
+    type: "string",
+    origin: "reportField",
+  },
+  {
+    field: "name",
+    headerName: "Nome",
     type: "string",
     origin: "reportField",
   },
   {
     field: "cpf",
     headerName: "CPF",
+    type: "string",
+    origin: "reportField",
+  },
+  {
+    field: "status",
+    headerName: "Status",
+    type: "string",
+    origin: "reportField",
+  },
+  {
+    field: "gender",
+    headerName: "Gênero",
+    type: "string",
+    origin: "reportField",
+  },
+  {
+    field: "age",
+    headerName: "Idade",
+    type: "number",
+    origin: "reportField",
+  },
+  {
+    field: "city",
+    headerName: "Cidade",
+    type: "string",
+    origin: "reportField",
+  },
+  {
+    field: "state",
+    headerName: "Estado",
+    type: "string",
+    origin: "reportField",
+  },
+  {
+    field: "registrationDate",
+    headerName: "Data de Inscrição",
+    type: "string",
+    origin: "reportField",
+  },
+  {
+    field: "photoUrl",
+    headerName: "Foto",
+    type: "string",
+    origin: "reportField",
+  },
+  {
+    field: "nome_completo",
+    headerName: "Nome Completo",
     type: "string",
     origin: "reportField",
   },
@@ -23,12 +77,6 @@ export const columnsMock: DataTableColumn[] = [
     field: "data_nascimento",
     headerName: "Data de Nascimento",
     type: "string",
-    origin: "reportField",
-  },
-  {
-    field: "idade",
-    headerName: "Idade",
-    type: "number",
     origin: "reportField",
   },
   {
@@ -76,18 +124,6 @@ export const columnsMock: DataTableColumn[] = [
   {
     field: "bairro",
     headerName: "Bairro",
-    type: "string",
-    origin: "reportField",
-  },
-  {
-    field: "cidade",
-    headerName: "Cidade",
-    type: "string",
-    origin: "reportField",
-  },
-  {
-    field: "estado",
-    headerName: "Estado",
     type: "string",
     origin: "reportField",
   },

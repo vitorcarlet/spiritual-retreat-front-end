@@ -15,6 +15,7 @@ import Iconify from "@/src/components/Iconify";
 import NextLink from "next/link";
 import { menuConfig } from "../SideMenu/shared";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
+import { useTranslations } from "next-intl";
 
 interface BreadcrumbItem {
   label: string;
@@ -100,6 +101,7 @@ const Breadcrumbs: React.FC = () => {
     //pathname: breadCrumbPathName,
     noBreadCrumbs,
   } = useBreadCrumbs();
+  const t = useTranslations("breadcrumbs");
 
   const routeConfig = useMemo(() => getRouteConfig(), []);
 
@@ -167,7 +169,7 @@ const Breadcrumbs: React.FC = () => {
       )}
       <Box>
         <Typography variant="h4">
-          {title ?? breadcrumbs[breadcrumbs.length - 1].label}
+          {title || t(breadcrumbs[breadcrumbs.length - 1].label)}
         </Typography>
         <MuiBreadcrumbs
           separator={
@@ -219,7 +221,7 @@ const Breadcrumbs: React.FC = () => {
                     {/* Label */}
                     {isLast ? (
                       <Chip
-                        label={title ?? item.label}
+                        label={title ?? t(item.label)}
                         size="small"
                         color="primary"
                         variant="outlined"

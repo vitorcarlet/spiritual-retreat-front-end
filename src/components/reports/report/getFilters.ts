@@ -1,80 +1,115 @@
-import { useTranslations } from "next-intl";
 import { ReportsTableDateFilters, ReportsTableFilters } from "../types";
 
-type DateFilters = FiltersDate<UsersTableDateFilters>;
-
-export const getDateFilters = (): DateFilters => {
-  const t = useTranslations();
+export const getFilters = (): Filters<
+  ReportsTableFilters,
+  ReportsTableDateFilters
+> => {
   return {
-    // configKey,
-    variantDate: "dateRange",
-    title: t("period"),
-  };
-};
-
-//type Filters = Filters;
-
-export const getFilters = (
-  id: string
-): Filters<ReportsTableFilters, ReportsTableDateFilters> => {
-  const t = useTranslations();
-  return {
-    //variantDate: "dateRange",
-    date: [
-      { title: t("periodStart"), filter: "periodStart" },
-      { title: t("periodEnd"), filter: "periodEnd" },
-    ],
     items: [
       {
-        title: t("status"),
+        title: "Status",
         fields: [
           {
-            typeField: "selectAutocomplete",
+            typeField: "selectMultiple",
             name: "status",
-            primaryKey: "value",
-            onlyFirstLoad: true,
-            url: `models/filter/status/serviceOrders?type=F`,
-            isMultiple: true,
-            custom: { variant: "custom" },
+            options: [
+              { label: "Não Selecionado", value: "NotSelected" },
+              { label: "Selecionado", value: "Selected" },
+              { label: "Pagamento Pendente", value: "PendingPayment" },
+              { label: "Pagamento Confirmado", value: "PaymentConfirmed" },
+              { label: "Confirmado", value: "Confirmed" },
+              { label: "Cancelado", value: "Canceled" },
+            ],
           },
         ],
       },
       {
-        title: t("city"),
+        title: "Gênero",
         fields: [
           {
-            typeField: "selectAutocomplete",
+            typeField: "selectMultiple",
+            name: "gender",
+            options: [
+              { label: "Masculino", value: "Male" },
+              { label: "Feminino", value: "Female" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Idade",
+        fields: [
+          {
+            typeField: "number",
+            name: "minAge",
+            placeholder: "Idade mínima",
+          },
+          {
+            typeField: "number",
+            name: "maxAge",
+            placeholder: "Idade máxima",
+          },
+        ],
+      },
+      {
+        title: "Cidade",
+        fields: [
+          {
+            typeField: "text",
             name: "city",
-            url: "clients/filter/city",
-            onlyFirstLoad: true,
-            isMultiple: true,
-            custom: { variant: "custom" },
+            placeholder: "Buscar por cidade",
           },
         ],
       },
       {
-        title: t("report-data"),
+        title: "Estado",
         fields: [
           {
-            typeField: "selectAutocomplete",
-            name: "name",
-            url: "reports/filter/name",
-            onlyFirstLoad: true,
-            isMultiple: true,
-            custom: { variant: "custom" },
+            typeField: "selectMultiple",
+            name: "state",
+            options: [
+              { label: "Acre", value: "AC" },
+              { label: "Alagoas", value: "AL" },
+              { label: "Amapá", value: "AP" },
+              { label: "Amazonas", value: "AM" },
+              { label: "Bahia", value: "BA" },
+              { label: "Ceará", value: "CE" },
+              { label: "Distrito Federal", value: "DF" },
+              { label: "Espírito Santo", value: "ES" },
+              { label: "Goiás", value: "GO" },
+              { label: "Maranhão", value: "MA" },
+              { label: "Mato Grosso", value: "MT" },
+              { label: "Mato Grosso do Sul", value: "MS" },
+              { label: "Minas Gerais", value: "MG" },
+              { label: "Pará", value: "PA" },
+              { label: "Paraíba", value: "PB" },
+              { label: "Paraná", value: "PR" },
+              { label: "Pernambuco", value: "PE" },
+              { label: "Piauí", value: "PI" },
+              { label: "Rio de Janeiro", value: "RJ" },
+              { label: "Rio Grande do Norte", value: "RN" },
+              { label: "Rio Grande do Sul", value: "RS" },
+              { label: "Rondônia", value: "RO" },
+              { label: "Roraima", value: "RR" },
+              { label: "Santa Catarina", value: "SC" },
+              { label: "São Paulo", value: "SP" },
+              { label: "Sergipe", value: "SE" },
+              { label: "Tocantins", value: "TO" },
+              { label: "Exterior", value: "EX" },
+            ],
           },
         ],
       },
       {
-        title: t("custom-fields"),
+        title: "Possui Foto",
         fields: [
           {
-            typeField: "selectAutocomplete",
-            name: "name",
-            url: `reports/${id}/filter/customFields`,
-            onlyFirstLoad: true,
-            isMultiple: true,
-            custom: { variant: "custom" },
+            typeField: "selectMultiple",
+            name: "hasPhoto",
+            options: [
+              { label: "Sim", value: "true" },
+              { label: "Não", value: "false" },
+            ],
           },
         ],
       },

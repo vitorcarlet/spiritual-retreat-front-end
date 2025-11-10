@@ -25,7 +25,10 @@ interface CreateTentBulkFormProps {
 }
 
 const tentItemSchema = z.object({
-  number: z.string().min(1, "Número é obrigatório"),
+  number: z.coerce
+    .number({ invalid_type_error: "Número deve ser um número" })
+    .int("Número deve ser um número inteiro")
+    .min(1, "Número é obrigatório"),
   category: z.enum(["Male", "Female"], {
     errorMap: () => ({ message: "Selecione um gênero válido" }),
   }),
@@ -58,7 +61,7 @@ export function CreateTentBulkForm({
     defaultValues: {
       items: [
         {
-          number: "",
+          number: 0,
           category: "Male",
           capacity: 0,
           note: "",
@@ -75,7 +78,10 @@ export function CreateTentBulkForm({
   const onSubmit = async (data: CreateTentBulkData) => {
     try {
       await apiClient.post(`/retreats/${retreatId}/tents/tents/bulk`, {
-        items: data.items,
+        items: data.items.map((item) => ({
+          ...item,
+          number: String(item.number),
+        })),
       });
       enqueueSnackbar(t("tents.bulk-form.success"), {
         variant: "success",
@@ -89,7 +95,7 @@ export function CreateTentBulkForm({
 
   const handleAddTent = () => {
     append({
-      number: "",
+      number: 0,
       category: "Male",
       capacity: 0,
       note: "",

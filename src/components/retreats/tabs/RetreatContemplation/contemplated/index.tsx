@@ -62,7 +62,7 @@ const getContemplated = async (
 
     const registrations = extractRegistrations(response.data).filter((item) => {
       // Filtrar apenas Selected e Guest
-      return item.status === "Selected" && item.category === "Guest";
+      return item.status === "Selected";
     });
 
     const rows = registrations.map((registration) =>

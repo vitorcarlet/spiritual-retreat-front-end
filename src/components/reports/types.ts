@@ -5,8 +5,6 @@ export type ReportsTableFilters = {
   state?: string;
   city?: string;
   status?: string;
-  periodStart?: string;
-  periodEnd?: string;
 };
 
 export type ReportsTableDateFilters = {

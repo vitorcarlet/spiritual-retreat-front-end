@@ -19,8 +19,8 @@ export interface ValidationResult {
   hasViceCoordinatorIssues: boolean;
 }
 
-const COORDINATOR_ROLE = 1;
-const VICE_COORDINATOR_ROLE = 2;
+const COORDINATOR_ROLE = "Coordinator";
+const VICE_COORDINATOR_ROLE = "Vice";
 
 export const useServiceTeamValidation = (
   serviceSpaces: ServiceSpace[],

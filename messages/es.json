@@ -2,6 +2,12 @@
   "HomePage": {
     "title": "Hello world!"
   },
+  "breadcrumbs": {
+    "home": "Início",
+    "retreats": "Retiros",
+    "tents": "Barracas",
+    "participants": "Participantes"
+  },
   "notifications": {
     "configuration": "Configurations",
     "notifications": "Notifications"

@@ -11,8 +11,6 @@ import SearchField from "@/src/components/filters/SearchField";
 import apiClient from "@/src/lib/axiosClientInstance";
 import { useModal } from "@/src/hooks/useModal";
 import ServiceRegistrationForm from "../ServiceRegistrationForm";
-import { GridRowId } from "@mui/x-data-grid";
-import { SendMessage } from "./SendMessage";
 
 interface ServiceConfirmedItem {
   registrationId?: string;
@@ -125,50 +123,6 @@ export default function ServiceConfirmedTab({ id }: { id: string }) {
     }
   };
 
-  function handleOpenMessagesComponent(selectedIds: GridRowId[] | "all"): void {
-    const allParticipants = (rows ?? []).map((participant) => ({
-      id: String(participant.id),
-      name: participant.name,
-    }));
-
-    const isAll =
-      selectedIds === "all" ||
-      (Array.isArray(selectedIds) && selectedIds.length !== 1);
-
-    const initialIds =
-      Array.isArray(selectedIds) && !isAll ? [String(selectedIds[0])] : [];
-
-    if (!isAll && initialIds.length) {
-      const selectedArray = Array.isArray(selectedIds)
-        ? selectedIds
-        : [selectedIds];
-
-      selectedArray.forEach((idValue) => {
-        if (!allParticipants.find((p) => p.id === String(idValue))) {
-          allParticipants.push({
-            id: String(idValue),
-            name: `Participante ${idValue}`,
-          });
-        }
-      });
-    }
-
-    modal.open({
-      title: "Enviar Mensagem",
-      size: "xl",
-      customRender: () => (
-        <SendMessage
-          retreatId={id}
-          mode={isAll ? "all" : "single"}
-          participants={allParticipants}
-          initialParticipantIds={initialIds}
-          onCancel={() => modal.close?.()}
-          onSuccess={() => modal.close?.()}
-        />
-      ),
-    });
-  }
-
   const handleOpenRegistration = useCallback(
     (row: ServiceConfirmedRow) => {
       if (!row.registrationId) {
@@ -280,14 +234,6 @@ export default function ServiceConfirmedTab({ id }: { id: string }) {
             count: filteredRows.length,
           })}
         />
-
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={() => handleOpenMessagesComponent("all")}
-        >
-          Enviar mensagens para todos os contemplados
-        </Button>
       </Stack>
 
       <Box sx={{ flexGrow: 1, minHeight: 300 }}>
@@ -295,6 +241,7 @@ export default function ServiceConfirmedTab({ id }: { id: string }) {
           <Skeleton variant="rounded" height={320} />
         ) : (
           <DataTable<ServiceConfirmedRow, TableDefaultFilters>
+            disableBuffer={true}
             rows={filteredRows}
             columns={columns}
             loading={isBusy}
@@ -323,13 +270,6 @@ export default function ServiceConfirmedTab({ id }: { id: string }) {
                 onClick: (row) => handleOpenRegistration(row),
                 color: "primary",
                 disabled: (row) => !row.registrationId,
-              },
-              {
-                icon: "lucide:send",
-                label: "Enviar Mensagem",
-                onClick: (participant) =>
-                  handleOpenMessagesComponent([participant.id]),
-                color: "primary",
               },
             ]}
             onRowDoubleClick={(params) =>

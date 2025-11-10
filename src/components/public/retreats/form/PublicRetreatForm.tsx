@@ -1,15 +1,7 @@
 "use client";
 
 import React, { use, useMemo } from "react";
-import {
-  Box,
-  Stack,
-  Skeleton,
-  Alert,
-  Paper,
-  Typography,
-  Button,
-} from "@mui/material";
+import { Box, Stack, Skeleton, Alert, Paper, Typography } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { enqueueSnackbar } from "notistack";
@@ -132,10 +124,6 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
     unknown
   > | null>(null);
 
-  if (!form || !Array.isArray(form.sections)) {
-    return <Skeleton />;
-  }
-
   const normalizedSections = useMemo(
     () => applySpecialFieldNaming(form.sections),
     [form.sections]
@@ -177,6 +165,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
     handleSubmit,
     watch,
     trigger,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<Record<string, unknown>>({
     resolver: zodResolver(schema),
@@ -242,6 +231,28 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
 
   const values = watch();
 
+  // Monitorar mudanças em campos switchExpansible e limpar campos internos
+  React.useEffect(() => {
+    const allFields = flattenSectionFields(normalizedSections);
+
+    allFields.forEach((field) => {
+      if (field.type === "switchExpansible" && Array.isArray(field.fields)) {
+        const switchValue = values[field.name];
+
+        // Se o switch foi desativado (false), resetar campos internos
+        if (!switchValue) {
+          field.fields.forEach((childField) => {
+            setValue(childField.name, "");
+          });
+        }
+      }
+    });
+  }, [values, normalizedSections, setValue]);
+
+  if (!form || !Array.isArray(form.sections)) {
+    return <Skeleton />;
+  }
+
   const handleFormSubmit = async (data: Record<string, unknown>) => {
     try {
       await sendFormData(id, data, type);
@@ -261,7 +272,6 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
         variant: "error",
         autoHideDuration: 6000,
       });
-      console.error("Erro ao enviar formulário:", error);
     }
   };
 
@@ -458,6 +468,7 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
           onNext={handleNext}
           onBack={handleBack}
           submitLabel={form.submitLabel}
+          onSubmit={handleSubmit(handleFormSubmit)}
         />
       </Stack>
     </Box>

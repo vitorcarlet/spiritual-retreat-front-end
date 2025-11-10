@@ -394,8 +394,9 @@ export default function RetreatOutboxTab() {
           )}
           autoHeight={false}
           height="100%"
-          rowBuffer={200}
-          columnBuffer={200}
+          disableBuffer={true}
+          // rowBuffer={200}
+          // columnBuffer={200}
           pagination
           showToolbar={false}
           paginationMode="server"

@@ -10,12 +10,13 @@ const ReportViewPage = dynamic(
 );
 
 type PageParams = {
-  params: {
+  params: Promise<{
     id: string;
     type?: string;
-  };
+  }>;
 };
 
-export default function Page({ params }: PageParams) {
-  return <ReportViewPage reportId={params.id} reportType={params.type} />;
+export default async function Page({ params }: PageParams) {
+  const { id, type } = await params;
+  return <ReportViewPage reportId={id} reportType={type} />;
 }

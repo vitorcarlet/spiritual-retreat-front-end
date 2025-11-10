@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import LoadingScreenCircular from "@/src/components/loading-screen/client/LoadingScreenCircular";
-import GenericReportTable from "./GenericReportTable";
 
 const FamilyReportCards = dynamic<{ reportId: string }>(
   () => import("./family/FamilyReportCards"),
@@ -26,6 +25,11 @@ const TentReport = dynamic<{ reportId: string }>(
 
 const RibbonReport = dynamic<{ reportId: string }>(
   () => import("./ribbons/RibbonReport"),
+  { loading: () => <LoadingScreenCircular /> }
+);
+
+const GenericReportTable = dynamic<{ reportId: string }>(
+  () => import("./GenericReportTable"),
   { loading: () => <LoadingScreenCircular /> }
 );
 
@@ -54,6 +58,8 @@ const ReportViewRouter = ({ reportId, reportType }: ReportRouterProps) => {
       return <TentReport reportId={reportId} />;
     case "ribbons":
       return <RibbonReport reportId={reportId} />;
+    // case "generic":
+    //   return <GenericReportTable reportId={reportId} />;
     default:
       return <GenericReportTable reportId={reportId} />;
   }
