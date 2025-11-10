@@ -7,10 +7,13 @@ interface FiltersDate<T = unknown> {
 interface FilterField {
   typeField:
     | "selectAutocomplete"
+    | "selectMultiple"
     | "input"
     | "select"
     | "checkbox"
     | "radio"
+    | "text"
+    | "number"
     | "date";
   name: string;
   primaryKey?: string;

@@ -4,8 +4,6 @@ import RetreatsCardTable from "./CardTable/RetreatsCardTable";
 
 import { useQuery } from "@tanstack/react-query";
 import { Box, Stack } from "@mui/material";
-import FilterButton from "@/src/components/filters/FilterButton";
-import { getFilters } from "./CardTable/getFilters";
 import { useTranslations } from "next-intl";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useRouter } from "next/navigation";
@@ -59,14 +57,15 @@ export default function RetreatsTablePage() {
   const t = useTranslations();
   const router = useRouter();
   const modal = useModal();
-  const { filters, updateFilters, activeFiltersCount, resetFilters } =
-    useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
-      defaultFilters: {
-        page: 1,
-        pageLimit: 4,
-      },
-      excludeFromCount: ["page", "pageLimit"], // Don't count pagination in active filters
-    });
+  const { filters, updateFilters } = useUrlFilters<
+    TableDefaultFilters<RetreatsCardTableFilters>
+  >({
+    defaultFilters: {
+      page: 1,
+      pageLimit: 4,
+    },
+    excludeFromCount: ["page", "pageLimit"], // Don't count pagination in active filters
+  });
 
   const { data: sessionData } = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
@@ -82,8 +81,6 @@ export default function RetreatsTablePage() {
       );
     }
   }, [sessionData]);
-
-  const filtersConfig = getFilters();
 
   const {
     data: retreatsData,
@@ -115,12 +112,6 @@ export default function RetreatsTablePage() {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const handleApplyFilters = (
-    newFilters: Partial<TableDefaultFilters<RetreatsCardTableFilters>>
-  ) => {
-    updateFilters({ ...filters, ...newFilters });
-  };
-
   const retreatsDataArray: RetreatSimple[] = Array.isArray(retreatsData?.items)
     ? retreatsData?.items
     : ([retreatsData?.items] as unknown as RetreatSimple[]);
@@ -134,7 +125,7 @@ export default function RetreatsTablePage() {
     >
       <Stack direction="row" spacing={2} alignItems="center" mb={3}>
         <Typography variant="h5">{t("retreats")}</Typography>
-        <FilterButton<
+        {/* <FilterButton<
           TableDefaultFilters<RetreatsCardTableFilters>,
           RetreatsCardTableDateFilters
         >
@@ -143,7 +134,7 @@ export default function RetreatsTablePage() {
           onApplyFilters={handleApplyFilters}
           onReset={resetFilters}
           activeFiltersCount={activeFiltersCount}
-        />
+        /> */}
         {hasCreatePermission && (
           <Button variant="contained">
             <Link href={{ pathname: "/retreats/create" }}>

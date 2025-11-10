@@ -43,19 +43,21 @@ export const fetchReport = async (
   const pageLimit =
     filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 20;
   const skip = (page - 1) * pageLimit;
-  const filtersFiltered = keysToRemoveFromFilters.forEach(
-    (key) => delete filters[key]
-  );
+
+  // Remover chaves desnecessárias dos filtros
+  const filtersFiltered = { ...filters };
+  keysToRemoveFromFilters.forEach((key) => delete filtersFiltered[key]);
+
   const { retreatId } = reportResponse.data.report;
-  console.log(reportResponse, params, retreatId, "aaaa");
+
   // Depois, fazer a requisição com o retreatId
   const response = await apiClient.get<RegistrationApiResponse>(
     `/Registrations`,
     {
       params: {
         retreatId,
+        ...filtersFiltered,
         ...params,
-        filtersFiltered,
         take: pageLimit,
         skip,
       },

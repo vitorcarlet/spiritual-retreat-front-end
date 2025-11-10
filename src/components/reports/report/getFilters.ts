@@ -116,16 +116,3 @@ export const getFilters = (): Filters<
     ],
   };
 };
-
-// {
-//   "baseColumns": [
-//     { "key": "id", "label": "ID", "fixed": true },
-//     { "key": "name", "label": "Nome", "defaultVisible": true },
-//     { "key": "status", "label": "Status", "defaultVisible": true },
-//     { "key": "createdAt", "label": "Criado em" }
-//   ],
-//   "customFields": [
-//     { "key": "tshirtSize", "label": "Tamanho Camisa", "inputType": "select" },
-//     { "key": "allergies", "label": "Alergias", "inputType": "text" }
-//   ]
-// }

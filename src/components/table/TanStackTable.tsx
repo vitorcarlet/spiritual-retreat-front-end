@@ -70,6 +70,11 @@ export interface TanStackTableProps<T extends Record<string, unknown>> {
   pageSize?: number;
   pageSizeOptions?: number[];
 
+  // Paginação Server-Side
+  manualPagination?: boolean;
+  pageCount?: number;
+  onPaginationModelChange?: (model: { page: number; pageSize: number }) => void;
+
   // Seleção
   enableRowSelection?: boolean;
   onRowSelectionChange?: (selectedRows: T[]) => void;
@@ -558,6 +563,9 @@ export function TanStackTable<T extends Record<string, unknown>>({
   enablePagination = true,
   pageSize: initialPageSize = 10,
   pageSizeOptions = [10, 50, 100],
+  manualPagination = false,
+  pageCount,
+  onPaginationModelChange,
   enableRowSelection = false,
   onRowSelectionChange,
   title,
@@ -646,6 +654,9 @@ export function TanStackTable<T extends Record<string, unknown>>({
     getPaginationRowModel: getPaginationRowModel(),
     globalFilterFn: fuzzyFilter,
     getRowId: getRowId,
+    // Server-side pagination
+    manualPagination,
+    pageCount: manualPagination ? (pageCount ?? -1) : undefined,
   });
 
   // Handle row selection change
@@ -657,6 +668,16 @@ export function TanStackTable<T extends Record<string, unknown>>({
       onRowSelectionChange(selectedRows);
     }
   }, [rowSelection, onRowSelectionChange, table]);
+
+  // Handle pagination change for server-side pagination
+  React.useEffect(() => {
+    if (manualPagination && onPaginationModelChange && !showAllRows) {
+      onPaginationModelChange({
+        page: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+      });
+    }
+  }, [pagination, manualPagination, onPaginationModelChange, showAllRows]);
 
   const handleExportCSV = useCallback(() => {
     const timestamp = new Date().toISOString().slice(0, 10);
@@ -684,7 +705,11 @@ export function TanStackTable<T extends Record<string, unknown>>({
     }
   };
 
-  const totalRows = table.getFilteredRowModel().rows.length;
+  const totalRows = manualPagination
+    ? pageCount
+      ? pageCount * pagination.pageSize
+      : data.length
+    : table.getFilteredRowModel().rows.length;
   const selectedCount = Object.keys(rowSelection).length;
 
   return (

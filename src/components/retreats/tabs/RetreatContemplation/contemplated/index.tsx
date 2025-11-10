@@ -50,7 +50,6 @@ const getContemplated = async (
       take: pageLimit,
       filtersFiltered,
       status: "Selected",
-      category: "Guest",
     };
 
     const response = await apiClient.get<RegistrationApiResponse>(
@@ -247,15 +246,15 @@ export default function ContemplatedTable({ id }: { id: string }) {
   const filtersConfig = getFilters();
 
   // ✅ Helper para obter IDs selecionados
-  const getSelectedIds = (): GridRowId[] => {
-    if (Array.isArray(selectedRows)) {
-      return selectedRows;
-    }
-    if (typeof selectedRows === "object" && "ids" in selectedRows) {
-      return Array.from(selectedRows.ids) || [];
-    }
-    return [];
-  };
+  // const getSelectedIds = (): GridRowId[] => {
+  //   if (Array.isArray(selectedRows)) {
+  //     return selectedRows;
+  //   }
+  //   if (typeof selectedRows === "object" && "ids" in selectedRows) {
+  //     return Array.from(selectedRows.ids) || [];
+  //   }
+  //   return [];
+  // };
 
   const handleRefresh = async () => {
     setLoading(true);

@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Button } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -26,14 +26,16 @@ interface ReportRow extends Record<string, unknown> {
 
 const GenericReportTable = ({ reportId }: { reportId: string }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const filtersConfig = getFilters();
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    await queryClient.invalidateQueries({
+      queryKey: ["reports", reportId],
+    });
+    setLoading(false);
   };
 
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
@@ -122,7 +124,13 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
           //title="Gerenciamento de Relatórios"
           //subtitle={`${reportData?.total || 0} relatórios encontrados`}
           enablePagination
-          pageSize={50}
+          manualPagination
+          pageSize={filters.pageLimit || 50}
+          pageCount={
+            reportData?.total
+              ? Math.ceil(reportData.total / (filters.pageLimit || 50))
+              : 0
+          }
           pageSizeOptions={[10, 50, 100]}
           enableRowSelection
           enableGlobalFilter
@@ -133,6 +141,13 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
           onRowDoubleClick={handleViewReport}
           maxHeight="calc(100% - 124px)"
           stickyHeader
+          onPaginationModelChange={(newModel) => {
+            updateFilters({
+              ...filters,
+              page: newModel.page + 1,
+              pageLimit: newModel.pageSize,
+            });
+          }}
         />
       </Box>
     </Box>
