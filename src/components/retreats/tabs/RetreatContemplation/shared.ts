@@ -11,7 +11,7 @@ export const mapRegistrationToParticipant = (
     cpf: registration.cpf,
     region: registration.region,
     status: "not_contemplated", // Já filtrado na API (NotSelected + Guest)
-    photoUrl: undefined,
+    photoUrl: registration.photoUrl,
     activity: "Participante",
     paymentStatus: "pending",
     participation: false,

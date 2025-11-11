@@ -408,7 +408,6 @@ export default function SingleImageUpload({
             <Stack direction="row" spacing={1}>
               <Chip size="small" label="image/png" />
               <Chip size="small" label="image/jpeg" />
-              <Chip size="small" label="image/webp" />
             </Stack>
           </Stack>
         )}

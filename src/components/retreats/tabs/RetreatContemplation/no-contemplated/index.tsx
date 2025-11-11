@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Avatar, Box, Button, Chip, Stack } from "@mui/material";
 import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
 import { GridRowSelectionModel } from "@mui/x-data-grid";
@@ -16,7 +16,6 @@ import {
   ContemplatedTableFiltersWithDates,
 } from "../types";
 import { useTranslations } from "next-intl";
-import { getSelectedIds as getSelectedIdsFn } from "@/src/components/table/shared";
 import { useModal } from "@/src/hooks/useModal";
 import { enqueueSnackbar } from "notistack";
 import apiClient from "@/src/lib/axiosClientInstance";
@@ -352,7 +351,6 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     Array.isArray(contemplatedData?.rows) && contemplatedData.rows.length > 0
       ? contemplatedData.rows
       : [];
-  console.log({ contemplatedDataArray, contemplatedData });
   if (isLoading || session.status === "loading" || !session.data?.user) {
     return (
       <Box

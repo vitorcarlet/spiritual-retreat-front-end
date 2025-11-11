@@ -472,6 +472,7 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                       ? "A foto atual pode ser substituída ao enviar uma nova imagem."
                       : "Opcional. Formatos sugeridos: PNG, JPG ou WEBP."
                   }
+                  participantId={participant?.id}
                 />
               )}
             />
@@ -525,6 +526,7 @@ type ParticipantPhotoFieldProps = {
   disabled?: boolean;
   errorMessage?: string;
   helperText?: string;
+  participantId?: string | number | null;
 };
 
 const readFileAsDataUrl = (file: File): Promise<string> => {
@@ -550,6 +552,7 @@ const ParticipantPhotoField: React.FC<ParticipantPhotoFieldProps> = ({
   disabled,
   errorMessage,
   helperText,
+  participantId,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -580,23 +583,73 @@ const ParticipantPhotoField: React.FC<ParticipantPhotoFieldProps> = ({
         return;
       }
 
+      // Se não tem participantId, apenas converte para dataURL (modo criação)
+      if (!participantId) {
+        setIsProcessing(true);
+        try {
+          const dataUrl = await readFileAsDataUrl(nextFile);
+          setLocalError(null);
+          onChange(dataUrl);
+        } catch (error) {
+          console.error(error);
+          setLocalError(
+            error instanceof Error
+              ? error.message
+              : "Não foi possível carregar a imagem selecionada."
+          );
+        } finally {
+          setIsProcessing(false);
+        }
+        return;
+      }
+
+      // Se tem participantId, faz upload via API
       setIsProcessing(true);
       try {
-        const dataUrl = await readFileAsDataUrl(nextFile);
-        setLocalError(null);
-        onChange(dataUrl);
-      } catch (error) {
-        console.error(error);
-        setLocalError(
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar a imagem selecionada."
+        const formData = new FormData();
+        formData.append("file", nextFile);
+
+        const response = await apiClient.post(
+          `/Registrations/${participantId}/photo`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
         );
+
+        // A API pode retornar a URL da foto ou não retornar nada
+        // Vamos assumir que após o upload bem-sucedido, a foto foi atualizada
+        // Você pode ajustar isso conforme a resposta real da API
+        const photoUrl =
+          response.data?.photoUrl ??
+          response.data?.url ??
+          URL.createObjectURL(nextFile);
+
+        setLocalError(null);
+        onChange(photoUrl);
+
+        enqueueSnackbar("Foto atualizada com sucesso!", {
+          variant: "success",
+          autoHideDuration: 3000,
+        });
+      } catch (error) {
+        console.error("Erro ao fazer upload da foto:", error);
+        const message = axios.isAxiosError(error)
+          ? ((error.response?.data as { error?: string })?.error ??
+            error.message)
+          : "Não foi possível fazer upload da imagem.";
+        setLocalError(message);
+        enqueueSnackbar(message, {
+          variant: "error",
+          autoHideDuration: 4000,
+        });
       } finally {
         setIsProcessing(false);
       }
     },
-    [onChange]
+    [onChange, participantId]
   );
 
   const handleRemoveExisting = useCallback(() => {
@@ -618,7 +671,7 @@ const ParticipantPhotoField: React.FC<ParticipantPhotoFieldProps> = ({
       disabled={disabled || isProcessing}
       helperText={effectiveHelperText ?? undefined}
       errorText={effectiveErrorText}
-      accept={{ "image/*": [] }}
+      accept={{ "image/jpeg": [".jpg", ".jpeg"], "image/png": [".png"] }}
     />
   );
 };

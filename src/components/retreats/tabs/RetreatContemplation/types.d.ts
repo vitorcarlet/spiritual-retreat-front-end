@@ -38,6 +38,7 @@ export type RegistrationDTO = {
   region: string;
   category: "Guest" | "Server";
   registrationDate: ISO8601DateTime;
+  photoUrl?: string;
 };
 
 export type RegistrationApiResponse = {

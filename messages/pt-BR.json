@@ -20,7 +20,9 @@
     "Botafora": "Bota-fora",
     "Ribbons": "Fitas",
     "Forms": "Formulários",
-    "Service-team": "Equipe de Serviço"
+    "Service-team": "Equipe de Serviço",
+    "Perfil": "Perfil",
+    "Gestão de OutBox": "Gestão de OutBox"
   },
   "error": "Algo deu errado",
   "HomePage": {
