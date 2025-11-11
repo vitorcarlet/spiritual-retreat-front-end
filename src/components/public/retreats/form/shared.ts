@@ -4,7 +4,7 @@ import z from "zod";
 import type { BackendField } from "./types";
 import apiClient from "@/src/lib/axiosClientInstance";
 import {
-  sections2,
+  // sections2,
   sections3,
   sectionsServe,
 } from "@/src/mocks/handlerData/formData";
@@ -213,7 +213,7 @@ export const sendFormData = async (
   retreatId: string,
   body: Record<string, unknown>,
   type: string
-): Promise<BackendForm> => {
+): Promise<{ registrationId?: string }> => {
   try {
     // Transforma o payload para o formato esperado pela API
     const transformedBody =
@@ -226,12 +226,15 @@ export const sendFormData = async (
         ? "/Registrations"
         : `/retreats/${retreatId}/service/registrations`;
 
-    const response = await apiClient.post<BackendForm>(url, transformedBody);
+    const response = await apiClient.post<{ registrationId?: string }>(
+      url,
+      transformedBody
+    );
 
     if (response.data) {
       return response.data;
     }
-    return {} as BackendForm;
+    return {};
   } catch (error) {
     console.error("Erro ao enviar dados do formulario:", error);
 

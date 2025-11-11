@@ -19,6 +19,7 @@ import FormStepProgress from "./components/FormStepProgress";
 import StepSectionHeader from "./components/StepSectionHeader";
 import FormNavigation from "./components/FormNavigation";
 import FieldRenderer from "./components/FieldRenderer";
+import PhotoUploadStep from "./PhotoUploadStep";
 
 const formCache = new Map<string, Promise<BackendForm>>();
 
@@ -123,6 +124,10 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
     string,
     unknown
   > | null>(null);
+  const [registrationId, setRegistrationId] = React.useState<string | null>(
+    null
+  );
+  const [showPhotoStep, setShowPhotoStep] = React.useState(false);
 
   const normalizedSections = useMemo(
     () => applySpecialFieldNaming(form.sections),
@@ -255,13 +260,24 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
 
   const handleFormSubmit = async (data: Record<string, unknown>) => {
     try {
-      await sendFormData(id, data, type);
-      // Sucesso: armazena os dados e mostra tela de confirmação
-      setSubmittedData(data);
-      enqueueSnackbar("Inscrição enviada com sucesso!", {
-        variant: "success",
-        autoHideDuration: 4000,
-      });
+      const response = await sendFormData(id, data, type);
+
+      // Verifica se o backend retornou um registrationId
+      if (response?.registrationId) {
+        setRegistrationId(response.registrationId);
+        setShowPhotoStep(true);
+        enqueueSnackbar("Dados enviados! Agora envie suas fotos.", {
+          variant: "success",
+          autoHideDuration: 4000,
+        });
+      } else {
+        // Fallback: se não retornar ID, mostra tela de sucesso antiga
+        setSubmittedData(data);
+        enqueueSnackbar("Inscrição enviada com sucesso!", {
+          variant: "success",
+          autoHideDuration: 4000,
+        });
+      }
     } catch (error) {
       // Erro: mostra notificação
       const errorMessage =
@@ -353,6 +369,19 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
   const handleBack = () => {
     setCurrentStep((step) => Math.max(step - 1, 0));
   };
+
+  // Tela de upload de fotos (após envio do formulário)
+  if (showPhotoStep && registrationId) {
+    return (
+      <PhotoUploadStep
+        registrationId={registrationId}
+        onComplete={() => {
+          setSubmittedData(values);
+          setShowPhotoStep(false);
+        }}
+      />
+    );
+  }
 
   // Tela de sucesso
   if (submittedData) {
@@ -474,7 +503,6 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
     </Box>
   );
 };
-
 export default PublicRetreatForm;
 
 /* -------------------- Exemplo de uso -------------------- */
