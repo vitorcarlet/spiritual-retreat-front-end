@@ -104,7 +104,7 @@ export default function AddParticipantToFamilyForm({
     fetchParticipants();
   }, [retreatId, t]);
 
-  const selectedFamily = families.find((f) => String(f.id) === familyId);
+  const selectedFamily = families.find((f) => String(f.familyId) === familyId);
 
   const onSubmit = async (data: AddParticipantData) => {
     try {
@@ -150,7 +150,10 @@ export default function AddParticipantToFamilyForm({
               <InputLabel>{t("select-family")}</InputLabel>
               <Select {...field} label={t("select-family")}>
                 {families.map((family) => (
-                  <MenuItem key={family.id} value={String(family.id)}>
+                  <MenuItem
+                    key={family.familyId}
+                    value={String(family.familyId)}
+                  >
                     <Box
                       sx={{
                         display: "flex",

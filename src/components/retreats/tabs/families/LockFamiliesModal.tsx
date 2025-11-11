@@ -44,29 +44,75 @@ interface RetreatLockStatus {
   families?: FamilyLockStatus[];
 }
 
+interface FamiliesResponse {
+  version?: number;
+  familiesLocked?: boolean;
+  families?: Array<{
+    familyId: string;
+    name?: string;
+    isLocked?: boolean;
+    members?: unknown[];
+  }>;
+}
+
 // Helper para construir o mapa de locks das famílias
-const buildFamilyLocks = (
-  payload: RetreatLockStatus | null | undefined,
+const buildFamilyLocks = async (
+  retreatId: string,
   families: RetreatFamily[]
-): Record<string, boolean> => {
-  const locks: Record<string, boolean> = {};
+): Promise<Record<string, boolean>> => {
+  try {
+    // 1. Primeiro, buscar a rota geral para verificar familiesLocked
+    const generalResponse = await apiClient.get<FamiliesResponse>(
+      `/retreats/${retreatId}/families`
+    );
 
-  if (payload?.families && Array.isArray(payload.families)) {
-    payload.families.forEach((family) => {
-      const key = String(family.familyId);
-      locks[key] = Boolean(family.locked ?? family.isLocked);
-    });
-  }
+    const familiesLocked = generalResponse.data.familiesLocked ?? false;
 
-  // Inicializa famílias não encontradas como desbloqueadas
-  families.forEach((family) => {
-    const key = String(family.familyId);
-    if (!(key in locks)) {
-      locks[key] = false;
+    // 2. Se familiesLocked for true, todas as famílias estão bloqueadas
+    if (familiesLocked) {
+      const locks: Record<string, boolean> = {};
+      families.forEach((family) => {
+        locks[String(family.familyId)] = true;
+      });
+      return locks;
     }
-  });
 
-  return locks;
+    // 3. Se não, verificar cada família individualmente
+    const locks: Record<string, boolean> = {};
+
+    // Usar Promise.all para buscar todas as famílias em paralelo
+    const familyPromises = families.map(async (family) => {
+      try {
+        const familyResponse = await apiClient.get<{
+          family: { isLocked?: boolean };
+        }>(`/retreats/${retreatId}/families/${family.familyId}`);
+
+        const isLocked = familyResponse.data.family?.isLocked ?? false;
+        return { familyId: String(family.familyId), isLocked };
+      } catch (error) {
+        console.error(
+          `Error fetching lock status for family ${family.familyId}:`,
+          error
+        );
+        return { familyId: String(family.familyId), isLocked: false };
+      }
+    });
+
+    const results = await Promise.all(familyPromises);
+    results.forEach(({ familyId, isLocked }) => {
+      locks[familyId] = isLocked;
+    });
+
+    return locks;
+  } catch (error) {
+    console.error("Error building family locks:", error);
+    // Em caso de erro, retorna todas desbloqueadas
+    const locks: Record<string, boolean> = {};
+    families.forEach((family) => {
+      locks[String(family.familyId)] = false;
+    });
+    return locks;
+  }
 };
 
 // Helper para verificar se todas as famílias estão bloqueadas
@@ -83,7 +129,6 @@ const areAllFamiliesLocked = (
 export default function LockFamiliesModal({
   retreatId,
   families,
-  familiesLocked,
   onSuccess,
   onCancel,
 }: LockFamiliesModalProps) {
@@ -108,12 +153,8 @@ export default function LockFamiliesModal({
     const fetchLockStatus = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get<RetreatLockStatus>(
-          `/retreats/${retreatId}/families/lock`
-        );
-
-        // Constrói o mapa de locks baseado na resposta
-        const locks = buildFamilyLocks(response.data, families);
+        // Usa a nova função que verifica familiesLocked global e isLocked individual
+        const locks = await buildFamilyLocks(retreatId, families);
         setFamilyLocks(locks);
       } catch (error) {
         console.error("Error fetching lock status:", error);
@@ -126,7 +167,11 @@ export default function LockFamiliesModal({
         });
 
         // Inicializa com todas desbloqueadas em caso de erro
-        setFamilyLocks(buildFamilyLocks(undefined, families));
+        const fallbackLocks: Record<string, boolean> = {};
+        families.forEach((family) => {
+          fallbackLocks[String(family.familyId)] = false;
+        });
+        setFamilyLocks(fallbackLocks);
       } finally {
         setLoading(false);
       }
@@ -141,7 +186,7 @@ export default function LockFamiliesModal({
       const nextState = !allFamiliesLocked;
 
       // Usa a rota de lock global das famílias
-      const { data } = await apiClient.post<RetreatLockStatus>(
+      await apiClient.post<RetreatLockStatus>(
         `/retreats/${retreatId}/families/lock`,
         { lock: nextState }
       );
@@ -339,13 +384,13 @@ export default function LockFamiliesModal({
           <Button onClick={onCancel} disabled={submitting} variant="outlined">
             Cancelar
           </Button>
-          <Button
+          {/* <Button
             onClick={handleClose}
             disabled={submitting}
             variant="contained"
           >
             Concluir
-          </Button>
+          </Button> */}
         </Stack>
       </Stack>
     </Box>

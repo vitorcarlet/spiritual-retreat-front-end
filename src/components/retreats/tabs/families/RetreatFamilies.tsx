@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
-import { Container, Box } from "@mui/material";
+import { useState, useCallback } from "react";
+import { Container } from "@mui/material";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useTranslations } from "next-intl";
 import { UniqueIdentifier } from "@dnd-kit/core";
@@ -51,7 +51,6 @@ export default function RetreatFamilies({
 
   const { hasCreatePermission, canEditFamily } = useFamiliesPermissions();
   const {
-    familiesData,
     familiesDataArray,
     isLoading,
     isFetching,

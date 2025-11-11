@@ -32,7 +32,7 @@ interface LockTentsModalProps {
 
 interface ServiceSpaceLockStatusEntry {
   id?: string;
-  serviceSpaceId?: string;
+  tenttId?: string;
   spaceId?: string;
   name?: string;
   isLocked: boolean;
@@ -45,6 +45,42 @@ interface ServiceSpacesLockStatus {
   serviceSpaces?: ServiceSpaceLockStatusEntry[];
 }
 
+// Helper para construir o mapa de locks das barracas
+const buildTentLocks = async (
+  retreatId: string
+): Promise<{
+  locks: Record<string, { name: string; isLocked: boolean }>;
+  globalLock: boolean;
+}> => {
+  try {
+    // Busca todas as barracas - cada uma já vem com isLocked
+    const response = await apiClient.get<RetreatTentLite[]>(
+      `/retreats/${retreatId}/tents`
+    );
+
+    const tents = response.data;
+
+    // Constrói o mapa de locks usando o isLocked de cada barraca
+    const locks: Record<string, { name: string; isLocked: boolean }> = {};
+
+    tents.forEach((tent) => {
+      locks[String(tent.tentId)] = {
+        name: tent.number || `Tent ${tent.tentId}`,
+        isLocked: tent.isLocked ?? false,
+      };
+    });
+
+    // Verifica se todas estão bloqueadas para definir o globalLock
+    const allLocked =
+      tents.length > 0 && tents.every((tent) => tent.isLocked === true);
+
+    return { locks, globalLock: allLocked };
+  } catch (error) {
+    console.error("Error building tent locks:", error);
+    throw error;
+  }
+};
+
 // const buildServiceSpaceLocks = (
 //   payload: ServiceSpacesLockStatus | null | undefined,
 //   serviceSpaces: ServiceSpace[]
@@ -55,7 +91,7 @@ interface ServiceSpacesLockStatus {
 
 //   if (Array.isArray(entries)) {
 //     entries.forEach((entry) => {
-//       const key = entry.serviceSpaceId ?? entry.spaceId ?? entry.id;
+//       const key = entry.tenttId ?? entry.spaceId ?? entry.id;
 //       if (key) {
 //         // Verifica ambas as chaves: isLocked e locked
 //         locks[String(key)] = Boolean(entry.isLocked);
@@ -100,19 +136,11 @@ export default function LockTentsModal({
     const fetchTentDetails = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get<RetreatTentLite[]>(
-          `/retreats/${retreatId}/tents/`
-        );
-
-        const tent = response.data;
-        setServiceSpaceLocks(
-          Object.fromEntries(
-            tent.map((t) => [
-              String(t.tentId),
-              { name: t.number || `Tent ${t.tentId}`, isLocked: t.isLocked },
-            ])
-          )
-        );
+        // Usa a nova função que verifica tentsLocked global e isLocked individual
+        const { locks, globalLock: isGlobalLocked } =
+          await buildTentLocks(retreatId);
+        setServiceSpaceLocks(locks);
+        setGlobalLock(isGlobalLocked);
       } catch (error) {
         console.error("Error fetching tent details:", error);
         const message = axios.isAxiosError(error)
@@ -120,17 +148,23 @@ export default function LockTentsModal({
             error.message)
           : t("load-error");
         enqueueSnackbar(message, { variant: "error" });
+
+        // Inicializa vazio em caso de erro
+        setServiceSpaceLocks({});
+        setGlobalLock(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTentDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retreatId]);
 
   const totalCount = Object.keys(serviceSpaceLocks).length;
   const lockedCount = useMemo(
-    () => Object.values(serviceSpaceLocks).filter(Boolean).length,
+    () =>
+      Object.values(serviceSpaceLocks).filter((space) => space.isLocked).length,
     [serviceSpaceLocks]
   );
 
@@ -144,27 +178,26 @@ export default function LockTentsModal({
     setSubmitting(true);
 
     try {
-      const { data } = await apiClient.post<ServiceSpacesLockStatus>(
-        `/retreats/${retreatId}/service/spaces/lock`,
+      // 1. Faz o POST para alterar o lock global
+      await apiClient.post<ServiceSpacesLockStatus>(
+        `/retreats/${retreatId}/tents/lock`,
         { lock: nextState }
       );
 
-      setGlobalLock(Boolean(data.locked));
-      const newLocks = Object.fromEntries(
-        Object.entries(serviceSpaceLocks).map(([spaceId, space]) => [
-          spaceId,
-          { ...space, isLocked: nextState },
-        ])
-      );
-      setServiceSpaceLocks(newLocks);
+      // 2. Faz o GET para buscar o estado real do backend
+      const { locks, globalLock: isGlobalLocked } =
+        await buildTentLocks(retreatId);
+
+      setServiceSpaceLocks(locks);
+      setGlobalLock(isGlobalLocked);
 
       enqueueSnackbar(
         nextState
           ? t("messages.globalLocked", {
-              defaultMessage: "All service teams are now locked.",
+              defaultMessage: "All tents are now locked.",
             })
           : t("messages.globalUnlocked", {
-              defaultMessage: "All service teams are now unlocked.",
+              defaultMessage: "All tents are now unlocked.",
             }),
         { variant: "success" }
       );
@@ -180,45 +213,35 @@ export default function LockTentsModal({
     }
   };
 
-  const handleServiceSpaceToggle = async (serviceSpaceId: string) => {
-    if (globalLock) {
-      enqueueSnackbar(
-        t("messages.disableGlobal", {
-          defaultMessage: "Disable the global lock to manage individual teams.",
-        }),
-        { variant: "warning" }
-      );
-      return;
-    }
-
+  const handleServiceSpaceToggle = async (tenttId: string) => {
     setSubmitting(true);
-    const nextState = !serviceSpaceLocks[serviceSpaceId]?.isLocked;
+    const nextState = !serviceSpaceLocks[tenttId]?.isLocked;
 
     try {
       await apiClient.post<{ locked: boolean }>(
-        `/retreats/${retreatId}/service/spaces/${serviceSpaceId}/lock`,
+        `/retreats/${retreatId}/tents/${tenttId}/lock`,
         { lock: nextState }
       );
 
       setServiceSpaceLocks((prev) => ({
         ...prev,
-        [serviceSpaceId]: {
-          ...prev[serviceSpaceId],
+        [tenttId]: {
+          ...prev[tenttId],
           isLocked: nextState,
         },
       }));
 
-      const space = serviceSpaceLocks[serviceSpaceId];
+      const space = serviceSpaceLocks[tenttId];
 
       enqueueSnackbar(
         nextState
           ? t("messages.spaceLocked", {
-              defaultMessage: 'Service team "{name}" locked.',
-              name: space?.name ?? serviceSpaceId,
+              defaultMessage: 'Tent "{name}" locked.',
+              name: space?.name ?? tenttId,
             })
           : t("messages.spaceUnlocked", {
-              defaultMessage: 'Service team "{name}" unlocked.',
-              name: space?.name ?? serviceSpaceId,
+              defaultMessage: 'Tent "{name}" unlocked.',
+              name: space?.name ?? tenttId,
             }),
         { variant: "success" }
       );
@@ -247,8 +270,7 @@ export default function LockTentsModal({
       <Stack spacing={3}>
         <Alert severity="info">
           {t("alerts.intro", {
-            defaultMessage:
-              "Lock service teams to prevent changes during the event.",
+            defaultMessage: "Lock tents to prevent changes during the event.",
           })}
         </Alert>
 
@@ -319,10 +341,10 @@ export default function LockTentsModal({
           </Stack>
 
           {globalLock && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
               {t("alerts.globalActive", {
                 defaultMessage:
-                  "The global lock is active. Disable it to manage teams individually.",
+                  "The global lock is active. You can still manage individual tents.",
               })}
             </Alert>
           )}
@@ -352,7 +374,7 @@ export default function LockTentsModal({
                       edge="end"
                       checked={isLocked}
                       onChange={() => handleServiceSpaceToggle(spaceId)}
-                      disabled={submitting || globalLock}
+                      disabled={submitting}
                       color={isLocked ? "error" : "primary"}
                     />
                   </ListItemSecondaryAction>

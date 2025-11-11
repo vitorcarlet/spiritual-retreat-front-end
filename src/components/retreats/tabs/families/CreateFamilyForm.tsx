@@ -91,7 +91,7 @@ export default function CreateFamilyForm({
     try {
       const body = {
         name: data.name,
-        color: data.color, // Adicionado (parecia faltar no seu original)
+        // color: data.color, // Adicionado (parecia faltar no seu original)
         memberIds: data.members.map((p) => p.registrationId), // Mapeia os IDs
         ignoreWarnings: true,
       };

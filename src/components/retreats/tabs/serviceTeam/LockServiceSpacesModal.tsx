@@ -45,42 +45,88 @@ interface ServiceSpacesLockStatus {
   serviceSpaces?: ServiceSpaceLockStatusEntry[];
 }
 
-const buildServiceSpaceLocks = (
-  payload: ServiceSpacesLockStatus | null | undefined,
+interface ServiceSpacesResponse {
+  version?: number;
+  spacesLocked?: boolean;
+  serviceSpacesLocked?: boolean;
+  spaces?: ServiceSpace[];
+  serviceSpaces?: ServiceSpace[];
+}
+
+// Helper para construir o mapa de locks dos espaços de serviço
+const buildServiceSpaceLocks = async (
+  retreatId: string,
   serviceSpaces: ServiceSpace[]
-): Record<string, boolean> => {
-  const locks: Record<string, boolean> = {};
+): Promise<{
+  locks: Record<string, boolean>;
+  globalLock: boolean;
+}> => {
+  try {
+    // 1. Primeiro, buscar a rota geral para verificar spacesLocked/serviceSpacesLocked
+    const generalResponse = await apiClient.get<ServiceSpacesResponse>(
+      `/retreats/${retreatId}/service/spaces`
+    );
 
-  const entries = payload?.spaces ?? payload?.serviceSpaces;
+    const spacesLocked =
+      generalResponse.data.spacesLocked ??
+      generalResponse.data.serviceSpacesLocked ??
+      false;
 
-  if (Array.isArray(entries)) {
-    entries.forEach((entry) => {
-      const key = entry.serviceSpaceId ?? entry.spaceId ?? entry.id;
-      if (key) {
-        // Verifica ambas as chaves: isLocked e locked
-        locks[String(key)] = Boolean(entry.isLocked);
+    // 2. Se spacesLocked for true, todos os espaços estão bloqueados
+    if (spacesLocked) {
+      const locks: Record<string, boolean> = {};
+      serviceSpaces.forEach((space) => {
+        locks[String(space.spaceId)] = true;
+      });
+      return { locks, globalLock: true };
+    }
+
+    // 3. Se não, verificar cada espaço individualmente
+    const locks: Record<string, boolean> = {};
+
+    // Usar Promise.all para buscar todos os espaços em paralelo
+    const spacePromises = serviceSpaces.map(async (space) => {
+      try {
+        const spaceResponse = await apiClient.get<{
+          space?: { isLocked?: boolean };
+          serviceSpace?: { isLocked?: boolean };
+        }>(`/retreats/${retreatId}/service/spaces/${space.spaceId}`);
+
+        const isLocked =
+          spaceResponse.data.space?.isLocked ??
+          spaceResponse.data.serviceSpace?.isLocked ??
+          false;
+        return { spaceId: String(space.spaceId), isLocked };
+      } catch (error) {
+        console.error(
+          `Error fetching lock status for space ${space.spaceId}:`,
+          error
+        );
+        return { spaceId: String(space.spaceId), isLocked: false };
       }
     });
+
+    const results = await Promise.all(spacePromises);
+    results.forEach(({ spaceId, isLocked }) => {
+      locks[spaceId] = isLocked;
+    });
+
+    // Verifica se todos estão bloqueados para definir o globalLock
+    const allLocked = serviceSpaces.every((space) => {
+      const key = String(space.spaceId);
+      return locks[key] === true;
+    });
+
+    return { locks, globalLock: allLocked };
+  } catch (error) {
+    console.error("Error building service space locks:", error);
+    // Em caso de erro, retorna todos desbloqueados
+    const locks: Record<string, boolean> = {};
+    serviceSpaces.forEach((space) => {
+      locks[String(space.spaceId)] = false;
+    });
+    return { locks, globalLock: false };
   }
-
-  serviceSpaces.forEach((space) => {
-    const key = String(space.spaceId);
-    if (!(key in locks)) {
-      locks[key] = false;
-    }
-  });
-
-  return locks;
-};
-
-const areAllServiceSpacesLocked = (
-  serviceSpaceLocks: Record<string, boolean>,
-  serviceSpaces: ServiceSpace[]
-): boolean => {
-  return serviceSpaces.every((space) => {
-    const key = String(space.spaceId);
-    return serviceSpaceLocks[key] === true;
-  });
 };
 
 export default function LockServiceSpacesModal({
@@ -112,16 +158,11 @@ export default function LockServiceSpacesModal({
     const fetchLockStatus = async () => {
       try {
         setLoading(true);
-
-        // Determina o estado do lock global verificando se todos estão bloqueados
-        const locks = buildServiceSpaceLocks(undefined, serviceSpaces);
-        const isGloballyLocked = areAllServiceSpacesLocked(
-          locks,
-          serviceSpaces
-        );
-
-        setGlobalLock(isGloballyLocked);
+        // Usa a nova função que verifica spacesLocked global e isLocked individual
+        const { locks, globalLock: isGlobalLocked } =
+          await buildServiceSpaceLocks(retreatId, serviceSpaces);
         setServiceSpaceLocks(locks);
+        setGlobalLock(isGlobalLocked);
       } catch (error) {
         const message = axios.isAxiosError(error)
           ? ((error.response?.data as { error?: string })?.error ??
@@ -130,31 +171,40 @@ export default function LockServiceSpacesModal({
               defaultMessage: "Unable to load lock status.",
             });
         enqueueSnackbar(message, { variant: "error" });
-        setServiceSpaceLocks(buildServiceSpaceLocks(undefined, serviceSpaces));
+
+        // Inicializa com todos desbloqueados em caso de erro
+        const fallbackLocks: Record<string, boolean> = {};
+        serviceSpaces.forEach((space) => {
+          fallbackLocks[String(space.spaceId)] = false;
+        });
+        setServiceSpaceLocks(fallbackLocks);
+        setGlobalLock(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchLockStatus();
-  }, [retreatId, serviceSpaces, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retreatId, serviceSpaces]);
 
   const handleGlobalLockToggle = async () => {
     const nextState = !globalLock;
     setSubmitting(true);
 
     try {
-      const { data } = await apiClient.post<ServiceSpacesLockStatus>(
+      // 1. Faz o POST para alterar o lock global
+      await apiClient.post<ServiceSpacesLockStatus>(
         `/retreats/${retreatId}/service/spaces/lock`,
         { lock: nextState }
       );
 
-      setGlobalLock(Boolean(data.locked));
-      const newLocks = Object.fromEntries(
-        serviceSpaces.map((space) => [String(space.spaceId), nextState])
-      );
-      setServiceSpaceLocks(newLocks);
-      setGlobalLock(nextState);
+      // 2. Faz o GET para buscar o estado real do backend
+      const { locks, globalLock: isGlobalLocked } =
+        await buildServiceSpaceLocks(retreatId, serviceSpaces);
+
+      setServiceSpaceLocks(locks);
+      setGlobalLock(isGlobalLocked);
 
       enqueueSnackbar(
         nextState
@@ -179,16 +229,6 @@ export default function LockServiceSpacesModal({
   };
 
   const handleServiceSpaceToggle = async (serviceSpaceId: string) => {
-    if (globalLock) {
-      enqueueSnackbar(
-        t("messages.disableGlobal", {
-          defaultMessage: "Disable the global lock to manage individual teams.",
-        }),
-        { variant: "warning" }
-      );
-      return;
-    }
-
     setSubmitting(true);
     const nextState = !serviceSpaceLocks[serviceSpaceId];
 
@@ -316,10 +356,10 @@ export default function LockServiceSpacesModal({
           </Stack>
 
           {globalLock && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
               {t("alerts.globalActive", {
                 defaultMessage:
-                  "The global lock is active. Disable it to manage teams individually.",
+                  "The global lock is active. You can still manage individual teams.",
               })}
             </Alert>
           )}
@@ -350,7 +390,7 @@ export default function LockServiceSpacesModal({
                       edge="end"
                       checked={isLocked}
                       onChange={() => handleServiceSpaceToggle(serviceSpaceId)}
-                      disabled={submitting || globalLock}
+                      disabled={submitting}
                       color={isLocked ? "error" : "primary"}
                     />
                   </ListItemSecondaryAction>

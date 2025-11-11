@@ -18,7 +18,9 @@
     "Family": "Família",
     "Fiveminutescard": "Cartão de Cinco Minutos",
     "Botafora": "Bota-fora",
-    "Ribbons": "Fitas"
+    "Ribbons": "Fitas",
+    "Forms": "Formulários",
+    "Service-team": "Equipe de Serviço"
   },
   "error": "Algo deu errado",
   "HomePage": {
@@ -270,6 +272,9 @@
     "delete-family": "Deletar Família"
   },
   "tents": {
+    "lock": {
+      "title": "Bloqueio de Barracas"
+    },
     "title": "Barraca {number}",
     "add-participant-to-tent": "Adicionar Participante à Tenda",
     "addParticipantToTent": "Adicionar Participante à Tenda",
@@ -743,5 +748,7 @@
     "deleting": "Deletando",
     "delete-tent": "Deletar Barraca",
     "delete-tent-confirmation": "Confirmaçção de deleção da barraca"
-  }
+  },
+  "participants-added-successfully": "Participante adicionado com sucesso!",
+  "error-adding-participants": "Erro ao adicionar participantes"
 }
