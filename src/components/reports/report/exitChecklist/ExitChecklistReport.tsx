@@ -20,7 +20,7 @@ import { useTranslations } from "next-intl";
 import Iconify from "@/src/components/Iconify";
 import LoadingScreenCircular from "@/src/components/loading-screen/client/LoadingScreenCircular";
 import SearchField from "../../../filters/SearchField";
-import { fetchReport } from "../api";
+import { fetchExitChecklistReport } from "./shared";
 import {
   ExitChecklistReportData,
   ExitChecklistRow,
@@ -231,7 +231,7 @@ const ExitChecklistReport = ({ reportId }: { reportId: string }) => {
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["reports", reportId, "exitChecklist"],
-    queryFn: () => fetchReport(reportId),
+    queryFn: () => fetchExitChecklistReport(reportId),
     staleTime: 5 * 60 * 1000,
   });
 

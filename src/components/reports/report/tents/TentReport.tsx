@@ -15,7 +15,7 @@ import { useTranslations } from "next-intl";
 import Iconify from "@/src/components/Iconify";
 import LoadingScreenCircular from "@/src/components/loading-screen/client/LoadingScreenCircular";
 import SearchField from "@/src/components/filters/SearchField";
-import { fetchReport } from "../api";
+import { fetchTentReport } from "./shared";
 import {
   ReportDataSummary,
   TentReportData,
@@ -221,7 +221,7 @@ const TentReport = ({ reportId }: { reportId: string }) => {
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["reports", reportId, "tents"],
-    queryFn: () => fetchReport(reportId),
+    queryFn: () => fetchTentReport(reportId),
     staleTime: 5 * 60 * 1000,
   });
 

@@ -19,22 +19,14 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import LoadingScreenCircular from "@/src/components/loading-screen/client/LoadingScreenCircular";
 import Iconify from "@/src/components/Iconify";
-import SearchField from "../../../filters/SearchField";
-import FilterButton from "../../../filters/FilterButton";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
+import { ReportsAllFilters } from "../../types";
+import { FamilyReportMember, ReportDataSummary } from "@/src/types/reports";
 import {
-  ReportsAllFilters,
-  ReportsTableFilters,
-  ReportsTableDateFilters,
-} from "../../types";
-import { getFilters } from "../getFilters";
-import {
-  FamilyReportMember,
+  fetchFamilyReport,
   FamilyReportRow,
   FamilyReportSummary,
-  ReportDataSummary,
-} from "@/src/types/reports";
-import { fetchReport } from "../api";
+} from "./shared";
 import { useTranslations } from "next-intl";
 import {
   normalizeHexColor,
@@ -359,15 +351,13 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [isExportingPdf, setIsExportingPdf] = useState(false);
-  const filtersConfig = getFilters(reportId);
-  const { filters, updateFilters, activeFiltersCount, resetFilters } =
-    useUrlFilters<TableDefaultFilters<ReportsAllFilters>>({
-      defaultFilters: {
-        page: 1,
-        pageLimit: 12,
-      },
-      excludeFromCount: ["page", "pageLimit", "search"],
-    });
+  const { filters } = useUrlFilters<TableDefaultFilters<ReportsAllFilters>>({
+    defaultFilters: {
+      page: 1,
+      pageLimit: 12,
+    },
+    excludeFromCount: ["page", "pageLimit", "search"],
+  });
 
   const {
     data: reportData,
@@ -375,8 +365,8 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: ["reports", reportId, "family"],
-    queryFn: () => fetchReport(reportId),
+    queryKey: ["reports", reportId, "family", filters],
+    queryFn: () => fetchFamilyReport(reportId, filters),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -447,12 +437,6 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
 
   const handleToggleFamily = (id: string) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleApplyFilters = (
-    newFilters: Partial<TableDefaultFilters<ReportsAllFilters>>
-  ) => {
-    updateFilters({ ...filters, ...newFilters });
   };
 
   const renderMembers = (members: FamilyReportMember[]) => {
@@ -543,18 +527,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
             : t("family-report-export-pdf")}
         </Button>
 
-        <FilterButton<
-          TableDefaultFilters<ReportsTableFilters>,
-          ReportsTableDateFilters
-        >
-          filters={filtersConfig}
-          defaultValues={filters}
-          onApplyFilters={handleApplyFilters}
-          onReset={resetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
-
-        <SearchField
+        {/* <SearchField
           sx={{ minWidth: 220, flex: 1, maxWidth: 320 }}
           value={searchTerm}
           onChange={(value) => {
@@ -562,7 +535,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
             updateFilters({ ...filters, search: value });
           }}
           placeholder={t("family-report-search")}
-        />
+        /> */}
       </Box>
 
       <Box

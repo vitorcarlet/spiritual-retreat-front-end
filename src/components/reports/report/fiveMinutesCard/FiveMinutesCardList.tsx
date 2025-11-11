@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import Iconify from "@/src/components/Iconify";
 import LoadingScreenCircular from "@/src/components/loading-screen/client/LoadingScreenCircular";
 import SearchField from "../../../filters/SearchField";
-import { fetchReport } from "../api";
+import { fetchFiveMinutesCardReport } from "./shared";
 import {
   FiveMinutesCardParticipant,
   FiveMinutesCardReportData,
@@ -99,7 +99,7 @@ const FiveMinutesCardList = ({ reportId }: { reportId: string }) => {
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["reports", reportId, "fiveMinutesCard"],
-    queryFn: () => fetchReport(reportId),
+    queryFn: () => fetchFiveMinutesCardReport(reportId),
     staleTime: 5 * 60 * 1000,
   });
 

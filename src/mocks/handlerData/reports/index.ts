@@ -53,7 +53,7 @@ const familyReportRows: FamilyReportRow[] = mockFamilies.map((family) => {
     id: member.id,
     fullName:
       member.name || `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim(),
-    firstName: member.firstName ?? "",
+    firstName: member.name ?? "",
     lastName: member.lastName ?? "",
     email: member.email,
     phone: member.phone,
@@ -63,8 +63,8 @@ const familyReportRows: FamilyReportRow[] = mockFamilies.map((family) => {
   }));
 
   return {
-    id: String(family.id),
-    familyId: family.id,
+    id: String(family.familyId),
+    familyId: family.familyId,
     familyName: family.name,
     color: family.color,
     contactName: family.contactName,
@@ -101,12 +101,12 @@ const familyReportColumns = [
 const fiveMinutesCardRows: FiveMinutesCardRow[] = mockFamilies.flatMap(
   (family) =>
     (family.members ?? []).map((member) => ({
-      id: `${family.id}-${member.id}`,
+      id: `${family.familyId}-${member.id}`,
       participantId: member.id,
       fullName:
         member.name ||
         `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim(),
-      familyId: family.id,
+      familyId: family.familyId,
       familyName: family.name,
       familyColor: family.color,
       confirmed: true,

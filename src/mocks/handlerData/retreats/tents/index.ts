@@ -1,14 +1,17 @@
 import { makeParticipant } from "../shared";
+import { RetreatTentMock, TentParticipantMock } from "./types";
+
+export type { RetreatTentMock, TentParticipantMock } from "./types";
 
 const genders: Array<"male" | "female"> = ["male", "female"];
 
-export const mockTents: RetreatTent[] = (() => {
-  const tents: RetreatTent[] = [];
+export const mockTents: RetreatTentMock[] = (() => {
+  const tents: RetreatTentMock[] = [];
   let participantGlobalId = 1;
 
   for (let index = 1; index <= 12; index++) {
     const gender = genders[index % genders.length];
-    const participants: TentParticipant[] = [];
+    const participants: TentParticipantMock[] = [];
 
     for (let m = 0; m < 3; m++) {
       const participant = makeParticipant(participantGlobalId++, index, m);
@@ -17,7 +20,10 @@ export const mockTents: RetreatTent[] = (() => {
         name: participant.name,
         email: participant.email,
         phone: participant.phone,
-        gender: participant.gender,
+        gender: (participant.gender === "male" ||
+        participant.gender === "female"
+          ? participant.gender
+          : "male") as "male" | "female",
         city: participant.city,
       });
     }
@@ -43,6 +49,6 @@ export const mockTents: RetreatTent[] = (() => {
   return tents;
 })();
 
-export const mockTentParticipants: TentParticipant[] = mockTents.flatMap(
+export const mockTentParticipants: TentParticipantMock[] = mockTents.flatMap(
   (tent) => tent.participants
 );

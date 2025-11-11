@@ -771,10 +771,6 @@ export const handlers = [
     );
   }),
 
-  
-
-  
-
   http.get("http://localhost:5000/api/reports", ({ request }) => {
     const url = new URL(request.url);
     const payload = paginate(mockReports, url);
