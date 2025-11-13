@@ -1,0 +1,45 @@
+{
+  "recommendations": [
+    // Essenciais para Next.js + React + TypeScript
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+
+    // TypeScript
+    "ms-vscode.vscode-typescript-next",
+
+    // Internacionalização (i18n)
+    "lokalise.i18n-ally",
+
+    // Testes
+    "orta.vscode-jest",
+    "firsttris.vscode-jest-runner",
+
+    // Material-UI (MUI)
+    "vunguyentuan.vscode-mui",
+
+    // Git
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+
+    // Produtividade
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-portuguese-brazilian",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-vscode-remote.remote-containers",
+
+    // Acessibilidade
+    "deque-systems.vscode-axe-linter",
+
+    // Utilitários
+    "ritwickdey.liveserver",
+    "mikestead.dotenv",
+    "styled-components.vscode-styled-components",
+
+    // GitHub Copilot (opcional)
+    "github.copilot",
+    "github.copilot-chat"
+  ],
+  "unwantedRecommendations": []
+}

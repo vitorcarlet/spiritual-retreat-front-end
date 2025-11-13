@@ -57,7 +57,6 @@ next-env.d.ts
 /modelo-latex-ifc-PTCC/**/*.glsdefs
 
 .sequence-diagram
-.vscode
 project.txt
 src/components/table/TanStackTable.md
 /tcc
