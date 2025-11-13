@@ -60,3 +60,6 @@ next-env.d.ts
 .vscode
 project.txt
 src/components/table/TanStackTable.md
+/tcc
+src/__tests__/teste.txt
+TESTES_VALIDACAO_TCC.txt

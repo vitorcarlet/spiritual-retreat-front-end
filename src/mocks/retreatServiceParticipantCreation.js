@@ -1,9 +1,9 @@
+/* eslint-disable no-console */
 import axios from "axios";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const TOKEN = process.env.TOKEN || process.argv[2];
 const RETREAT_ID = process.env.RETREAT_ID || process.argv[3];
 
 if (!RETREAT_ID) {
@@ -264,7 +264,7 @@ async function createMultipleParticipants(count = 10) {
     if (result.success) {
       console.log(`  ✓ ID de registro: ${result.data.serviceRegistrationId}`);
     } else {
-      console.error(`  ✗ Erro: ${result.error}`);
+      console.error(`  ✗ Erro: ${errorMessage}`);
     }
 
     await sleep(500); // Aguarda 500ms entre requisições
@@ -279,13 +279,9 @@ async function main() {
       process.env.NUM_PARTICIPANTS || process.argv[4] || 5;
     const results = await createMultipleParticipants(parseInt(numParticipants));
 
-    const successful = results.filter((r) => r.success).length;
     const failed = results.filter((r) => !r.success).length;
 
-    console.log(`\n=== RESUMO ===`);
-    console.log(`Total: ${results.length}`);
-    console.log(`Sucesso: ${successful}`);
-    console.log(`Falhas: ${failed}`);
+
 
     if (failed > 0) {
       console.log(`\nErros:`);

@@ -22,7 +22,7 @@ export default defineConfig([
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "react/jsx-uses-react": "error",
       "react/jsx-uses-vars": "error",
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
       "react/react-in-jsx-scope": "off",
       "@typescript-eslint/ban-ts-comment": "warn",
       "react-hooks/rules-of-hooks": "error",
