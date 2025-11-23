@@ -38,7 +38,6 @@ const retreatGeneralSchema = z
     registrationEnd: z.string().min(1, "Informe o fim das inscrições"),
     feeFazer: z.number().min(0, "Informe um valor válido"),
     feeServir: z.number().min(0, "Informe um valor válido"),
-    capacity: z.number().min(0, "A capacidade deve ser positiva"),
     maleSlots: z.number().min(0, "Vagas masculinas devem ser positivas"),
     femaleSlots: z.number().min(0, "Vagas femininas devem ser positivas"),
     westRegionPct: z
@@ -89,7 +88,6 @@ const defaultFormValues: RetreatGeneralFormValues = {
   registrationEnd: "",
   feeFazer: 0,
   feeServir: 0,
-  capacity: 0,
   maleSlots: 60,
   femaleSlots: 60,
   westRegionPct: 85,
@@ -170,15 +168,17 @@ const mapRetreatToFormValues = (
   stateShort: retreat.stateShort ?? defaultFormValues.stateShort,
   city: retreat.city ?? defaultFormValues.city,
   description: retreat.description ?? defaultFormValues.description,
-  capacity:
-    typeof retreat.capacity === "number"
-      ? retreat.capacity
-      : defaultFormValues.capacity,
   location: retreat.location ?? defaultFormValues.location,
   instructor: retreat.instructor ?? defaultFormValues.instructor,
 });
 
-const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
+const RetreatEditPage = ({
+  isCreating,
+  initialData,
+}: {
+  isCreating?: boolean;
+  initialData?: Retreat;
+}) => {
   const { menuMode } = useMenuMode();
   const { setBreadCrumbsTitle } = useBreadCrumbs();
   const router = useRouter();
@@ -199,6 +199,7 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
     queryKey: ["retreats", retreatId ?? "new"],
     queryFn: () => fetchRetreatData(retreatId!),
     enabled: Boolean(retreatId) && !isCreating,
+    initialData,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -232,7 +233,7 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
       setImagesToDelete([]);
       setNewImages([]);
     }
-  }, [retreatData, isCreating]);
+  }, [retreatData, isCreating, reset]);
 
   useEffect(() => {
     if (retreatData) {
@@ -552,23 +553,6 @@ const RetreatEditPage = ({ isCreating }: { isCreating?: boolean }) => {
             error={Boolean(errors.endDate)}
             helperText={errors.endDate?.message}
             {...register("endDate")}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            fullWidth
-            label="Vagas"
-            type="number"
-            disabled={isReadOnly}
-            error={Boolean(errors.capacity)}
-            helperText={errors.capacity?.message}
-            inputProps={{ min: 0 }}
-            {...register("capacity", {
-              valueAsNumber: true,
-              setValueAs: (value) =>
-                value === "" || value == null ? 0 : Number(value),
-            })}
           />
         </Grid>
 
