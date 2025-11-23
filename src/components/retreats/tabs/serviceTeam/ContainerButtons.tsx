@@ -1,7 +1,9 @@
 import React from "react";
 import { Button, Stack } from "@mui/material";
-import Iconify from "@/src/components/Iconify";
 import { UniqueIdentifier } from "@dnd-kit/core";
+import Visibility from "@mui/icons-material/Visibility";
+import Edit from "@mui/icons-material/Edit";
+import Delete from "@mui/icons-material/Delete";
 import { ValidationError } from "./hooks/useRulesValidations";
 import ServiceTeamStatus from "./ContainerButtons/ServiceTeamStatus";
 
@@ -37,7 +39,7 @@ export default function ContainerButtons({
           onClick={() => onView(familyId)}
           disabled={reorderFlag}
           fullWidth
-          startIcon={<Iconify icon="solar:eye-bold" />}
+          startIcon={<Visibility />}
         >
           Visualizar
         </Button>
@@ -50,7 +52,7 @@ export default function ContainerButtons({
               onClick={() => onEdit(familyId)}
               disabled={reorderFlag}
               fullWidth
-              startIcon={<Iconify icon="solar:pen-bold" />}
+              startIcon={<Edit />}
             >
               Editar
             </Button>
@@ -58,7 +60,7 @@ export default function ContainerButtons({
               size="small"
               variant="outlined"
               color="error"
-              startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+              startIcon={<Delete />}
               onClick={() => onDelete(familyId)}
               sx={{ minWidth: "auto" }}
             >

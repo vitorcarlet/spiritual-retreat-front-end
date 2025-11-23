@@ -7,17 +7,12 @@ import { NextIntlClientProvider } from "next-intl";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { initMocks } from "@/src/mocks";
-import { MSWProvider } from "@/src/providers/MSWProvider";
-import EmotionCacheProvider from "@/src/components/navbar/mui/EmotionCacheProvider";
+import EmotionCacheProvider from "@/src/providers/EmotionCacheProvider";
 import ThemeMuiProvider from "@/src/providers/ThemeMuiProvider";
 import { ModalProvider } from "@/src/contexts/ModalContext";
 import QueryClientProviderWrapper from "@/src/providers/QueryClientProvider";
 import { getLocale } from "next-intl/server";
-import "swiper/css";
-import "swiper/css/free-mode";
-import "swiper/css/navigation";
-import "swiper/css/thumbs";
-import "swiper/css/zoom";
+
 //import { initMocks } from "@/src/mocks";
 
 if (process.env.NODE_ENV === "development") {
@@ -60,10 +55,10 @@ export default async function RootLayout({
               <AppRouterCacheProvider options={{ enableCssLayer: true }}>
                 <ThemeMuiProvider>
                   <NextIntlClientProvider locale={locale ?? realLocale}>
-                    <MSWProvider>
-                      <ModalProvider>{children}</ModalProvider>
-                      {/* <ToastContainer /> */}
-                    </MSWProvider>
+                    {/* <MSWProvider> */}
+                    <ModalProvider>{children}</ModalProvider>
+                    {/* <ToastContainer /> */}
+                    {/* </MSWProvider> */}
                   </NextIntlClientProvider>
                 </ThemeMuiProvider>
               </AppRouterCacheProvider>

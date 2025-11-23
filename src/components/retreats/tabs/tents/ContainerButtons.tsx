@@ -1,7 +1,9 @@
 import React from "react";
 import { Button, Stack } from "@mui/material";
 import { UniqueIdentifier } from "@dnd-kit/core";
-import Iconify from "@/src/components/Iconify";
+import Visibility from "@mui/icons-material/Visibility";
+import Edit from "@mui/icons-material/Edit";
+import Delete from "@mui/icons-material/Delete";
 import { useTranslations } from "next-intl";
 
 interface ContainerButtonsProps {
@@ -25,7 +27,7 @@ export default function ContainerButtons({
       <Button
         size="small"
         variant="outlined"
-        startIcon={<Iconify icon="solar:eye-bold" />}
+        startIcon={<Visibility />}
         onClick={() => onView(tentId)}
         sx={{ minWidth: "auto" }}
       >
@@ -36,7 +38,7 @@ export default function ContainerButtons({
           <Button
             size="small"
             variant="outlined"
-            startIcon={<Iconify icon="solar:pen-bold" />}
+            startIcon={<Edit />}
             onClick={() => onEdit(tentId)}
             sx={{ minWidth: "auto" }}
           >
@@ -46,7 +48,7 @@ export default function ContainerButtons({
             size="small"
             variant="outlined"
             color="error"
-            startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+            startIcon={<Delete />}
             onClick={() => onDelete(tentId)}
             sx={{ minWidth: "auto" }}
           >
