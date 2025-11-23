@@ -157,7 +157,7 @@ const DashboardPage = () => {
             sx={{ p: 2, mb: 3, borderRadius: 2 }}
           >
             <Grid container alignItems="center" spacing={2}>
-              <Grid size={{ xs: 12, md: 8 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h5" gutterBottom>
                   Dashboard do Retiro
                 </Typography>
@@ -175,7 +175,7 @@ const DashboardPage = () => {
                   </Box>
                 )}
               </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 {/* Substituição do Autocomplete antigo */}
                 <AsynchronousAutoComplete<RetreatLite>
                   label="Selecionar Retiro"

@@ -129,15 +129,12 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
     openPersistent,
     handleDrawerPersistentToggle,
   } = useDrawer();
-  const {
-    getAccessibleMenus,
-    debugUserAccess,
-    isLoading: isLoadingMenu,
-  } = useMenuAccess();
+  const { getAccessibleMenus, isLoading: isLoadingMenu } = useMenuAccess();
   const router = useRouter();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("sm"));
-  const showMenuLabels = openPersistent || !isDesktop;
+  const showMenuLabels = openPersistent || (!isDesktop && mobileOpen);
+  // const showMenuLabels = openPersistent;
 
   // ✅ Obter apenas os menus que o usuário tem acesso
   const accessibleMenus = getAccessibleMenus();
@@ -193,11 +190,6 @@ const SideMenuDrawer = ({ children }: { children: React.ReactNode }) => {
       </List>
     </>
   );
-
-  // Debug (remover em produção)
-  useEffect(() => {
-    debugUserAccess();
-  }, []);
 
   return (
     <Box id="side-menu-drawer" sx={{ display: "flex", height: "100vh" }}>
