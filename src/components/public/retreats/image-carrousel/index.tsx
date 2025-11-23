@@ -7,7 +7,6 @@ import {
   Dialog,
   Stack,
   alpha,
-  useTheme,
   ButtonBase,
   Fade,
   Tooltip,
@@ -17,6 +16,11 @@ import FullscreenRoundedIcon from "@mui/icons-material/FullscreenRounded";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 
+import "swiper/css";
+import "swiper/css/free-mode";
+import "swiper/css/navigation";
+import "swiper/css/thumbs";
+import "swiper/css/zoom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Navigation, Thumbs, Keyboard, Zoom } from "swiper/modules";
 
