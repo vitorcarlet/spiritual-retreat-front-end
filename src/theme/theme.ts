@@ -15,10 +15,10 @@ const initialTheme = {
           //primary: { primary: GREY[900], contrastText: "#fff" },
           primary: GREY[900],
           //secondary: GREY[700],
-          secondary: "#A6ABC8",
+          secondary: "#797d8fff",
           disabled: GREY[500],
-          menu: "#A6ABC8",
-          contrastText: "#A6ABC8",
+          menu: "#797d8fff",
+          contrastText: "#797d8fff",
         },
         warning: {
           lighter: "#FFF3BF",
@@ -47,7 +47,7 @@ const initialTheme = {
           primary: "#C9D1D9",
           secondary: GREY[0],
           disabled: GREY[600],
-          menu: "#A6ABC8",
+          menu: "#797d8fff",
           contrastText: GREY[900],
         },
         background: {
