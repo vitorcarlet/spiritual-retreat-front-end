@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Stack } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { useTranslations } from "next-intl";
 
 interface FamiliesActionBarProps {

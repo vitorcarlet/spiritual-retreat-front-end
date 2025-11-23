@@ -1,4 +1,5 @@
 import Iconify from "@/src/components/Iconify";
+import Close from "@mui/icons-material/Close";
 import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import { CloseButtonProps, ModalComponentProps } from "./types";
 
@@ -79,6 +80,6 @@ const CloseButton = ({ handleClose, sx, ...rest }: CloseButtonProps) => (
       ...sx,
     }}
   >
-    <Iconify icon="ep:close-bold" size={2.2} color="text.secondary" />
+    <Close />
   </IconButton>
 );

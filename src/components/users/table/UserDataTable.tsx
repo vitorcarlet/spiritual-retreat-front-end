@@ -254,9 +254,7 @@ export default function UserDataTable() {
         boxSizing: "border-box",
       }}
     >
-      <Box
-        sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
-      >
+      <Box sx={{ mb: 2, display: "flex", gap: 2, height: 40 }}>
         {hasCreatePermission && (
           <Button variant="contained" onClick={handleCreateNewUser}>
             {"Criar Novo Usuário"}

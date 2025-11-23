@@ -65,7 +65,9 @@ import {
   Fab,
   Fade,
 } from "@mui/material";
-import Iconify from "@/src/components/Iconify";
+import Lock from "@mui/icons-material/Lock";
+import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
+import Save from "@mui/icons-material/Save";
 import {
   Items,
   RetreatFamiliesProps,
@@ -586,108 +588,90 @@ export default function RetreatFamiliesTable({
   );
 
   // Ajuste: onde antes iterava objetos com {id,name}, agora ids
-  const columnDefs: ColumnDef<UniqueIdentifier>[] = useMemo(
-    () => [
-      {
-        id: "card",
-        cell: (row) => {
-          const { original: containerId } = row.cell.row;
-          const memberIds = items[containerId] || [];
-          const familyName = familiesById[containerId] || containerId;
-          return (
-            <DroppableContainer
-              key={containerId}
-              id={containerId}
-              label={minimal ? undefined : `Família ${familyName.name}`}
-              color={familyName.color}
-              items={memberIds}
-              scrollable={scrollable}
-              style={containerStyle}
-              unstyled={minimal}
-              onRemove={() => handleRemove(containerId)}
-              disabled={familyName.locked} // Disable drag for locked families
-            >
-              {familyName.locked && (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.5,
-                    mb: 1,
-                    px: 1,
-                    py: 0.5,
-                    bgcolor: "warning.lighter",
-                    borderRadius: 1,
-                  }}
-                >
-                  <Iconify icon="solar:lock-bold" width={16} />
-                  <Typography variant="caption" color="warning.dark">
-                    Família Bloqueada
+  const columnDefs: ColumnDef<UniqueIdentifier>[] = [
+    {
+      id: "card",
+      cell: (row) => {
+        const { original: containerId } = row.cell.row;
+        const memberIds = items[containerId] || [];
+        const familyName = familiesById[containerId] || containerId;
+        return (
+          <DroppableContainer
+            key={containerId}
+            id={containerId}
+            label={minimal ? undefined : `Família ${familyName.name}`}
+            color={familyName.color}
+            items={memberIds}
+            scrollable={scrollable}
+            style={containerStyle}
+            unstyled={minimal}
+            onRemove={() => handleRemove(containerId)}
+            disabled={familyName.locked} // Disable drag for locked families
+          >
+            {familyName.locked && (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  mb: 1,
+                  px: 1,
+                  py: 0.5,
+                  bgcolor: "warning.lighter",
+                  borderRadius: 1,
+                }}
+              >
+                <Lock sx={{ width: 16, height: 16 }} />
+                <Typography variant="caption" color="warning.dark">
+                  Família Bloqueada
+                </Typography>
+              </Box>
+            )}
+            <SortableContext items={memberIds} strategy={strategy}>
+              {memberIds.map((memberId, index) => {
+                const meta = membersById[memberId];
+                return (
+                  <SortableItem
+                    disabled={isSortingContainer || familyName.locked} // Disable sorting for locked families
+                    key={memberId}
+                    id={memberId}
+                    value={meta?.name || String(memberId)}
+                    index={index}
+                    handle={handle}
+                    style={getItemStyles}
+                    wrapperStyle={wrapperStyle}
+                    containerId={containerId}
+                    getIndex={getIndex}
+                  />
+                );
+              })}
+            </SortableContext>
+            <ContainerButtons
+              onEdit={onEdit}
+              onView={onView}
+              onDelete={onDelete}
+              familyId={containerId}
+              canEdit={canEditFamily && !familyName.locked} // Disable edit for locked families
+            />
+            {familyValidationErrors[containerId]?.length ? (
+              <Stack spacing={0.5} mt={1}>
+                {familyValidationErrors[containerId].map((message, idx) => (
+                  <Typography
+                    key={`${containerId}-validation-error-${idx}`}
+                    variant="caption"
+                    color="error"
+                    display="block"
+                  >
+                    {message}
                   </Typography>
-                </Box>
-              )}
-              <SortableContext items={memberIds} strategy={strategy}>
-                {memberIds.map((memberId, index) => {
-                  const meta = membersById[memberId];
-                  return (
-                    <SortableItem
-                      disabled={isSortingContainer || familyName.locked} // Disable sorting for locked families
-                      key={memberId}
-                      id={memberId}
-                      value={meta?.name || String(memberId)}
-                      index={index}
-                      handle={handle}
-                      style={getItemStyles}
-                      wrapperStyle={wrapperStyle}
-                      containerId={containerId}
-                      getIndex={getIndex}
-                    />
-                  );
-                })}
-              </SortableContext>
-              <ContainerButtons
-                onEdit={onEdit}
-                onView={onView}
-                onDelete={onDelete}
-                familyId={containerId}
-                canEdit={canEditFamily && !familyName.locked} // Disable edit for locked families
-              />
-              {familyValidationErrors[containerId]?.length ? (
-                <Stack spacing={0.5} mt={1}>
-                  {familyValidationErrors[containerId].map((message, idx) => (
-                    <Typography
-                      key={`${containerId}-validation-error-${idx}`}
-                      variant="caption"
-                      color="error"
-                      display="block"
-                    >
-                      {message}
-                    </Typography>
-                  ))}
-                </Stack>
-              ) : null}
-            </DroppableContainer>
-          );
-        },
+                ))}
+              </Stack>
+            ) : null}
+          </DroppableContainer>
+        );
       },
-    ],
-    [
-      items,
-      membersById,
-      minimal,
-      scrollable,
-      containerStyle,
-      handle,
-      strategy,
-      isSortingContainer,
-      getItemStyles,
-      wrapperStyle,
-      onEdit,
-      onView,
-      canEditFamily,
-      familyValidationErrors,
-    ]
-  );
+    },
+  ];
 
   // getIndex agora trabalha só com IDs
   const getIndex = (id: UniqueIdentifier) => {
@@ -905,7 +889,7 @@ export default function RetreatFamiliesTable({
           <Button
             variant="outlined"
             size="small"
-            endIcon={<Iconify icon="solar:alt-arrow-down-linear" />}
+            endIcon={<KeyboardArrowDown />}
             onClick={handlePopoverOpen}
             sx={{ minWidth: 120 }}
           >
@@ -974,7 +958,7 @@ export default function RetreatFamiliesTable({
             zIndex: 1000,
           }}
         >
-          <Iconify icon="solar:diskette-bold" />
+          <Save />
         </Fab>
       </Fade>
     </Box>
@@ -1029,7 +1013,7 @@ export default function RetreatFamiliesTable({
               borderRadius: 1,
             }}
           >
-            <Iconify icon="solar:lock-bold" width={16} />
+            <Lock sx={{ width: 16, height: 16 }} />
             <Typography variant="caption" color="warning.dark">
               Família Bloqueada
             </Typography>
