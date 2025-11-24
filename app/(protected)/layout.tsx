@@ -4,7 +4,6 @@ import { NotificationsProvider } from "@/src/contexts/NotificationsContext";
 import SnackbarClientProvider from "@/src/providers/SnackbarProvider";
 import NotificationListener from "@/src/components/notifications/NotificationListener";
 import TokenErrorMonitor from "@/src/components/auth/TokenErrorMonitor";
-import { SessionProvider } from "next-auth/react";
 import SessionWatcher from "@/src/providers/SessionWatcher";
 
 export const metadata = {
@@ -17,18 +16,18 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SessionProvider>
-      <SessionWatcher>
-        <TokenErrorMonitor />
-        <DrawerProvider>
-          <NotificationsProvider>
-            <SnackbarClientProvider>
-              <NotificationListener />
-              <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
-            </SnackbarClientProvider>
-          </NotificationsProvider>
-        </DrawerProvider>
-      </SessionWatcher>
-    </SessionProvider>
+    // <SessionProvider>
+    <SessionWatcher>
+      <TokenErrorMonitor />
+      <DrawerProvider>
+        <NotificationsProvider>
+          <SnackbarClientProvider>
+            <NotificationListener />
+            <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
+          </SnackbarClientProvider>
+        </NotificationsProvider>
+      </DrawerProvider>
+    </SessionWatcher>
+    // </SessionProvider>
   );
 }

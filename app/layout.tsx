@@ -6,7 +6,6 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { NextIntlClientProvider } from "next-intl";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
-import { initMocks } from "@/src/mocks";
 import EmotionCacheProvider from "@/src/providers/EmotionCacheProvider";
 import ThemeMuiProvider from "@/src/providers/ThemeMuiProvider";
 import { ModalProvider } from "@/src/contexts/ModalContext";
@@ -15,11 +14,11 @@ import { getLocale } from "next-intl/server";
 
 //import { initMocks } from "@/src/mocks";
 
-if (process.env.NODE_ENV === "development") {
-  if (typeof window !== "undefined") {
-    initMocks();
-  }
-}
+// if (process.env.NODE_ENV === "development") {
+//   if (typeof window !== "undefined") {
+//     initMocks();
+//   }
+// }
 
 const poppins = Poppins({
   subsets: ["latin"],
