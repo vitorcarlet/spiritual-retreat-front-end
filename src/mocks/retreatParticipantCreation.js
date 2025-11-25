@@ -12,11 +12,13 @@ const NUM_PARTICIPANTS = parseInt(
 );
 
 if (!RETREAT_ID) {
-  console.error("Uso: RETREAT_ID=... [NUM_PARTICIPANTS=...] node retreatServiceParticipantCreation.js");
+  console.error(
+    "Uso: RETREAT_ID=... [NUM_PARTICIPANTS=...] node retreatServiceParticipantCreation.js"
+  );
   process.exit(1);
 }
 
-const BASE_URL = process.env.API_BASE_URL || "http://localhost:5000";
+const BASE_URL = process.env.API_BASE_URL || "http://localhost:5001";
 
 // Dados de cidades catarinenses por região
 const catarinenseCities = {
@@ -27,7 +29,14 @@ const catarinenseCities = {
     "Massaranduba",
     "Barra Velha",
   ],
-  sul: ["Criciúma", "Tubarão", "Laguna", "Braço do Norte", "Orleans", "Urussanga"],
+  sul: [
+    "Criciúma",
+    "Tubarão",
+    "Laguna",
+    "Braço do Norte",
+    "Orleans",
+    "Urussanga",
+  ],
   oeste: ["Chapecó", "Concórdia", "Caçador", "Xanxerê", "Joaçaba"],
   leste: ["Blumenau", "Brusque", "Gaspar", "Timbó", "Indaial"],
 };
@@ -120,7 +129,9 @@ function pickRandom(list) {
 }
 
 function generateCPF() {
-  const numbers = Array.from({ length: 11 }, () => Math.floor(Math.random() * 10)).join("");
+  const numbers = Array.from({ length: 11 }, () =>
+    Math.floor(Math.random() * 10)
+  ).join("");
   return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 }
 
@@ -327,7 +338,7 @@ function generateParticipant() {
       "Enfermeiro",
       "Autônomo",
       "Estudante",
-      "Administrador"
+      "Administrador",
     ]),
     streetAndNumber: `${pickRandom(["Rua", "Av.", "Travessa"])} ${pickRandom(lastNames)} ${Math.floor(Math.random() * 300)}`,
     neighborhood: pickRandom([
@@ -384,9 +395,7 @@ function generateParticipant() {
       ? "Restrição alimentar."
       : null,
     takesMedication,
-    medicationsDetails: takesMedication
-      ? "Uso contínuo de vitaminas."
-      : null,
+    medicationsDetails: takesMedication ? "Uso contínuo de vitaminas." : null,
     physicalLimitationDetails: maybe("Nenhuma limitação relevante."),
     recentSurgeryOrProcedureDetails: maybe("Cirurgia simples em 2023."),
     termsAccepted: true,
@@ -435,7 +444,11 @@ async function createMultipleParticipants(count = 10) {
       console.log(`  ✓ Registro criado: ${result.data.registrationId}`);
     } else {
       const errorMsg = axios.isAxiosError(result.error)
-        ? JSON.stringify(result.error.response?.data ?? result.error.message, null, 2)
+        ? JSON.stringify(
+            result.error.response?.data ?? result.error.message,
+            null,
+            2
+          )
         : String(result.error);
       console.error(`  ✗ Erro ao criar ${participant.name.value}: ${errorMsg}`);
     }

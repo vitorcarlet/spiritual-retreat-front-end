@@ -24,7 +24,7 @@ import { mockTents } from "./handlerData/retreats/tents";
 export const handlersApi = [
   // Send message to families endpoint
   http.post(
-    "http://localhost:5000/api/admin/retreats/{retreatId}/groups",
+    "http://localhost:5001/api/admin/retreats/{retreatId}/groups",
     async ({ request }) => {
       const body = (await request.json()) as {
         subject: string;
@@ -46,7 +46,7 @@ export const handlersApi = [
   ),
 
   http.post(
-    "http://localhost:5000/api/admin/retreats/{retreatId}/groups/{familyId}/notify",
+    "http://localhost:5001/api/admin/retreats/{retreatId}/groups/{familyId}/notify",
     async ({ request, params }) => {
       const body = (await request.json()) as {
         subject: string;
@@ -68,7 +68,7 @@ export const handlersApi = [
   ),
 
   http.get(
-    "http://localhost:5000/api/admin/retreats/:retreatId/groups",
+    "http://localhost:5001/api/admin/retreats/:retreatId/groups",
     ({ params, request }) => {
       const retreatId = params.retreatId as string;
       const url = new URL(request.url);
@@ -89,7 +89,7 @@ export const handlersApi = [
   ),
 
   http.get(
-    "http://localhost:5000/api/admin/retreats/:retreatId/groups/status",
+    "http://localhost:5001/api/admin/retreats/:retreatId/groups/status",
     ({ params }) => {
       const retreatId = params.retreatId as string;
       const groups = ensureFamilyGroups(retreatId);
@@ -100,7 +100,7 @@ export const handlersApi = [
   ),
 
   http.post(
-    "http://localhost:5000/api/admin/retreats/:retreatId/groups/:familyId/resend",
+    "http://localhost:5001/api/admin/retreats/:retreatId/groups/:familyId/resend",
     ({ params }) => {
       const retreatId = params.retreatId as string;
       const familyId = params.familyId as string;
@@ -133,7 +133,7 @@ export const handlersApi = [
   ),
 
   http.post(
-    "http://localhost:5000/api/admin/retreats/:retreatId/groups/retry-failed",
+    "http://localhost:5001/api/admin/retreats/:retreatId/groups/retry-failed",
     ({ params }) => {
       const retreatId = params.retreatId as string;
       const groups = ensureFamilyGroups(retreatId);
@@ -165,10 +165,10 @@ export const handlersApi = [
       );
     }
   ),
-  ...createOutboxHandlers("http://localhost:5000/api/admin/outbox"),
-  ...createOutboxHandlers("http://localhost:5000/admin/outbox"),
+  ...createOutboxHandlers("http://localhost:5001/api/admin/outbox"),
+  ...createOutboxHandlers("http://localhost:5001/admin/outbox"),
   http.post(
-    "http://localhost:5000/api/admin/notifications/retreats/:retreatId/notify-selected",
+    "http://localhost:5001/api/admin/notifications/retreats/:retreatId/notify-selected",
     async ({ params, request }) => {
       const retreatId = params.retreatId as string;
       const body = (await request.json()) as {
@@ -198,7 +198,7 @@ export const handlersApi = [
   ),
 
   http.post(
-    "http://localhost:5000/api/admin/notifications/registrations/:registrationId/notify",
+    "http://localhost:5001/api/admin/notifications/registrations/:registrationId/notify",
     async ({ params }) => {
       const registrationId = params.registrationId as string;
 
@@ -211,12 +211,12 @@ export const handlersApi = [
       );
     }
   ),
-  http.post("http://localhost:5000/api/Registrations", async ({ request }) => {
+  http.post("http://localhost:5001/api/Registrations", async ({ request }) => {
     const body = await request.json();
     return HttpResponse.json(body, { status: 200 });
   }),
 
-  http.get("http://localhost:5000/api/Registrations", ({ request }) => {
+  http.get("http://localhost:5001/api/Registrations", ({ request }) => {
     const url = new URL(request.url);
     const statusParam = url.searchParams.get("status");
 
@@ -235,7 +235,7 @@ export const handlersApi = [
     return HttpResponse.json(payload, { status: 200 });
   }),
 
-  http.get("http://localhost:5000/api/Registrations/:id", ({ params }) => {
+  http.get("http://localhost:5001/api/Registrations/:id", ({ params }) => {
     const id = Number(params.id);
     const participant = mockContemplatedParticipants.find((p) => p.id === id);
 
@@ -250,7 +250,7 @@ export const handlersApi = [
   }),
 
   http.post(
-    "http://localhost:5000/api/retreats/:id/families/generate",
+    "http://localhost:5001/api/retreats/:id/families/generate",
     async ({ params }) => {
       const retreatId = params.id as string;
 
@@ -270,7 +270,7 @@ export const handlersApi = [
   ),
 
   http.get(
-    "http://localhost:5000/api/retreats/:id/families",
+    "http://localhost:5001/api/retreats/:id/families",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
       const payload = paginate(mockFamilies, url);
@@ -280,7 +280,7 @@ export const handlersApi = [
 
   // Reorder families and members endpoint
   http.put(
-    "http://localhost:5000/api/retreats/:id/families",
+    "http://localhost:5001/api/retreats/:id/families",
     async ({ params, request }) => {
       const retreatId = params.id as string;
       const body = (await request.json()) as {
@@ -315,7 +315,7 @@ export const handlersApi = [
 
   // Get single family by ID
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/families/:familyId",
+    "http://localhost:5001/api/retreats/:retreatId/families/:familyId",
     ({ params }) => {
       const familyId = Number(params.familyId);
       const family = mockFamilies.find((f) => f.familyId === familyId);
@@ -333,7 +333,7 @@ export const handlersApi = [
 
   //Delete Family By Id
   http.delete(
-    "http://localhost:5000/api/retreats/:retreatId/families/:familyId",
+    "http://localhost:5001/api/retreats/:retreatId/families/:familyId",
     ({ params }) => {
       const familyId = Number(params.familyId);
       const family = mockFamilies.find((f) => f.familyId === familyId);
@@ -355,7 +355,7 @@ export const handlersApi = [
 
   // Lock/Unlock all families in a retreat (global lock)
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/families/lock",
+    "http://localhost:5001/api/retreats/:retreatId/families/lock",
     async ({ params, request }) => {
       const retreatId = params.retreatId as string;
       const body = (await request.json()) as { lock: boolean };
@@ -383,7 +383,7 @@ export const handlersApi = [
 
   // Lock/Unlock a specific family
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/families/:familyId/lock",
+    "http://localhost:5001/api/retreats/:retreatId/families/:familyId/lock",
     async ({ params, request }) => {
       const familyId = Number(params.familyId);
       const body = (await request.json()) as { lock: boolean };
@@ -411,7 +411,7 @@ export const handlersApi = [
 
   // Get unassigned participants for a retreat
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/families/unassigned",
+    "http://localhost:5001/api/retreats/:retreatId/families/unassigned",
     ({ request }) => {
       const url = new URL(request.url);
       const gender = url.searchParams.get("gender");
@@ -524,7 +524,7 @@ export const handlersApi = [
 
   // Reset all families
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/families/reset",
+    "http://localhost:5001/api/retreats/:retreatId/families/reset",
     async ({ request }) => {
       const body = (await request.json()) as { forceLockedFamilies: boolean };
 
@@ -582,7 +582,7 @@ export const handlersApi = [
 
   // Family creation endpoint
   http.post(
-    "http://localhost:5000/api/retreats/:id/create/families",
+    "http://localhost:5001/api/retreats/:id/create/families",
     async ({ request }) => {
       const body = (await request.json()) as {
         name: string;
@@ -611,7 +611,7 @@ export const handlersApi = [
 
   // Lottery preview - show which participants would be selected
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/lottery/preview",
+    "http://localhost:5001/api/retreats/:retreatId/lottery/preview",
     () => {
       // Get contemplated participants
       const contemplated = mockContemplatedParticipants.filter(
@@ -645,7 +645,7 @@ export const handlersApi = [
 
   // Lottery commit - confirm the lottery selection
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/lottery/commit",
+    "http://localhost:5001/api/retreats/:retreatId/lottery/commit",
     () => {
       // Get contemplated participants
       const contemplated = mockContemplatedParticipants.filter(
@@ -681,7 +681,7 @@ export const handlersApi = [
 
   // Contemplate a participant (mark as selected for retreat)
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/selections/:registrationId",
+    "http://localhost:5001/api/retreats/:retreatId/selections/:registrationId",
     ({ params }) => {
       const { retreatId, registrationId } = params;
 
@@ -717,7 +717,7 @@ export const handlersApi = [
 
   // Remove contemplation from a participant
   http.delete(
-    "http://localhost:5000/api/retreats/:retreatId/selections/:registrationId",
+    "http://localhost:5001/api/retreats/:retreatId/selections/:registrationId",
     ({ params }) => {
       const { retreatId, registrationId } = params;
 
@@ -753,7 +753,7 @@ export const handlersApi = [
 
   //Retreat
 
-  http.post("http://localhost:5000/api/Retreats", async ({ request }) => {
+  http.post("http://localhost:5001/api/Retreats", async ({ request }) => {
     const contentType = request.headers.get("content-type");
 
     let payload: Record<string, unknown>;
@@ -805,7 +805,7 @@ export const handlersApi = [
   }),
 
   http.get(
-    "http://localhost:5000/api/Retreats",
+    "http://localhost:5001/api/Retreats",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
 
@@ -851,7 +851,7 @@ export const handlersApi = [
     }
   ),
 
-  http.get("http://localhost:5000/api/Retreats/:id", ({ params }) => {
+  http.get("http://localhost:5001/api/Retreats/:id", ({ params }) => {
     const id = params.id as string;
     const retreat = mockRetreats.find((r) => r.id.toString() === id);
     if (retreat) {
@@ -861,7 +861,7 @@ export const handlersApi = [
   }),
 
   http.put(
-    "http://localhost:5000/api/Retreats/:id",
+    "http://localhost:5001/api/Retreats/:id",
     async ({ params, request }) => {
       const id = params.id as string;
       const contentType = request.headers.get("content-type");
@@ -898,7 +898,7 @@ export const handlersApi = [
     }
   ),
 
-  http.delete("http://localhost:5000/api/Retreats/:id", ({ params }) => {
+  http.delete("http://localhost:5001/api/Retreats/:id", ({ params }) => {
     const id = params.id as string;
     const index = mockRetreats.findIndex((r) => r.id.toString() === id);
 
@@ -920,7 +920,7 @@ export const handlersApi = [
 
   // Service Alerts for retreat service teams
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/service/alerts",
+    "http://localhost:5001/api/retreats/:retreatId/service/alerts",
     ({ params, request }) => {
       const retreatId = (params.retreatId as string) ?? "";
       const url = new URL(request.url);
@@ -1012,7 +1012,7 @@ export const handlersApi = [
 
   // Service Registrations - Create
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/service/registrations",
+    "http://localhost:5001/api/retreats/:retreatId/service/registrations",
     async ({ request }) => {
       await request.json(); // consume body
 
@@ -1031,7 +1031,7 @@ export const handlersApi = [
 
   // Service Registrations - Get by ID
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/service/registrations/:id",
+    "http://localhost:5001/api/retreats/:retreatId/service/registrations/:id",
     ({ params }) => {
       const { retreatId, id } = params;
 
@@ -1063,7 +1063,7 @@ export const handlersApi = [
 
   // Service Registrations - Roster
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/service/registrations/roster",
+    "http://localhost:5001/api/retreats/:retreatId/service/registrations/roster",
     ({ params }) => {
       const retreatId = params.retreatId as string;
 
@@ -1126,7 +1126,7 @@ export const handlersApi = [
 
   // Service Registrations - Roster Unassigned
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/service/registrations/roster/unassigned",
+    "http://localhost:5001/api/retreats/:retreatId/service/registrations/roster/unassigned",
     () => {
       const mockUnassigned = [
         {
@@ -1170,7 +1170,7 @@ export const handlersApi = [
 
   // Service Registrations - Confirmed
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/service/registrations/confirmed",
+    "http://localhost:5001/api/retreats/:retreatId/service/registrations/confirmed",
     () => {
       // Return 200 OK with empty response or minimal data
       return HttpResponse.json(
@@ -1184,7 +1184,7 @@ export const handlersApi = [
   ),
 
   http.get(
-    "http://localhost:5000/api/retreats/:id/service/spaces/public",
+    "http://localhost:5001/api/retreats/:id/service/spaces/public",
     ({ request, params }) => {
       const url = new URL(request.url);
       const retreatId = params.id as string;
@@ -1198,7 +1198,7 @@ export const handlersApi = [
 
   // Service Spaces - Summary
   http.get(
-    "http://localhost:5000/api/retreats/:retreatId/service/spaces/summary",
+    "http://localhost:5001/api/retreats/:retreatId/service/spaces/summary",
     ({ params }) => {
       const retreatId = params.retreatId as string;
       const spaces = mockServiceSpaces.filter((s) => s.retreatId === retreatId);
@@ -1245,7 +1245,7 @@ export const handlersApi = [
   ),
 
   http.get(
-    "http://localhost:5000/api/retreats/:id/service/spaces",
+    "http://localhost:5001/api/retreats/:id/service/spaces",
     ({ request, params }) => {
       const url = new URL(request.url);
       const retreatId = params.id as string;
@@ -1258,7 +1258,7 @@ export const handlersApi = [
   ),
 
   http.post(
-    "http://localhost:5000/api/retreats/:id/service/spaces",
+    "http://localhost:5001/api/retreats/:id/service/spaces",
     async ({ params, request }) => {
       const retreatId = params.id as string;
       const body = (await request.json()) as Partial<MockServiceSpace> & {
@@ -1312,7 +1312,7 @@ export const handlersApi = [
   ),
 
   http.get(
-    "http://localhost:5000/api/retreats/:id/service/spaces/:spaceId",
+    "http://localhost:5001/api/retreats/:id/service/spaces/:spaceId",
     ({ params }) => {
       const retreatId = params.id as string;
       const spaceId = params.spaceId as string;
@@ -1332,7 +1332,7 @@ export const handlersApi = [
   ),
 
   http.delete(
-    "http://localhost:5000/api/retreats/:id/service-spaces/:spaceId",
+    "http://localhost:5001/api/retreats/:id/service-spaces/:spaceId",
     ({ params }) => {
       const retreatId = params.id as string;
       const spaceId = params.spaceId as string;
@@ -1356,7 +1356,7 @@ export const handlersApi = [
 
   // Service Spaces - Set Capacity (bulk or individual)
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/service/spaces/capacity",
+    "http://localhost:5001/api/retreats/:retreatId/service/spaces/capacity",
     async ({ params, request }) => {
       const retreatId = params.retreatId as string;
       const body = (await request.json()) as {
@@ -1411,7 +1411,7 @@ export const handlersApi = [
 
   // Service Spaces - Lock/Unlock individual space
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/service/spaces/:spaceId/lock",
+    "http://localhost:5001/api/retreats/:retreatId/service/spaces/:spaceId/lock",
     async ({ params, request }) => {
       const retreatId = params.retreatId as string;
       const spaceId = params.spaceId as string;
@@ -1447,7 +1447,7 @@ export const handlersApi = [
 
   // Service Spaces - Lock/Unlock all spaces in retreat
   http.post(
-    "http://localhost:5000/api/retreats/:retreatId/service/spaces/lock",
+    "http://localhost:5001/api/retreats/:retreatId/service/spaces/lock",
     async ({ params, request }) => {
       const retreatId = params.retreatId as string;
       const body = (await request.json()) as { lock: boolean };
@@ -1478,7 +1478,7 @@ export const handlersApi = [
 
   // Service Roster - Update roster (reorder members across spaces)
   http.put(
-    "http://localhost:5000/api/retreats/:retreatId/service/roster",
+    "http://localhost:5001/api/retreats/:retreatId/service/roster",
     async ({ params, request }) => {
       const retreatId = params.retreatId as string;
       const body = (await request.json()) as {
@@ -1531,7 +1531,7 @@ export const handlersApi = [
   ),
 
   http.get(
-    "http://localhost:5000/api/retreats/:id/tents",
+    "http://localhost:5001/api/retreats/:id/tents",
     ({ request /*, params */ }) => {
       const url = new URL(request.url);
       const payload = paginate(mockTents, url);

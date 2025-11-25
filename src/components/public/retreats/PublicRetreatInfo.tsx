@@ -6,7 +6,7 @@ import { ImageCarrousel } from "./image-carrousel";
 import { redirect } from "next/navigation";
 import { Retreat } from "@/src/types/retreats";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
 export default async function PublicRetreatInfo({
   retreatId,

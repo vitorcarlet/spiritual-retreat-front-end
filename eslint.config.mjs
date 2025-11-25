@@ -8,6 +8,9 @@ export default defineConfig([
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
   {
+    ignores: ["jest.polyfills.js", "jest.config.js", "next.config.ts"],
+  },
+  {
     files: ["**/*.{js,ts,jsx,tsx}"],
     languageOptions: {
       parserOptions: {

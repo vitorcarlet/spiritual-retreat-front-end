@@ -13,7 +13,7 @@ if (!RETREAT_ID) {
   process.exit(1);
 }
 
-const BASE_URL = process.env.API_BASE_URL || "http://localhost:5000";
+const BASE_URL = process.env.API_BASE_URL || "http://localhost:5001";
 
 // Dados de cidades catarinenses por região
 const catarinenseCities = {
@@ -259,7 +259,7 @@ async function createMultipleParticipants(count = 10) {
     const result = await createParticipant(participant);
     results.push(result);
     const errorMessage = axios.isAxiosError(result.error)
-      ? result.error.response?.data?.error ?? result.error.message
+      ? (result.error.response?.data?.error ?? result.error.message)
       : "Não foi possível enviar a mensagem.";
     if (result.success) {
       console.log(`  ✓ ID de registro: ${result.data.serviceRegistrationId}`);
@@ -280,8 +280,6 @@ async function main() {
     const results = await createMultipleParticipants(parseInt(numParticipants));
 
     const failed = results.filter((r) => !r.success).length;
-
-
 
     if (failed > 0) {
       console.log(`\nErros:`);

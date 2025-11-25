@@ -10,13 +10,29 @@ import { mockUsers } from "./handlerData/users";
 import { mockContemplatedParticipants } from "./handlerData/retreats/contemplated";
 import { mockFamilies } from "./handlerData/retreats/families";
 import { columnsMock } from "./handlerData/reports/columns";
-import { createByOrigin, MockNotification, mockNotifications } from "./handlerData/notifications";
+import {
+  createByOrigin,
+  MockNotification,
+  mockNotifications,
+} from "./handlerData/notifications";
 import { sections2 as sections } from "./handlerData/formData";
-import { paginate, ensureFamilyGroups, LoginRequest, normalizeOptionalServiceSpaceMember, normalizeServiceSpaceMember, ServiceSpaceMemberInput } from "./shared";
-import { mockServiceSpaces, MockServiceSpace, updateServiceSpace } from "./handlerData/retreats/serviceSpaces";
+import {
+  paginate,
+  ensureFamilyGroups,
+  LoginRequest,
+  normalizeOptionalServiceSpaceMember,
+  normalizeServiceSpaceMember,
+  ServiceSpaceMemberInput,
+} from "./shared";
+import {
+  mockServiceSpaces,
+  MockServiceSpace,
+  updateServiceSpace,
+} from "./handlerData/retreats/serviceSpaces";
 //import { handlersApi } from "./handlersApi";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 export const handlers = [
   //...handlersApi,
@@ -181,10 +197,6 @@ export const handlers = [
     );
   }),
 
-  
-
-  
-
   // Mock para /api/retreats/:id/metrics
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   http.get(`${API_BASE_URL}/retreats/:id/metrics`, ({ params }) => {
@@ -245,8 +257,8 @@ export const handlers = [
         rua_e_n_casa: "Rua das Flores, 123",
         bairro: "Centro",
         estou_gravida: "Não",
-        peso: '75',
-        altura: '177',
+        peso: "75",
+        altura: "177",
         nome_usuario_facebook: "nao tenho",
         instagram: "@participante",
         "Pai está vivo?": true,
@@ -290,7 +302,9 @@ export const handlers = [
     async ({ request, params }) => {
       const retreatId = params.id as string;
       const participantId = Number(params.participantId);
-      const body = (await request.json()) as { answers: Record<string, unknown> };
+      const body = (await request.json()) as {
+        answers: Record<string, unknown>;
+      };
 
       return HttpResponse.json(
         {
@@ -306,15 +320,12 @@ export const handlers = [
     }
   ),
 
- 
-
-  
   // Update family by ID
   http.put(
     `${API_BASE_URL}/retreats/:retreatId/families/:familyId`,
     async ({ params, request }) => {
       const familyId = Number(params.familyId);
-      const body = await request.json() as {
+      const body = (await request.json()) as {
         name?: string;
         contactName?: string;
         contactEmail?: string;
@@ -341,16 +352,17 @@ export const handlers = [
     }
   ),
 
-   http.get(
-      `${API_BASE_URL}/retreats/:retreatId/families/lock`,
-      ({ params }) => {
-        const retreatId = params.retreatId as string;
-        const groups = ensureFamilyGroups(retreatId);
-        
-        // Check if there's a global lock
-        const globalLock = groups.every((g) => g.groupStatus === "locked");
-        
-        return HttpResponse.json({
+  http.get(
+    `${API_BASE_URL}/retreats/:retreatId/families/lock`,
+    ({ params }) => {
+      const retreatId = params.retreatId as string;
+      const groups = ensureFamilyGroups(retreatId);
+
+      // Check if there's a global lock
+      const globalLock = groups.every((g) => g.groupStatus === "locked");
+
+      return HttpResponse.json(
+        {
           version: 0,
           locked: globalLock,
           families: mockFamilies.map((family) => ({
@@ -358,13 +370,13 @@ export const handlers = [
             familyName: family.name,
             locked: family.isLocked ?? false,
           })),
-        }, { status: 200 });
-      }
-    ),
+        },
+        { status: 200 }
+      );
+    }
+  ),
 
-  
-
- http.put(
+  http.put(
     `${API_BASE_URL}/retreats/:id/service/spaces/:spaceId`,
     async ({ params, request }) => {
       const retreatId = params.id as string;
@@ -432,40 +444,33 @@ export const handlers = [
     }
   ),
 
-  
-  
+  http.get(`${API_BASE_URL}/retreats/:id/families/rules`, ({ params }) => {
+    const retreatId = params.id as string;
 
-  http.get(
-    `${API_BASE_URL}/retreats/:id/families/rules`,
-    ({ params }) => {
-      const retreatId = params.id as string;
-
-      return HttpResponse.json(
-        {
-          success: true,
-          retreatId,
-          rules: {
-            maxMembersPerFamily: 6,
-            genderBalance: {
-              enabled: true,
-              ratio: 0.5,
-              tolerance: 1,
-              label: "50% homens / 50% mulheres",
-            },
-            preventSameRealFamily: true,
-            preventSameCity: true,
+    return HttpResponse.json(
+      {
+        success: true,
+        retreatId,
+        rules: {
+          maxMembersPerFamily: 6,
+          genderBalance: {
+            enabled: true,
+            ratio: 0.5,
+            tolerance: 1,
+            label: "50% homens / 50% mulheres",
           },
+          preventSameRealFamily: true,
+          preventSameCity: true,
         },
-        { status: 200 }
-      );
-    }
-  ),
+      },
+      { status: 200 }
+    );
+  }),
 
   // Family configuration endpoints
-  http.get(
-    `${API_BASE_URL}/retreats/:id/families/config`,
-    () => {
-      return HttpResponse.json({
+  http.get(`${API_BASE_URL}/retreats/:id/families/config`, () => {
+    return HttpResponse.json(
+      {
         success: true,
         data: {
           config: {
@@ -473,207 +478,197 @@ export const handlers = [
             maxFamilySize: 8,
             totalFamilies: mockFamilies.length,
             totalParticipants: 42,
-          }
-        }
-      }, { status: 200 });
-    }
-  ),
+          },
+        },
+      },
+      { status: 200 }
+    );
+  }),
 
   http.put(
     `${API_BASE_URL}/retreats/:id/families/config`,
     async ({ request }) => {
-      const body = await request.json() as {
+      const body = (await request.json()) as {
         defaultFamilySize: number;
         maxFamilySize: number;
       };
-      
-      return HttpResponse.json({
-        success: true,
-        message: "Configuração das famílias atualizada com sucesso",
-        data: {
-          config: body,
-        },
-      }, { status: 200 });
-    }
-  ),
-
-  
-
- 
-  
-
-  
-
-  // Get available participants for a retreat (legacy endpoint)
-  http.get(
-    `${API_BASE_URL}/retreats/:id/participants/available`,
-    () => {
-      const mockParticipants = [
-        {
-          id: 1,
-          name: "João Silva",
-          email: "joao.silva@email.com",
-          phone: "(11) 99999-1111",
-          age: 25,
-          isAssigned: false,
-          location: "São Paulo, SP",
-        },
-        {
-          id: 2,
-          name: "Maria Santos",
-          email: "maria.santos@email.com",
-          phone: "(11) 99999-2222",
-          age: 32,
-          isAssigned: false,
-          location: "Rio de Janeiro, RJ",
-        },
-        {
-          id: 3,
-          name: "Pedro Oliveira",
-          email: "pedro.oliveira@email.com",
-          phone: "(11) 99999-3333",
-          age: 28,
-          isAssigned: false,
-          location: "Belo Horizonte, MG",
-        },
-        {
-          id: 4,
-          name: "Ana Costa",
-          email: "ana.costa@email.com",
-          phone: "(11) 99999-4444",
-          age: 29,
-          isAssigned: false,
-          location: "Porto Alegre, RS",
-        },
-        {
-          id: 5,
-          name: "Carlos Pereira",
-          email: "carlos.pereira@email.com",
-          phone: "(11) 99999-5555",
-          age: 35,
-          isAssigned: false,
-          location: "Salvador, BA",
-        },
-        {
-          id: 6,
-          name: "Fernanda Lima",
-          email: "fernanda.lima@email.com",
-          phone: "(11) 99999-6666",
-          age: 27,
-          isAssigned: false,
-          location: "Brasília, DF",
-        },
-        {
-          id: 7,
-          name: "Ricardo Mendes",
-          email: "ricardo.mendes@email.com",
-          phone: "(11) 99999-7777",
-          age: 31,
-          isAssigned: false,
-          location: "Curitiba, PR",
-        },
-        {
-          id: 8,
-          name: "Juliana Ferreira",
-          email: "juliana.ferreira@email.com",
-          phone: "(11) 99999-8888",
-          age: 26,
-          isAssigned: false,
-          location: "Fortaleza, CE",
-        },
-        {
-          id: 9,
-          name: "Rafael Alves",
-          email: "rafael.alves@email.com",
-          phone: "(11) 99999-9999",
-          age: 33,
-          isAssigned: false,
-          location: "Recife, PE",
-        },
-        {
-          id: 10,
-          name: "Luciana Rocha",
-          email: "luciana.rocha@email.com",
-          phone: "(11) 99999-0000",
-          age: 24,
-          isAssigned: false,
-          location: "Goiânia, GO",
-        },
-      ];
 
       return HttpResponse.json(
-           mockParticipants,
-       { status: 200 });
+        {
+          success: true,
+          message: "Configuração das famílias atualizada com sucesso",
+          data: {
+            config: body,
+          },
+        },
+        { status: 200 }
+      );
     }
   ),
+
+  // Get available participants for a retreat (legacy endpoint)
+  http.get(`${API_BASE_URL}/retreats/:id/participants/available`, () => {
+    const mockParticipants = [
+      {
+        id: 1,
+        name: "João Silva",
+        email: "joao.silva@email.com",
+        phone: "(11) 99999-1111",
+        age: 25,
+        isAssigned: false,
+        location: "São Paulo, SP",
+      },
+      {
+        id: 2,
+        name: "Maria Santos",
+        email: "maria.santos@email.com",
+        phone: "(11) 99999-2222",
+        age: 32,
+        isAssigned: false,
+        location: "Rio de Janeiro, RJ",
+      },
+      {
+        id: 3,
+        name: "Pedro Oliveira",
+        email: "pedro.oliveira@email.com",
+        phone: "(11) 99999-3333",
+        age: 28,
+        isAssigned: false,
+        location: "Belo Horizonte, MG",
+      },
+      {
+        id: 4,
+        name: "Ana Costa",
+        email: "ana.costa@email.com",
+        phone: "(11) 99999-4444",
+        age: 29,
+        isAssigned: false,
+        location: "Porto Alegre, RS",
+      },
+      {
+        id: 5,
+        name: "Carlos Pereira",
+        email: "carlos.pereira@email.com",
+        phone: "(11) 99999-5555",
+        age: 35,
+        isAssigned: false,
+        location: "Salvador, BA",
+      },
+      {
+        id: 6,
+        name: "Fernanda Lima",
+        email: "fernanda.lima@email.com",
+        phone: "(11) 99999-6666",
+        age: 27,
+        isAssigned: false,
+        location: "Brasília, DF",
+      },
+      {
+        id: 7,
+        name: "Ricardo Mendes",
+        email: "ricardo.mendes@email.com",
+        phone: "(11) 99999-7777",
+        age: 31,
+        isAssigned: false,
+        location: "Curitiba, PR",
+      },
+      {
+        id: 8,
+        name: "Juliana Ferreira",
+        email: "juliana.ferreira@email.com",
+        phone: "(11) 99999-8888",
+        age: 26,
+        isAssigned: false,
+        location: "Fortaleza, CE",
+      },
+      {
+        id: 9,
+        name: "Rafael Alves",
+        email: "rafael.alves@email.com",
+        phone: "(11) 99999-9999",
+        age: 33,
+        isAssigned: false,
+        location: "Recife, PE",
+      },
+      {
+        id: 10,
+        name: "Luciana Rocha",
+        email: "luciana.rocha@email.com",
+        phone: "(11) 99999-0000",
+        age: 24,
+        isAssigned: false,
+        location: "Goiânia, GO",
+      },
+    ];
+
+    return HttpResponse.json(mockParticipants, { status: 200 });
+  }),
 
   // Add participants to family endpoint
   http.post(
     `${API_BASE_URL}/retreats/:id/families/add-participants`,
     async ({ request }) => {
-      const body = await request.json() as {
+      const body = (await request.json()) as {
         familyId: string;
         participantIds: number[];
         role: "leader" | "member";
       };
-      
-      return HttpResponse.json({
-        success: true,
-        message: `${body.participantIds.length} participante(s) adicionado(s) à família com sucesso`,
-        data: {
-          familyId: body.familyId,
-          addedParticipants: body.participantIds.length,
-          role: body.role,
-        }
-      }, { status: 200 });
+
+      return HttpResponse.json(
+        {
+          success: true,
+          message: `${body.participantIds.length} participante(s) adicionado(s) à família com sucesso`,
+          data: {
+            familyId: body.familyId,
+            addedParticipants: body.participantIds.length,
+            role: body.role,
+          },
+        },
+        { status: 200 }
+      );
     }
   ),
 
+  http.get(`${API_BASE_URL}/public/retreats`, ({ request /*, params */ }) => {
+    const url = new URL(request.url);
 
+    const isSelectAutocomplete =
+      url.searchParams.get("selectAutocomplete") === "true";
+    //url.searchParams.get("variant") === "selectAutocomplete" ||
+    // url.searchParams.get("type") === "selectAutocomplete";
 
-  http.get(
-    `${API_BASE_URL}/public/retreats`,
-    ({ request /*, params */ }) => {
-      const url = new URL(request.url);
+    if (isSelectAutocomplete) {
+      const search = (url.searchParams.get("search") || "").toLowerCase();
 
-      const isSelectAutocomplete =
-        url.searchParams.get("selectAutocomplete") === "true";
-      //url.searchParams.get("variant") === "selectAutocomplete" ||
-      // url.searchParams.get("type") === "selectAutocomplete";
+      let list = mockRetreats;
 
-      if (isSelectAutocomplete) {
-        const search = (url.searchParams.get("search") || "").toLowerCase();
-
-        let list = mockRetreats;
-
-        if (search) {
-          list = list.filter((r) => r.name.toLowerCase().includes(search));
-        }
-
-        // Optional limit for autocomplete (default 20)
-        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-        const sliced = list.slice(0, isNaN(limit) ? 20 : limit);
-
-        return HttpResponse.json(
-          {
-            options: sliced.map((r) => ({
-              value: r.id,
-              label: r.name,
-              // extra metadata if needed by frontend
-              startDate: r.startDate,
-              endDate: r.endDate,
-            })),
-            total: list.length,
-          },
-          { status: 200 }
-        );
+      if (search) {
+        list = list.filter((r) => r.name.toLowerCase().includes(search));
       }
 
-      // Fallback to normal paginated payload
-      const payload = paginate(mockRetreats, url);
-      return HttpResponse.json(payload, { status: 200 });
+      // Optional limit for autocomplete (default 20)
+      const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+      const sliced = list.slice(0, isNaN(limit) ? 20 : limit);
+
+      return HttpResponse.json(
+        {
+          options: sliced.map((r) => ({
+            value: r.id,
+            label: r.name,
+            // extra metadata if needed by frontend
+            startDate: r.startDate,
+            endDate: r.endDate,
+          })),
+          total: list.length,
+        },
+        { status: 200 }
+      );
     }
-  ),
+
+    // Fallback to normal paginated payload
+    const payload = paginate(mockRetreats, url);
+    return HttpResponse.json(payload, { status: 200 });
+  }),
 
   // Public retreats endpoint supporting selectAutocomplete variant
 
@@ -697,14 +692,14 @@ export const handlers = [
         description: "Preencha seus dados para participar do retiro",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        sections
+        sections,
       };
 
       return HttpResponse.json(form, { status: 200 });
     }
   ),
 
-   http.get(
+  http.get(
     `${API_BASE_URL}/public/retreats/:id/form/service-team`,
     ({ params }) => {
       const id = params.id as string;
@@ -715,21 +710,17 @@ export const handlers = [
         description: "Preencha seus dados para servir no retiro",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        sections
+        sections,
       };
 
       return HttpResponse.json(form, { status: 200 });
     }
   ),
 
- 
-
   http.put(`${API_BASE_URL}/Registrations/:id`, async ({ params, request }) => {
     const id = Number(params.id);
     const body = await request.json();
-    const participant = mockContemplatedParticipants.find(
-      (p) => p.id === id
-    );
+    const participant = mockContemplatedParticipants.find((p) => p.id === id);
 
     if (!participant) {
       return HttpResponse.json(
@@ -740,11 +731,11 @@ export const handlers = [
 
     // Update the participant in the mock data
     Object.assign(participant, body);
-    
+
     return HttpResponse.json(
-      { 
+      {
         ...participant,
-        message: "Participante atualizado com sucesso" 
+        message: "Participante atualizado com sucesso",
       },
       { status: 200 }
     );
@@ -752,9 +743,7 @@ export const handlers = [
 
   http.delete(`${API_BASE_URL}/Registrations/:id`, ({ params }) => {
     const id = Number(params.id);
-    const index = mockContemplatedParticipants.findIndex(
-      (p) => p.id === id
-    );
+    const index = mockContemplatedParticipants.findIndex((p) => p.id === id);
 
     if (index === -1) {
       return HttpResponse.json(
@@ -765,7 +754,7 @@ export const handlers = [
 
     // Remove from mock data
     mockContemplatedParticipants.splice(index, 1);
-    
+
     return HttpResponse.json(
       { message: "Participante excluído com sucesso" },
       { status: 200 }
@@ -843,34 +832,31 @@ export const handlers = [
   }),
 
   // PUT - Atualizar relatório existente
-  http.put(
-    `${API_BASE_URL}/reports/:id`,
-    async ({ params, request }) => {
-      const id = params.id as string;
-      const updatedData = await request.json();
+  http.put(`${API_BASE_URL}/reports/:id`, async ({ params, request }) => {
+    const id = params.id as string;
+    const updatedData = await request.json();
 
-      const reportData =
-        typeof updatedData === "object" && updatedData !== null
-          ? updatedData
-          : {};
-      const reportExists = mockReports.some((r) => r.id === id);
+    const reportData =
+      typeof updatedData === "object" && updatedData !== null
+        ? updatedData
+        : {};
+    const reportExists = mockReports.some((r) => r.id === id);
 
-      if (!reportExists) {
-        return HttpResponse.json(
-          { error: "Relatório não encontrado" },
-          { status: 404 }
-        );
-      }
-
-      // Simula a atualização
-      const updatedReport = {
-        ...reportData,
-        id,
-      };
-
-      return HttpResponse.json(updatedReport, { status: 200 });
+    if (!reportExists) {
+      return HttpResponse.json(
+        { error: "Relatório não encontrado" },
+        { status: 404 }
+      );
     }
-  ),
+
+    // Simula a atualização
+    const updatedReport = {
+      ...reportData,
+      id,
+    };
+
+    return HttpResponse.json(updatedReport, { status: 200 });
+  }),
 
   // DELETE - Excluir relatório
   http.delete(`${API_BASE_URL}/reports/:id`, ({ params }) => {
@@ -899,23 +885,26 @@ export const handlers = [
     return HttpResponse.json(mockNotifications, { status: 200 });
   }),
 
-  http.post(`${API_BASE_URL}/notifications/mark-all-read`, async ({ request }) => {
-    try {
-      const body = (await request.json()) as { ids?: Array<number | string> };
-      const ids = (body?.ids ?? []).map((v) => Number(v));
-      if (ids.length) {
-        for (const n of mockNotifications) {
-          if (ids.includes(Number(n.id))) n.read = true;
+  http.post(
+    `${API_BASE_URL}/notifications/mark-all-read`,
+    async ({ request }) => {
+      try {
+        const body = (await request.json()) as { ids?: Array<number | string> };
+        const ids = (body?.ids ?? []).map((v) => Number(v));
+        if (ids.length) {
+          for (const n of mockNotifications) {
+            if (ids.includes(Number(n.id))) n.read = true;
+          }
+        } else {
+          // se não enviar ids, marca todas
+          mockNotifications.forEach((n) => (n.read = true));
         }
-      } else {
-        // se não enviar ids, marca todas
-        mockNotifications.forEach((n) => (n.read = true));
+        return HttpResponse.json({ success: true }, { status: 200 });
+      } catch {
+        return HttpResponse.json({ success: false }, { status: 400 });
       }
-      return HttpResponse.json({ success: true }, { status: 200 });
-    } catch {
-      return HttpResponse.json({ success: false }, { status: 400 });
     }
-  }),
+  ),
 
   http.post(`${API_BASE_URL}/notifications/:id/read`, ({ params }) => {
     const id = Number(params.id as string);
@@ -924,7 +913,10 @@ export const handlers = [
       item.read = true;
       return HttpResponse.json({ success: true }, { status: 200 });
     }
-    return HttpResponse.json({ error: "Notification not found" }, { status: 404 });
+    return HttpResponse.json(
+      { error: "Notification not found" },
+      { status: 404 }
+    );
   }),
 
   // ---- SSE: envia 1 notificação/minuto por 3 vezes ----
@@ -945,7 +937,7 @@ export const handlers = [
         // Heartbeat para manter a conexão viva
         const keepAlive = setInterval(() => {
           controller.enqueue(encoder.encode(":\n\n"));
-        }, 15000);
+        }, 15001);
 
         const timer = setInterval(() => {
           // Verifica se já temos 10 notificações no total
@@ -971,7 +963,9 @@ export const handlers = [
 
           // evento SSE
           controller.enqueue(encoder.encode("event: notification\n"));
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(notif)}\n\n`));
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(notif)}\n\n`)
+          );
 
           sent += 1;
           if (sent >= 3) {
@@ -1008,55 +1002,55 @@ export const handlers = [
     });
   }),
 
-   http.get(
-      `${API_BASE_URL}/unhandled/retreats`,
-      ({ request /*, params */ }) => {
-        const url = new URL(request.url);
-  
-        const isSelectAutocomplete =
-          url.searchParams.get("selectAutocomplete") === "true";
-        //url.searchParams.get("variant") === "selectAutocomplete" ||
-        // url.searchParams.get("type") === "selectAutocomplete";
-  
-        if (isSelectAutocomplete) {
-          const search = (url.searchParams.get("search") || "").toLowerCase();
-  
-          let list = mockRetreats;
-  
-          if (search) {
-            list = list.filter((r) => r.name.toLowerCase().includes(search));
-          }
-  
-          // Optional limit for autocomplete (default 20)
-          const limit = parseInt(url.searchParams.get("limit") || "20", 10);
-          const sliced = list.slice(0, isNaN(limit) ? 20 : limit);
-  
-          return HttpResponse.json(
-            {
-              options: sliced.map((r) => ({
-                value: r.id,
-                label: r.name,
-                // extra metadata if needed by frontend
-                // isActive: r.status === "running" || r.status === "open",
-                isActive: true,
-                startDate: r.startDate,
-                endDate: r.endDate,
-                location: r.location,
-              })),
-              total: list.length,
-            },
-            { status: 200 }
-          );
+  http.get(
+    `${API_BASE_URL}/unhandled/retreats`,
+    ({ request /*, params */ }) => {
+      const url = new URL(request.url);
+
+      const isSelectAutocomplete =
+        url.searchParams.get("selectAutocomplete") === "true";
+      //url.searchParams.get("variant") === "selectAutocomplete" ||
+      // url.searchParams.get("type") === "selectAutocomplete";
+
+      if (isSelectAutocomplete) {
+        const search = (url.searchParams.get("search") || "").toLowerCase();
+
+        let list = mockRetreats;
+
+        if (search) {
+          list = list.filter((r) => r.name.toLowerCase().includes(search));
         }
-  
-        // Fallback to normal paginated payload
-        const payload = paginate(mockRetreats, url);
-        return HttpResponse.json(payload, { status: 200 });
+
+        // Optional limit for autocomplete (default 20)
+        const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+        const sliced = list.slice(0, isNaN(limit) ? 20 : limit);
+
+        return HttpResponse.json(
+          {
+            options: sliced.map((r) => ({
+              value: r.id,
+              label: r.name,
+              // extra metadata if needed by frontend
+              // isActive: r.status === "running" || r.status === "open",
+              isActive: true,
+              startDate: r.startDate,
+              endDate: r.endDate,
+              location: r.location,
+            })),
+            total: list.length,
+          },
+          { status: 200 }
+        );
       }
-    ),
+
+      // Fallback to normal paginated payload
+      const payload = paginate(mockRetreats, url);
+      return HttpResponse.json(payload, { status: 200 });
+    }
+  ),
 
   //fallback handler for unhandled requests
-  // http.all("http://localhost:5000/*", ({ request }) => {
+  // http.all("http://localhost:5001/*", ({ request }) => {
   //   console.warn("⚠️ Unhandled request:", request.method, request.url);
   //   return HttpResponse.json({ error: "Endpoint not mocked" }, { status: 404 });
   // }),
