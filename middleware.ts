@@ -1,21 +1,22 @@
-import NextAuth from "next-auth";
 import { authRoutes, DEFAULT_LOGIN_REDIRECT, isPublicPath } from "./routes";
-import authConfig from "@/auth.config";
+import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-
-const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { nextUrl } = req;
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-url", req.url);
-  console.log(req.auth, "aa");
   const isPublicRoute = isPublicPath(nextUrl.pathname);
   const isCodeRoute = nextUrl.pathname === "/login/code";
   const isAuthRoute =
     !isCodeRoute &&
     authRoutes.some((route) => nextUrl.pathname.startsWith(route));
-  const isLoggedIn = !!req.auth && !req.auth.error;
+
+  const hasValidUser =
+    req.auth?.user &&
+    typeof req.auth.user === "object" &&
+    Object.keys(req.auth.user).length > 0;
+  const isLoggedIn = hasValidUser && !req.auth?.error;
 
   // Verifica se há erros de token que requerem redirecionamento para login
   const hasTokenError =

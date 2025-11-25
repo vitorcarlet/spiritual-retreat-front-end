@@ -7,7 +7,6 @@ import {
   Stack,
   CircularProgress,
   TextField,
-  Alert,
   FormControlLabel,
   Switch,
   List,
@@ -15,7 +14,6 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
-import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -56,7 +54,7 @@ interface ServiceSpace {
 
 const configureServiceSpaceSchema = z
   .object({
-    applyToAll: z.boolean().default(false),
+    applyToAll: z.boolean(),
     minPeople: z
       .number()
       .min(0, "Mínimo deve ser 0 ou maior")
@@ -71,13 +69,16 @@ const configureServiceSpaceSchema = z
     path: ["maxPeople"],
   });
 
-type ConfigureServiceSpaceData = z.infer<typeof configureServiceSpaceSchema>;
+interface ConfigureServiceSpaceData {
+  applyToAll: boolean;
+  minPeople: number;
+  maxPeople: number;
+}
 
 export default function ConfigureServiceSpace({
   retreatId,
   onSuccess,
 }: ConfigureServiceSpaceProps) {
-  const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serviceSpaces, setServiceSpaces] = useState<ServiceSpace[]>([]);

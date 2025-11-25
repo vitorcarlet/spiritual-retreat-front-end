@@ -33,7 +33,6 @@ export default function FamiliesContent({
   familiesDataArray,
   total,
   filters,
-  isReordering,
   canEditFamily,
   retreatId,
   onSaveReorder,

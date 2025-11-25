@@ -1,22 +1,29 @@
 import IconButton from "@mui/material/IconButton";
 import Iconify from "../Iconify";
-import { ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
+import { ListItemText, Menu, MenuItem } from "@mui/material";
 import React from "react";
-import { DataTableColumn } from "./DataTable";
 import { GridRenderCellParams, GridValidRowModel } from "@mui/x-data-grid";
 
-type ActionOptionsProps<T> = {
+type ActionColor =
+  | "primary"
+  | "secondary"
+  | "error"
+  | "warning"
+  | "info"
+  | "success";
+
+type ActionOptionsProps<T extends GridValidRowModel> = {
   actions: Array<{
     icon: string;
     label: string;
     onClick: (row: T) => void;
-    color?: "primary" | "secondary" | "error" | "warning" | "info" | "success";
+    color?: ActionColor;
     disabled?: (row: T) => boolean;
   }>;
   params: GridRenderCellParams<T>;
 };
 
-function ActionOptions<T = unknown>({
+function ActionOptions<T extends GridValidRowModel = GridValidRowModel>({
   actions,
   params,
 }: ActionOptionsProps<T>) {
@@ -26,10 +33,15 @@ function ActionOptions<T = unknown>({
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
   };
-  const handleClose = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
+  const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const getColorValue = (color: ActionColor | undefined) => {
+    if (!color) return undefined;
+    return `${color}.main`;
+  };
+
   return (
     <React.Fragment>
       <IconButton
@@ -74,25 +86,12 @@ function ActionOptions<T = unknown>({
                 action.color
                   ? {
                       "& .menu-item-icon": {
-                        color: (theme) =>
-                          // Use type assertion to avoid 'any'
-                          ((typeof theme !== "undefined" &&
-                            theme.vars?.palette &&
-                            theme.vars.palette[
-                              action.color as keyof typeof theme.vars.palette
-                            ]?.main) ||
-                            (typeof theme !== "undefined" &&
-                              theme.palette &&
-                              theme.palette[
-                                action.color as keyof typeof theme.palette
-                              ]?.main)) ??
-                          undefined,
+                        color: getColorValue(action.color),
                       },
                     }
                   : {}
               }
             >
-              {/* <ListItemIcon className="menu-item-icon" sx={{ minWidth: 28 }} /> */}
               <Iconify
                 icon={action.icon}
                 className="menu-item-icon"
@@ -105,18 +104,7 @@ function ActionOptions<T = unknown>({
                   variant: "body2",
                   sx: action.color
                     ? {
-                        color: (theme) =>
-                          ((typeof theme !== "undefined" &&
-                            theme?.vars?.palette &&
-                            theme.vars.palette[
-                              action.color as keyof typeof theme.vars.palette
-                            ]?.main) ||
-                            (typeof theme !== "undefined" &&
-                              theme?.palette &&
-                              theme.palette[
-                                action.color as keyof typeof theme.palette
-                              ]?.main)) ??
-                          undefined,
+                        color: getColorValue(action.color),
                       }
                     : {},
                 }}

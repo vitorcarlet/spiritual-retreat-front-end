@@ -34,7 +34,7 @@ export default function IconSearchField({
       }}
       options={iconOptions}
       getOptionLabel={(option) => option.label}
-      renderOption={(props, option, key) => (
+      renderOption={(props, option) => (
         <Box
           padding={2}
           component="li"

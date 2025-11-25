@@ -129,7 +129,6 @@ const areAllFamiliesLocked = (
 export default function LockFamiliesModal({
   retreatId,
   families,
-  onSuccess,
   onCancel,
 }: LockFamiliesModalProps) {
   const [loading, setLoading] = useState(true);
@@ -263,10 +262,6 @@ export default function LockFamiliesModal({
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleClose = () => {
-    onSuccess?.();
   };
 
   if (loading) {

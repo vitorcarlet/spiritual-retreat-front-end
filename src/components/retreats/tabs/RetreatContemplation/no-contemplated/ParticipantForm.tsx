@@ -22,7 +22,6 @@ import {
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import ParticipantPublicFormTab from "./ParticipantPublicFormTab";
 import SingleImageUpload from "@/src/components/fields/ImageUpload/SingleImageUpload";
 import apiClient from "@/src/lib/axiosClientInstance";
 import { enqueueSnackbar } from "notistack";

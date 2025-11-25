@@ -27,6 +27,8 @@ import { Items } from "./types";
 
 import apiClient from "@/src/lib/axiosClientInstance";
 import { RetreatsCardTableFilters } from "@/src/components/public/retreats/types";
+import { enqueueSnackbar } from "notistack";
+import axios from "axios";
 
 interface RetreatFamiliesProps {
   id: string;
@@ -323,6 +325,14 @@ export default function RetreatFamilies({
         setIsReordering(false);
         invalidateFamiliesQuery();
       } catch (error) {
+        const message = axios.isAxiosError(error)
+          ? ((error.response?.data as { error?: string })?.error ??
+            error.message)
+          : "Erro ao reordenar participantes.";
+        enqueueSnackbar(message, {
+          variant: "error",
+          autoHideDuration: 4000,
+        });
         console.error("Error saving families reorder:", error);
         invalidateFamiliesQuery();
         throw error;

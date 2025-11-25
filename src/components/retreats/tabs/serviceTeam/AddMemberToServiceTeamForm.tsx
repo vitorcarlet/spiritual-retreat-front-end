@@ -15,7 +15,6 @@ import {
   Autocomplete,
   Chip,
   Avatar,
-  Alert,
   Paper,
   Divider,
 } from "@mui/material";
@@ -93,7 +92,6 @@ export default function AddMemberToServiceTeamForm({
   const t = useTranslations("service-team-details");
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [members, setMembers] = useState<UnassignedMember[]>([]);
-  const [unassignedVersion, setUnassignedVersion] = useState(0);
   const [loadingSpaceDetails, setLoadingSpaceDetails] = useState(false);
 
   const {
@@ -123,7 +121,6 @@ export default function AddMemberToServiceTeamForm({
           `/retreats/${retreatId}/service/registrations/roster/unassigned`
         );
         setMembers(response.data.items || []);
-        setUnassignedVersion(response.data.version);
       } catch (error) {
         console.error("Erro ao buscar membros:", error);
         if (axios.isAxiosError(error)) {

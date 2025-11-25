@@ -59,7 +59,7 @@ export default function LoginFormServer() {
       >
         <Avatar sx={{ m: 1, bgcolor: "primary.main" }} />
         <Typography component="h1" variant="h5">
-          Entrar no Server
+          Entrar
         </Typography>
 
         <Box component="form" action={formAction} sx={{ mt: 1 }}>

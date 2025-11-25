@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import Iconify from "../../Iconify";
-import { UserObject, UserPermissions } from "next-auth";
+import { UserPermissions } from "next-auth";
 import {
   PERMISSION_SECTIONS,
   ROLE_PERMISSIONS,
@@ -24,6 +24,7 @@ import Header from "./Header";
 import { useUserContent } from "../context";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
+import type { ResourceType, ActionType } from "next-auth";
 
 const UserPermissionsPage = () => {
   const { user, setUser } = useUserContent();
@@ -48,11 +49,13 @@ const UserPermissionsPage = () => {
         permissions: user.permissions || {},
       });
     }
-    console.log("User permissions data loaded:", user);
   }, [user]);
 
   const handlePermissionToggle = (permissionId: string) => {
-    const [section, action] = permissionId.split(".");
+    const [section, action] = permissionId.split(".") as [
+      ResourceType,
+      ActionType,
+    ];
     setPermissionsData((prev) => ({
       ...prev,
       permissions: {
@@ -76,7 +79,10 @@ const UserPermissionsPage = () => {
     if (rolePermissions.includes(permissionId)) {
       return true;
     }
-    const [section, action] = permissionId.split(".");
+    const [section, action] = permissionId.split(".") as [
+      ResourceType,
+      ActionType,
+    ];
 
     // console.log(
     //   permissionId,
@@ -89,8 +95,11 @@ const UserPermissionsPage = () => {
   };
 
   const isPermissionFromRole = (permissionId: string): boolean => {
-    const [section, action] = permissionId.split(".");
-    return user?.permissions?.[section]?.[action];
+    const [section, action] = permissionId.split(".") as [
+      ResourceType,
+      ActionType,
+    ];
+    return user?.permissions?.[section]?.[action] ?? false;
   };
 
   const mutationUpdatePermissions = useMutation({
@@ -103,10 +112,12 @@ const UserPermissionsPage = () => {
       });
     },
     onSuccess: () => {
-      setUser((prev: UserObject) => ({
-        ...prev,
-        permissions: permissionsData.permissions,
-      }));
+      if (user) {
+        setUser({
+          ...user,
+          permissions: permissionsData.permissions,
+        });
+      }
       // Feedback de sucesso, fechar modal, etc.
     },
     onSettled: () => {
@@ -328,8 +339,8 @@ const UserPermissionsPage = () => {
                                   borderColor: isReadOnly
                                     ? "grey.600"
                                     : isEnabled
-                                    ? "primary.main"
-                                    : "divider",
+                                      ? "primary.main"
+                                      : "divider",
                                   // bgcolor: isEnabled
                                   //   ? "primary.50"
                                   //   : "background.paper",
@@ -349,8 +360,8 @@ const UserPermissionsPage = () => {
                                         isReadOnly
                                           ? "primary"
                                           : isFromRole
-                                          ? "default"
-                                          : "primary"
+                                            ? "default"
+                                            : "primary"
                                       }
                                     />
                                   }

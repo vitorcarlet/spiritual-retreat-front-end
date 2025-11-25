@@ -1,4 +1,5 @@
 import apiClient from "@/src/lib/axiosClientInstance";
+import apiServer from "@/src/lib/axiosServerInstance";
 import { Retreat } from "@/src/types/retreats";
 import axios from "axios";
 
@@ -31,6 +32,18 @@ export const fetchRetreatData = async (
 ): Promise<Retreat | null> => {
   try {
     const result = await apiClient.get(`/Retreats/${retreatId}`);
+    return result.data;
+  } catch (error) {
+    console.error("Erro ao buscar dados do retiro:", error);
+    throw error;
+  }
+};
+
+export const fetchRetreatDataServer = async (
+  retreatId: string
+): Promise<Retreat | null> => {
+  try {
+    const result = await apiServer.get(`/Retreats/${retreatId}`);
     return result.data;
   } catch (error) {
     console.error("Erro ao buscar dados do retiro:", error);
@@ -99,7 +112,7 @@ export const createRetreat = async (
     return response.data;
   } catch (error) {
     const message = axios.isAxiosError(error)
-      ? (error.response?.data as { error?: string })?.error ?? error.message
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
       : "Erro ao criar retiro. Tente novamente.";
     throw new Error(message);
   }
@@ -135,7 +148,7 @@ export const updateRetreat = async (
     return response.data;
   } catch (error) {
     const message = axios.isAxiosError(error)
-      ? (error.response?.data as { error?: string })?.error ?? error.message
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
       : "Erro ao atualizar retiro. Tente novamente.";
     throw new Error(message);
   }
@@ -146,7 +159,7 @@ export const deleteRetreat = async (retreatId: string): Promise<void> => {
     await apiClient.delete(`/Retreats/${retreatId}`);
   } catch (error) {
     const message = axios.isAxiosError(error)
-      ? (error.response?.data as { error?: string })?.error ?? error.message
+      ? ((error.response?.data as { error?: string })?.error ?? error.message)
       : "Erro ao excluir retiro. Tente novamente.";
     throw new Error(message);
   }

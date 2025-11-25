@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useModal } from "@/src/hooks/useModal";
 import UserSummaryModal from "../userSummaryModal";
 import apiClient from "@/src/lib/axiosClientInstance";
-import { getFilters } from "./getFilters";
+import { useUsersFilters } from "./useFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useQuery } from "@tanstack/react-query";
 import FilterButton from "../../filters/FilterButton";
@@ -142,7 +142,7 @@ export default function UserDataTable() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const modal = useModal();
-  const filtersConfig = getFilters();
+  const { filters: filtersConfig } = useUsersFilters();
 
   // ✅ Helper para obter IDs selecionados
   const getSelectedIds = (): GridRowId[] => {

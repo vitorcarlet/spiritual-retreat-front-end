@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Stack,
@@ -208,7 +202,7 @@ export const SendMessage: React.FC<SendMessageProps> = ({
 }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [selected, setSelected] = useState<MessageParticipant[]>([]);
-  const [channels, _setChannels] = useState({
+  const [channels] = useState({
     whatsapp: true,
     email: true,
     sms: false,
@@ -279,16 +273,6 @@ export const SendMessage: React.FC<SendMessageProps> = ({
 
     setSubmitting(true);
     try {
-      const html = editor.getHTML();
-      const text = editor.getText();
-      const payload = {
-        participantIds:
-          mode === "all" ? participants.map((p) => p.id) : allSelectedIds,
-        messageHtml: html,
-        messageText: text,
-        channels,
-      };
-
       if (!channels.whatsapp && !channels.email && !channels.sms) {
         enqueueSnackbar("Selecione ao menos um meio de envio.", {
           variant: "warning",
@@ -336,29 +320,11 @@ export const SendMessage: React.FC<SendMessageProps> = ({
     mode,
     selected.length,
     enqueueSnackbar,
-    participants,
     allSelectedIds,
     channels,
     retreatId,
     onSuccess,
   ]);
-
-  // const insertVariable = (key: string) => {
-  //   if (!editor) return;
-  //   editor
-  //     .chain()
-  //     .focus()
-  //     .insertContent([
-  //       {
-  //         type: "mention",
-  //         attrs: { id: key, label: key },
-  //       },
-  //       { type: "text", text: " " },
-  //     ])
-  //     .run();
-  // };
-
-  // const allVariablesRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <Paper

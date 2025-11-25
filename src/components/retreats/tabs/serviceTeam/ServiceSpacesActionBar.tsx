@@ -2,11 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Button, Stack } from "@mui/material";
-import FilterButton from "@/src/components/filters/FilterButton";
-import type {
-  RetreatsCardTableFilters,
-  RetreatsCardTableDateFilters,
-} from "@/src/components/retreats/types";
+import type { RetreatsCardTableFilters } from "@/src/components/retreats/types";
 
 interface ServiceTeamActionBarProps {
   hasCreatePermission: boolean;
@@ -27,15 +23,10 @@ interface ServiceTeamActionBarProps {
 export default function ServiceTeamActionBar({
   hasCreatePermission,
   isReordering,
-  filters,
-  activeFiltersCount,
-  //filtersConfig,
   onCreateTeam,
   onAddParticipant,
   onConfigure,
   onLock,
-  onApplyFilters,
-  onResetFilters,
 }: ServiceTeamActionBarProps) {
   const t = useTranslations("service-team-details");
 

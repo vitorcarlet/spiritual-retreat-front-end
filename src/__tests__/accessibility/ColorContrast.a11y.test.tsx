@@ -7,7 +7,8 @@
  * WCAG AAA: 7:1 para texto normal, 4.5:1 para texto grande
  */
 
-import { render, screen } from "@testing-library/react";
+import React from "react";
+import { render } from "@testing-library/react";
 
 // Função auxiliar para calcular contraste de cores
 // Baseada em https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio
@@ -36,8 +37,19 @@ function getContrastRatio(color1: string, color2: string): number {
 }
 
 // Mock de componentes do sistema
-const Button = ({ children, variant = "primary" }: any) => {
-  const styles = {
+type ButtonVariant = "primary" | "secondary" | "outlined";
+
+const Button = ({
+  children,
+  variant = "primary",
+}: {
+  children: any;
+  variant?: ButtonVariant;
+}) => {
+  const styles: Record<
+    ButtonVariant,
+    { backgroundColor: string; color: string; border?: string }
+  > = {
     primary: { backgroundColor: "#1976d2", color: "#ffffff" },
     secondary: { backgroundColor: "#dc004e", color: "#ffffff" },
     outlined: {
@@ -55,9 +67,17 @@ const Button = ({ children, variant = "primary" }: any) => {
     </button>
   );
 };
-
-const Alert = ({ children, severity = "info" }: any) => {
-  const styles = {
+const Alert = ({
+  children,
+  severity = "info",
+}: {
+  children: React.ReactNode;
+  severity?: "error" | "warning" | "info" | "success";
+}) => {
+  const styles: Record<
+    "error" | "warning" | "info" | "success",
+    { backgroundColor: string; color: string }
+  > = {
     error: { backgroundColor: "#fdeded", color: "#5f2120" },
     warning: { backgroundColor: "#fff4e5", color: "#663c00" },
     info: { backgroundColor: "#e5f6fd", color: "#014361" },
@@ -75,9 +95,7 @@ describe("Testes de Contraste de Cores", () => {
   describe("WCAG AA - Botões Primários", () => {
     it("botão primary deve ter contraste ≥ 4.5:1 (AA)", () => {
       render(<Button variant="primary">Entrar</Button>);
-      const button = screen.getByRole("button");
 
-      const styles = window.getComputedStyle(button);
       const bgColor = "#1976d2"; // azul Material UI primary
       const textColor = "#ffffff"; // branco
 

@@ -117,7 +117,7 @@ export function useUrlFilters<T extends Partial<Record<keyof T, unknown>>>({
     if (searchParams.toString().length === 0) {
       updateUrlWithFilters(defaultFilters);
     }
-  }, [defaultFilters]);
+  }, [defaultFilters, searchParams, updateUrlWithFilters]);
 
   return {
     filters,

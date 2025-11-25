@@ -1,6 +1,5 @@
 "use client";
 import { Box, Grid } from "@mui/material";
-//import LoginForm from "@/src/auth/login/form";
 import Image from "next/image";
 import LoginFormServer from "./form/loginFormServer";
 
@@ -24,16 +23,15 @@ export default function LoginPageContent() {
             theme.palette.mode === "light"
               ? theme.palette.grey[50]
               : theme.palette.grey[900],
-          position: "relative", // ← IMPORTANTE: Necessário para fill
+          position: "relative",
         }}
       >
         <Image
-          src={"/images/background16-9.png"} // ← Renomeie o arquivo (sem dois pontos)
+          src={"/images/background16-9.png"}
           alt="Background"
-          fill // ← Nova API
-          style={{ objectFit: "cover" }} // ← Use style
-          priority // ← Para imagens importantes
-          onLoad={() => console.log("✅ Imagem carregou com sucesso")}
+          fill
+          style={{ objectFit: "cover" }}
+          priority
           onError={(e) => console.error("❌ Erro ao carregar imagem:", e)}
         />
       </Grid>

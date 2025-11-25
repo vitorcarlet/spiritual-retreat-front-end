@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/actions/login-server.ts
 "use server";
 
 import { signIn } from "@/auth";
@@ -35,9 +33,7 @@ function sanitizeCallback(raw: string | null): string {
   return DEFAULT_REDIRECT;
 }
 
-export async function loginServerAction(
-  formData: FormData,
-) {
+export async function loginServerAction(formData: FormData) {
   // Validar dados com Zod
   const validatedFields = loginSchema.safeParse({
     email: formData.get("email"),
@@ -73,17 +69,6 @@ export async function loginServerAction(
 
       // Normaliza removendo tudo após o primeiro ponto / quebra de linha
       const normalized = raw.split(/[\n.]/)[0].trim();
-      console.log(
-        "AuthError during signIn (raw):",
-        raw,
-        "| normalized:",
-        normalized
-      );
-
-      if (normalized === "CONFIRMATION_CODE_REQUIRED") {
-        console.log("Redirecionando para /login/code POR ACTION");
-        redirect(`/login/code?email=${encodeURIComponent(email)}`);
-      }
 
       switch (error.type) {
         case "CredentialsSignin":

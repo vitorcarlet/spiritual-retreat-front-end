@@ -45,12 +45,12 @@ export const ImageCarrousel: React.FC<ImageCarrouselProps> = ({
   const [thumbsSwiper, setThumbsSwiper] = useState<any>(null);
   const [openViewer, setOpenViewer] = useState(false);
 
-  if (!images?.length) return null;
-
   const openFullscreen = useCallback((idx: number) => {
     setActiveIndex(idx);
     setOpenViewer(true);
   }, []);
+
+  if (!images?.length) return null;
 
   const closeFullscreen = () => setOpenViewer(false);
 
@@ -148,7 +148,6 @@ export const ImageCarrousel: React.FC<ImageCarrouselProps> = ({
         {/* Thumbnails */}
         <Box
           sx={(theme) => {
-            console.log(theme, "theme");
             const leftGrad = `linear-gradient(90deg, 
     var(--mui-palette-background-default) 0%, 
     color-mix(in srgb, var(--mui-palette-background-default) 85%, transparent) 35%, 

@@ -6,7 +6,6 @@ import {
 } from "@/src/types/reports";
 import { mockFamilies, mockFamilyParticipants } from "../retreats/families";
 import { mockTents } from "../retreats/tents";
-import { columnsMock } from "./columns";
 
 type FamilyReportRow = {
   id: string;
@@ -52,7 +51,8 @@ const familyReportRows: FamilyReportRow[] = mockFamilies.map((family) => {
   const members = (family.members ?? []).map((member) => ({
     id: member.id,
     fullName:
-      member.name || `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim(),
+      member.name ||
+      `${member.firstName ?? ""} ${member.lastName ?? ""}`.trim(),
     firstName: member.name ?? "",
     lastName: member.lastName ?? "",
     email: member.email,
@@ -73,7 +73,7 @@ const familyReportRows: FamilyReportRow[] = mockFamilies.map((family) => {
     membersCount: family.membersCount,
     createdAt: family.createdAt,
     updatedAt: family.updatedAt,
-    locked: Boolean(family.locked && members.length > 0),
+    locked: Boolean(members.length > 0),
     members,
   } satisfies FamilyReportRow;
 });
@@ -149,15 +149,21 @@ const getMemberDisplayName = (member: {
 const tentReportRows: TentReportRow[] = mockTents.map((tent, index) => {
   const family = mockFamilies[index % mockFamilies.length];
   const members = family.members ?? [];
-  const rahamistas = members.slice(0, 3).map((member) => getMemberDisplayName(member));
+  const rahamistas = members
+    .slice(0, 3)
+    .map((member) => getMemberDisplayName(member));
 
   const sponsorName = (() => {
     if (!members.length) return family.contactName ?? null;
     if (tent.gender === "female") {
-      return getMemberDisplayName(members.find((m) => m.gender === "female") ?? members[0]);
+      return getMemberDisplayName(
+        members.find((m) => m.gender === "female") ?? members[0]
+      );
     }
     if (tent.gender === "male") {
-      return getMemberDisplayName(members.find((m) => m.gender === "male") ?? members[0]);
+      return getMemberDisplayName(
+        members.find((m) => m.gender === "male") ?? members[0]
+      );
     }
     return family.contactName ?? getMemberDisplayName(members[0]);
   })();

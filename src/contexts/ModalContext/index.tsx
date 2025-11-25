@@ -184,6 +184,9 @@ const ModalProvider = ({ children }: ModalProviderProps) => {
     state.size,
     state.index,
     state.isOpened,
+    state,
+    destroy,
+    handleOpen,
   ]);
 
   const modalComponentProps = getModalComponentProps(state);

@@ -91,11 +91,7 @@ const BreadcrumbIcon = ({
 
 const Breadcrumbs: React.FC = () => {
   const pathname = usePathname();
-  const {
-    title,
-    pathname: breadCrumbPathName,
-    noBreadCrumbs,
-  } = useBreadCrumbs();
+  const { title, noBreadCrumbs } = useBreadCrumbs();
 
   const routeConfig = useMemo(() => getRouteConfig(), []);
 
@@ -140,14 +136,6 @@ const Breadcrumbs: React.FC = () => {
 
     return breadcrumbs;
   }, [pathname, routeConfig]);
-
-  console.log(breadcrumbs, noBreadCrumbs, "Breadcrumbs items:", pathname);
-  // Se só tem um item (Home), não mostrar breadcrumbs
-
-  const mainIcon = useMemo(() => {
-    const lastBreadcrumb = breadcrumbs[breadcrumbs.length - 1];
-    return lastBreadcrumb?.icon || "lucide:folder";
-  }, [breadcrumbs]);
 
   if (breadcrumbs.length <= 1) {
     return null;

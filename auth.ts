@@ -19,7 +19,6 @@ import { isPublicPath } from "./routes";
 import { refresh } from "./src/mocks/actions";
 import { jwtDecode } from "jwt-decode";
 import { JWT } from "next-auth/jwt";
-import { sendRequestServer } from "./src/lib/sendRequestServer";
 import { LoginResponse } from "./src/auth/types";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
@@ -28,6 +27,7 @@ import {
   handleApiResponse,
   sendRequestServerVanilla,
 } from "./src/lib/sendRequestServerVanilla";
+import apiServer from "./src/lib/axiosServerInstance";
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -101,22 +101,61 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Initial signin contains a 'User' object from authorize method
       //console.log(user,token,'JWT USER')
       if (user) {
-        console.debug("Initial signin");
-        return { ...token, data: user };
+        const enrichedUser = user as User & {
+          tokens?: BackendJWT;
+          validity?: AuthValidity;
+        };
+
+        // eslint-disable-next-line no-console
+        console.log("✅ Initial signin - User data:", {
+          userId: enrichedUser.user?.id ?? enrichedUser.id,
+          hasTokens: !!enrichedUser.tokens,
+          validUntil: enrichedUser.validity?.valid_until
+            ? new Date(enrichedUser.validity.valid_until * 1000).toISOString()
+            : "N/A",
+        });
+        return { ...token, data: enrichedUser };
       }
 
+      // ✅ Validação: se não tem data, significa que o token é inválido
+      if (!token.data) {
+        console.warn("❌ Token without data - invalid token");
+        return { ...token, error: "NoTokenData" } as JWT;
+      }
+
+      const now = Date.now();
+      const validUntil = token.data.validity?.valid_until
+        ? token.data.validity.valid_until * 1000
+        : 0;
+      const refreshUntil = token.data.validity?.refresh_until
+        ? token.data.validity.refresh_until * 1000
+        : 0;
+
+      // eslint-disable-next-line no-console
+      console.log("🔍 Token check:", {
+        now: new Date(now).toISOString(),
+        validUntil: validUntil ? new Date(validUntil).toISOString() : "N/A",
+        refreshUntil: refreshUntil
+          ? new Date(refreshUntil).toISOString()
+          : "N/A",
+        isValid: now < validUntil,
+        canRefresh: now < refreshUntil,
+      });
+
       // The current access token is still valid
-      if (Date.now() < token.data.validity.valid_until * 1000) {
-        console.debug("Access token is still valid");
+      if (token.data.validity?.valid_until && now < validUntil) {
+        // eslint-disable-next-line no-console
+        console.log("✅ Access token is still valid");
         return token;
       }
 
       // The current access token has expired, but the refresh token is still valid
-      if (Date.now() < token.data.validity.refresh_until * 1000) {
-        console.debug("Access token is being refreshed");
+      if (token.data.validity?.refresh_until && now < refreshUntil) {
+        // eslint-disable-next-line no-console
+        console.log("🔄 Refreshing access token...");
         const refreshedToken = await refreshAccessToken(token);
         if (refreshedToken.error) {
-          console.debug("❌ Refresh failed - forcing logout");
+          console.warn("❌ Refresh failed - forcing logout");
           return { ...token, error: "RefreshAccessTokenError" };
         }
 
@@ -126,26 +165,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // This should not really happen unless you get really unlucky with
       // the timing of the token expiration because the middleware should
       // have caught this case before the callback is called
-      console.debug("Both tokens have expired");
+      console.warn("Both tokens have expired");
       return { ...token, error: "RefreshTokenExpired" } as JWT;
     },
     async session({ session, token }) {
-      if (token.error) {
-        console.debug("❌ Token error detected:", token.error);
+      const buildInvalidSession = (errorCode: string) => {
         return {
           ...session,
           user: undefined,
-          error: token.error,
           validity: null,
-          expires: "1970-01-01T00:00:00.000Z", // Date in the past forces logout
+          tokens: undefined,
+          error: errorCode,
+          expires: "1970-01-01T00:00:00.000Z",
         };
+      };
+
+      if (token.error) {
+        console.warn("❌ Token error detected:", token.error);
+        return buildInvalidSession(token.error as string);
       }
-      session.user = token.data.user;
-      session.validity = token.data.validity;
-      session.tokens = token.data.tokens;
-      session.error = token.error;
-      //console.log(session, 'SESSION CALLBACK')
-      return session;
+
+      const hasUserData =
+        token.data?.user && Object.keys(token.data.user).length > 0;
+
+      if (!hasUserData) {
+        console.warn("❌ Invalid user data in token");
+        return buildInvalidSession("InvalidUserData");
+      }
+
+      return {
+        ...session,
+        user: token.data.user,
+        validity: token.data.validity,
+        tokens: token.data.tokens,
+        error: token.error,
+      };
     },
     authorized: ({ auth, request }) => {
       if (
@@ -196,7 +250,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Não envolva tudo em try/catch que retorna null; só capture para re-lançar
         try {
           // Fluxo de verificação de código direto
-          console.debug("Verifying code for user:", credentials);
           if (!!credentials.code) {
             const { data, error } = await handleApiResponse<LoginResponse>(
               await sendRequestServerVanilla.post("/verify-code", {
@@ -204,8 +257,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 code: credentials.code,
               })
             );
-
-            console.debug(data, error, "VERIFY CODE RESPONSE");
 
             if (!data?.access_token || error) {
               // Código inválido -> credenciais inválidas
@@ -233,15 +284,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           // Login normal
-          const data = await sendRequestServer<LoginResponse>({
-            url: "/login",
-            isSilent: true,
-            method: "post",
-            payload: {
-              email: credentials.email,
-              password: credentials.password,
-            },
+          const response = await apiServer.post<LoginResponse>("/login", {
+            email: credentials.email,
+            password: credentials.password,
           });
+          // eslint-disable-next-line no-console
+          console.log(
+            "RESPONSE LOGIN <-----------------",
+            response.data,
+            "<------------------RESPONSE LOGIN"
+          );
+          const data = response.data;
 
           if (!data) return null;
 
@@ -313,7 +366,7 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
       },
     };
   } catch (error) {
-    console.debug(error);
+    console.error("Failed to refresh access token:", error);
     return {
       ...nextAuthJWT,
       error: "RefreshAccessTokenError",

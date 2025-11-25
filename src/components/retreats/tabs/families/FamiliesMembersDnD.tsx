@@ -11,21 +11,17 @@ interface FamilyMembersDnDColumnProps {
   disabled: boolean;
   onAddMember?: (familyId: string | number) => void;
   addButtonLabel?: string;
-  renderMemberExtra?: (member: Participant) => React.ReactNode;
+  renderMemberExtra?: (member: FamilyParticipant) => React.ReactNode;
 }
-
-//export const FAMILY_PREFIX = "family-";
-//export const MEMBER_PREFIX = "member-";
 
 export function FamilyMembersDnDColumn({
   family,
-  disabled,
   onAddMember,
   addButtonLabel = "+ Membro",
   renderMemberExtra,
 }: FamilyMembersDnDColumnProps) {
-  const members: Participant[] = Array.isArray(family.members)
-    ? (family.members as Participant[])
+  const members: FamilyParticipant[] = Array.isArray(family.members)
+    ? (family.members as FamilyParticipant[])
     : [];
   const isEmpty = members.length === 0;
 
@@ -64,9 +60,9 @@ export function FamilyMembersDnDColumn({
         {!isEmpty &&
           members.map((m) => (
             <MemberSortable
-              key={m.id}
+              key={m.registrationId}
               member={m}
-              familyId={family.id}
+              familyId={family.familyId}
               extra={renderMemberExtra?.(m)}
             />
           ))}
@@ -75,7 +71,7 @@ export function FamilyMembersDnDColumn({
         <Button
           variant="contained"
           size="small"
-          onClick={() => onAddMember(family.id)}
+          onClick={() => onAddMember(family.familyId)}
         >
           {addButtonLabel}
         </Button>
@@ -89,7 +85,7 @@ export function MemberSortable({
   familyId,
   extra,
 }: {
-  member: Participant;
+  member: FamilyParticipant;
   familyId: string | number;
   extra?: React.ReactNode;
 }) {
@@ -100,13 +96,10 @@ export function MemberSortable({
     transform,
     transition,
     isDragging,
-    setActivatorNodeRef,
     isSorting,
-    over,
-    overIndex,
   } = useSortable({
-    id: String(member.id),
-    data: { type: "member", memberId: member.id, familyId },
+    id: String(member.registrationId),
+    data: { type: "member", memberId: member.registrationId, familyId },
   });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -137,13 +130,9 @@ export function MemberSortable({
   );
 }
 
-function getParticipantDisplayName(member: Participant): string {
+function getParticipantDisplayName(member: FamilyParticipant): string {
   if (member.name) return member.name;
-  const combined = [member.firstName, member.lastName]
-    .filter(Boolean)
-    .join(" ");
-  if (combined) return combined;
-  return String(member.id);
+  return String(member.registrationId);
 }
 
 export function MemberItem({
@@ -152,7 +141,7 @@ export function MemberItem({
   color,
   extra,
 }: {
-  member: Participant;
+  member: FamilyParticipant;
   style?: { zIndex: number | undefined };
   color?: string;
   extra?: React.ReactNode;

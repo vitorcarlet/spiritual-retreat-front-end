@@ -38,24 +38,29 @@ const fetchUnassignedForAutocomplete = async (
 };
 
 // Esquema Zod para validar o participante (usado no array)
-const participantSchema = z
-  .object({
-    registrationId: z.string(),
-    name: z.string(),
-    email: z.string().optional(),
-    gender: z.string().optional(),
-    city: z.string().optional(),
-  })
-  .passthrough(); // Permite outros campos
+const participantSchema = z.object({
+  registrationId: z.string(),
+  name: z.string(),
+  email: z.string().optional(),
+  gender: z.string().optional(),
+  city: z.string().optional(),
+});
+
+type ParticipantMember = z.infer<typeof participantSchema>;
 
 // Esquema Zod atualizado para incluir 'members'
 const createFamilySchema = z.object({
   name: z.string().min(1, "Nome da família é obrigatório"),
   color: z.string().regex(HEX_REGEX, "Cor inválida"),
-  members: z.array(participantSchema).default([]), // Novo campo
+  members: z.array(participantSchema),
 });
 
-type CreateFamilyData = z.infer<typeof createFamilySchema>;
+// Tipagem manual para garantir compatibilidade com react-hook-form
+interface CreateFamilyData {
+  name: string;
+  color: string;
+  members: ParticipantMember[];
+}
 
 export default function CreateFamilyForm({
   retreatId,
@@ -69,7 +74,6 @@ export default function CreateFamilyForm({
     formState: { errors, isSubmitting },
     reset,
   } = useForm<CreateFamilyData>({
-    // @ts-ignore
     resolver: zodResolver(createFamilySchema),
     defaultValues: {
       name: "",
@@ -127,7 +131,6 @@ export default function CreateFamilyForm({
         width: "100%",
       }}
     >
-      {/* @ts-ignore */}
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 1 }}>
         <Stack spacing={3}>
           <Controller
@@ -176,28 +179,19 @@ export default function CreateFamilyForm({
                 label={t("add-participants")}
                 placeholder={t("search-by-name-or-email")}
                 value={field.value ?? []} // Garante que o valor seja sempre um array
-                //@ts-ignore
                 onChange={(newValue) => {
                   field.onChange(newValue ?? []); // Garante que o onChange envie um array
                 }}
                 fetchOptions={boundFetchOptions}
-                //@ts-ignore
                 getOptionLabel={(option) => option.name} // Pega o nome do participante
-                //@ts-ignore
                 isOptionEqualToValue={(opt, val) =>
                   opt.registrationId === val.registrationId
                 }
-                //@ts-ignore
                 renderOption={(props, option) => (
                   <li {...props} key={option.registrationId}>
                     {option.name}
                   </li>
                 )}
-                textFieldProps={{
-                  //@ts-ignore
-                  error: !!errors.members,
-                  helperText: (errors.members as any)?.message, // Helper para erros de array
-                }}
               />
             )}
           />

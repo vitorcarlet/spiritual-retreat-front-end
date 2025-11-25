@@ -57,7 +57,7 @@ const SECRET_SIGNING_SALT = "super-secret-salt";
 export async function refresh(
   token: string
 ): Promise<AxiosResponse<BackendAccessJWT, any>> {
-  console.debug("Refreshing token");
+  console.warn("Refreshing token");
 
   // Verify that the token is valid and not expired
   try {
@@ -102,17 +102,25 @@ export async function refresh(
 
 // Função para criar access token
 export const create_access_token = (user: UserObject): string => {
+  const sanitizedUser: Record<string, unknown> = {
+    ...(user as unknown as Record<string, unknown>),
+  };
+  delete sanitizedUser.exp;
+  delete sanitizedUser.iat;
+  delete sanitizedUser.nbf;
+  delete sanitizedUser.aud;
+  delete sanitizedUser.iss;
+
   return jwt.sign(
     {
-      ...user,
+      ...sanitizedUser,
       jti: uuidv4(),
       type: "access",
     },
     SECRET_SIGNING_SALT,
     {
       algorithm: "HS256", // HS256 é mais comum que HS384
-      //Refresh token expired: Error: Bad "options.expiresIn" option the payload already has an "exp" property.
-      //expiresIn: "15m", // 15 minutos é mais realista
+      expiresIn: "15m", // 15 minutos é mais realista
     }
   );
 };

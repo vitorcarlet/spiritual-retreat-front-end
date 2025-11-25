@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, use, useCallback, useMemo } from "react";
 import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import Iconify from "../Iconify";
@@ -41,44 +41,46 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
 
   useEffect(() => {
     if (user) {
-      console.log("User data loaded:", user);
       setBreadCrumbsTitle({ title: user.name, pathname: `/users/${user.id}` });
     }
   }, [user, setBreadCrumbsTitle]);
 
-  const tabs = [
-    {
-      label: "Informações",
-      icon: "lucide:user",
-      path: `/users/${userId}`,
-      value: 0,
-    },
-    {
-      label: "Permissões",
-      icon: "lucide:shield-check",
-      path: `/users/${userId}/permissions`,
-      value: 1,
-    },
-    {
-      label: "Segurança",
-      icon: "lucide:lock",
-      path: `/users/${userId}/credentials`,
-      value: 2,
-    },
-  ];
+  const tabs = useMemo(
+    () => [
+      {
+        label: "Informações",
+        icon: "lucide:user",
+        path: `/users/${userId}`,
+        value: 0,
+      },
+      {
+        label: "Permissões",
+        icon: "lucide:shield-check",
+        path: `/users/${userId}/permissions`,
+        value: 1,
+      },
+      {
+        label: "Segurança",
+        icon: "lucide:lock",
+        path: `/users/${userId}/credentials`,
+        value: 2,
+      },
+    ],
+    [userId]
+  );
 
-  const getCurrentTabValue = () => {
+  const getCurrentTabValue = useCallback(() => {
     // Em modo de criação, mantém sempre na primeira aba
     if (isCreating) return 0;
     const currentTab = tabs.find((tab) => pathname === tab.path);
     return currentTab ? currentTab.value : 0;
-  };
+  }, [pathname, isCreating, tabs]);
 
   const [value, setValue] = useState(getCurrentTabValue());
 
   useEffect(() => {
     setValue(getCurrentTabValue());
-  }, [pathname, isCreating]);
+  }, [pathname, isCreating, getCurrentTabValue]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     // Bloqueia navegação para outras abas enquanto estiver criando

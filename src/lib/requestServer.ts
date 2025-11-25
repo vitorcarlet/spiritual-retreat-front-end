@@ -87,8 +87,8 @@ export async function requestServerFn<T = unknown>(
       body !== undefined
         ? body
         : data !== undefined
-        ? JSON.stringify(data)
-        : undefined;
+          ? JSON.stringify(data)
+          : undefined;
 
     const response = await fetch(url, {
       method,
@@ -96,11 +96,6 @@ export async function requestServerFn<T = unknown>(
       body: finalBody,
       ...rest,
     });
-
-    // Debug (remover em produção)
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`API ${method} ${response.status} -> ${url}`);
-    }
 
     const status = response.status;
 

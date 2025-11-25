@@ -265,8 +265,8 @@ export default function CreateGroupsForm({
         <CardContent>
           <Stack spacing={2}>
             <Alert severity="info">
-              Configure as opções abaixo e clique em "Criar Grupos" para
-              processar as famílias.
+              Configure as opções abaixo e clique em &quot;Criar Grupos&quot;
+              para processar as famílias.
             </Alert>
 
             <Stack spacing={1}>

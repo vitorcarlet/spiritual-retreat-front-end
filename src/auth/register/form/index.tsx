@@ -8,12 +8,11 @@ import {
   Box,
   Typography,
   Paper,
+  Link,
 } from "@mui/material";
 import { Icon } from "@iconify/react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { OtpInput } from "@/src/components/otp/OtpInput";
 import OtpWrapper from "@/src/components/otp/OtpWrapper";
 import { FormSuccess } from "../../FormSuccess";
@@ -35,24 +34,16 @@ export default function RegisterForm() {
     resolver: zodResolver(registerSchema),
   });
 
-  //const router = useRouter();
   const [loading, setLoading] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [otp, setOtp] = useState<string>(""); // State for OTP code
   const [success, setSuccess] = useState<string | undefined>("");
   const [errorMessage, setErrorMessage] = useState<string | undefined>("");
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl");
 
   const onSubmit = async (data: RegisterSchema) => {
     setLoading(true);
 
     startTransition(() => {
-      console.log(callbackUrl, "Callback URL from login form");
-      registerForm(data, callbackUrl)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      registerForm(data)
         .then((data: any) => {
-          console.log(data, "Data from login");
           if (data?.error) {
             reset();
             setErrorMessage(data.error);

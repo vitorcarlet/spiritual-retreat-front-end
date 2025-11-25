@@ -36,13 +36,13 @@ export const OtpInput = ({
       }
       setOtp(newOtp);
     }
-  }, [value]);
+  }, [length, otp, value]);
 
   useEffect(() => {
     if (valueRef) {
       valueRef.current = otp.join("");
     }
-  }, [otp]);
+  }, [otp, valueRef]);
 
   const handleChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;

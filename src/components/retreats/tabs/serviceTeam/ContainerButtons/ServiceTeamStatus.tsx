@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Box, Chip, Stack } from "@mui/material";
+import { Chip, Stack } from "@mui/material";
 import Iconify from "@/src/components/Iconify";
 import { ValidationError } from "../hooks/useRulesValidations";
 import ValidationWarning from "./ValidationWarning";

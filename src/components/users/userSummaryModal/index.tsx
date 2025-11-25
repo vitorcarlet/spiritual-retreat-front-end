@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, use } from "react";
-import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
+import { Box, Tabs, Tab, Grid } from "@mui/material";
 import Iconify from "../../Iconify";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import { UserObject } from "next-auth";
@@ -39,8 +39,6 @@ interface UserPageProps {
 const userCache = new Map<string, Promise<UserObject | null>>();
 
 export default function UserSummaryModal({ userId }: UserPageProps) {
-  const theme = useTheme();
-
   const getUserData = (userId: string) => {
     if (!userCache.has(userId)) {
       userCache.set(userId, fetchUserData(userId));
@@ -54,7 +52,6 @@ export default function UserSummaryModal({ userId }: UserPageProps) {
 
   useEffect(() => {
     if (user) {
-      console.log("User data loaded:", user);
       setBreadCrumbsTitle({ title: user.name, pathname: `/users/${user.id}` });
     }
   }, [user, setBreadCrumbsTitle]);
@@ -98,7 +95,8 @@ export default function UserSummaryModal({ userId }: UserPageProps) {
                   scrollButtons="auto"
                   sx={{
                     "& .MuiTabs-indicator": {
-                      backgroundColor: theme => theme.vars?.palette.primary.main,
+                      backgroundColor: (theme) =>
+                        theme.vars?.palette.primary.main,
                     },
                     height: "100%",
                   }}

@@ -11,7 +11,7 @@ import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
 } from "./types";
-import { getFilters } from "./getFilters";
+import { useFilters } from "./useFilters";
 import PublicRetreatsCardTable from "./table";
 import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
@@ -50,7 +50,7 @@ export default function PublicRetreatsPage() {
       excludeFromCount: ["page", "pageLimit"], // Don't count pagination in active filters
     });
 
-  const filtersConfig = getFilters();
+  const { filters: filtersConfig } = useFilters();
   //const { status: sessionStatus } = useSession();
   const {
     data: retreatsData,

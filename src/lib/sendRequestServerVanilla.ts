@@ -98,9 +98,6 @@ export async function sendRequestServerVanillaFn(
     headers: defaultHeaders,
   });
 
-  // Log para debug (remover em produção)
-  console.log(`API Request: ${fetchOptions.method || "GET"} ${url}`);
-
   // Lança erro para qualquer status não-2xx (inclui 404)
   if (!response.ok) {
     const contentType = response.headers.get("content-type") || "";

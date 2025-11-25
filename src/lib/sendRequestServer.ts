@@ -1,4 +1,4 @@
-import { AxiosRequestConfig, Method } from "axios";
+import { Method } from "axios";
 
 import { AxiosError } from "axios";
 import api from "./axiosServerInstance";
@@ -24,7 +24,7 @@ export const sendRequestServer = async <T>({
   url,
   method = "get",
   payload,
-}: SendRequestFunctionProps): Promise<T> => {
+}: SendRequestFunctionProps): Promise<T | undefined> => {
   if (!payload) payload = {};
 
   payload._method = method;
@@ -32,13 +32,8 @@ export const sendRequestServer = async <T>({
     const { data } = await api.post<T>(url, Helpers.objToFormData(payload));
     return data;
   } catch (error) {
-    console.log("Error during request:", error);
+    console.error(error);
   }
-};
-type HookOptions = {
-  headers?: Record<string, string>;
-  params?: Record<string, any>;
-  data?: Record<string, any>;
 };
 
 export interface ResponseWithMessage {

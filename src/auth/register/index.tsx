@@ -32,7 +32,6 @@ export default function RegisterPageContent() {
           fill // ← Nova API
           style={{ objectFit: "cover" }} // ← Use style
           priority // ← Para imagens importantes
-          onLoad={() => console.log("✅ Register image loaded successfully")}
           onError={(e) => console.error("❌ Error loading register image:", e)}
         />
 

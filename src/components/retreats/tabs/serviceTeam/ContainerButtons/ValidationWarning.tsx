@@ -29,7 +29,6 @@ export default function ValidationWarning({
   onToggle,
 }: ValidationWarningProps) {
   const t = useTranslations("service-team-details");
-  console.log({ error });
   const severity = useMemo(() => {
     const errorCount = error.errors.length;
     if (errorCount >= 2) return "error";

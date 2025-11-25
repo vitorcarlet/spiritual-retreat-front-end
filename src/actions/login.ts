@@ -22,16 +22,14 @@ export const login = async (
   const { email, password } = validatedFields.data;
   console.log(callbackUrl, "Callback URL from login action");
   try {
-     await signIn("credentials", {
+    await signIn("credentials", {
       email,
       password,
       redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
     });
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.log("Login error:", error);
-    
+
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
@@ -40,7 +38,7 @@ export const login = async (
           return { error: "Something went wrong!" };
       }
     }
-    
-    throw error;;
+
+    throw error;
   }
 };

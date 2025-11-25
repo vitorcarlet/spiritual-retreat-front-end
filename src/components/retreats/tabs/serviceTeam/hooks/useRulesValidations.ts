@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import type { MembersById } from "../types";
 
 export interface ValidationError {
   spaceId: string;
@@ -23,8 +22,7 @@ const COORDINATOR_ROLE = "Coordinator";
 const VICE_COORDINATOR_ROLE = "Vice";
 
 export const useServiceTeamValidation = (
-  serviceSpaces: ServiceSpace[],
-  membersById: MembersById
+  serviceSpaces: ServiceSpace[]
 ): ValidationResult => {
   return useMemo(() => {
     const errors: ValidationError[] = [];
@@ -81,5 +79,5 @@ export const useServiceTeamValidation = (
       hasCoordinatorIssues,
       hasViceCoordinatorIssues,
     };
-  }, [serviceSpaces, membersById]);
+  }, [serviceSpaces]);
 };

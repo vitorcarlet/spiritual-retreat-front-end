@@ -52,11 +52,8 @@ export default function LoginForm() {
   const onSubmit = async (data: { email: string; password: string }) => {
     setLoading(true);
     startTransition(() => {
-      console.log(callbackUrl, "Callback URL from login form");
       login(data, callbackUrl)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((data: any) => {
-          console.log(data, "Data from login");
           if (data?.error) {
             reset();
             setError(data.error);

@@ -16,7 +16,7 @@ import {
   ReportsTableDateFilters,
   ReportsTableFilters,
 } from "./types";
-import { getFilters } from "./getFilters";
+import { useReportsFilters } from "./useFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useTranslations } from "next-intl";
 import { GridRowSelectionModel } from "@mui/x-data-grid/models";
@@ -115,7 +115,6 @@ const fetchReports = async () => {
   if (!response || response.error) {
     throw new Error("Failed to fetch reports");
   }
-  console.log("Fetched reports:", response);
   return response.data as ReportDataRequest;
 };
 
@@ -141,7 +140,7 @@ const ReportPage = () => {
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
   >(undefined);
-  const filtersConfig = getFilters();
+  const { filters: filtersConfig } = useReportsFilters();
   const handleRefresh = () => {
     setLoading(true);
     setTimeout(() => {

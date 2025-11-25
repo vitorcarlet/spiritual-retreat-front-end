@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, Tabs, Tab, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import Iconify from "../Iconify";
@@ -26,57 +26,60 @@ export default function RetreatPage({
 
   const retreatId = pathname.split("/")[2];
 
-  const tabs = [
-    {
-      label: "Geral",
-      icon: "lucide:home",
-      path: `/retreats/${retreatId}`,
-      value: 0,
-    },
-    {
-      label: "Contemplações",
-      icon: "lucide:star",
-      path: `/retreats/${retreatId}/contemplations`,
-      value: 1,
-    },
-    {
-      label: "Formulários",
-      icon: "lucide:file-text",
-      path: `/retreats/${retreatId}/forms`,
-      value: 2,
-    },
-    {
-      label: "Famílias",
-      icon: "icon-park-solid:family",
-      path: `/retreats/${retreatId}/families`,
-      value: 3,
-    },
-    {
-      label: "Equipe de serviço",
-      icon: "fluent:people-team-toolbox-20-filled",
-      path: `/retreats/${retreatId}/service-team`,
-      value: 4,
-    },
-    {
-      label: "Barracas",
-      icon: "lucide:tent",
-      path: `/retreats/${retreatId}/tents`,
-      value: 5,
-    },
-  ];
+  const tabs = useMemo(
+    () => [
+      {
+        label: "Geral",
+        icon: "lucide:home",
+        path: `/retreats/${retreatId}`,
+        value: 0,
+      },
+      {
+        label: "Contemplações",
+        icon: "lucide:star",
+        path: `/retreats/${retreatId}/contemplations`,
+        value: 1,
+      },
+      {
+        label: "Formulários",
+        icon: "lucide:file-text",
+        path: `/retreats/${retreatId}/forms`,
+        value: 2,
+      },
+      {
+        label: "Famílias",
+        icon: "icon-park-solid:family",
+        path: `/retreats/${retreatId}/families`,
+        value: 3,
+      },
+      {
+        label: "Equipe de serviço",
+        icon: "fluent:people-team-toolbox-20-filled",
+        path: `/retreats/${retreatId}/service-team`,
+        value: 4,
+      },
+      {
+        label: "Barracas",
+        icon: "lucide:tent",
+        path: `/retreats/${retreatId}/tents`,
+        value: 5,
+      },
+    ],
+    [retreatId]
+  );
 
-  const getCurrentTabValue = () => {
+  const getCurrentTabValue = useCallback(() => {
     // Em modo de criação, mantém sempre na primeira aba
     if (isCreating) return 0;
     const currentTab = tabs.find((tab) => pathname === tab.path);
     return currentTab ? currentTab.value : 0;
-  };
+  }, [isCreating, pathname, tabs]);
 
   const [value, setValue] = useState(getCurrentTabValue());
 
   useEffect(() => {
     setValue(getCurrentTabValue());
-  }, [pathname, isCreating]);
+  }, [pathname, isCreating, getCurrentTabValue]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     // Bloqueia navegação para outras abas enquanto estiver criando

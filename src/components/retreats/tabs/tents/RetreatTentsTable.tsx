@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { createPortal } from "react-dom";
 import {
@@ -386,88 +380,70 @@ export default function RetreatTentsTable({
   const totalItems = total ?? Object.keys(items).length ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageLimit));
 
-  const columnDefs: ColumnDef<UniqueIdentifier>[] = useMemo(
-    () => [
-      {
-        id: "card",
-        cell: (row) => {
-          const { original: containerId } = row.cell.row;
-          const memberIds = items[containerId] || [];
-          const tentMeta = tentsById[containerId];
-          const label = tentMeta
-            ? t("card-label", { number: tentMeta.number })
-            : t("card-label", { number: containerId });
+  const columnDefs: ColumnDef<UniqueIdentifier>[] = [
+    {
+      id: "card",
+      cell: (row) => {
+        const { original: containerId } = row.cell.row;
+        const memberIds = items[containerId] || [];
+        const tentMeta = tentsById[containerId];
+        const label = tentMeta
+          ? t("card-label", { number: tentMeta.number })
+          : t("card-label", { number: containerId });
 
-          return (
-            <DroppableContainer
-              key={containerId}
-              id={containerId}
-              label={minimal ? undefined : label}
-              color={tentMeta?.color}
-              items={memberIds}
-              scrollable={scrollable}
-              style={containerStyle}
-              unstyled={minimal}
-            >
-              <SortableContext items={memberIds} strategy={strategy}>
-                {memberIds.map((memberId, index) => {
-                  const meta = membersById[memberId];
-                  return (
-                    <SortableItem
-                      disabled={isSortingContainer}
-                      key={memberId}
-                      id={memberId}
-                      value={meta?.name || String(memberId)}
-                      index={index}
-                      handle={handle}
-                      style={getItemStyles}
-                      wrapperStyle={wrapperStyle}
-                      containerId={containerId}
-                      getIndex={getIndex}
-                    />
-                  );
-                })}
-              </SortableContext>
-              <ContainerButtons
-                onEdit={onEdit}
-                onView={onView}
-                onDelete={onDelete}
-                tentId={containerId}
-                canEdit={canEditTent}
-              />
-              {tentMeta ? (
-                <Stack spacing={0.5} mt={1} alignItems="center">
-                  <Typography variant="caption" color="text.secondary">
-                    {t("tent-info", {
-                      gender: t(`gender.${tentMeta.category}` as const),
-                      capacity: tentMeta.capacity,
-                      current: memberIds.length,
-                    })}
-                  </Typography>
-                </Stack>
-              ) : null}
-            </DroppableContainer>
-          );
-        },
+        return (
+          <DroppableContainer
+            key={containerId}
+            id={containerId}
+            label={minimal ? undefined : label}
+            color={tentMeta?.color}
+            items={memberIds}
+            scrollable={scrollable}
+            style={containerStyle}
+            unstyled={minimal}
+          >
+            <SortableContext items={memberIds} strategy={strategy}>
+              {memberIds.map((memberId, index) => {
+                const meta = membersById[memberId];
+                return (
+                  <SortableItem
+                    disabled={isSortingContainer}
+                    key={memberId}
+                    id={memberId}
+                    value={meta?.name || String(memberId)}
+                    index={index}
+                    handle={handle}
+                    style={getItemStyles}
+                    wrapperStyle={wrapperStyle}
+                    containerId={containerId}
+                    getIndex={getIndex}
+                  />
+                );
+              })}
+            </SortableContext>
+            <ContainerButtons
+              onEdit={onEdit}
+              onView={onView}
+              onDelete={onDelete}
+              tentId={containerId}
+              canEdit={canEditTent}
+            />
+            {tentMeta ? (
+              <Stack spacing={0.5} mt={1} alignItems="center">
+                <Typography variant="caption" color="text.secondary">
+                  {t("tent-info", {
+                    gender: t(`gender.${tentMeta.category}` as const),
+                    capacity: tentMeta.capacity,
+                    current: memberIds.length,
+                  })}
+                </Typography>
+              </Stack>
+            ) : null}
+          </DroppableContainer>
+        );
       },
-    ],
-    [
-      items,
-      tentsById,
-      minimal,
-      scrollable,
-      containerStyle,
-      handle,
-      strategy,
-      isSortingContainer,
-      getItemStyles,
-      wrapperStyle,
-      onEdit,
-      onView,
-      canEditTent,
-      t,
-    ]
-  );
+    },
+  ];
 
   const table = useReactTable({
     data: containers || [],

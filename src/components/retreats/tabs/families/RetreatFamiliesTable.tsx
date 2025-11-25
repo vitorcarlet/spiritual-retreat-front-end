@@ -493,7 +493,13 @@ export default function RetreatFamiliesTable({
         setFamiliesReorderFlag(false);
       }
     }
-  }, [items, onSaveReorder, memberToContainer, savedSnapshot]);
+  }, [
+    onSaveReorder,
+    items,
+    memberToContainer,
+    savedSnapshot,
+    setFamiliesReorderFlag,
+  ]);
 
   const recentlyMovedToNewContainer = useRef(false);
   const isSortingContainer =

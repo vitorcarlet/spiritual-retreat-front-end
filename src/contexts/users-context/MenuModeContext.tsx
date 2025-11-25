@@ -32,7 +32,7 @@ const MenuModeProvider = ({
   useEffect(() => {
     if (!allowEdit) setMenuMode("view");
     setMenuMode(mode);
-  }, [mode]);
+  }, [allowEdit, mode]);
 
   return (
     <MenuModeContext.Provider

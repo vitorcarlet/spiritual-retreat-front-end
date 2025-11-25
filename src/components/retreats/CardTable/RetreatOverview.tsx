@@ -11,12 +11,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
 import { fetchRetreatData } from "../shared";
-import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 const RetreatOverview = ({ retreatId }: { retreatId: string }) => {
   const { setBreadCrumbsTitle } = useBreadCrumbs();
-  const t = useTranslations();
   const { data: retreatData, isLoading } = useQuery({
     queryKey: ["retreats", retreatId],
     queryFn: () => fetchRetreatData(retreatId),

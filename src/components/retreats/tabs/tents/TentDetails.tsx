@@ -118,7 +118,7 @@ export default function TentDetails({
     };
 
     fetchTentDetails();
-  }, [tentId, retreatId, startInEdit, canEdit, t]);
+  }, [tentId, retreatId, startInEdit, canEdit, t, tentProp.members]);
 
   const handleToggleEdit = () => {
     if (!canEdit || !tentState) return;
