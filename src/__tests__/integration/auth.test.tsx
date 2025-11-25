@@ -17,7 +17,7 @@ import { server } from "@/src/mocks/server";
 import "@testing-library/jest-dom";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 // Mock de componente LoginPage
 const LoginPage = ({
@@ -112,14 +112,12 @@ const Dashboard = ({ onLogout }: { onLogout?: () => void }) => {
 };
 
 describe("Authentication Flow - Testes de Integração", () => {
+  // server.listen() e server.close() são gerenciados globalmente em setupTests.ts
   beforeEach(() => {
-    server.listen();
     localStorage.clear();
   });
 
   afterEach(() => {
-    server.resetHandlers();
-    server.close();
     localStorage.clear();
   });
 

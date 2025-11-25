@@ -15,7 +15,7 @@ import { server } from "@/src/mocks/server";
 import "@testing-library/jest-dom";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 // Mock do componente RetreatsList
 const RetreatsList = ({
@@ -78,15 +78,7 @@ const RetreatsList = ({
 };
 
 describe("RetreatsList - Testes de Integração", () => {
-  // Antes de cada teste, a API iniciará com handlers padrão
-  beforeEach(() => {
-    server.listen();
-  });
-
-  afterEach(() => {
-    server.resetHandlers();
-    server.close();
-  });
+  // server.listen() e server.close() são gerenciados globalmente em setupTests.ts
 
   describe("Carregamento de Dados", () => {
     it("deve exibir estado de carregamento inicialmente", () => {

@@ -9,6 +9,59 @@
 
 import React from "react";
 import { render } from "@testing-library/react";
+import { COMMON, GREY } from "@/src/theme/core/palette";
+
+// ============================================================================
+// CORES DO TEMA REAL
+// ============================================================================
+
+// Light Mode
+const LIGHT_THEME = {
+  text: {
+    primary: GREY[900], // "#161B22"
+    secondary: "#797d8fff",
+    disabled: GREY[500], // "#6E7681"
+    menu: "#797d8fff",
+  },
+  background: {
+    paper: GREY[0], // "#FFFFFF"
+    default: "#EBEBEB",
+    active: "#DFE1EA",
+  },
+  warning: {
+    main: "#f1ba23ff",
+    contrastText: GREY[800], // "#21262D"
+  },
+};
+
+// Dark Mode
+const DARK_THEME = {
+  text: {
+    primary: "#C9D1D9",
+    secondary: GREY[0], // "#FFFFFF"
+    disabled: GREY[600], // "#484F58"
+    menu: "#797d8fff",
+  },
+  background: {
+    paper: GREY[900], // "#161B22"
+    default: GREY[1000], // "#0D1117"
+    active: "#DFE1EA",
+  },
+  success: {
+    main: "#D6FBE9",
+    contrastText: GREY[100], // "#F0F6FC"
+  },
+};
+
+// Cores compartilhadas (COMMON)
+const SHARED_COLORS = {
+  primary: COMMON.primary,
+  secondary: COMMON.secondary,
+  info: COMMON.info,
+  success: COMMON.success,
+  warning: COMMON.warning,
+  error: COMMON.error,
+};
 
 // Função auxiliar para calcular contraste de cores
 // Baseada em https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio
@@ -92,7 +145,291 @@ const Alert = ({
 };
 
 describe("Testes de Contraste de Cores", () => {
-  describe("WCAG AA - Botões Primários", () => {
+  // ============================================================================
+  // TESTES COM CORES REAIS DO TEMA - LIGHT MODE
+  // ============================================================================
+  describe("Light Mode - Cores do Tema Real", () => {
+    describe("Texto sobre fundos", () => {
+      it("text.primary sobre background.paper deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          LIGHT_THEME.text.primary,
+          LIGHT_THEME.background.paper
+        );
+        console.log(
+          `Light: text.primary (${LIGHT_THEME.text.primary}) sobre paper (${LIGHT_THEME.background.paper}): ${ratio.toFixed(2)}:1`
+        );
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("text.primary sobre background.default deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          LIGHT_THEME.text.primary,
+          LIGHT_THEME.background.default
+        );
+        console.log(`Light: text.primary sobre default: ${ratio.toFixed(2)}:1`);
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("text.secondary sobre background.paper deve ter contraste ≥ 4.5:1", () => {
+        // Nota: cores com 8 caracteres hex têm alfa, vamos usar apenas os 6 primeiros
+        const secondaryColor = LIGHT_THEME.text.secondary.substring(0, 7);
+        const ratio = getContrastRatio(
+          secondaryColor,
+          LIGHT_THEME.background.paper
+        );
+        console.log(
+          `Light: text.secondary (${secondaryColor}) sobre paper: ${ratio.toFixed(2)}:1`
+        );
+        // Este teste pode falhar - documenta problema de acessibilidade
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("text.disabled sobre background.paper deve ter contraste ≥ 3:1 (texto grande)", () => {
+        const ratio = getContrastRatio(
+          LIGHT_THEME.text.disabled,
+          LIGHT_THEME.background.paper
+        );
+        console.log(`Light: text.disabled sobre paper: ${ratio.toFixed(2)}:1`);
+        // Texto desabilitado pode ter contraste menor (3:1 para texto grande)
+        expect(ratio).toBeGreaterThanOrEqual(3.0);
+      });
+    });
+
+    describe("Cores de alerta", () => {
+      it("error.main com contrastText deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          SHARED_COLORS.error.main,
+          SHARED_COLORS.error.contrastText
+        );
+        console.log(
+          `Error: ${SHARED_COLORS.error.main} com ${SHARED_COLORS.error.contrastText}: ${ratio.toFixed(2)}:1`
+        );
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("warning.main com contrastText deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          SHARED_COLORS.warning.main,
+          SHARED_COLORS.warning.contrastText
+        );
+        console.log(
+          `Warning: ${SHARED_COLORS.warning.main} com ${SHARED_COLORS.warning.contrastText}: ${ratio.toFixed(2)}:1`
+        );
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("info.main com contrastText deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          SHARED_COLORS.info.main,
+          SHARED_COLORS.info.contrastText
+        );
+        console.log(
+          `Info: ${SHARED_COLORS.info.main} com ${SHARED_COLORS.info.contrastText}: ${ratio.toFixed(2)}:1`
+        );
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("success.main com contrastText deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          SHARED_COLORS.success.main,
+          SHARED_COLORS.success.contrastText
+        );
+        console.log(
+          `Success: ${SHARED_COLORS.success.main} com ${SHARED_COLORS.success.contrastText}: ${ratio.toFixed(2)}:1`
+        );
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+    });
+
+    describe("Botões", () => {
+      it("primary.main com contrastText deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          SHARED_COLORS.primary.main,
+          SHARED_COLORS.primary.contrastText
+        );
+        console.log(
+          `Primary button: ${SHARED_COLORS.primary.main} com ${SHARED_COLORS.primary.contrastText}: ${ratio.toFixed(2)}:1`
+        );
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("secondary.main com contrastText deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          SHARED_COLORS.secondary.main,
+          SHARED_COLORS.secondary.contrastText
+        );
+        console.log(
+          `Secondary button: ${SHARED_COLORS.secondary.main} com ${SHARED_COLORS.secondary.contrastText}: ${ratio.toFixed(2)}:1`
+        );
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+    });
+  });
+
+  // ============================================================================
+  // TESTES COM CORES REAIS DO TEMA - DARK MODE
+  // ============================================================================
+  describe("Dark Mode - Cores do Tema Real", () => {
+    describe("Texto sobre fundos", () => {
+      it("text.primary sobre background.paper deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          DARK_THEME.text.primary,
+          DARK_THEME.background.paper
+        );
+        console.log(
+          `Dark: text.primary (${DARK_THEME.text.primary}) sobre paper (${DARK_THEME.background.paper}): ${ratio.toFixed(2)}:1`
+        );
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("text.primary sobre background.default deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          DARK_THEME.text.primary,
+          DARK_THEME.background.default
+        );
+        console.log(`Dark: text.primary sobre default: ${ratio.toFixed(2)}:1`);
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("text.secondary sobre background.paper deve ter contraste ≥ 4.5:1", () => {
+        const ratio = getContrastRatio(
+          DARK_THEME.text.secondary,
+          DARK_THEME.background.paper
+        );
+        console.log(`Dark: text.secondary sobre paper: ${ratio.toFixed(2)}:1`);
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("text.menu sobre background.paper deve ter contraste ≥ 3:1", () => {
+        const menuColor = DARK_THEME.text.menu.substring(0, 7);
+        const ratio = getContrastRatio(menuColor, DARK_THEME.background.paper);
+        console.log(`Dark: text.menu sobre paper: ${ratio.toFixed(2)}:1`);
+        expect(ratio).toBeGreaterThanOrEqual(3.0);
+      });
+    });
+  });
+
+  // ============================================================================
+  // RELATÓRIO COMPLETO DE TODAS AS CORES
+  // ============================================================================
+  describe("Relatório Completo de Contraste", () => {
+    it("deve gerar relatório de todas as combinações de cores do tema", () => {
+      const combinations = [
+        // Light Mode - Texto
+        {
+          name: "Light: text.primary / paper",
+          fg: LIGHT_THEME.text.primary,
+          bg: LIGHT_THEME.background.paper,
+        },
+        {
+          name: "Light: text.primary / default",
+          fg: LIGHT_THEME.text.primary,
+          bg: LIGHT_THEME.background.default,
+        },
+        {
+          name: "Light: text.secondary / paper",
+          fg: LIGHT_THEME.text.secondary.substring(0, 7),
+          bg: LIGHT_THEME.background.paper,
+        },
+        {
+          name: "Light: text.disabled / paper",
+          fg: LIGHT_THEME.text.disabled,
+          bg: LIGHT_THEME.background.paper,
+        },
+        // Dark Mode - Texto
+        {
+          name: "Dark: text.primary / paper",
+          fg: DARK_THEME.text.primary,
+          bg: DARK_THEME.background.paper,
+        },
+        {
+          name: "Dark: text.primary / default",
+          fg: DARK_THEME.text.primary,
+          bg: DARK_THEME.background.default,
+        },
+        {
+          name: "Dark: text.secondary / paper",
+          fg: DARK_THEME.text.secondary,
+          bg: DARK_THEME.background.paper,
+        },
+        // Cores compartilhadas
+        {
+          name: "Primary button",
+          fg: SHARED_COLORS.primary.contrastText,
+          bg: SHARED_COLORS.primary.main,
+        },
+        {
+          name: "Secondary button",
+          fg: SHARED_COLORS.secondary.contrastText,
+          bg: SHARED_COLORS.secondary.main,
+        },
+        {
+          name: "Error alert",
+          fg: SHARED_COLORS.error.contrastText,
+          bg: SHARED_COLORS.error.main,
+        },
+        {
+          name: "Warning alert",
+          fg: SHARED_COLORS.warning.contrastText,
+          bg: SHARED_COLORS.warning.main,
+        },
+        {
+          name: "Info alert",
+          fg: SHARED_COLORS.info.contrastText,
+          bg: SHARED_COLORS.info.main,
+        },
+        {
+          name: "Success alert",
+          fg: SHARED_COLORS.success.contrastText,
+          bg: SHARED_COLORS.success.main,
+        },
+      ];
+
+      console.log("\n========================================");
+      console.log("RELATÓRIO DE CONTRASTE DE CORES DO TEMA");
+      console.log("========================================\n");
+
+      const results: { name: string; ratio: number; status: string }[] = [];
+
+      combinations.forEach(({ name, fg, bg }) => {
+        const ratio = getContrastRatio(fg, bg);
+        let status = "❌ FALHA";
+        if (ratio >= 7) {
+          status = "✅ AAA (7:1+)";
+        } else if (ratio >= 4.5) {
+          status = "✅ AA (4.5:1+)";
+        } else if (ratio >= 3) {
+          status = "⚠️ Texto Grande (3:1+)";
+        }
+
+        results.push({ name, ratio, status });
+        console.log(`${status} ${name}: ${ratio.toFixed(2)}:1`);
+        console.log(`   Foreground: ${fg} | Background: ${bg}`);
+      });
+
+      console.log("\n========================================");
+      console.log("RESUMO:");
+      console.log(
+        `  Passam AAA: ${results.filter((r) => r.ratio >= 7).length}`
+      );
+      console.log(
+        `  Passam AA: ${results.filter((r) => r.ratio >= 4.5 && r.ratio < 7).length}`
+      );
+      console.log(
+        `  Apenas texto grande: ${results.filter((r) => r.ratio >= 3 && r.ratio < 4.5).length}`
+      );
+      console.log(`  Falham: ${results.filter((r) => r.ratio < 3).length}`);
+      console.log("========================================\n");
+
+      // Este teste não falha, apenas documenta
+      expect(true).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // TESTES ORIGINAIS COM MOCKS (mantidos para referência)
+  // ============================================================================
+  describe("WCAG AA - Botões Primários (Mocks)", () => {
     it("botão primary deve ter contraste ≥ 4.5:1 (AA)", () => {
       render(<Button variant="primary">Entrar</Button>);
 
