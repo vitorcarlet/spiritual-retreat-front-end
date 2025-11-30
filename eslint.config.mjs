@@ -8,7 +8,23 @@ export default defineConfig([
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
   {
-    ignores: ["jest.polyfills.js", "jest.config.js", "next.config.ts"],
+    ignores: [
+      "jest.polyfills.js",
+      "jest.config.js",
+      "next.config.ts",
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "dist/**",
+      "build/**",
+      "*.config.js",
+      "*.config.ts",
+      "next-env.d.ts",
+      ".vercel/**",
+      "jest.polyfills.js",
+      "jest.config.js",
+      "next.config.ts",
+    ],
   },
   {
     files: ["**/*.{js,ts,jsx,tsx}"],
@@ -33,6 +49,11 @@ export default defineConfig([
     },
     linterOptions: {
       reportUnusedDisableDirectives: "off",
+    },
+    settings: {
+      react: {
+        version: "detect",
+      },
     },
   },
 ]);
