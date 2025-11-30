@@ -1,4 +1,4 @@
-import { alpha } from "@mui/material/styles";
+import { alpha } from "@mui/material";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { Theme } from "@mui/material";
 
@@ -112,7 +112,7 @@ export function overrides(theme: Theme) {
       styleOverrides: {
         head: {
           color: theme.palette.text.secondary,
-          backgroundColor: theme.palette.background.neutral,
+          backgroundColor: theme.palette.background.default,
         },
       },
     },
