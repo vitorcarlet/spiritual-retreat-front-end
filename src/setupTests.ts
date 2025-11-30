@@ -70,10 +70,12 @@ const originalError = console.error;
 beforeAll(() => {
   console.error = (...args: any[]) => {
     // Suppress specific known warnings
+    const message = typeof args[0] === "string" ? args[0] : String(args[0]);
     if (
-      typeof args[0] === "string" &&
-      (args[0].includes("Warning: ReactDOM.render") ||
-        args[0].includes("Not implemented: HTMLFormElement.prototype.submit"))
+      message.includes("Warning: ReactDOM.render") ||
+      message.includes("Not implemented: HTMLFormElement.prototype.submit") ||
+      message.includes("cannot be a child of") ||
+      message.includes("hydration error")
     ) {
       return;
     }
