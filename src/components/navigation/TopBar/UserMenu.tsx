@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { signOut, useSession } from "next-auth/react"; // ← Client-side signOut
 import {
   Avatar,
@@ -83,13 +84,13 @@ export default function UserMenu() {
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <MenuItem>
+        <MenuItem component={Link} href="/profile">
           <ListItemIcon>
             <PortableWifiOffOutlined fontSize="small" />
           </ListItemIcon>
           Profile
         </MenuItem>
-        <MenuItem>
+        <MenuItem component={Link} href="/settings">
           <ListItemIcon>
             <Settings fontSize="small" />
           </ListItemIcon>
