@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, use, useCallback, useMemo } from "react";
-import { Box, Tabs, Tab, useTheme, Grid } from "@mui/material";
+import { Box, Tabs, Tab, useTheme } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import Iconify from "../Iconify";
 import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
@@ -105,79 +105,77 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
     <Box sx={{ width: "100%", height: "100%", maxHeight: "100%" }}>
       {/* Container das abas */}
       {/* Tabs Header */}
-      <Grid container spacing={0} height={72}>
-        <Grid
-          size={{ xs: 12, md: 8, lg: 6 }}
-          sx={{ p: 2, pr: 0, pb: 0, pt: 0, height: "100%" }}
-        >
-          <Box>
-            <Tabs
-              value={value}
-              onChange={handleChange}
-              aria-label="Abas de gerenciamento de usuário"
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={{
-                "& .MuiTabs-indicator": {
-                  backgroundColor: theme.palette.primary.main,
-                },
-                height: "100%",
-              }}
-            >
-              {tabs.map((tab) => (
-                <Tab
-                  key={tab.value}
-                  icon={<Iconify icon={tab.icon} />}
-                  iconPosition="start"
-                  label={tab.label}
-                  {...a11yProps(tab.value)}
-                  // Desabilita abas 1 e 2 quando está criando
-                  disabled={isCreating && tab.value !== 0}
-                  sx={{
-                    //minHeight: 72,
-                    textTransform: "none",
-                    fontSize: "0.95rem",
-                    fontWeight: 500,
-                  }}
-                />
-              ))}
-            </Tabs>
-          </Box>
-        </Grid>
-        <Grid
-          size={{ xs: 12, md: 4, lg: 6 }}
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: { xs: 1, sm: 2 },
+          p: 2,
+          height: "auto",
+          minHeight: 72,
+          alignItems: "center",
+        }}
+      >
+        <Box
           sx={{
-            p: 2,
-            pl: 0,
-            pb: 0,
-            pt: 0,
-
-            height: "100%",
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            minWidth: 0,
           }}
         >
-          <Box
-            width={"100%"}
-            height={73}
+          <Tabs
+            value={value}
+            onChange={handleChange}
+            aria-label="Abas de gerenciamento de usuário"
+            variant="scrollable"
+            scrollButtons="auto"
             sx={{
-              // borderBottom: 1,
-              // borderColor: "divider",
-              display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
+              "& .MuiTabs-indicator": {
+                backgroundColor: theme.palette.primary.main,
+              },
             }}
           >
-            <SelectEditMode
-              sx={{ height: "90%", minWidth: 120 }}
-              menuMode={menuMode}
-              setMenuMode={toggleMenuMode}
-              isAllowedToEdit={isAllowedToEdit}
-            />
-          </Box>
-        </Grid>
-      </Grid>
+            {tabs.map((tab) => (
+              <Tab
+                key={tab.value}
+                icon={<Iconify icon={tab.icon} />}
+                iconPosition="start"
+                label={tab.label}
+                {...a11yProps(tab.value)}
+                // Desabilita abas 1 e 2 quando está criando
+                disabled={isCreating && tab.value !== 0}
+                sx={{
+                  textTransform: "none",
+                  fontSize: "0.95rem",
+                  fontWeight: 500,
+                }}
+              />
+            ))}
+          </Tabs>
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            minWidth: 0,
+            display: "flex",
+            justifyContent: { xs: "flex-start", md: "flex-end" },
+            alignItems: "center",
+          }}
+        >
+          <SelectEditMode
+            sx={{ height: 40, minWidth: 120 }}
+            menuMode={menuMode}
+            setMenuMode={toggleMenuMode}
+            isAllowedToEdit={isAllowedToEdit}
+          />
+        </Box>
+      </Box>
 
       {/* Content Area - Renderiza os children baseado na rota */}
-      <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "calc(100% - 72px)" }}>
+      <Box
+        flexGrow={1}
+        sx={{ p: 2, pt: 1, height: "calc(100% - 72px)", overflow: "auto" }}
+      >
         <UserContentProvider user={user as unknown as UserObject | null}>
           {children}
         </UserContentProvider>
