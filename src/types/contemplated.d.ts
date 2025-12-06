@@ -5,7 +5,15 @@ interface ContemplatedParticipant {
   phone?: string;
   cpf: string;
   region: string;
-  status: "contemplated" | "not_contemplated";
+  status:
+    | "contemplated"
+    | "not_contemplated"
+    | "Confirmed"
+    | "Selected"
+    | "NotSelected"
+    | "PendingPayment"
+    | "PaymentConfirmed"
+    | "Canceled";
   photoUrl?: string;
   activity: string;
   paymentStatus: "paid" | "pending" | "overdue";
