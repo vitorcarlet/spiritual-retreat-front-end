@@ -10,7 +10,7 @@ export const mapRegistrationToParticipant = (
     phone: undefined,
     cpf: registration.cpf,
     region: registration.region,
-    status: "not_contemplated", // Já filtrado na API (NotSelected + Guest)
+    status: registration.status, // Já filtrado na API (NotSelected + Guest)
     photoUrl: registration.photoUrl,
     activity: "Participante",
     paymentStatus: "pending",
@@ -21,6 +21,7 @@ export const mapRegistrationToParticipant = (
 export const DEFAULT_FILTERS = {
   page: 1,
   pageLimit: 10,
+  status: ["Selected"], // Status padrão para participantes
 };
 
 export const extractRegistrations = (

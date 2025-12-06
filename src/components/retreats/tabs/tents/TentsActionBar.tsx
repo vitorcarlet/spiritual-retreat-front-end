@@ -27,7 +27,7 @@ export default function TentsActionBar({
   onCreateTent,
   onCreateTentBulk,
   onAddParticipant,
-  onConfigure,
+  // onConfigure,
   onLock,
 }: TentsActionBarProps) {
   const t = useTranslations("tent-details");
@@ -57,13 +57,13 @@ export default function TentsActionBar({
           >
             {t("add-member-to-team")}
           </Button>
-          <Button
+          {/* <Button
             variant="contained"
             onClick={onConfigure}
             disabled={isReordering}
           >
             {t("tent-configurations")}
-          </Button>
+          </Button> */}
           <Button variant="contained" onClick={onLock} disabled={isReordering}>
             {t("lock-tents")}
           </Button>

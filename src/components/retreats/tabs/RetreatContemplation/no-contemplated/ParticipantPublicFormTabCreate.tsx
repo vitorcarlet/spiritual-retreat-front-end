@@ -13,6 +13,7 @@ import StepSectionHeader from "@/src/components/public/retreats/form/components/
 import {
   buildZodSchema,
   defaultValues as baseDefaultValues,
+  testDefaultValues,
   fetchFormData,
   sendFormData,
 } from "@/src/components/public/retreats/form/shared";
@@ -51,6 +52,10 @@ const buildInitialValues = (
   const result: Record<string, unknown> = { ...answers };
   const fields = flattenSectionFields(sections);
 
+  // DEV: usar testDefaultValues para preencher campos automaticamente
+  const useTestData = process.env.NODE_ENV === "development";
+  const testData = useTestData ? testDefaultValues : {};
+
   fields.forEach((field) => {
     const key = field.name;
     const hasAnswer =
@@ -78,6 +83,12 @@ const buildInitialValues = (
         }
       }
 
+      return;
+    }
+
+    // Primeiro: verificar se há valor de teste
+    if (useTestData && Object.prototype.hasOwnProperty.call(testData, key)) {
+      result[key] = testData[key];
       return;
     }
 
@@ -159,11 +170,12 @@ const collectFieldsForValidation = (
 
 type ParticipantPublicFormTabProps = {
   retreatId: string;
+  onSuccess?: () => void;
 };
 
 const ParticipantPublicFormTabCreate: React.FC<
   ParticipantPublicFormTabProps
-> = ({ retreatId }) => {
+> = ({ retreatId, onSuccess }) => {
   const queryClient = useQueryClient();
 
   const {
@@ -237,6 +249,7 @@ const ParticipantPublicFormTabCreate: React.FC<
       queryClient.invalidateQueries({
         queryKey: ["NonContemplated", retreatId],
       });
+      onSuccess?.();
     },
     onError: (error: unknown) => {
       const message =

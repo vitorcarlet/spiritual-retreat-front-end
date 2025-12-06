@@ -27,6 +27,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { enqueueSnackbar } from "notistack";
 import apiClient from "@/src/lib/axiosClientInstance";
 import { getApiUrl } from "@/src/lib/apiConfig";
+import axios from "axios";
 
 interface RetreatFamily {
   familyId: string;
@@ -174,7 +175,13 @@ export default function CreateGroupsForm({
       }
     } catch (error) {
       console.error("Error creating groups:", error);
-      enqueueSnackbar("Erro ao criar grupos", { variant: "error" });
+      enqueueSnackbar(
+        "Erro ao criar grupos: " +
+          (axios.isAxiosError(error)
+            ? error.response?.data.error
+            : String(error)),
+        { variant: "error" }
+      );
     } finally {
       setLoadingCreate(false);
     }

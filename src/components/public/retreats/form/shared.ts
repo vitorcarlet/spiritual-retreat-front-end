@@ -274,6 +274,63 @@ export const defaultValues: Record<string, unknown> = {
   },
 };
 
+// Valores de teste para preencher o formulário automaticamente (DEV ONLY)
+export const testDefaultValues: Record<string, unknown> = {
+  // Dados pessoais
+  nameSpecial: { value: "Roger Guedes" },
+  cpfSpecial: { value: "534.534.534-53" },
+  birthDateSpecial: "1997-08-08",
+  genderSpecial: "Male",
+  maritalStatusSpecial: "Single",
+  professionSpecial: "Desenvolvedor",
+  pregnancySpecial: "None",
+  weightKgSpecial: "70",
+  heightCmSpecial: "175",
+  shirtSizeSpecial: "M",
+  religionSpecial: "Catholic",
+
+  // Endereço
+  streetAndNumberSpecial: "Rua das Flores, 123",
+  neighborhoodSpecial: "Centro",
+  citySpecial: "Lages",
+  stateSpecial: "SC",
+  locationSpecial: { stateShort: "SC", city: "Lages" },
+
+  // Contato
+  emailSpecial: { value: "roger.guedes@teste.com" },
+  phoneSpecial: "48999999999",
+  whatsappSpecial: "48999999999",
+  neighborPhoneSpecial: "48888888888",
+  relativePhoneSpecial: "48777777777",
+  facebookUsernameSpecial: "roger.guedes",
+  instagramHandleSpecial: "@roger.guedes",
+
+  // Família
+  fatherStatusSwitchSpecial: true,
+  fatherStatusSpecial: "Alive",
+  fatherNameSpecial: "José Guedes",
+  motherStatusSwitchSpecial: true,
+  motherStatusSpecial: "Alive",
+  motherNameSpecial: "Maria Guedes",
+  hadFamilyLossLast6MonthsSpecial: false,
+  hasRelativeOrFriendSubmittedSpecial: false,
+
+  // Histórico
+  previousUncalledApplicationsSpecial: "None",
+  rahaminVidaCompletedSpecial: "None",
+
+  // Saúde
+  alcoholUseSpecial: "None",
+  usesDrugsSpecial: false,
+  hasAllergiesSpecial: false,
+  hasMedicalRestrictionSpecial: false,
+  takesMedicationSpecial: false,
+
+  // Termos
+  termsAcceptedSpecial: true,
+  marketingOptInSpecial: true,
+};
+
 export const getOptionLabel = (option?: BackendOption) => {
   if (!option) return "";
   const withLabel = option as BackendOption & {
@@ -465,8 +522,8 @@ const buildFieldSchema = (
           maskType === "custom" && field.customMask
             ? `Formato inválido: ${field.customMask}`
             : MASK_REGEX[maskType]
-            ? `Formato inválido para ${maskType}`
-            : "Formato inválido",
+              ? `Formato inválido para ${maskType}`
+              : "Formato inválido",
       }
     );
   }

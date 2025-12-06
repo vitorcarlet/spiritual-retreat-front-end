@@ -12,8 +12,8 @@ interface FilterButtonProps<T, F> {
   onApplyFilters: (filters: Partial<allFilters<T, F>>) => void;
   onReset?: () => void;
   activeFiltersCount?: number;
+  fullWidth?: boolean;
 }
-
 
 export type allFilters<T, F> = T extends F ? T : never;
 
@@ -23,6 +23,7 @@ export default function FilterButton<T, F>({
   onApplyFilters,
   onReset,
   activeFiltersCount = 0,
+  fullWidth = false,
 }: FilterButtonProps<T, F>) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
@@ -37,12 +38,18 @@ export default function FilterButton<T, F>({
 
   return (
     <>
-      <Badge badgeContent={activeFiltersCount} color="primary">
+      <Badge
+        badgeContent={activeFiltersCount}
+        color="primary"
+        sx={{ width: fullWidth ? "100%" : "auto" }}
+      >
         <Button
           variant="outlined"
           color="inherit"
           onClick={handleOpen}
           startIcon={<Iconify icon="solar:filter-bold" />}
+          fullWidth={fullWidth}
+          sx={{ height: 40 }}
         >
           {t("filters")}
         </Button>

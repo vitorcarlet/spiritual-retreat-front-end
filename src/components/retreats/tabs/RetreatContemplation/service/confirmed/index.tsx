@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Button, Chip, Skeleton, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Skeleton, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import axios from "axios";
@@ -210,22 +210,45 @@ export default function ServiceConfirmedTab({ id }: { id: string }) {
         minHeight: 400,
       }}
     >
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Button
-          variant="contained"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: { xs: 1, sm: 2 },
+          alignItems: "center",
+        }}
+      >
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+          }}
         >
-          {isRefreshing
-            ? t("contemplations.service.confirmed.refreshing")
-            : t("contemplations.service.confirmed.refresh")}
-        </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            sx={{ height: 40 }}
+          >
+            {isRefreshing
+              ? t("contemplations.service.confirmed.refreshing")
+              : t("contemplations.service.confirmed.refresh")}
+          </Button>
+        </Box>
 
-        <SearchField
-          value={search}
-          onChange={setSearch}
-          placeholder={t("contemplations.service.confirmed.search-placeholder")}
-        />
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+          }}
+        >
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder={t(
+              "contemplations.service.confirmed.search-placeholder"
+            )}
+          />
+        </Box>
 
         <Chip
           color="primary"
@@ -234,14 +257,14 @@ export default function ServiceConfirmedTab({ id }: { id: string }) {
             count: filteredRows.length,
           })}
         />
-      </Stack>
+      </Box>
 
       <Box sx={{ flexGrow: 1, minHeight: 300 }}>
         {isLoading ? (
           <Skeleton variant="rounded" height={320} />
         ) : (
           <DataTable<ServiceConfirmedRow, TableDefaultFilters>
-            disableBuffer={true}
+            disableVirtualization={true}
             rows={filteredRows}
             columns={columns}
             loading={isBusy}

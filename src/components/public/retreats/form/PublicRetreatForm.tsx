@@ -9,6 +9,7 @@ import { enqueueSnackbar } from "notistack";
 import {
   fetchFormData,
   defaultValues as baseDefaultValues,
+  testDefaultValues,
   buildZodSchema,
   PublicRetreatFormProps,
   sendFormData,
@@ -24,10 +25,11 @@ import PhotoUploadStep from "./PhotoUploadStep";
 const formCache = new Map<string, Promise<BackendForm>>();
 
 const getFormPromise = (id: string, type: "participate" | "serve") => {
-  if (!formCache.has(id)) {
-    formCache.set(id, fetchFormData(id, type));
+  const cacheKey = `${id}-${type}`;
+  if (!formCache.has(cacheKey)) {
+    formCache.set(cacheKey, fetchFormData(id, type));
   }
-  return formCache.get(id)!;
+  return formCache.get(cacheKey)!;
 };
 
 const flattenSectionFields = (sections: BackendSection[]): BackendField[] => {
@@ -176,9 +178,21 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
     resolver: zodResolver(schema),
     defaultValues: useMemo(() => {
       const allFields = flattenSectionFields(normalizedSections);
+      // DEV: usar testDefaultValues para preencher campos automaticamente
+      const useTestData = process.env.NODE_ENV === "development";
+      const testData = useTestData ? testDefaultValues : {};
 
       const accumulator = allFields.reduce<Record<string, unknown>>(
         (acc, field) => {
+          // Primeiro: verificar se há valor de teste
+          if (
+            useTestData &&
+            Object.prototype.hasOwnProperty.call(testData, field.name)
+          ) {
+            acc[field.name] = testData[field.name];
+            return acc;
+          }
+
           if (
             Object.prototype.hasOwnProperty.call(baseDefaultValues, field.name)
           ) {

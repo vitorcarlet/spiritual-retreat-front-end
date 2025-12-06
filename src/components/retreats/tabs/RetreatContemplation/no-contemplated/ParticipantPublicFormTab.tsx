@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
@@ -27,6 +27,7 @@ import type {
   BackendSection,
 } from "@/src/components/public/retreats/form/types";
 import { enqueueSnackbar } from "notistack";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 const collectFieldsForValidation = (
   fields: BackendField[],
@@ -65,11 +66,16 @@ const collectFieldsForValidation = (
 
 type ParticipantPublicFormTabProps = {
   retreatId: string;
+  participantId?: string;
+  initialData?: Participant;
 };
 
 const ParticipantPublicFormTab: React.FC<ParticipantPublicFormTabProps> = ({
   retreatId,
+  participantId,
+  initialData,
 }) => {
+  const isEditMode = Boolean(participantId && initialData);
   const queryClient = useQueryClient();
 
   const {
@@ -119,28 +125,125 @@ const ParticipantPublicFormTab: React.FC<ParticipantPublicFormTabProps> = ({
   const totalSteps = steps.length || 1;
   const [currentStep, setCurrentStep] = useState(0);
 
+  // Mapeia dados do participante para valores do formulário
+  const mapParticipantToFormValues = useCallback(
+    (p: Participant): Record<string, unknown> => {
+      return {
+        name: p.name ?? "",
+        email: p.email ?? "",
+        phone: p.phone ?? "",
+        cpf: p.cpf ?? "",
+        city: p.city ?? "",
+        gender: p.gender ?? "",
+        birthDate: p.birthDate ?? "",
+        // Personal
+        maritalStatus: p.personal?.maritalStatus ?? "",
+        pregnancy: p.personal?.pregnancy ?? "None",
+        shirtSize: p.personal?.shirtSize ?? "",
+        weightKg: String(p.personal?.weightKg ?? ""),
+        heightCm: String(p.personal?.heightCm ?? ""),
+        profession: p.personal?.profession ?? "",
+        streetAndNumber: p.personal?.streetAndNumber ?? "",
+        neighborhood: p.personal?.neighborhood ?? "",
+        state: p.personal?.state ?? "",
+        // Contacts
+        whatsapp: p.contacts?.whatsapp ?? "",
+        facebookUsername: p.contacts?.facebookUsername ?? "",
+        instagramHandle: p.contacts?.instagramHandle ?? "",
+        neighborPhone: p.contacts?.neighborPhone ?? "",
+        relativePhone: p.contacts?.relativePhone ?? "",
+        // Family Info
+        fatherStatus: p.familyInfo?.fatherStatus ?? "",
+        fatherName: p.familyInfo?.fatherName ?? "",
+        fatherPhone: p.familyInfo?.fatherPhone ?? "",
+        motherStatus: p.familyInfo?.motherStatus ?? "",
+        motherName: p.familyInfo?.motherName ?? "",
+        motherPhone: p.familyInfo?.motherPhone ?? "",
+        hadFamilyLossLast6Months:
+          p.familyInfo?.hadFamilyLossLast6Months ?? false,
+        familyLossDetails: p.familyInfo?.familyLossDetails ?? "",
+        hasRelativeOrFriendSubmitted:
+          p.familyInfo?.hasRelativeOrFriendSubmitted ?? false,
+        submitterRelationship: p.familyInfo?.submitterRelationship ?? "",
+        submitterNames: p.familyInfo?.submitterNames ?? "",
+        // Religion History
+        religion: p.religionHistory?.religion ?? "",
+        previousUncalledApplications:
+          p.religionHistory?.previousUncalledApplications ?? "",
+        rahaminVidaCompleted: p.religionHistory?.rahaminVidaCompleted ?? "",
+        // Health
+        alcoholUse: p.health?.alcoholUse ?? "None",
+        smoker: p.health?.smoker ?? false,
+        usesDrugs: p.health?.usesDrugs ?? false,
+        drugUseFrequency: p.health?.drugUseFrequency ?? "",
+        hasAllergies: p.health?.hasAllergies ?? false,
+        allergiesDetails: p.health?.allergiesDetails ?? "",
+        hasMedicalRestriction: p.health?.hasMedicalRestriction ?? false,
+        medicalRestrictionDetails: p.health?.medicalRestrictionDetails ?? "",
+        takesMedication: p.health?.takesMedication ?? false,
+        medicationsDetails: p.health?.medicationsDetails ?? "",
+        physicalLimitationDetails: p.health?.physicalLimitationDetails ?? "",
+        recentSurgeryOrProcedureDetails:
+          p.health?.recentSurgeryOrProcedureDetails ?? "",
+        // Consents
+        termsAccepted: p.consents?.termsAccepted ?? false,
+        marketingOptIn: p.consents?.marketingOptIn ?? false,
+      };
+    },
+    []
+  );
+
+  const defaultValues = useMemo(() => {
+    if (isEditMode && initialData) {
+      return mapParticipantToFormValues(initialData);
+    }
+    return {};
+  }, [isEditMode, initialData, mapParticipantToFormValues]);
+
   const {
     control,
     handleSubmit,
     watch,
     trigger,
     formState: { errors, isSubmitting, isDirty },
+    reset,
   } = useForm<Record<string, unknown>>({
     resolver: zodResolver(schema),
-    defaultValues: {},
+    defaultValues,
     mode: "onChange",
   });
 
+  // Reset form when initialData changes
+  useEffect(() => {
+    if (isEditMode && initialData) {
+      reset(mapParticipantToFormValues(initialData));
+    }
+  }, [isEditMode, initialData, reset, mapParticipantToFormValues]);
+
   const mutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
-      sendFormData(retreatId, payload, "participate"),
+    mutationFn: async (payload: Record<string, unknown>) => {
+      if (isEditMode && participantId) {
+        // Modo edição: atualiza o participante existente
+        return apiClient.put(`/Registrations/${participantId}`, payload);
+      }
+      // Modo criação
+      return sendFormData(retreatId, payload, "participate");
+    },
     onSuccess: () => {
-      enqueueSnackbar("Participante criado com sucesso!", {
-        variant: "success",
-      });
+      enqueueSnackbar(
+        isEditMode
+          ? "Participante atualizado com sucesso!"
+          : "Participante criado com sucesso!",
+        { variant: "success" }
+      );
       queryClient.invalidateQueries({
         queryKey: ["NonContemplated", retreatId],
       });
+      if (isEditMode) {
+        queryClient.invalidateQueries({
+          queryKey: ["participant", participantId],
+        });
+      }
     },
     onError: (error: unknown) => {
       const message =
@@ -281,6 +384,14 @@ const ParticipantPublicFormTab: React.FC<ParticipantPublicFormTabProps> = ({
 
   const activeStep = steps[currentStep];
 
+  const submitButtonLabel = isEditMode
+    ? submitting
+      ? "Salvando..."
+      : "Salvar Alterações"
+    : submitting
+      ? "Criando..."
+      : "Criar Participante";
+
   return (
     <Box
       component="form"
@@ -289,19 +400,21 @@ const ParticipantPublicFormTab: React.FC<ParticipantPublicFormTabProps> = ({
       sx={{ maxHeight: "70vh", overflowY: "auto", pr: 1 }}
     >
       <Stack spacing={3}>
-        <FormHeader
-          title={formData.title}
-          subtitle={formData.subtitle}
-          description={formData.description}
-        />
+        {!isEditMode && (
+          <FormHeader
+            title={formData.title}
+            subtitle={formData.subtitle}
+            description={formData.description}
+          />
+        )}
 
         <Button
           type="submit"
           variant="contained"
-          disabled={submitting || !isDirty}
+          disabled={submitting || (!isEditMode && !isDirty)}
           sx={{ alignSelf: "flex-end" }}
         >
-          {submitting ? "Criando..." : "Criar Participante"}
+          {submitButtonLabel}
         </Button>
 
         <FormStepProgress steps={steps} currentStep={currentStep} />
@@ -325,8 +438,8 @@ const ParticipantPublicFormTab: React.FC<ParticipantPublicFormTabProps> = ({
           isSubmitting={submitting}
           onNext={handleNext}
           onBack={handleBack}
-          submitLabel="Criar Participante"
-          disableSubmit={!isDirty}
+          submitLabel={submitButtonLabel}
+          disableSubmit={!isEditMode && !isDirty}
         />
       </Stack>
     </Box>

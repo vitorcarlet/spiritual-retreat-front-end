@@ -18,51 +18,28 @@ import {
   Divider,
   Tabs,
   Tab,
+  Grid,
+  Chip,
 } from "@mui/material";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import SingleImageUpload from "@/src/components/fields/ImageUpload/SingleImageUpload";
 import apiClient from "@/src/lib/axiosClientInstance";
 import { enqueueSnackbar } from "notistack";
 import axios from "axios";
 
-const dataUrlRegex = /^data:image\/[a-zA-Z]+;base64,/;
+import {
+  participantSchema,
+  PARTICIPANT_STATUS,
+  defaultEmpty,
+  ParticipantFormValues,
+  mapParticipantToFormValues,
+  getStatusColor,
+  ParticipantReadOnlyDetails,
+  ParticipantPhotoField,
+  ParticipantFormTabView,
+} from "./participant-form";
 
-type ParticipantLoader = (
-  retreatId: string,
-  participantId: string
-) => Promise<ContemplatedParticipant | undefined>;
-
-/* Zod schema */
-const participantSchema = z.object({
-  id: z.number().optional(), // read-only in form if present
-  name: z.string().min(2, "Name too short").max(120, "Name too long"),
-  email: z.string().email("Invalid email"),
-  phone: z
-    .string()
-    .trim()
-    .optional()
-    .refine((v) => !v || /^[+0-9 ()-]{8,20}$/.test(v), "Invalid phone format"),
-  status: z.enum(["contemplated", "not_contemplated"], {
-    required_error: "Status required",
-  }),
-  activity: z.string().min(1, "Activity required").max(120),
-  paymentStatus: z.enum(["paid", "pending", "overdue"], {
-    required_error: "Payment status required",
-  }),
-  participation: z.boolean(),
-  photoUrl: z
-    .union([
-      z.string().url("Invalid URL"),
-      z.string().regex(dataUrlRegex, "Imagem inválida"),
-    ])
-    .optional()
-    .or(z.literal("").transform(() => undefined))
-    .or(z.null()),
-});
-
-export type ParticipantFormValues = z.infer<typeof participantSchema>;
+export type { ParticipantFormValues };
 
 interface ParticipantFormProps {
   participantId: string | null;
@@ -71,42 +48,7 @@ interface ParticipantFormProps {
   submitLabel?: string;
   disabled?: boolean;
   retreatId: string;
-  loadParticipant?: ParticipantLoader;
 }
-
-const defaultEmpty: ParticipantFormValues = {
-  name: "",
-  email: "",
-  phone: "",
-  status: "not_contemplated",
-  activity: "",
-  paymentStatus: "pending",
-  participation: false,
-  photoUrl: null,
-};
-
-const getRetreatParticipant: ParticipantLoader = async (
-  _retreatId,
-  participantId
-) => {
-  try {
-    const response = await apiClient.get<ContemplatedParticipant>(
-      `/Registrations/${participantId}`
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error("Erro ao resgatar participante:", error);
-    const message = axios.isAxiosError(error)
-      ? ((error.response?.data as { error?: string })?.error ?? error.message)
-      : "Erro ao carregar dados do participante.";
-    enqueueSnackbar(message, {
-      variant: "error",
-      autoHideDuration: 4000,
-    });
-    return undefined;
-  }
-};
 
 const ParticipantForm: React.FC<ParticipantFormProps> = ({
   participantId,
@@ -115,10 +57,8 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   submitLabel = "Salvar",
   disabled = true,
   retreatId,
-  loadParticipant = getRetreatParticipant,
 }) => {
-  const [participant, setParticipant] =
-    useState<ContemplatedParticipant | null>(null);
+  const [participant, setParticipant] = useState<Participant | null>(null);
   const [isLoadingParticipant, setIsLoadingParticipant] = useState(false);
   const hasParticipant = Boolean(participant?.id);
   const [tab, setTab] = useState<"details" | "form">("details");
@@ -132,53 +72,42 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
     reset,
   } = useForm<ParticipantFormValues>({
     resolver: zodResolver(participantSchema),
-    defaultValues: participant
-      ? {
-          ...participant,
-          id:
-            typeof participant.id === "string"
-              ? parseInt(participant.id, 10)
-              : participant.id,
-          photoUrl: participant.photoUrl ?? null,
-        }
-      : defaultEmpty,
+    defaultValues: defaultEmpty,
     mode: "onBlur",
   });
 
-  // Fetch participant data when participantId changes
   useEffect(() => {
-    if (participantId) {
-      setIsLoadingParticipant(true);
-      loadParticipant(retreatId, participantId)
-        .then((data) => {
-          if (data) {
-            setParticipant(data);
-          } else {
-            setParticipant(null);
-          }
-        })
-        .finally(() => {
-          setIsLoadingParticipant(false);
-        });
-    } else {
+    if (!participantId) {
       setParticipant(null);
+      reset(defaultEmpty);
+      return;
     }
-  }, [participantId, loadParticipant, retreatId]);
 
-  useEffect(() => {
-    reset(
-      participant
-        ? {
-            ...participant,
-            id:
-              typeof participant.id === "string"
-                ? parseInt(participant.id, 10)
-                : participant.id,
-            photoUrl: participant.photoUrl ?? null,
-          }
-        : defaultEmpty
-    );
-  }, [participant, reset]);
+    const fetchParticipant = async () => {
+      setIsLoadingParticipant(true);
+      try {
+        const response = await apiClient.get<Participant>(
+          `/Registrations/${participantId}`
+        );
+        setParticipant(response.data);
+        reset(mapParticipantToFormValues(response.data));
+      } catch (error) {
+        console.error("Erro ao resgatar participante:", error);
+        const message = axios.isAxiosError(error)
+          ? ((error.response?.data as { error?: string })?.error ??
+            error.message)
+          : "Erro ao carregar dados do participante.";
+        enqueueSnackbar(message, {
+          variant: "error",
+          autoHideDuration: 4000,
+        });
+      } finally {
+        setIsLoadingParticipant(false);
+      }
+    };
+
+    fetchParticipant();
+  }, [participantId, reset]);
 
   useEffect(() => {
     setIsEditing(!disabled);
@@ -199,27 +128,27 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
     if (typeof watchedPhoto === "string" && watchedPhoto) {
       return watchedPhoto;
     }
-
     if (typeof participant?.photoUrl === "string" && participant.photoUrl) {
       return participant.photoUrl;
     }
-
     return undefined;
   }, [participant?.photoUrl, watchedPhoto]);
 
   const submit: SubmitHandler<ParticipantFormValues> = async (data) => {
-    // Preserve id if coming as prop but absent in data (optional)
     if (participant?.id && !data.id) {
-      const parsedId =
-        typeof participant.id === "string"
-          ? parseInt(participant.id, 10)
-          : participant.id;
-      data.id = parsedId;
+      data.id = participant.id;
     }
     await onSubmit?.(data);
   };
 
   const hasAvatar = Boolean(currentAvatarSrc);
+
+  const handleToggleEdit = useCallback(() => {
+    if (isEditing && participant) {
+      reset(mapParticipantToFormValues(participant));
+    }
+    setIsEditing((prev) => !prev);
+  }, [isEditing, participant, reset]);
 
   if (isLoadingParticipant) {
     return (
@@ -261,28 +190,19 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
                 ? "Atualize os dados necessários"
                 : "Preencha os campos abaixo"}
             </Typography>
+            {participant && (
+              <Chip
+                label={PARTICIPANT_STATUS[participant.status]}
+                color={getStatusColor(participant.status)}
+                size="small"
+                sx={{ mt: 0.5 }}
+              />
+            )}
           </Box>
         </Stack>
         <Button
           variant={isEditing ? "outlined" : "contained"}
-          onClick={() => {
-            if (isSubmitting || loading) return;
-            if (isEditing) {
-              reset(
-                participant
-                  ? {
-                      ...participant,
-                      id:
-                        typeof participant.id === "string"
-                          ? parseInt(participant.id, 10)
-                          : participant.id,
-                      photoUrl: participant.photoUrl ?? null,
-                    }
-                  : defaultEmpty
-              );
-            }
-            setIsEditing((prev) => !prev);
-          }}
+          onClick={handleToggleEdit}
           disabled={loading || isSubmitting}
         >
           {isEditing ? "Cancelar edição" : "Ativar edição"}
@@ -296,7 +216,11 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
         sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}
       >
         <Tab value="details" label="Dados do participante" />
-        <Tab value="form" label="Formulário respondido" disabled={true} />
+        <Tab
+          value="form"
+          label="Formulário respondido"
+          disabled={!hasParticipant}
+        />
       </Tabs>
 
       {tab === "details" && (
@@ -309,154 +233,182 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
           <Stack spacing={3}>
             <Divider />
 
-            {/* Name */}
-            <Controller
-              name="name"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Nome"
-                  required
-                  fullWidth
-                  disabled={submitting || isFormLocked}
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
-                />
-              )}
-            />
+            <Typography variant="subtitle2" color="text.secondary">
+              Dados Pessoais
+            </Typography>
 
-            {/* Email */}
-            <Controller
-              name="email"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="email"
-                  label="Email"
-                  required
-                  fullWidth
-                  disabled={submitting || isFormLocked}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                />
-              )}
-            />
-
-            {/* Phone */}
-            <Controller
-              name="phone"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Telefone"
-                  fullWidth
-                  disabled={submitting || isFormLocked}
-                  error={!!errors.phone}
-                  helperText={errors.phone?.message || "Opcional"}
-                />
-              )}
-            />
-
-            {/* Activity */}
-            <Controller
-              name="activity"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Atividade"
-                  required
-                  fullWidth
-                  disabled={submitting || isFormLocked}
-                  error={!!errors.activity}
-                  helperText={errors.activity?.message}
-                />
-              )}
-            />
-
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              {/* Status */}
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <FormControl
-                    fullWidth
-                    error={!!errors.status}
-                    disabled={submitting || isFormLocked}
-                  >
-                    <InputLabel>Status</InputLabel>
-                    <Select
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
                       {...field}
-                      label="Status"
-                      onChange={(e) => field.onChange(e.target.value)}
-                    >
-                      <MenuItem value="contemplated">Contemplado</MenuItem>
-                      <MenuItem value="not_contemplated">
-                        Não contemplado
-                      </MenuItem>
-                    </Select>
-                    <FormHelperText>{errors.status?.message}</FormHelperText>
-                  </FormControl>
-                )}
-              />
-
-              {/* Payment Status */}
-              <Controller
-                name="paymentStatus"
-                control={control}
-                render={({ field }) => (
-                  <FormControl
-                    fullWidth
-                    error={!!errors.paymentStatus}
-                    disabled={submitting || isFormLocked}
-                  >
-                    <InputLabel>Pagamento</InputLabel>
-                    <Select
-                      {...field}
-                      label="Pagamento"
-                      onChange={(e) => field.onChange(e.target.value)}
-                    >
-                      <MenuItem value="paid">Pago</MenuItem>
-                      <MenuItem value="pending">Pendente</MenuItem>
-                      <MenuItem value="overdue">Atrasado</MenuItem>
-                    </Select>
-                    <FormHelperText>
-                      {errors.paymentStatus?.message}
-                    </FormHelperText>
-                  </FormControl>
-                )}
-              />
-            </Stack>
-
-            {/* Participation */}
-            <Controller
-              name="participation"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      color="primary"
-                      checked={field.value}
-                      onChange={(e) => field.onChange(e.target.checked)}
+                      label="Nome"
+                      required
+                      fullWidth
                       disabled={submitting || isFormLocked}
+                      error={!!errors.name}
+                      helperText={errors.name?.message}
                     />
-                  }
-                  label="Participação confirmada"
+                  )}
                 />
-              )}
-            />
-            {errors.participation && (
-              <Typography variant="caption" color="error">
-                {errors.participation.message?.toString()}
-              </Typography>
-            )}
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="cpf"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="CPF"
+                      required
+                      fullWidth
+                      disabled={submitting || isFormLocked}
+                      error={!!errors.cpf}
+                      helperText={errors.cpf?.message}
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
 
-            {/* Photo URL */}
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      type="email"
+                      label="Email"
+                      required
+                      fullWidth
+                      disabled={submitting || isFormLocked}
+                      error={!!errors.email}
+                      helperText={errors.email?.message}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Telefone"
+                      fullWidth
+                      disabled={submitting || isFormLocked}
+                      error={!!errors.phone}
+                      helperText={errors.phone?.message || "Opcional"}
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="city"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Cidade"
+                      fullWidth
+                      disabled={submitting || isFormLocked}
+                      error={!!errors.city}
+                      helperText={errors.city?.message}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="profession"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Profissão/Atividade"
+                      fullWidth
+                      disabled={submitting || isFormLocked}
+                      error={!!errors.profession}
+                      helperText={errors.profession?.message}
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+
+            <Divider />
+
+            <Typography variant="subtitle2" color="text.secondary">
+              Status e Controle
+            </Typography>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl
+                      fullWidth
+                      error={!!errors.status}
+                      disabled={submitting || isFormLocked}
+                    >
+                      <InputLabel>Status</InputLabel>
+                      <Select
+                        {...field}
+                        label="Status"
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        {Object.entries(PARTICIPANT_STATUS).map(
+                          ([key, label]) => (
+                            <MenuItem key={key} value={key}>
+                              {label}
+                            </MenuItem>
+                          )
+                        )}
+                      </Select>
+                      <FormHelperText>{errors.status?.message}</FormHelperText>
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Controller
+                  name="enabled"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          color="primary"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          disabled={submitting || isFormLocked}
+                        />
+                      }
+                      label="Inscrição ativa"
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+
+            <Divider />
+
+            <Typography variant="subtitle2" color="text.secondary">
+              Foto do Participante
+            </Typography>
+
             <Controller
               name="photoUrl"
               control={control}
@@ -476,201 +428,47 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
               )}
             />
 
+            {participant && (
+              <>
+                <Divider />
+                <ParticipantReadOnlyDetails participant={participant} />
+              </>
+            )}
+
             <Stack direction="row" spacing={2} justifyContent="flex-end">
               <Button
                 variant="outlined"
                 type="button"
                 disabled={submitting || !isDirty || isFormLocked}
                 onClick={() =>
-                  reset(
-                    participant
-                      ? {
-                          ...participant,
-                          id:
-                            typeof participant.id === "string"
-                              ? parseInt(participant.id, 10)
-                              : participant.id,
-                          photoUrl: participant.photoUrl ?? null,
-                        }
-                      : defaultEmpty
-                  )
+                  participant
+                    ? reset(mapParticipantToFormValues(participant))
+                    : reset(defaultEmpty)
                 }
               >
-                Resetar
+                Descartar alterações
               </Button>
               <Button
                 variant="contained"
                 type="submit"
-                disabled={submitting || isFormLocked}
+                disabled={submitting || !isDirty || isFormLocked}
               >
-                {submitLabel}
+                {submitting ? "Salvando..." : submitLabel}
               </Button>
             </Stack>
           </Stack>
         </Box>
       )}
 
-      {/* {tab === "form" && participant?.id && (
-        <ParticipantPublicFormTab retreatId={retreatId} />
-      )} */}
+      {tab === "form" && participant?.id && (
+        <ParticipantFormTabView
+          retreatId={retreatId}
+          participantId={participant.id}
+          participant={participant}
+        />
+      )}
     </Stack>
   );
 };
 
 export default ParticipantForm;
-
-type ParticipantPhotoFieldProps = {
-  value?: string | null;
-  onChange: (value: string | null) => void;
-  disabled?: boolean;
-  errorMessage?: string;
-  helperText?: string;
-  participantId?: string | number | null;
-};
-
-const readFileAsDataUrl = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-      reject(new Error("Não foi possível processar o arquivo selecionado."));
-    };
-    reader.onerror = () => {
-      reject(new Error("Falha ao ler a imagem. Tente novamente."));
-    };
-    reader.readAsDataURL(file);
-  });
-};
-
-const ParticipantPhotoField: React.FC<ParticipantPhotoFieldProps> = ({
-  value,
-  onChange,
-  disabled,
-  errorMessage,
-  helperText,
-  participantId,
-}) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
-
-  const existingImage = useMemo(() => {
-    if (typeof value === "string" && value) {
-      return { url: value };
-    }
-    return undefined;
-  }, [value]);
-
-  const effectiveHelperText = useMemo(() => {
-    if (errorMessage || localError) {
-      return undefined;
-    }
-    return helperText;
-  }, [errorMessage, helperText, localError]);
-
-  const effectiveErrorText = useMemo(() => {
-    return errorMessage ?? localError ?? undefined;
-  }, [errorMessage, localError]);
-
-  const handleFileChange = useCallback(
-    async (nextFile: File | null) => {
-      if (!nextFile) {
-        setLocalError(null);
-        onChange(null);
-        return;
-      }
-
-      // Se não tem participantId, apenas converte para dataURL (modo criação)
-      if (!participantId) {
-        setIsProcessing(true);
-        try {
-          const dataUrl = await readFileAsDataUrl(nextFile);
-          setLocalError(null);
-          onChange(dataUrl);
-        } catch (error) {
-          console.error(error);
-          setLocalError(
-            error instanceof Error
-              ? error.message
-              : "Não foi possível carregar a imagem selecionada."
-          );
-        } finally {
-          setIsProcessing(false);
-        }
-        return;
-      }
-
-      // Se tem participantId, faz upload via API
-      setIsProcessing(true);
-      try {
-        const formData = new FormData();
-        formData.append("file", nextFile);
-
-        const response = await apiClient.post(
-          `/Registrations/${participantId}/photo`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        // A API pode retornar a URL da foto ou não retornar nada
-        // Vamos assumir que após o upload bem-sucedido, a foto foi atualizada
-        // Você pode ajustar isso conforme a resposta real da API
-        const photoUrl =
-          response.data?.photoUrl ??
-          response.data?.url ??
-          URL.createObjectURL(nextFile);
-
-        setLocalError(null);
-        onChange(photoUrl);
-
-        enqueueSnackbar("Foto atualizada com sucesso!", {
-          variant: "success",
-          autoHideDuration: 3000,
-        });
-      } catch (error) {
-        console.error("Erro ao fazer upload da foto:", error);
-        const message = axios.isAxiosError(error)
-          ? ((error.response?.data as { error?: string })?.error ??
-            error.message)
-          : "Não foi possível fazer upload da imagem.";
-        setLocalError(message);
-        enqueueSnackbar(message, {
-          variant: "error",
-          autoHideDuration: 4000,
-        });
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [onChange, participantId]
-  );
-
-  const handleRemoveExisting = useCallback(() => {
-    setLocalError(null);
-    onChange(null);
-  }, [onChange]);
-
-  return (
-    <SingleImageUpload
-      label="Foto do participante"
-      variant="avatar"
-      size={120}
-      value={null}
-      existing={existingImage}
-      onChange={handleFileChange}
-      onRemoveExisting={
-        existingImage ? () => handleRemoveExisting() : undefined
-      }
-      disabled={disabled || isProcessing}
-      helperText={effectiveHelperText ?? undefined}
-      errorText={effectiveErrorText}
-      accept={{ "image/jpeg": [".jpg", ".jpeg"], "image/png": [".png"] }}
-    />
-  );
-};

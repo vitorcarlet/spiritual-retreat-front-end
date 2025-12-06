@@ -4,23 +4,26 @@ import { useMemo, useState, useCallback } from "react";
 import {
   Box,
   Button,
+  IconButton,
   MenuItem,
   Stack,
   TextField,
-  Typography,
+  Tooltip,
 } from "@mui/material";
 import type { ButtonProps } from "@mui/material/Button";
+import { ColumnDef } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSnackbar } from "notistack";
 import axios from "axios";
 import apiClient from "@/src/lib/axiosClientInstance";
 import { useModal } from "@/src/hooks/useModal";
-import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
+import { TanStackTable } from "@/src/components/table/TanStackTable";
 import OutboxSummaryCards from "./OutboxSummaryCards";
 import OutboxDetailView from "./OutboxDetail";
 import { OutboxListResponse, OutboxMessage, OutboxSummary } from "./types";
 import { getApiUrl } from "@/src/lib/apiConfig";
+import Iconify from "../Iconify";
 
 type TableFilters = {
   page: number;
@@ -108,7 +111,6 @@ export default function RetreatOutboxTab() {
     data: tableData,
     isLoading: isTableLoading,
     refetch: refetchTable,
-    isError: isTableError,
   } = useQuery({
     queryKey: ["admin-outbox", filters],
     queryFn: async () => {
@@ -201,69 +203,6 @@ export default function RetreatOutboxTab() {
     });
   }, [tableData]);
 
-  const columns = useMemo<DataTableColumn<OutboxMessage>[]>(
-    () => [
-      {
-        field: "id",
-        headerName: translate("columns.id", "ID"),
-        flex: 1,
-        minWidth: 180,
-      },
-      {
-        field: "type",
-        headerName: translate("columns.type", "Tipo"),
-        flex: 1,
-        minWidth: 160,
-      },
-      {
-        field: "status",
-        headerName: translate("columns.status", "Status"),
-        flex: 0.8,
-        minWidth: 130,
-        renderCell: (params: { value?: unknown } | null) => {
-          const status =
-            (params?.value as OutboxMessage["status"]) ?? "unknown";
-          const buttonColor: ButtonProps["color"] =
-            statusColorMap[status] ?? "inherit";
-          return (
-            <Button
-              variant="outlined"
-              color={buttonColor}
-              size="small"
-              sx={{ pointerEvents: "none" }}
-            >
-              {status}
-            </Button>
-          );
-        },
-      },
-      {
-        field: "attempts",
-        headerName: translate("columns.attempts", "Tentativas"),
-        width: 120,
-        valueFormatter: (params: { value?: unknown } | null) =>
-          String(params?.value ?? 0),
-      },
-      {
-        field: "createdAt",
-        headerName: translate("columns.createdAt", "Criada em"),
-        minWidth: 180,
-        flex: 1,
-        valueFormatter: (params: { value?: unknown } | null) =>
-          formatDateTime((params?.value as string) ?? undefined),
-      },
-      {
-        field: "processedAt",
-        headerName: translate("columns.processedAt", "Processada em"),
-        minWidth: 180,
-        flex: 1,
-        valueFormatter: (params: { value?: unknown } | null) =>
-          formatDateTime((params?.value as string) ?? undefined),
-      },
-    ],
-    [translate]
-  );
-
   const handleFilterChange = useCallback(
     (key: keyof TableFilters, value: string) => {
       setFilters((prev) => ({
@@ -295,6 +234,77 @@ export default function RetreatOutboxTab() {
       });
     },
     [modal, refetchSummary, refetchTable, t]
+  );
+
+  const columns = useMemo<ColumnDef<OutboxMessage>[]>(
+    () => [
+      {
+        accessorKey: "id",
+        header: translate("columns.id", "ID"),
+        size: 180,
+      },
+      {
+        accessorKey: "type",
+        header: translate("columns.type", "Tipo"),
+        size: 160,
+      },
+      {
+        accessorKey: "status",
+        header: translate("columns.status", "Status"),
+        size: 130,
+        cell: ({ getValue }) => {
+          const status = (getValue() as OutboxMessage["status"]) ?? "unknown";
+          const buttonColor: ButtonProps["color"] =
+            statusColorMap[status] ?? "inherit";
+          return (
+            <Button
+              variant="outlined"
+              color={buttonColor}
+              size="small"
+              sx={{ pointerEvents: "none" }}
+            >
+              {status}
+            </Button>
+          );
+        },
+      },
+      {
+        accessorKey: "attempts",
+        header: translate("columns.attempts", "Tentativas"),
+        size: 120,
+        cell: ({ getValue }) => String(getValue() ?? 0),
+      },
+      {
+        accessorKey: "createdAt",
+        header: translate("columns.createdAt", "Criada em"),
+        size: 180,
+        cell: ({ getValue }) => formatDateTime(getValue() as string),
+      },
+      {
+        accessorKey: "processedAt",
+        header: translate("columns.processedAt", "Processada em"),
+        size: 180,
+        cell: ({ getValue }) => formatDateTime(getValue() as string),
+      },
+      {
+        id: "actions",
+        header: translate("columns.actions", "Ações"),
+        size: 100,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Tooltip title={translate("table.actions.view", "Ver detalhes")}>
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => openDetail(row.original)}
+            >
+              <Iconify icon="lucide:scan-text" width={20} />
+            </IconButton>
+          </Tooltip>
+        ),
+      },
+    ],
+    [translate, openDetail]
   );
 
   const handleResetFilters = () => {
@@ -381,28 +391,24 @@ export default function RetreatOutboxTab() {
         </Button>
       </Stack>
 
-      <Box sx={{ flex: 1, minHeight: 0 }}>
-        <DataTable<OutboxMessage, TableFilters>
-          rows={rows}
-          rowCount={tableData?.total ?? 0}
-          columns={columns}
+      <Box sx={{ flex: 1, minHeight: { xs: 1500, md: 0 } }}>
+        <TanStackTable<OutboxMessage & Record<string, unknown>>
+          data={rows as (OutboxMessage & Record<string, unknown>)[]}
+          columns={
+            columns as ColumnDef<OutboxMessage & Record<string, unknown>>[]
+          }
           loading={isTableLoading}
           title={translate("table.title", "Mensagens na fila")}
           subtitle={translate(
             "table.subtitle",
             "Acompanhe o processamento de notificações."
           )}
-          autoHeight={false}
-          height="100%"
-          disableBuffer={true}
-          // rowBuffer={200}
-          // columnBuffer={200}
-          pagination
-          showToolbar={false}
-          paginationMode="server"
-          page={filters.page ? filters.page - 1 : 0}
+          maxHeight="100%"
+          enablePagination
+          manualPagination
+          pageCount={Math.ceil((tableData?.total ?? 0) / filters.pageLimit)}
           pageSize={filters.pageLimit}
-          pageSizeOptions={[10, 25, 50, 100]}
+          pageSizeOptions={[10, 25, 50, 100, 999]}
           onPaginationModelChange={(model) => {
             setFilters((prev) => ({
               ...prev,
@@ -410,30 +416,12 @@ export default function RetreatOutboxTab() {
               pageLimit: model.pageSize,
             }));
           }}
-          serverFilters={filters}
-          checkboxSelection={false}
-          actions={[
-            {
-              icon: "lucide:scan-text",
-              label: translate("table.actions.view", "Ver detalhes"),
-              onClick: (row) => openDetail(row),
-              color: "primary",
-            },
-          ]}
-          noRowsOverlay={
-            <Stack
-              spacing={1}
-              alignItems="center"
-              justifyContent="center"
-              sx={{ py: 4 }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                {isTableError
-                  ? translate("table.error", "Erro ao carregar mensagens.")
-                  : translate("table.empty", "Nenhuma mensagem encontrada.")}
-              </Typography>
-            </Stack>
-          }
+          enableRowSelection={false}
+          enableGlobalFilter={false}
+          enableColumnFilters={false}
+          enableExport={true}
+          enableExportPdf={true}
+          getRowId={(row) => row.id}
         />
       </Box>
     </Box>

@@ -377,7 +377,7 @@ export default function LockFamiliesModal({
         {/* Action Buttons */}
         <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button onClick={onCancel} disabled={submitting} variant="outlined">
-            Cancelar
+            Fechar
           </Button>
           {/* <Button
             onClick={handleClose}

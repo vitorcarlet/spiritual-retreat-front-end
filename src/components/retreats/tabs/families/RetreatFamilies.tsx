@@ -38,7 +38,6 @@ export default function RetreatFamilies({
   id: retreatId,
 }: RetreatFamiliesProps) {
   const t = useTranslations();
-  const tFamilyDetails = useTranslations("family-details");
   const modal = useModal();
 
   const { filters, updateFilters } = useUrlFilters<
@@ -207,7 +206,6 @@ export default function RetreatFamilies({
   const handleOpenFamilyDetails = useCallback(
     (familyId: UniqueIdentifier, startInEdit = false) => {
       modal.open({
-        title: tFamilyDetails("title"),
         size: "md",
         customRender() {
           return (
@@ -243,7 +241,7 @@ export default function RetreatFamilies({
         },
       });
     },
-    [modal, tFamilyDetails, retreatId, canEditFamily, queryClient, filters]
+    [modal, retreatId, canEditFamily, queryClient, filters]
   );
 
   const handleDelete = useCallback(
@@ -325,10 +323,35 @@ export default function RetreatFamilies({
         setIsReordering(false);
         invalidateFamiliesQuery();
       } catch (error) {
-        const message = axios.isAxiosError(error)
-          ? ((error.response?.data as { error?: string })?.error ??
-            error.message)
-          : "Erro ao reordenar participantes.";
+        let message = "Erro ao reordenar participantes.";
+
+        if (axios.isAxiosError(error)) {
+          const responseData = error.response?.data as
+            | {
+                errors?: Array<{
+                  code?: string;
+                  message?: string;
+                  familyId?: string;
+                }>;
+                message?: string;
+              }
+            | undefined;
+
+          if (responseData?.errors?.length) {
+            // Concatena mensagens únicas dos erros
+            const uniqueMessages = [
+              ...new Set(
+                responseData.errors.map((e) => e.message).filter(Boolean)
+              ),
+            ];
+            message = uniqueMessages.join(" | ") || error.message;
+          } else if (responseData?.message) {
+            message = responseData.message;
+          } else {
+            message = error.message;
+          }
+        }
+
         enqueueSnackbar(message, {
           variant: "error",
           autoHideDuration: 4000,

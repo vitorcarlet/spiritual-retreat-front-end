@@ -1,21 +1,14 @@
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
 import { UserObject } from "next-auth";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 export const fetchUserData = async (
   userId: string
 ): Promise<UserObject | null> => {
   try {
-    const result = await handleApiResponse<UserObject>(
-      await sendRequestServerVanilla.get(`/api/user/${userId}`, {
-        baseUrl: "http://localhost:3001", // URL do MSW
-      })
-    );
+    const response = await apiClient.get<UserObject>(`/users/${userId}`);
 
-    if (result.success && result.data) {
-      return result.data as UserObject;
+    if (response && response.data) {
+      return response.data as UserObject;
     }
 
     return null;

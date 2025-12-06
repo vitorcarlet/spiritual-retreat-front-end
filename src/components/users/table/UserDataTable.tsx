@@ -254,46 +254,110 @@ export default function UserDataTable() {
         boxSizing: "border-box",
       }}
     >
-      <Box sx={{ mb: 2, display: "flex", gap: 2, height: 40 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: { xs: 1, sm: 2 },
+          mb: 2,
+        }}
+      >
         {hasCreatePermission && (
-          <Button variant="contained" onClick={handleCreateNewUser}>
-            {"Criar Novo Usuário"}
-          </Button>
+          <Box
+            sx={{
+              flex: {
+                xs: "1 1 100%",
+                sm: "1 1 calc(50% - 4px)",
+                md: "initial",
+              },
+              minWidth: { xs: 0, md: 200 },
+            }}
+          >
+            <Button
+              variant="contained"
+              onClick={handleCreateNewUser}
+              fullWidth
+              sx={{ height: 40, maxWidth: { md: 200 } }}
+            >
+              {"Criar Novo Usuário"}
+            </Button>
+          </Box>
         )}
-        <Button variant="contained" onClick={handleRefresh} disabled={loading}>
-          {loading ? "Carregando..." : "Atualizar Dados"}
-        </Button>
 
-        <FilterButton<
-          TableDefaultFilters<UsersTableFilters>,
-          UsersTableDateFilters
-        >
-          filters={filtersConfig}
-          defaultValues={filters}
-          onApplyFilters={handleApplyFilters}
-          onReset={resetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
-
-        <SearchField
+        <Box
           sx={{
-            height: "100%",
-            minWidth: "120px",
-            width: "max-content",
-            flexShrink: 0,
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            minWidth: 0,
           }}
-          value={filters.search || ""}
-          onChange={(e) => {
-            updateFilters({ ...filters, search: e });
-          }}
-          placeholder="search-field"
-        />
-
-        {/* ✅ CORREÇÃO: Usar helper para contar */}
-        {getSelectedIds().length > 0 && (
-          <Button variant="outlined" color="primary" onClick={handleBulkAction}>
-            Ação em Lote ({getSelectedIds().length})
+        >
+          <Button
+            variant="contained"
+            onClick={handleRefresh}
+            disabled={loading}
+            fullWidth
+            sx={{ height: 40, maxWidth: { md: 150 } }}
+          >
+            {loading ? "Carregando..." : "Atualizar Dados"}
           </Button>
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            minWidth: { xs: 0, md: 150 },
+            maxWidth: { md: 150 },
+          }}
+        >
+          <FilterButton<
+            TableDefaultFilters<UsersTableFilters>,
+            UsersTableDateFilters
+          >
+            filters={filtersConfig}
+            defaultValues={filters}
+            onApplyFilters={handleApplyFilters}
+            onReset={resetFilters}
+            activeFiltersCount={activeFiltersCount}
+            fullWidth
+          />
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            minWidth: 0,
+          }}
+        >
+          <SearchField
+            fullWidth
+            value={filters.search || ""}
+            onChange={(e) => {
+              updateFilters({ ...filters, search: e });
+            }}
+            placeholder="search-field"
+          />
+        </Box>
+
+        {getSelectedIds().length > 0 && (
+          <Box
+            sx={{
+              flex: {
+                xs: "1 1 100%",
+                sm: "1 1 calc(50% - 4px)",
+                md: "initial",
+              },
+              minWidth: 0,
+            }}
+          >
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleBulkAction}
+              fullWidth
+              sx={{ height: 40 }}
+            >
+              Ação em Lote ({getSelectedIds().length})
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -303,7 +367,7 @@ export default function UserDataTable() {
           rowCount={usersData?.total || 0}
           columns={columns}
           loading={isLoading || !session.data?.user || loading}
-          disableBuffer={true}
+          disableVirtualization={true}
           // Configurações de aparência
           title="Gerenciamento de Usuários"
           subtitle="Lista completa de usuários do sistema"
@@ -330,7 +394,7 @@ export default function UserDataTable() {
           checkboxSelection={true}
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
-          // Virtualização otimizada
+          // Desabilita virtualização para listas pequenas (menos de 100 itens)
           // Ações personalizadas
           actions={[
             {

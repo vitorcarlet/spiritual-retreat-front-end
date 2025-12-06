@@ -271,7 +271,7 @@ export const sections = [
         specialType: "phone",
         required: true,
         helperTextContent: "Digite seu WhatsApp com DDD",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 6,
       },
       {
@@ -282,7 +282,7 @@ export const sections = [
         maskType: "phone",
         required: true,
         helperTextContent: "Digite seu celular com DDD",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 4,
       },
       {
@@ -293,7 +293,7 @@ export const sections = [
         maskType: "phone",
         required: true,
         helperTextContent: "Celular de alguém que NÃO participará do retiro",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 4,
       },
       {
@@ -304,7 +304,7 @@ export const sections = [
         maskType: "phone",
         required: true,
         helperTextContent: "Celular de alguém que NÃO participará do retiro",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 4,
       },
       {
@@ -753,7 +753,7 @@ export const sections2 = [
         maskType: "phone",
         required: false,
         helperTextContent: "Digite seu telefone",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 6,
       },
       {
@@ -912,7 +912,7 @@ export const sectionsServe = [
         maskType: "phone",
         required: false,
         helperTextContent: "Digite seu telefone",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 6,
       },
       {
@@ -1284,7 +1284,7 @@ export const sections3 = [
         maskType: "phone",
         required: true,
         helperTextContent: "Digite seu telefone com DDD",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 6,
       },
       {
@@ -1295,7 +1295,7 @@ export const sections3 = [
         maskType: "phone",
         required: true,
         helperTextContent: "Digite seu WhatsApp com DDD",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 4,
       },
       {
@@ -1306,7 +1306,7 @@ export const sections3 = [
         maskType: "phone",
         required: true,
         helperTextContent: "Telefone de alguém que NÃO participará do retiro",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 4,
       },
       {
@@ -1317,7 +1317,7 @@ export const sections3 = [
         maskType: "phone",
         required: true,
         helperTextContent: "Telefone de alguém que NÃO participará do retiro",
-        placeholder: "+55 (11) 99999-9999",
+        placeholder: "(49) 999999999",
         grid: 4,
       },
       {

@@ -22,7 +22,8 @@
     "Forms": "Formulários",
     "Service-team": "Equipe de Serviço",
     "Perfil": "Perfil",
-    "Gestão de OutBox": "Gestão de OutBox"
+    "Gestão de OutBox": "Gestão de OutBox",
+    "New": "Novo Relatório"
   },
   "error": "Algo deu errado",
   "HomePage": {
@@ -257,7 +258,8 @@
     "view": "Visualizar",
     "update-success": "Família atualizada com sucesso!",
     "update-error": "Não foi possível atualizar a família. Tente novamente.",
-    "general-info": "Informações gerais",
+    "load-error": "Não foi possível carregar os dados da família.",
+    "general-info": "Informações gerais da família {family}",
     "name-label": "Nome da família",
     "leader-label": "Líder da família",
     "email-label": "E-mail",
@@ -271,7 +273,18 @@
     "no-leader": "Nenhum líder definido",
     "family-color": "Cor da Família",
     "send-messages": "Enviar Mensagens",
-    "delete-family": "Deletar Família"
+    "delete-family": "Deletar Família",
+    "capacity-label": "Capacidade",
+    "composition-label": "Composição",
+    "male": "Homens",
+    "female": "Mulheres",
+    "family-locked": "Família bloqueada",
+    "alerts-title": "Alertas",
+    "group-info": "Informações do Grupo de WhatsApp",
+    "group-status": "Status do grupo",
+    "group-channel": "Canal",
+    "group-link": "Link do grupo",
+    "open-group": "Abrir grupo"
   },
   "tents": {
     "lock": {
@@ -556,6 +569,10 @@
   "family-report-show-members": "Mostrar participantes",
   "family-report-no-members": "Esta família ainda não possui participantes.",
   "family-report-member-status-unknown": "Status não disponível",
+  "family-report-status-confirmed": "Confirmado",
+  "family-report-status-registered": "Inscrito",
+  "family-report-status-attended": "Participou",
+  "family-report-status-cancelled": "Cancelado",
   "family-report-tags": {
     "locked": "Bloqueada",
     "active": "Ativa"
@@ -752,5 +769,24 @@
     "delete-tent-confirmation": "Confirmaçção de deleção da barraca"
   },
   "participants-added-successfully": "Participante adicionado com sucesso!",
-  "error-adding-participants": "Erro ao adicionar participantes"
+  "error-adding-participants": "Erro ao adicionar participantes",
+  "creat-tent-form": {},
+  "create-tent-form": {
+    "tent-number": "Número da Barraca",
+    "tent-number-placeholder": "Ex: 1, 2, 3...",
+    "tent-category": "Categoria",
+    "category-male": "Masculina",
+    "category-female": "Feminina",
+    "tent-capacity": "Capacidade",
+    "tent-capacity-placeholder": "Ex: 5",
+    "tent-notes": "Notas",
+    "tent-notes-placeholder": "Adicione observações sobre a barraca...",
+    "cancel": "Cancelar",
+    "creating": "Criando...",
+    "create-tent": "Criar Barraca",
+    "success": "Barraca criada com sucesso!",
+    "error": "Erro ao criar barraca."
+  },
+  "Male": "Masculino",
+  "Female": "Feminino"
 }

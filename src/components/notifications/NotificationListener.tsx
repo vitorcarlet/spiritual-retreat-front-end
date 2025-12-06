@@ -19,7 +19,7 @@ export default function NotificationListener() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001/api";
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4999/api";
 
   const playNotificationSound = (soundId: string) => {
     const sound = NOTIFICATION_SOUNDS.find((s) => s.id === soundId);

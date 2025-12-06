@@ -98,22 +98,49 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
       }}
     >
       <Box
-        sx={{ mb: 2, display: "flex", gap: 2, height: "40px", minHeight: 40 }}
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: { xs: 1, sm: 2 },
+          mb: 2,
+        }}
       >
-        <Button variant="contained" onClick={handleRefresh} disabled={loading}>
-          {loading ? "Carregando..." : "Atualizar Dados"}
-        </Button>
-
-        <FilterButton<
-          TableDefaultFilters<ReportsTableFilters>,
-          ReportsTableDateFilters
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            minWidth: 0,
+          }}
         >
-          filters={filtersConfig}
-          defaultValues={filters}
-          onApplyFilters={handleApplyFilters}
-          onReset={resetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
+          <Button
+            variant="contained"
+            onClick={handleRefresh}
+            disabled={loading}
+            fullWidth
+            sx={{ height: 40, maxWidth: { md: 150 } }}
+          >
+            {loading ? "Carregando..." : "Atualizar Dados"}
+          </Button>
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            minWidth: { xs: 0, md: 150 },
+            maxWidth: { md: 150 },
+          }}
+        >
+          <FilterButton<
+            TableDefaultFilters<ReportsTableFilters>,
+            ReportsTableDateFilters
+          >
+            filters={filtersConfig}
+            defaultValues={filters}
+            onApplyFilters={handleApplyFilters}
+            onReset={resetFilters}
+            activeFiltersCount={activeFiltersCount}
+            fullWidth
+          />
+        </Box>
       </Box>
 
       <Box sx={{ flexGrow: 1, height: "calc(100% - 40px)" }}>

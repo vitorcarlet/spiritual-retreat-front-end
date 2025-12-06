@@ -1,13 +1,10 @@
-"use client";
-import dynamic from "next/dynamic";
-import { useParams } from "next/navigation";
-const RetreatContemplation = dynamic(
-  () => import("@/src/components/retreats/tabs/RetreatContemplation"),
-  {
-    loading: () => <p>Loading...</p>,
-  }
-);
-export default function Page() {
-  const { id } = useParams<{ id: string }>();
-  return <RetreatContemplation id={id} />;
+import { redirect } from "next/navigation";
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ContemplationsPage({ params }: PageProps) {
+  const { id } = await params;
+  redirect(`/retreats/${id}/contemplations/contemplated`);
 }

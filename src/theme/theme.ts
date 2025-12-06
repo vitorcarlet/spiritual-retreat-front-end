@@ -35,13 +35,53 @@ const initialTheme = {
     dark: {
       palette: {
         ...COMMON,
+        primary: {
+          lighter: "#D15D00",
+          light: "#FF6A00",
+          main: "#FF921E",
+          dark: "#FFA04D",
+          darker: "#FFB66B",
+          contrastText: "#fff",
+        },
+        secondary: {
+          lighter: "#005249",
+          light: "#007B55",
+          main: "#00AB55",
+          dark: "#5BE584",
+          darker: "#C8FACD",
+          contrastText: "#fff",
+        },
+        info: {
+          lighter: "#0A3069",
+          light: "#1158C7",
+          main: "#1F6FEB",
+          dark: "#58A6FF",
+          darker: "#F0F6FC",
+          contrastText: "#fff",
+        },
         success: {
           lighter: "#0F3E1E",
           light: "#196127",
-          main: "#D6FBE9", // Verde característico do GitHub
-          dark: "#196127",
-          darker: "#0F3E1E",
-          contrastText: GREY[100],
+          main: "#00E676",
+          dark: "#33EB91",
+          darker: "#D6FBE9",
+          contrastText: GREY[800],
+        },
+        warning: {
+          lighter: "#735C00",
+          light: "#B08800",
+          main: "#F2CC60",
+          dark: "#FFD33D",
+          darker: "#FFF3BF",
+          contrastText: GREY[800],
+        },
+        error: {
+          lighter: "#7D181F",
+          light: "#B62324",
+          main: "#D73A49",
+          dark: "#FF7B72",
+          darker: "#FFDCE0",
+          contrastText: "#fff",
         },
         text: {
           primary: "#C9D1D9",

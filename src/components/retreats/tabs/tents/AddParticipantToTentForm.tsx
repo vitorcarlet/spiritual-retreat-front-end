@@ -84,6 +84,7 @@ export default function AddParticipantToFamilyForm({
     formState: { errors, isSubmitting },
     watch,
     reset,
+    setValue,
   } = useForm<AddParticipantData>({
     resolver: zodResolver(addParticipantSchema),
     defaultValues: {
@@ -93,6 +94,11 @@ export default function AddParticipantToFamilyForm({
   });
 
   const tentId = watch("tentId");
+
+  // Limpar participantes selecionados quando mudar a barraca
+  useEffect(() => {
+    setValue("participantIds", []);
+  }, [tentId, setValue]);
 
   // Buscar participantes disponíveis
   useEffect(() => {
@@ -116,7 +122,15 @@ export default function AddParticipantToFamilyForm({
   }, [retreatId]);
 
   const selectedTent = tents.find((f) => String(f.tentId) === tentId);
-  const availableParticipants = participants;
+
+  // Filtrar participantes pelo gênero da barraca selecionada
+  const availableParticipants = selectedTent
+    ? participants.filter((p) => {
+        // category 0 = Male, category 1 = Female
+        const tentGender = selectedTent.category == "Male" ? "Male" : "Female";
+        return p.gender === tentGender;
+      })
+    : participants;
 
   const onSubmit = async (data: AddParticipantData) => {
     try {
@@ -298,8 +312,7 @@ export default function AddParticipantToFamilyForm({
                       <Box>
                         <Typography variant="body2">{option.name}</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {option.gender}
-                          {option.city}
+                          {t(option.gender)} - {option.city}
                         </Typography>
                       </Box>
                     </Box>
