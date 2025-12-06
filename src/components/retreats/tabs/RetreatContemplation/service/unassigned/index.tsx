@@ -273,29 +273,74 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
       <Box
         sx={{
           display: "flex",
-          gap: 2,
           flexWrap: "wrap",
+          gap: { xs: 1, sm: 2 },
           alignItems: "center",
-          minHeight: 40,
         }}
       >
-        <Button
-          variant="contained"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+          }}
         >
-          {isRefreshing
-            ? t("contemplations.service.unassigned.refreshing")
-            : t("contemplations.service.unassigned.refresh")}
-        </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            sx={{ height: 40 }}
+          >
+            {isRefreshing
+              ? t("contemplations.service.unassigned.refreshing")
+              : t("contemplations.service.unassigned.refresh")}
+          </Button>
+        </Box>
 
-        <SearchField
-          value={search}
-          onChange={setSearch}
-          placeholder={t(
-            "contemplations.service.unassigned.search-placeholder"
-          )}
-        />
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+          }}
+        >
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            onClick={() => handleCreateNewParticipant(id)}
+            sx={{ height: 40 }}
+          >
+            {t("contemplations.no-contemplated.create-new-participant")}
+          </Button>
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+          }}
+        >
+          <Button
+            fullWidth
+            variant="outlined"
+            color="primary"
+            onClick={() => handleOpenMessagesComponent("all")}
+            sx={{ height: 40 }}
+          >
+            Enviar mensagens para todos
+          </Button>
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+          }}
+        >
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder={t(
+              "contemplations.service.unassigned.search-placeholder"
+            )}
+          />
+        </Box>
 
         <Chip
           color="primary"
@@ -304,21 +349,6 @@ export default function ServiceUnassignedTab({ id }: { id: string }) {
             count: filteredRows.length,
           })}
         />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleCreateNewParticipant(id)}
-        >
-          {t("contemplations.no-contemplated.create-new-participant")}
-        </Button>
-
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={() => handleOpenMessagesComponent("all")}
-        >
-          Enviar mensagens para todos
-        </Button>
       </Box>
 
       <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
