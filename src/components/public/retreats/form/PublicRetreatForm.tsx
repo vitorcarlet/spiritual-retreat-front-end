@@ -25,10 +25,11 @@ import PhotoUploadStep from "./PhotoUploadStep";
 const formCache = new Map<string, Promise<BackendForm>>();
 
 const getFormPromise = (id: string, type: "participate" | "serve") => {
-  if (!formCache.has(id)) {
-    formCache.set(id, fetchFormData(id, type));
+  const cacheKey = `${id}-${type}`;
+  if (!formCache.has(cacheKey)) {
+    formCache.set(cacheKey, fetchFormData(id, type));
   }
-  return formCache.get(id)!;
+  return formCache.get(cacheKey)!;
 };
 
 const flattenSectionFields = (sections: BackendSection[]): BackendField[] => {
