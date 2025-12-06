@@ -104,7 +104,7 @@ export default function RetreatPage({
     <Box sx={{ width: "100%", height: "100%", maxHeight: "100%" }}>
       {/* Container das abas */}
       {/* Tabs Header */}
-      <Grid container spacing={0} height={72}>
+      <Grid container spacing={0} minHeight={72}>
         <Grid
           size={{ xs: 12, md: 8, lg: 6 }}
           sx={{ p: 2, pr: 0, pb: 0, pt: 0, height: "100%" }}
@@ -172,7 +172,10 @@ export default function RetreatPage({
       </Grid>
 
       {/* Content Area - Renderiza os children baseado na rota */}
-      <Box flexGrow={1} sx={{ p: 2, pt: 0, height: "calc(100% - 72px)" }}>
+      <Box
+        flexGrow={1}
+        sx={{ p: 2, pt: 0, minHeight: "95vh", height: "calc(100% - 72px)" }}
+      >
         {children}
       </Box>
     </Box>
