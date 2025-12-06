@@ -51,10 +51,21 @@ const buildMemberEntries = (
   const locationLabel = t("family-report-pdf-location-label");
   const statusLabel = t("family-report-pdf-status-label");
 
+  const getStatusTranslation = (status?: string): string => {
+    if (!status) return t("family-report-member-status-unknown");
+    const statusMap: Record<string, string> = {
+      confirmed: t("family-report-status-confirmed"),
+      registered: t("family-report-status-registered"),
+      attended: t("family-report-status-attended"),
+      cancelled: t("family-report-status-cancelled"),
+    };
+    return statusMap[status] || status;
+  };
+
   const membersEntries = members.map((member) => {
     const location =
       [member.city, member.state].filter(Boolean).join(" / ") || notProvided;
-    const status = member.status || t("family-report-member-status-unknown");
+    const status = getStatusTranslation(member.status);
     const pieces = [
       member.fullName || notProvided,
       `${phoneLabel}: ${member.phone || notProvided}`,
@@ -448,6 +459,17 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
       );
     }
 
+    const getStatusTranslation = (status?: string): string => {
+      if (!status) return t("family-report-member-status-unknown");
+      const statusMap: Record<string, string> = {
+        confirmed: t("family-report-status-confirmed"),
+        registered: t("family-report-status-registered"),
+        attended: t("family-report-status-attended"),
+        cancelled: t("family-report-status-cancelled"),
+      };
+      return statusMap[status] || status;
+    };
+
     return (
       <Stack spacing={1} sx={{ mt: 1 }}>
         {members.map((member) => (
@@ -469,7 +491,7 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
             <Chip
               size="small"
               color="info"
-              label={member.status || t("family-report-member-status-unknown")}
+              label={getStatusTranslation(member.status)}
             />
           </Stack>
         ))}
@@ -707,7 +729,12 @@ const FamilyReportCards = ({ reportId }: { reportId: string }) => {
                     </Button>
                   </Stack>
 
-                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                  <Collapse
+                    sx={{ overflowX: "scroll" }}
+                    in={isExpanded}
+                    timeout="auto"
+                    unmountOnExit
+                  >
                     {renderMembers(family.members)}
                   </Collapse>
                 </CardContent>

@@ -1,10 +1,9 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
-  Autocomplete,
   Avatar,
   Box,
   Button,
@@ -39,9 +38,6 @@ interface FamilyDetailsProps {
 
 interface UpdateFamilyPayload {
   name?: string;
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
   color?: string;
 }
 
@@ -60,11 +56,9 @@ export default function FamilyDetails({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [familyState, setFamilyState] = useState<RetreatFamily | null>(null);
+  const [familyVersion, setFamilyVersion] = useState<number>(0);
   const [formValues, setFormValues] = useState<UpdateFamilyPayload>({
     name: "",
-    contactName: "",
-    contactEmail: "",
-    contactPhone: "",
     color: "",
   });
 
@@ -74,17 +68,16 @@ export default function FamilyDetails({
       setIsLoading(true);
       setErrorMessage(null);
       try {
-        const response = await apiClient.get<RetreatFamily>(
-          `/retreats/${retreatId}/families/${familyId}`
-        );
+        const response = await apiClient.get<{
+          version: number;
+          family: RetreatFamily;
+        }>(`/retreats/${retreatId}/families/${familyId}`);
 
-        const family = response.data;
+        const { version, family } = response.data;
         setFamilyState(family);
+        setFamilyVersion(version);
         setFormValues({
-          name: family.name,
-          contactName: family.contactName ?? "",
-          contactEmail: family.contactEmail ?? "",
-          contactPhone: family.contactPhone ?? "",
+          name: family.name ?? "",
           color: family.color ?? "",
         });
         setIsEditing(startInEdit && canEdit);
@@ -107,22 +100,13 @@ export default function FamilyDetails({
     fetchFamilyData();
   }, [familyId, retreatId, startInEdit, canEdit, t]);
 
-  const leaderName = useMemo(() => {
-    if (!familyState) return t("no-leader");
-    if (familyState.contactName) return familyState.contactName;
-    return familyState.members?.[0]?.name ?? t("no-leader");
-  }, [familyState, t]);
-
   const handleToggleEdit = () => {
     if (!canEdit || !familyState) return;
     setIsEditing((prev) => !prev);
     setErrorMessage(null);
     setSuccessMessage(null);
     setFormValues({
-      name: familyState.name,
-      contactName: familyState.contactName ?? "",
-      contactEmail: familyState.contactEmail ?? "",
-      contactPhone: familyState.contactPhone ?? "",
+      name: familyState.name ?? "",
       color: familyState.color ?? "",
     });
   };
@@ -142,27 +126,23 @@ export default function FamilyDetails({
     setSuccessMessage(null);
 
     try {
-      const payload: UpdateFamilyPayload = {
+      const payload = {
         name: formValues.name?.trim(),
-        contactName: formValues.contactName?.trim() || undefined,
-        contactEmail: formValues.contactEmail?.trim() || undefined,
-        contactPhone: formValues.contactPhone?.trim() || undefined,
         color: formValues.color?.trim() || undefined,
+        version: familyVersion,
       };
 
-      const response = await apiClient.put<RetreatFamily>(
-        `/retreats/${retreatId}/families/${familyState.id}`,
-        payload
-      );
+      const response = await apiClient.put<{
+        version: number;
+        family: RetreatFamily;
+      }>(`/retreats/${retreatId}/families/${familyState.familyId}`, payload);
 
-      const updatedFamily = response.data;
+      const { version, family: updatedFamily } = response.data;
 
       setFamilyState(updatedFamily);
+      setFamilyVersion(version);
       setFormValues({
         name: updatedFamily.name,
-        contactName: updatedFamily.contactName ?? "",
-        contactEmail: updatedFamily.contactEmail ?? "",
-        contactPhone: updatedFamily.contactPhone ?? "",
         color: updatedFamily.color ?? "",
       });
       setSuccessMessage(t("update-success"));
@@ -246,7 +226,7 @@ export default function FamilyDetails({
             gutterBottom
             marginBottom={2}
           >
-            {t("general-info")}
+            {t("general-info", { family: familyState.name ?? "" })}
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -269,6 +249,7 @@ export default function FamilyDetails({
               <MuiColorInput
                 format="hex"
                 label={t("family-color")}
+                disabled={!isEditing}
                 disableAlpha
                 value={formValues.color ?? ""}
                 onChange={(value) =>
@@ -277,96 +258,109 @@ export default function FamilyDetails({
                 TextFieldProps={{
                   fullWidth: true,
                   required: true,
-                  // error: !!errors.color,
-                  // helperText: errors.color?.message,
                 }}
               />
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
-              {isEditing ? (
-                <Autocomplete
-                  options={familyState?.members ?? []}
-                  value={
-                    familyState?.members?.find(
-                      (member) =>
-                        member.email === formValues.contactEmail &&
-                        member.name === formValues.contactName
-                    ) ?? null
-                  }
-                  getOptionLabel={(option) =>
-                    option.email
-                      ? `${option.name} (${option.email})`
-                      : option.name
-                  }
-                  onChange={(_, newValue) => {
-                    if (newValue) {
-                      setFormValues((prev) => ({
-                        ...prev,
-                        contactName: newValue.name ?? "",
-                        contactEmail: newValue.email ?? "",
-                        contactPhone: newValue.phone ?? "",
-                      }));
-                    } else {
-                      setFormValues((prev) => ({
-                        ...prev,
-                        contactName: "",
-                        contactEmail: "",
-                        contactPhone: "",
-                      }));
-                    }
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={t("leader-label")}
-                      placeholder={t("search-participants")}
-                    />
-                  )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props}>
-                      <Avatar sx={{ mr: 2, width: 32, height: 32 }}>
-                        {initialsFromName(option.name)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2">
-                          {option.name ?? t("unknown-name")}
-                        </Typography>
-                        {option.email && (
-                          <Typography variant="caption" color="text.secondary">
-                            {option.email}
-                          </Typography>
-                        )}
-                        {option.city && (
-                          <Typography variant="caption" color="text.secondary">
-                            {` • ${option.city}`}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  )}
-                  renderTags={(tagValue) =>
-                    tagValue.map((option) => (
-                      <Chip
-                        key={option.id}
-                        label={option.name}
-                        avatar={
-                          <Avatar>
-                            {initialsFromName(option.name).charAt(0)}
-                          </Avatar>
-                        }
-                      />
-                    ))
-                  }
-                  disabled={!familyState?.members?.length}
-                  noOptionsText={t("no-participants-available")}
-                />
-              ) : (
-                <InfoRow label={t("leader-label")} value={leaderName} />
-              )}
+              <InfoRow
+                label={t("capacity-label")}
+                value={`${familyState.totalMembers}/${familyState.capacity}`}
+              />
             </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <InfoRow
+                label={t("composition-label")}
+                value={`${familyState.maleCount} ${t("male")} / ${familyState.femaleCount} ${t("female")}`}
+              />
+            </Grid>
+
+            {familyState.isLocked && (
+              <Grid size={{ xs: 12 }}>
+                <Chip
+                  icon={<Iconify icon="solar:lock-bold" />}
+                  label={t("family-locked")}
+                  color="warning"
+                  size="small"
+                />
+              </Grid>
+            )}
           </Grid>
         </Box>
+
+        {/* Alertas */}
+        {familyState.alerts?.length > 0 && (
+          <>
+            <Divider />
+            <Box>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                gutterBottom
+              >
+                {t("alerts-title")}
+              </Typography>
+              <Stack spacing={1}>
+                {familyState.alerts.map((alert, index) => (
+                  <Alert key={index} severity="warning" variant="outlined">
+                    {alert}
+                  </Alert>
+                ))}
+              </Stack>
+            </Box>
+          </>
+        )}
+
+        {/* Informações do Grupo */}
+        {familyState.groupStatus && (
+          <>
+            <Divider />
+            <Box>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                gutterBottom
+              >
+                {t("group-info")}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <InfoRow
+                    label={t("group-status")}
+                    value={familyState.groupStatus}
+                  />
+                </Grid>
+                {familyState.groupChannel && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <InfoRow
+                      label={t("group-channel")}
+                      value={familyState.groupChannel}
+                    />
+                  </Grid>
+                )}
+                {familyState.groupLink && (
+                  <Grid size={{ xs: 12 }}>
+                    <Stack spacing={0.5}>
+                      <Typography variant="caption" color="text.secondary">
+                        {t("group-link")}
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        href={familyState.groupLink}
+                        target="_blank"
+                        startIcon={<Iconify icon="solar:link-bold" />}
+                      >
+                        {t("open-group")}
+                      </Button>
+                    </Stack>
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          </>
+        )}
 
         <Divider />
 
@@ -392,7 +386,7 @@ export default function FamilyDetails({
             <List disablePadding>
               {members.map((member) => (
                 <ListItem
-                  key={member.id}
+                  key={member.registrationId}
                   alignItems="flex-start"
                   disableGutters
                 >
@@ -402,31 +396,23 @@ export default function FamilyDetails({
                   <ListItemText
                     primary={member.name}
                     secondary={
-                      <>
-                        {member.email && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            display={"block"}
-                          >
-                            {member.email}
-                          </Typography>
-                        )}
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Chip
+                          label={
+                            member.gender === "Male" ? t("male") : t("female")
+                          }
+                          size="small"
+                          color={
+                            member.gender === "Male" ? "info" : "secondary"
+                          }
+                          variant="outlined"
+                        />
                         {member.city && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            display={"block"}
-                          >
+                          <Typography variant="caption" color="text.secondary">
                             {member.city}
                           </Typography>
                         )}
-                        {member.phone && (
-                          <Typography variant="caption" color="text.secondary">
-                            {member.phone}
-                          </Typography>
-                        )}
-                      </>
+                      </Stack>
                     }
                   />
                 </ListItem>
