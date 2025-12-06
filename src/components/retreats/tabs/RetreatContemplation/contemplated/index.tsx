@@ -28,7 +28,6 @@ import {
   extractRegistrations,
   mapRegistrationToParticipant,
   getInitials,
-  formatDateToBR,
   DEFAULT_FILTERS,
 } from "../shared";
 
@@ -41,15 +40,16 @@ const getContemplated = async (
     const pageLimit =
       filters.pageLimit && filters.pageLimit > 0 ? filters.pageLimit : 20;
     const skip = (page - 1) * pageLimit;
-    const filtersFiltered = keysToRemoveFromFilters.forEach(
-      (key) => delete filters[key]
-    );
+
+    // Cria cópia dos filtros e remove as chaves indesejadas
+    const filtersFiltered = { ...filters };
+    keysToRemoveFromFilters.forEach((key) => delete filtersFiltered[key]);
+
     const params: Record<string, unknown> = {
       retreatId,
       skip,
       take: pageLimit,
-      filtersFiltered,
-      status: "Selected",
+      ...filtersFiltered,
     };
 
     const response = await apiClient.get<RegistrationApiResponse>(
@@ -59,9 +59,15 @@ const getContemplated = async (
       }
     );
 
+    // Usa os status do filtro ou "Selected" como padrão
+    const statusFilter = Array.isArray(filters.status)
+      ? filters.status
+      : filters.status
+        ? [filters.status]
+        : ["Selected"];
+
     const registrations = extractRegistrations(response.data).filter((item) => {
-      // Filtrar apenas Selected e Guest
-      return item.status === "Selected";
+      return statusFilter.includes(item.status);
     });
 
     const rows = registrations.map((registration) =>
@@ -149,14 +155,17 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
     width: 140,
     renderCell: (params) => {
       const val = params.value as ContemplatedParticipant["status"];
-      const map: Record<
-        ContemplatedParticipant["status"],
-        { label: string; color: "success" | "default" }
+      const map: Partial<
+        Record<
+          ContemplatedParticipant["status"],
+          { label: string; color: "success" | "default" }
+        >
       > = {
         contemplated: { label: "Contemplado", color: "success" },
         not_contemplated: { label: "Não Contemplado", color: "default" },
+        Confirmed: { label: "Confirmado", color: "success" },
       };
-      const cfg = map[val] || map.not_contemplated;
+      const cfg = map[val] ?? { label: "Não Contemplado", color: "default" };
       return (
         <Chip
           label={cfg.label}
@@ -167,56 +176,56 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
       );
     },
   },
-  {
-    field: "paymentStatus",
-    headerName: "Pagamento",
-    width: 150,
-    renderCell: (params) => {
-      const val = params.value as ContemplatedParticipant["paymentStatus"];
-      const map: Record<
-        ContemplatedParticipant["paymentStatus"],
-        { label: string; color: "success" | "warning" | "error" }
-      > = {
-        paid: { label: "Pago", color: "success" },
-        pending: { label: "Pendente", color: "warning" },
-        overdue: { label: "Atrasado", color: "error" },
-      };
-      const cfg = map[val] || map.pending;
-      return (
-        <Chip
-          label={cfg.label}
-          color={cfg.color}
-          size="small"
-          variant="outlined"
-        />
-      );
-    },
-  },
-  {
-    field: "participation",
-    headerName: "Participação",
-    width: 150,
-    type: "boolean",
-    renderCell: (params) => (
-      <Chip
-        label={params.value ? "Presente" : "Ausente"}
-        color={params.value ? "primary" : "default"}
-        size="small"
-        variant="outlined"
-      />
-    ),
-  },
-  {
-    field: "registrationDate",
-    headerName: "Data de Inscrição",
-    width: 200,
-    valueFormatter: (v: { value?: unknown }) => {
-      if (typeof v?.value === "string") {
-        return formatDateToBR(v.value);
-      }
-      return "";
-    },
-  },
+  // {
+  //   field: "paymentStatus",
+  //   headerName: "Pagamento",
+  //   width: 150,
+  //   renderCell: (params) => {
+  //     const val = params.value as ContemplatedParticipant["paymentStatus"];
+  //     const map: Record<
+  //       ContemplatedParticipant["paymentStatus"],
+  //       { label: string; color: "success" | "warning" | "error" }
+  //     > = {
+  //       paid: { label: "Pago", color: "success" },
+  //       pending: { label: "Pendente", color: "warning" },
+  //       overdue: { label: "Atrasado", color: "error" },
+  //     };
+  //     const cfg = map[val] || map.pending;
+  //     return (
+  //       <Chip
+  //         label={cfg.label}
+  //         color={cfg.color}
+  //         size="small"
+  //         variant="outlined"
+  //       />
+  //     );
+  //   },
+  // },
+  // {
+  //   field: "participation",
+  //   headerName: "Participação",
+  //   width: 150,
+  //   type: "boolean",
+  //   renderCell: (params) => (
+  //     <Chip
+  //       label={params.value ? "Presente" : "Ausente"}
+  //       color={params.value ? "primary" : "default"}
+  //       size="small"
+  //       variant="outlined"
+  //     />
+  //   ),
+  // },
+  // {
+  //   field: "registrationDate",
+  //   headerName: "Data de Inscrição",
+  //   width: 200,
+  //   valueFormatter: (v: { value?: unknown }) => {
+  //     if (typeof v?.value === "string") {
+  //       return formatDateToBR(v.value);
+  //     }
+  //     return "";
+  //   },
+  // },
 ];
 
 export default function ContemplatedTable({ id }: { id: string }) {
@@ -426,54 +435,84 @@ export default function ContemplatedTable({ id }: { id: string }) {
       }}
     >
       <Box
-        sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: { xs: 1, sm: 2 },
+          mb: 2,
+        }}
       >
-        <Button variant="contained" onClick={handleRefresh} disabled={loading}>
-          {loading ? "Carregando..." : "Atualizar Dados"}
-        </Button>
-
-        <FilterButton<
-          TableDefaultFilters<ContemplatedTableFilters>,
-          ContemplatedTableDateFilters
-        >
-          filters={filtersConfig}
-          defaultValues={filters}
-          onApplyFilters={handleApplyFilters}
-          onReset={resetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
-
-        <SearchField
+        <Box
           sx={{
-            height: "100%",
-            minWidth: "120px",
-            width: "max-content",
-            flexShrink: 0,
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            minWidth: 0,
           }}
-          value={filters.search || ""}
-          onChange={(e) => {
-            updateFilters({ ...filters, search: e });
-          }}
-          placeholder="search-field"
-        />
+        >
+          <Button
+            variant="contained"
+            onClick={handleRefresh}
+            disabled={loading}
+            fullWidth
+            sx={{ height: 40, maxWidth: { md: 150 } }}
+          >
+            {loading ? "Carregando..." : "Atualizar Dados"}
+          </Button>
+        </Box>
 
-        {/* ✅ CORREÇÃO: Usar helper para contar */}
-        {/* {getSelectedIds().length === 1 && (
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            minWidth: { xs: 0, md: 150 },
+            maxWidth: { md: 150 },
+          }}
+        >
+          <FilterButton<
+            TableDefaultFilters<ContemplatedTableFilters>,
+            ContemplatedTableDateFilters
+          >
+            filters={filtersConfig}
+            defaultValues={filters}
+            onApplyFilters={handleApplyFilters}
+            onReset={resetFilters}
+            activeFiltersCount={activeFiltersCount}
+            fullWidth
+          />
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            minWidth: 0,
+          }}
+        >
+          <SearchField
+            sx={{ maxWidth: { md: 250 } }}
+            fullWidth
+            value={filters.search || ""}
+            onChange={(e) => {
+              updateFilters({ ...filters, search: e });
+            }}
+            placeholder="Buscar participante..."
+          />
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            minWidth: 0,
+            maxWidth: { md: 280 },
+          }}
+        >
           <Button
             variant="outlined"
             color="primary"
-            onClick={() => handleOpenMessagesComponent(getSelectedIds())}
+            onClick={() => handleOpenMessagesComponent("all")}
+            fullWidth
+            sx={{ height: 40 }}
           >
-            Enviar mensagem para o contemplado selecionado
+            Enviar mensagens para todos
           </Button>
-        )} */}
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={() => handleOpenMessagesComponent("all")}
-        >
-          Enviar mensagens para todos os contemplados
-        </Button>
+        </Box>
       </Box>
 
       <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
@@ -510,9 +549,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
           // Virtualização otimizada
-          disableBuffer={true}
-          rowBuffer={500}
-          columnBuffer={2}
+          disableVirtualization={true}
           // Ações personalizadas
           actions={[
             {

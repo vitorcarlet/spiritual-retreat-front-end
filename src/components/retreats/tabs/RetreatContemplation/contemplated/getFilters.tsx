@@ -16,7 +16,7 @@ export const getFilters = (): Filters<
             typeField: "selectMultiple",
             name: "status",
             options: [
-              { label: "Não Selecionado", value: "NotSelected" },
+              //{ label: "Não Selecionado", value: "NotSelected" },
               { label: "Selecionado", value: "Selected" },
               { label: "Pagamento Pendente", value: "PendingPayment" },
               { label: "Pagamento Confirmado", value: "PaymentConfirmed" },

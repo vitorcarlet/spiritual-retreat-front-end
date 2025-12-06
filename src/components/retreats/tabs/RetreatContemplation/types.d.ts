@@ -2,7 +2,11 @@ export type ContemplatedTableFilters = {
   name?: string;
   state?: string;
   city?: string;
-  status?: string;
+  status?: string | string[];
+  gender?: string | string[];
+  minAge?: number;
+  maxAge?: number;
+  hasPhoto?: string | string[];
 };
 
 export type ContemplatedTableDateFilters = {

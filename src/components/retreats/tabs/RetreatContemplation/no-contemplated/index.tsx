@@ -27,9 +27,9 @@ import {
   mapRegistrationToParticipant,
   getInitials,
   formatDateToBR,
-  DEFAULT_FILTERS,
 } from "../shared";
 import ParticipantPublicFormTabCreate from "./ParticipantPublicFormTabCreate";
+import { DEFAULT_FILTERS_NO_CONTEMPLATED } from "./shared";
 
 const getNoContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
@@ -178,14 +178,16 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
     width: 140,
     renderCell: (params) => {
       const val = params.value as ContemplatedParticipant["status"];
-      const map: Record<
-        ContemplatedParticipant["status"],
-        { label: string; color: "success" | "default" }
+      const map: Partial<
+        Record<
+          ContemplatedParticipant["status"],
+          { label: string; color: "success" | "default" }
+        >
       > = {
         contemplated: { label: "Contemplado", color: "success" },
         not_contemplated: { label: "Não Contemplado", color: "default" },
       };
-      const cfg = map[val] || map.not_contemplated;
+      const cfg = map[val] ?? { label: "Não Contemplado", color: "default" };
       return (
         <Chip
           label={cfg.label}
@@ -253,7 +255,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
   const modal = useModal();
   const { filters, updateFilters, activeFiltersCount, resetFilters } =
     useUrlFilters<TableDefaultFilters<ContemplatedTableFiltersWithDates>>({
-      defaultFilters: DEFAULT_FILTERS,
+      defaultFilters: DEFAULT_FILTERS_NO_CONTEMPLATED,
       excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
     });
   const {
@@ -326,7 +328,13 @@ export default function NonContemplatedTable({ id }: { id: string }) {
       title: "Criar Novo Participante",
       size: "md",
       customRender: () => (
-        <ParticipantPublicFormTabCreate retreatId={retreatId} />
+        <ParticipantPublicFormTabCreate
+          retreatId={retreatId}
+          onSuccess={() => {
+            modal.close?.();
+            refetch();
+          }}
+        />
       ),
     });
   };
@@ -359,7 +367,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          height: 400,
+          height: { xs: 50, sm: 75, md: 100, lg: 400 },
           width: "100%",
         }}
       >
@@ -446,60 +454,96 @@ export default function NonContemplatedTable({ id }: { id: string }) {
         maxWidth: "100%",
         overflowY: "hidden",
         boxSizing: "border-box",
+        gap: 2,
       }}
     >
       <Box
-        sx={{ mb: 2, display: "flex", gap: 2, height: "10%", minHeight: 40 }}
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: { xs: 1, sm: 2 },
+          alignItems: "center",
+        }}
       >
-        <Button variant="contained" onClick={handleRefresh} disabled={loading}>
-          {loading ? "Carregando..." : "Atualizar Dados"}
-        </Button>
-
-        <FilterButton<
-          TableDefaultFilters<ContemplatedTableFilters>,
-          ContemplatedTableDateFilters
-        >
-          filters={filtersConfig}
-          defaultValues={filters}
-          onApplyFilters={handleApplyFilters}
-          onReset={resetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
-
-        <SearchField
+        <Box
           sx={{
-            height: "100%",
-            minWidth: "120px",
-            width: "max-content",
-            flexShrink: 0,
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
           }}
-          value={filters.search || ""}
-          onChange={(e) => {
-            updateFilters({ ...filters, search: e });
-          }}
-          placeholder="search-field"
-        />
-
-        {/* ✅ CORREÇÃO: Usar helper para contar */}
-        {/* {selectedIds.length > 0 && (
-          <Button variant="outlined" color="primary" onClick={handleBulkAction}>
-            Contemplar em lote ({selectedIds.length})
+        >
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleRefresh}
+            disabled={loading}
+            sx={{ height: 40 }}
+          >
+            {loading ? "Carregando..." : "Atualizar Dados"}
           </Button>
-        )} */}
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => handleCreateNewParticipant(id)}
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+          }}
         >
-          {t("contemplations.no-contemplated.create-new-participant")}
-        </Button>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={handleOpenLottery}
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            onClick={() => handleCreateNewParticipant(id)}
+            sx={{ height: 40 }}
+          >
+            {t("contemplations.no-contemplated.create-new-participant")}
+          </Button>
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+          }}
         >
-          Realizar Sorteio
-        </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            color="secondary"
+            onClick={handleOpenLottery}
+            sx={{ height: 40 }}
+          >
+            Realizar Sorteio
+          </Button>
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+          }}
+        >
+          <FilterButton<
+            TableDefaultFilters<ContemplatedTableFilters>,
+            ContemplatedTableDateFilters
+          >
+            fullWidth
+            filters={filtersConfig}
+            defaultValues={filters}
+            onApplyFilters={handleApplyFilters}
+            onReset={resetFilters}
+            activeFiltersCount={activeFiltersCount}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+          }}
+        >
+          <SearchField
+            value={filters.search || ""}
+            onChange={(e) => {
+              updateFilters({ ...filters, search: e });
+            }}
+            placeholder="search-field"
+          />
+        </Box>
       </Box>
 
       <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
@@ -535,10 +579,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           checkboxSelection={true}
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
-          // Virtualização otimizada
-          //isableBuffer={true}
-          rowBuffer={50000}
-          columnBuffer={50000}
+          disableVirtualization={true}
           // Ações personalizadas
           actions={[
             {
