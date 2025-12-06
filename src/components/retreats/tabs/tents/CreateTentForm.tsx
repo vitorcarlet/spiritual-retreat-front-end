@@ -1,6 +1,17 @@
 "use client";
 
-import { Box, TextField, Button, Stack, CircularProgress } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Button,
+  Stack,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
+} from "@mui/material";
 import { useTranslations } from "next-intl";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,16 +39,16 @@ const createTentSchema = z.object({
     .number()
     .int("Capacidade deve ser um número inteiro")
     .min(1, "Capacidade deve ser no mínimo 1"),
-  notes: z.string().optional().default(""),
+  notes: z.string().default(""),
 });
 
-type CreateTentData = z.infer<typeof createTentSchema>;
+type CreateTentData = z.input<typeof createTentSchema>;
 
 export default function CreateTentForm({
   retreatId,
   onSuccess,
 }: CreateTentFormProps) {
-  const t = useTranslations();
+  const t = useTranslations("create-tent-form");
 
   const {
     control,
@@ -69,7 +80,7 @@ export default function CreateTentForm({
       );
 
       if (response.data) {
-        enqueueSnackbar("Barraca criada com sucesso!", {
+        enqueueSnackbar(t("success"), {
           variant: "success",
         });
         reset();
@@ -79,7 +90,7 @@ export default function CreateTentForm({
       console.error("Erro ao criar barraca:", error);
       const message = axios.isAxiosError(error)
         ? ((error.response?.data as { error?: string })?.error ?? error.message)
-        : "Erro ao criar barraca.";
+        : t("error");
       enqueueSnackbar(message, {
         variant: "error",
         autoHideDuration: 4000,
@@ -103,11 +114,9 @@ export default function CreateTentForm({
               <TextField
                 {...field}
                 fullWidth
-                label={t("tent-number", {
-                  defaultMessage: "Número da Barraca",
-                })}
+                label={t("tent-number")}
                 required
-                placeholder="Ex: 1, 2, 3..."
+                placeholder={t("tent-number-placeholder")}
                 error={!!errors.number}
                 helperText={errors.number?.message}
               />
@@ -118,32 +127,41 @@ export default function CreateTentForm({
             name="category"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                type="number"
-                label={t("tent-category", { defaultMessage: "Categoria" })}
-                required
-                placeholder="0"
-                error={!!errors.category}
-                helperText={errors.category?.message}
-              />
+              <FormControl fullWidth error={!!errors.category}>
+                <InputLabel id="category-label" required>
+                  {t("tent-category")}
+                </InputLabel>
+                <Select
+                  {...field}
+                  labelId="category-label"
+                  label={t("tent-category")}
+                >
+                  <MenuItem value={0}>{t("category-male")}</MenuItem>
+                  <MenuItem value={1}>{t("category-female")}</MenuItem>
+                </Select>
+                {errors.category && (
+                  <FormHelperText>{errors.category.message}</FormHelperText>
+                )}
+              </FormControl>
             )}
           />
 
           <Controller
             name="capacity"
             control={control}
-            render={({ field }) => (
+            render={({ field: { onChange, value, ...field } }) => (
               <TextField
                 {...field}
+                value={value}
+                onChange={(e) => onChange(Number(e.target.value) || 0)}
                 fullWidth
                 type="number"
-                label={t("tent-capacity", { defaultMessage: "Capacidade" })}
+                label={t("tent-capacity")}
                 required
-                placeholder="Ex: 5"
+                placeholder={t("tent-capacity-placeholder")}
                 error={!!errors.capacity}
                 helperText={errors.capacity?.message}
+                inputProps={{ min: 1 }}
               />
             )}
           />
@@ -157,8 +175,8 @@ export default function CreateTentForm({
                 fullWidth
                 multiline
                 rows={3}
-                label={t("tent-notes", { defaultMessage: "Notas" })}
-                placeholder="Adicione observações sobre a barraca..."
+                label={t("tent-notes")}
+                placeholder={t("tent-notes-placeholder")}
                 error={!!errors.notes}
                 helperText={errors.notes?.message}
               />
