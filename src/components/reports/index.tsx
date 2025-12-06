@@ -4,12 +4,12 @@ import { Box, Button, Chip, Typography } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/src/hooks/useModal";
-import { sendRequestClient } from "@/src/lib/sendRequestClient";
 import requestServer from "@/src/lib/requestServer";
 import { useState } from "react";
 import DataTable, { DataTableColumn } from "../table/DataTable";
 import SearchField from "../filters/SearchField";
 import FilterButton from "../filters/FilterButton";
+import DeleteReport from "./DeleteReport";
 import { Report } from "@/src/types/reports";
 import {
   ReportsAllFilters,
@@ -21,6 +21,8 @@ import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useTranslations } from "next-intl";
 import { GridRowSelectionModel } from "@mui/x-data-grid/models";
 import { format } from "date-fns/format";
+import { getUrlByReportType } from "./report/shared";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 type ReportDataRequest = {
   rows: Report[];
@@ -119,10 +121,7 @@ const fetchReports = async () => {
 };
 
 const deleteReport = async (id: string | number) => {
-  const response = sendRequestClient({
-    url: `/reports/${id}`,
-    method: "DELETE",
-  });
+  const response = await apiClient.delete(`/reports/${id}`);
 
   if (!response) {
     throw new Error("Failed to delete report");
@@ -141,6 +140,7 @@ const ReportPage = () => {
     GridRowSelectionModel | undefined
   >(undefined);
   const { filters: filtersConfig } = useReportsFilters();
+
   const handleRefresh = () => {
     setLoading(true);
     setTimeout(() => {
@@ -192,15 +192,15 @@ const ReportPage = () => {
     onConfirmDelete: (reportId: number | string) => void
   ) => {
     modal.open({
-      title: "Excluir Relatório",
+      title: "Deletar Relatório",
       size: "sm",
       customRender: () => (
-        <>
-          <Typography>
-            Tem certeza que deseja excluir o relatório {report.name}?
-          </Typography>
-          <Button onClick={() => onConfirmDelete(report?.id)}>Confirmar</Button>
-        </>
+        <DeleteReport
+          report={report}
+          onConfirmDelete={onConfirmDelete}
+          onClose={() => modal.close()}
+          isLoading={deleteMutation.isPending}
+        />
       ),
     });
   };
@@ -219,7 +219,7 @@ const ReportPage = () => {
     <Box
       sx={{
         p: 2,
-        height: "100%",
+        minHeight: "100%",
         minWidth: "100%",
         display: "flex",
         flexDirection: "column",
@@ -229,45 +229,90 @@ const ReportPage = () => {
       }}
     >
       <Box
-        sx={{ mb: 2, display: "flex", gap: 2, height: "40px", minHeight: 40 }}
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: { xs: 1, sm: 2 },
+          mb: 2,
+        }}
       >
-        <Button variant="contained" onClick={handleRefresh} disabled={loading}>
-          {loading ? "Carregando..." : "Atualizar Dados"}
-        </Button>
-
-        <FilterButton<
-          TableDefaultFilters<ReportsTableFilters>,
-          ReportsTableDateFilters
-        >
-          filters={filtersConfig}
-          defaultValues={filters}
-          onApplyFilters={handleApplyFilters}
-          onReset={resetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
-
-        <SearchField
+        <Box
           sx={{
-            height: "100%",
-            minWidth: "120px",
-            width: "max-content",
-            flexShrink: 0,
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            minWidth: 0,
           }}
-          value={filters.search || ""}
-          onChange={(e) => {
-            updateFilters({ ...filters, search: e });
-          }}
-          placeholder="search-field"
-        />
+        >
+          <Button
+            variant="contained"
+            onClick={handleRefresh}
+            disabled={loading}
+            fullWidth
+            sx={{ height: 40, maxWidth: { md: 150 } }}
+          >
+            {loading ? "Carregando..." : "Atualizar Dados"}
+          </Button>
+        </Box>
 
-        <Button variant="outlined" color="primary" onClick={handleCreateReport}>
-          {t("new-report")}
-        </Button>
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            minWidth: { xs: 0, md: 150 },
+            maxWidth: { md: 150 },
+          }}
+        >
+          <FilterButton<
+            TableDefaultFilters<ReportsTableFilters>,
+            ReportsTableDateFilters
+          >
+            filters={filtersConfig}
+            defaultValues={filters}
+            onApplyFilters={handleApplyFilters}
+            onReset={resetFilters}
+            activeFiltersCount={activeFiltersCount}
+            fullWidth
+          />
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            minWidth: 0,
+          }}
+        >
+          <SearchField
+            sx={{ maxWidth: { md: 250 } }}
+            fullWidth
+            multiline
+            value={filters.search || ""}
+            onChange={(e) => {
+              updateFilters({ ...filters, search: e });
+            }}
+            placeholder="search-field"
+          />
+        </Box>
+
+        <Box
+          sx={{
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            minWidth: 0,
+            maxWidth: { md: 150 },
+          }}
+        >
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleCreateReport}
+            fullWidth
+            sx={{ height: 40 }}
+          >
+            {t("new-report")}
+          </Button>
+        </Box>
       </Box>
 
-      <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
+      <Box sx={{ flexGrow: 1, maxHeight: "900px" }}>
         <DataTable<Report, ReportsAllFilters>
-          disableBuffer={true}
+          disableVirtualization={true}
           rows={reportsArray}
           rowCount={reportsData?.total || 0}
           columns={columns}
@@ -298,9 +343,6 @@ const ReportPage = () => {
           checkboxSelection={true}
           rowSelectionModel={selectedRows}
           onRowSelectionModelChange={setSelectedRows}
-          // Virtualização otimizada
-          rowBuffer={500}
-          columnBuffer={2}
           // Ações personalizadas
           actions={[
             {
@@ -332,59 +374,3 @@ const ReportPage = () => {
 };
 
 export default ReportPage;
-function getUrlByReportType(type: any): string {
-  const t = (
-    typeof type === "string" ? type : String(type || "")
-  ).toLowerCase();
-
-  switch (t) {
-    case "participant":
-    case "participants":
-      return "participant";
-
-    case "family":
-    case "families":
-      return "family";
-
-    case "ribbons":
-      return "ribbons";
-
-    case "tents":
-      return "tents";
-
-    case "fiveMinutesCard":
-    case "fiveminutescard":
-      return "fiveminutescard";
-
-    case "botafora":
-    case "bota-fora":
-    case "exitChecklist":
-      return "botafora";
-
-    case "service":
-    case "service_order":
-    case "service-orders":
-    case "serviceorders":
-    case "service_order_report":
-      return "service";
-
-    case "tent":
-    case "tents":
-      return "tent";
-
-    case "attendance":
-    case "attendance_report":
-      return "attendance";
-
-    case "financial":
-    case "finance":
-    case "financial_report":
-      return "financial";
-
-    // add other known report types here
-
-    default:
-      // fallback route segment when type is unknown
-      return "participant";
-  }
-}

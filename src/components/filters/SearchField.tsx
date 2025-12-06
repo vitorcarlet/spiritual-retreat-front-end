@@ -9,6 +9,8 @@ type SearchFieldProps = {
   onChange?: (value: string) => void;
   placeholder?: string;
   sx?: SxProps<Theme>;
+  fullWidth?: boolean;
+  multiline?: boolean;
 };
 
 const SearchField = ({
@@ -16,6 +18,8 @@ const SearchField = ({
   onChange,
   placeholder,
   sx,
+  fullWidth = false,
+  multiline = false,
 }: SearchFieldProps) => {
   const [localValue, setLocalValue] = useState(value ? value.toString() : "");
 
@@ -28,8 +32,7 @@ const SearchField = ({
   };
   const handleBlur = () => {
     if (hasChangesRef.current) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      onChange ? onChange(textRef.current?.value || "") : null;
+      onChange?.(textRef.current?.value || "");
       hasChangesRef.current = false;
     }
   };
@@ -43,15 +46,16 @@ const SearchField = ({
       (value as string) || (textRef.current?.value as string) || ""
     );
   }, [value]);
-  // Auto-resize width based on text length
-  const inputWidth = Math.max(150, localValue.length * 12 + 40); // min 150px, 12px per char, +40 for icon/padding
 
   return (
     <TextField
       sx={{
+        width: fullWidth ? "100%" : "auto",
+        "& .MuiOutlinedInput-root": {
+          minHeight: 40,
+          alignItems: multiline ? "flex-start" : "center",
+        },
         ...sx,
-        width: inputWidth,
-        transition: "width 0.2s",
       }}
       inputRef={textRef}
       value={localValue}
@@ -59,7 +63,7 @@ const SearchField = ({
       onBlur={handleBlur}
       onFocus={handleFocus}
       onKeyDown={(e) => {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && !multiline) {
           e.preventDefault();
           handleBlur();
         }
@@ -67,11 +71,21 @@ const SearchField = ({
       placeholder={placeholder}
       variant="outlined"
       size="small"
-      fullWidth={false}
+      fullWidth={fullWidth}
+      multiline={multiline}
+      maxRows={4}
       slotProps={{
         input: {
           startAdornment: (
-            <InputAdornment position="start">
+            <InputAdornment
+              position="start"
+              sx={{
+                alignSelf: "center",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
               <Iconify icon="lucide:search" />
             </InputAdornment>
           ),
