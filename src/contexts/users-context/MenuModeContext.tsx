@@ -29,10 +29,11 @@ const MenuModeProvider = ({
     if (!allowEdit) return;
     setMenuMode(value);
   };
+  // Só reseta para "view" se user não tiver permissão
+  // Não reseta baseado no prop "mode" para preservar estado entre navegação
   useEffect(() => {
     if (!allowEdit) setMenuMode("view");
-    setMenuMode(mode);
-  }, [allowEdit, mode]);
+  }, [allowEdit]);
 
   return (
     <MenuModeContext.Provider

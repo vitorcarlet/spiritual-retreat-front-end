@@ -1,9 +1,11 @@
+"use client";
 import { MenuModeProvider } from "@/src/contexts/users-context/MenuModeContext";
 import dynamic from "next/dynamic";
 const RetreatPage = dynamic(
   () => import("@/src/components/retreats/RetreatsPage"),
   {
     loading: () => <div>Loading...</div>,
+    ssr: false,
   }
 );
 export default function Page({ children }: { children: React.ReactNode }) {
