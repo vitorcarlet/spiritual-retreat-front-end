@@ -63,6 +63,7 @@ export interface RetreatFamiliesProps {
   onSaveReorder?: (items: Items) => Promise<void>;
   retreatId: string;
   canEditFamily: boolean;
+  isEditMode: boolean;
   loading: boolean;
 }
 

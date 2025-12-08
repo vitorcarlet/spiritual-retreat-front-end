@@ -55,7 +55,7 @@ export const menuConfig: MenuItem[] = [
         users: ["read"],
       },
       // ✅ Fallback para roles (caso não tenha permission específica)
-      roles: ["admin", "manager"],
+      roles: ["admin"],
     },
   },
   // {
@@ -96,9 +96,9 @@ export const menuConfig: MenuItem[] = [
     path: "/outbox",
     access: {
       permissions: {
-        retreats: ["read"],
+        outbox: ["read"],
       },
-      roles: ["admin", "manager"],
+      roles: ["admin"],
     },
   },
   {

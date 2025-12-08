@@ -31,10 +31,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
 import SectionCard from "./SectionCard";
 import { BackendForm } from "../public/retreats/form/types";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+import apiClient from "@/src/lib/axiosClientInstance";
 import { FormSchemaDefinition } from "./types";
 
 const cloneForm = <T,>(value: T): T => {
@@ -54,19 +51,10 @@ const fetchFormData = async (
   type: "participant" | "service-team"
 ): Promise<BackendForm> => {
   try {
-    const result = await handleApiResponse<BackendForm>(
-      await sendRequestServerVanilla.get(
-        `/api/public/retreats/${retreatId}/form/${type}`,
-        {
-          baseUrl: "http://localhost:3001", // URL do MSW
-        }
-      )
+    const response = await apiClient.get<BackendForm>(
+      `/api/public/retreats/${retreatId}/form/${type}`
     );
-
-    if (result.success && result.data) {
-      return result.data as BackendForm;
-    }
-    return {} as BackendForm;
+    return response.data as BackendForm;
   } catch (error) {
     console.error("Erro ao buscar dados do formulario:", error);
     return {} as BackendForm;
@@ -79,22 +67,13 @@ const sendFormData = async (
   type: string
 ): Promise<BackendForm> => {
   try {
-    const result = await handleApiResponse<BackendForm>(
-      await sendRequestServerVanilla.post(
-        `/api/public/retreats/${retreatId}/form/${type}`,
-        {
-          baseUrl: "http://localhost:3001",
-          payload: schema, // URL do MSW
-        }
-      )
+    const response = await apiClient.post<BackendForm>(
+      `/api/public/retreats/${retreatId}/form/${type}`,
+      schema
     );
-
-    if (result.success && result.data) {
-      return result.data as BackendForm;
-    }
-    return {} as BackendForm;
+    return response.data as BackendForm;
   } catch (error) {
-    console.error("Erro ao buscar dados do formulario:", error);
+    console.error("Erro ao salvar dados do formulario:", error);
     return {} as BackendForm;
   }
 };

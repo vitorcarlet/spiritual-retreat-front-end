@@ -231,9 +231,11 @@ export default function RetreatFamiliesTable({
   onSaveReorder,
   retreatId,
   canEditFamily,
+  isEditMode,
   loading,
 }: RetreatFamiliesProps) {
   const t = useTranslations("family-validation");
+  const canEditFamilyInMode = canEditFamily && isEditMode;
 
   // NOVA ESTRUTURA: arrays só de IDs + mapas O(1)
 
@@ -333,7 +335,9 @@ export default function RetreatFamiliesTable({
         familiesById[fid] = {
           name: fam.name,
           color: fam.color || "",
-          locked: fam.locked,
+          locked: Boolean(
+            typeof fam.locked !== "undefined" ? fam.locked : fam.isLocked
+          ),
         };
         items[fid] =
           fam.members?.map((m) => {
@@ -378,6 +382,14 @@ export default function RetreatFamiliesTable({
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
+
+  useEffect(() => {
+    if (!canEditFamilyInMode) {
+      setFamiliesReorderFlag(false);
+      setHasUnsavedChanges(false);
+      setActiveId(null);
+    }
+  }, [canEditFamilyInMode, setFamiliesReorderFlag]);
 
   // Snapshot do estado "persistido" (inicial ou último sucesso)
   const [savedSnapshot, setSavedSnapshot] = useState<{
@@ -471,7 +483,7 @@ export default function RetreatFamiliesTable({
   }, [compositionRules, items, membersById, familiesById, t]);
 
   const handleSaveReorder = useCallback(async () => {
-    if (!onSaveReorder) return;
+    if (!onSaveReorder || !canEditFamilyInMode) return;
 
     try {
       await onSaveReorder(items);
@@ -494,9 +506,10 @@ export default function RetreatFamiliesTable({
       }
     }
   }, [
-    onSaveReorder,
+    canEditFamilyInMode,
     items,
     memberToContainer,
+    onSaveReorder,
     savedSnapshot,
     setFamiliesReorderFlag,
   ]);
@@ -611,8 +624,8 @@ export default function RetreatFamiliesTable({
             scrollable={scrollable}
             style={containerStyle}
             unstyled={minimal}
-            onRemove={() => handleRemove(containerId)}
-            disabled={familyName.locked} // Disable drag for locked families
+            //onRemove={() => handleRemove(containerId)}
+            disabled={familyName.locked || !canEditFamilyInMode}
           >
             {familyName.locked && (
               <Box
@@ -638,7 +651,11 @@ export default function RetreatFamiliesTable({
                 const meta = membersById[memberId];
                 return (
                   <SortableItem
-                    disabled={isSortingContainer || familyName.locked} // Disable sorting for locked families
+                    disabled={
+                      !canEditFamilyInMode ||
+                      isSortingContainer ||
+                      familyName.locked
+                    }
                     key={memberId}
                     id={memberId}
                     value={meta?.name || String(memberId)}
@@ -657,7 +674,8 @@ export default function RetreatFamiliesTable({
               onView={onView}
               onDelete={onDelete}
               familyId={containerId}
-              canEdit={canEditFamily && !familyName.locked} // Disable edit for locked families
+              canEdit={canEditFamily && !familyName.locked}
+              disableActions={!isEditMode}
             />
             {familyValidationErrors[containerId]?.length ? (
               <Stack spacing={0.5} mt={1}>
@@ -772,6 +790,9 @@ export default function RetreatFamiliesTable({
           },
         }}
         onDragStart={({ active }) => {
+          if (!canEditFamilyInMode) {
+            return;
+          }
           // Check if the item being dragged belongs to a locked family
           const containerId = memberToContainer[active.id];
           const isLocked = containerId && familiesById[containerId]?.locked;
@@ -787,6 +808,9 @@ export default function RetreatFamiliesTable({
           setFamiliesReorderFlag?.(true);
         }}
         onDragOver={({ active, over }) => {
+          if (!canEditFamilyInMode) {
+            return;
+          }
           // Check if dragging from or to a locked family
           const sourceContainerId = memberToContainer[active.id];
           const targetContainerId =
@@ -814,6 +838,9 @@ export default function RetreatFamiliesTable({
           });
         }}
         onDragEnd={({ active, over }) => {
+          if (!canEditFamilyInMode) {
+            return;
+          }
           // Check if dragging from or to a locked family
           const sourceContainerId = memberToContainer[active.id];
           const targetContainerId =
@@ -849,6 +876,9 @@ export default function RetreatFamiliesTable({
         }}
         cancelDrop={cancelDrop}
         onDragCancel={() => {
+          if (!canEditFamilyInMode) {
+            return;
+          }
           onDragCancel();
           // Reset reorder flag when drag is cancelled
           setFamiliesReorderFlag?.(false);
@@ -947,15 +977,19 @@ export default function RetreatFamiliesTable({
           </DragOverlay>,
           document.body
         )}
-        {trashable && activeId && !containers.includes(activeId) ? (
+        {trashable &&
+        canEditFamilyInMode &&
+        activeId &&
+        !containers.includes(activeId) ? (
           <Trash id={TRASH_ID} />
         ) : null}
       </DndContext>
 
       {/* Floating Save Button */}
-      <Fade in={hasUnsavedChanges}>
+      <Fade in={hasUnsavedChanges && canEditFamilyInMode}>
         <Fab
           color="primary"
+          disabled={!canEditFamilyInMode}
           onClick={handleSaveReorder}
           sx={{
             position: "absolute",
@@ -1052,16 +1086,17 @@ export default function RetreatFamiliesTable({
           onDelete={onDelete}
           familyId={containerId}
           canEdit={canEditFamily && !familyName.locked}
+          disableActions={!isEditMode}
         />
       </Container>
     );
   }
 
-  function handleRemove(containerID: UniqueIdentifier) {
-    setContainers((containers) =>
-      containers.filter((id) => id !== containerID)
-    );
-  }
+  // function handleRemove(containerID: UniqueIdentifier) {
+  //   setContainers((containers) =>
+  //     containers.filter((id) => id !== containerID)
+  //   );
+  // }
 
   function getNextContainerId() {
     const containerIds = Object.keys(items);

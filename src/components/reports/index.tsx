@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/src/hooks/useModal";
 import requestServer from "@/src/lib/requestServer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DataTable, { DataTableColumn } from "../table/DataTable";
 import SearchField from "../filters/SearchField";
 import FilterButton from "../filters/FilterButton";
@@ -23,6 +23,8 @@ import { GridRowSelectionModel } from "@mui/x-data-grid/models";
 import { format } from "date-fns/format";
 import { getUrlByReportType } from "./report/shared";
 import apiClient from "@/src/lib/axiosClientInstance";
+import { useSession } from "next-auth/react";
+import getPermission from "@/src/utils/getPermission";
 
 type ReportDataRequest = {
   rows: Report[];
@@ -168,6 +170,21 @@ const ReportPage = () => {
     queryFn: fetchReports,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const { data: sessionData } = useSession();
+  const [hasDeletePermission, setHasDeletePermission] = useState(false);
+
+  useEffect(() => {
+    if (sessionData && sessionData.user) {
+      setHasDeletePermission(
+        getPermission({
+          permissions: sessionData.user.permissions,
+          permission: "reports.delete",
+          role: sessionData.user.role,
+        })
+      );
+    }
+  }, [sessionData]);
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -357,6 +374,7 @@ const ReportPage = () => {
               label: "Deletar relatório",
               onClick: (report) => handleDeleteReport(report, onConfirmDelete),
               color: "primary",
+              disabled: () => !hasDeletePermission,
               //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
           ]}

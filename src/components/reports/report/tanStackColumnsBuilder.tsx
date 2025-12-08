@@ -94,6 +94,17 @@ const handlers: Record<
         : "";
     },
   }),
+  registrationDate: (d) => ({
+    accessorKey: "registrationDate",
+    header: d.headerName || "Data de Inscrição",
+    size: d.width ?? 160,
+    cell: (info) => {
+      const value = info.getValue();
+      return value
+        ? format(new Date(value as string), "dd/MM/yyyy - HH:mm")
+        : "";
+    },
+  }),
   retreatName: (d) => ({
     accessorKey: "retreatName",
     header: d.headerName || "Retiro",

@@ -178,6 +178,7 @@ export default function RetreatTentsTable({
   setTentsReorderFlag,
   onSaveReorder,
   canEditTent,
+  isEditMode,
 }: RetreatTentsTableProps) {
   const t = useTranslations("tents");
 
@@ -252,6 +253,14 @@ export default function RetreatTentsTable({
     memberToContainer: MemberToContainer;
   } | null>(null);
   const [clonedItems, setClonedItems] = useState<Items | null>(null);
+
+  const canEditTentInMode = canEditTent && isEditMode;
+
+  useEffect(() => {
+    if (!isEditMode) {
+      setTentsReorderFlag?.(false);
+    }
+  }, [isEditMode, setTentsReorderFlag]);
 
   const isSortingContainer =
     activeId != null ? containers.includes(activeId) : false;
@@ -427,6 +436,7 @@ export default function RetreatTentsTable({
               onDelete={onDelete}
               tentId={containerId}
               canEdit={canEditTent}
+              disableActions={!canEditTentInMode}
             />
             {tentMeta ? (
               <Stack spacing={0.5} mt={1} alignItems="center">
@@ -495,6 +505,7 @@ export default function RetreatTentsTable({
           },
         }}
         onDragStart={({ active }) => {
+          if (!canEditTentInMode) return;
           setActiveId(active.id);
           setClonedItems(items);
           setTentsReorderFlag?.(true);
@@ -527,6 +538,7 @@ export default function RetreatTentsTable({
         }}
         cancelDrop={cancelDrop}
         onDragCancel={() => {
+          if (!canEditTentInMode) return;
           onDragCancel();
           setTentsReorderFlag?.(false);
         }}
@@ -633,6 +645,7 @@ export default function RetreatTentsTable({
         <Fab
           color="primary"
           onClick={handleSaveReorder}
+          disabled={!canEditTentInMode}
           sx={{
             position: "absolute",
             bottom: 24,
@@ -710,6 +723,7 @@ export default function RetreatTentsTable({
           tentId={containerId}
           canEdit={canEditTent}
           onDelete={onDelete}
+          disableActions={!canEditTentInMode}
         />
       </Container>
     );

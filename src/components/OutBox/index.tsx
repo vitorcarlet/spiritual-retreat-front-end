@@ -316,6 +316,7 @@ export default function RetreatOutboxTab() {
       sx={{
         p: 2,
         height: "100%",
+        minHeight: 1000,
         display: "flex",
         flexDirection: "column",
         gap: 3,
@@ -391,7 +392,14 @@ export default function RetreatOutboxTab() {
         </Button>
       </Stack>
 
-      <Box sx={{ flex: 1, minHeight: { xs: 1500, md: 0 } }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          minHeight: 1000,
+        }}
+      >
         <TanStackTable<OutboxMessage & Record<string, unknown>>
           data={rows as (OutboxMessage & Record<string, unknown>)[]}
           columns={
@@ -403,7 +411,6 @@ export default function RetreatOutboxTab() {
             "table.subtitle",
             "Acompanhe o processamento de notificações."
           )}
-          maxHeight="100%"
           enablePagination
           manualPagination
           pageCount={Math.ceil((tableData?.total ?? 0) / filters.pageLimit)}

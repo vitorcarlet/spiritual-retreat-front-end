@@ -19,7 +19,7 @@ export function useMenuAccess() {
   }, [session]);
 
   const isLoading = status === "loading";
-
+  console.log("useMenuAccess - status:", status, "user:", user);
   // Melhor tratamento do erro de autenticação
   useEffect(() => {
     if (status === "unauthenticated") {

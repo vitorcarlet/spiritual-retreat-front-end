@@ -30,6 +30,8 @@ import {
 } from "../shared";
 import ParticipantPublicFormTabCreate from "./ParticipantPublicFormTabCreate";
 import { DEFAULT_FILTERS_NO_CONTEMPLATED } from "./shared";
+import { useContemplationPermissions } from "../hooks/useContemplationPermissions";
+import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 
 const getNoContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
@@ -269,6 +271,9 @@ export default function NonContemplatedTable({ id }: { id: string }) {
     //staleTime: 5 * 60 * 1000, // 5 minutes,
   });
   const session = useSession();
+  const { canEditRetreat } = useContemplationPermissions();
+  const { menuMode } = useMenuMode();
+  const menuModeBoolean = menuMode === "edit" ? true : false;
 
   const [selectedRows, setSelectedRows] = useState<
     GridRowSelectionModel | undefined
@@ -318,6 +323,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
           participantId={participantId}
           onSubmit={editParticipant}
           retreatId={id}
+          menuMode={menuMode}
         />
       ),
     });
@@ -491,6 +497,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
             variant="contained"
             color="primary"
             onClick={() => handleCreateNewParticipant(id)}
+            disabled={!canEditRetreat || !menuModeBoolean}
             sx={{ height: 40 }}
           >
             {t("contemplations.no-contemplated.create-new-participant")}
@@ -507,6 +514,7 @@ export default function NonContemplatedTable({ id }: { id: string }) {
             variant="contained"
             color="secondary"
             onClick={handleOpenLottery}
+            disabled={!canEditRetreat || !menuModeBoolean}
             sx={{ height: 40 }}
           >
             Realizar Sorteio
@@ -585,22 +593,20 @@ export default function NonContemplatedTable({ id }: { id: string }) {
             {
               icon: "lucide:eye",
               label: "Ver Mais",
-              onClick: (participant) =>
+              onClick: (participant: ContemplatedParticipant) =>
                 handleOpenParticipantModal(String(participant.id)),
-              color: "primary",
+              color: "primary" as const,
             },
-            {
-              icon: "lucide:check-circle",
-              label: "Contemplar",
-              onClick: handleContemplate,
-              color: "secondary",
-            },
-            // {
-            //   icon: "lucide:trash-2",
-            //   label: "Excluir participante",
-            //   onClick: handleDeleteParticipant,
-            //   color: "error",
-            // },
+            ...(canEditRetreat && menuModeBoolean
+              ? [
+                  {
+                    icon: "lucide:check-circle",
+                    label: "Contemplar",
+                    onClick: handleContemplate,
+                    color: "secondary" as const,
+                  },
+                ]
+              : []),
           ]}
           // Eventos
           // onRowDoubleClick={(params) => {

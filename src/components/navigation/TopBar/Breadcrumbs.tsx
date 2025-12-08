@@ -127,9 +127,38 @@ const resolveBreadcrumbLabel = (
     },
   };
 
+  const hierarchicalRoutes: Record<string, { label: string; icon: string }> = {
+    "retreats/contemplations/contemplated": {
+      label: "Contemplados",
+      icon: "mdi:meditation",
+    },
+    "retreats/contemplations/no-contemplated": {
+      label: "Não Contemplados",
+      icon: "mdi:check-circle",
+    },
+    "retreats/contemplations/service-unassgined": {
+      label: "Sem Equipe de Serviço",
+      icon: "mdi:account-hard-hat",
+    },
+    "retreats/contemplations/service-confirmed": {
+      label: "Equipe de Serviço Confirmada",
+      icon: "mdi:account-check",
+    },
+  };
+
   // Verificar se existe uma rota contextual
   if (previousSegment && contextualRoutes[previousSegment]?.[segment]) {
     return contextualRoutes[previousSegment][segment];
+  }
+
+  // ===== REGRA 2.1: Rotas hierárquicas (multi-nível) =====
+  const normalizedKey = context.pathSegments
+    .slice(0, context.index + 1)
+    .filter((seg) => !UUID_REGEX.test(seg) && !NUMERIC_ID_REGEX.test(seg))
+    .join("/");
+
+  if (normalizedKey && hierarchicalRoutes[normalizedKey]) {
+    return hierarchicalRoutes[normalizedKey];
   }
 
   // ===== REGRA 3: Rotas específicas (independente do contexto) =====

@@ -410,16 +410,32 @@ export default function DynamicFilters<T, F>({
                 );
                 handleFilterChange(name, serialized);
               }}
-              renderTags={(vals, getTagProps) =>
-                (vals as any[]).map((option, index) => (
-                  // eslint-disable-next-line react/jsx-key
-                  <Chip
-                    label={getOptionLabelSafe(option, name)}
-                    size="small"
-                    {...getTagProps({ index })}
-                  />
-                ))
+              renderValue={(vals: readonly string[], getItemsProps) =>
+                vals.map((option, index) => {
+                  const { key, ...tagProps } = getItemsProps({ index });
+                  return (
+                    <Chip
+                      key={key}
+                      label={getOptionLabelSafe(option, name)}
+                      size="small"
+                      {...tagProps}
+                    />
+                  );
+                })
               }
+              // renderTags={(vals, getTagProps) =>
+              //   (vals as any[]).map((option, index) => {
+              //     const { key, ...tagProps } = getTagProps({ index });
+              //     return (
+              //       <Chip
+              //         key={key}
+              //         label={getOptionLabelSafe(option, name)}
+              //         size="small"
+              //         {...tagProps}
+              //       />
+              //     );
+              //   })
+              // }
               renderInput={(params) => (
                 <TextField
                   {...params}

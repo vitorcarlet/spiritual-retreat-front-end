@@ -7,6 +7,7 @@ import type { RetreatsCardTableFilters } from "@/src/components/retreats/types";
 interface ServiceTeamActionBarProps {
   hasCreatePermission: boolean;
   isReordering: boolean;
+  isEditMode: boolean;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
   activeFiltersCount: number;
   //filtersConfig: any;
@@ -23,6 +24,7 @@ interface ServiceTeamActionBarProps {
 export default function ServiceTeamActionBar({
   hasCreatePermission,
   isReordering,
+  isEditMode,
   onCreateTeam,
   onAddParticipant,
   onConfigure,
@@ -48,25 +50,29 @@ export default function ServiceTeamActionBar({
           <Button
             variant="contained"
             onClick={onCreateTeam}
-            disabled={isReordering}
+            disabled={isReordering || !isEditMode}
           >
             {t("create-new-team")}
           </Button>
           <Button
             variant="contained"
             onClick={onAddParticipant}
-            disabled={isReordering}
+            disabled={isReordering || !isEditMode}
           >
             {t("add-member-to-team")}
           </Button>
           <Button
             variant="contained"
             onClick={onConfigure}
-            disabled={isReordering}
+            disabled={isReordering || !isEditMode}
           >
             {t("service-space-configurations")}
           </Button>
-          <Button variant="contained" onClick={onLock} disabled={isReordering}>
+          <Button
+            variant="contained"
+            onClick={onLock}
+            disabled={isReordering || !isEditMode}
+          >
             {t("lock.button", {
               defaultMessage: "Lock service teams",
             })}

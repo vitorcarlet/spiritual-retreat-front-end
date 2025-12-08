@@ -12,14 +12,14 @@ import { ModalProvider } from "@/src/contexts/ModalContext";
 import QueryClientProviderWrapper from "@/src/providers/QueryClientProvider";
 import { getLocale } from "next-intl/server";
 
-import { initMocks } from "@/src/mocks";
-import { MSWProvider } from "@/src/providers/MSWProvider";
+// import { initMocks } from "@/src/mocks";
+// import { MSWProvider } from "@/src/providers/MSWProvider";
 
-if (process.env.NODE_ENV === "development") {
-  if (typeof window !== "undefined") {
-    initMocks();
-  }
-}
+// if (process.env.NODE_ENV === "development") {
+//   if (typeof window !== "undefined") {
+//     initMocks();
+//   }
+// }
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -55,10 +55,10 @@ export default async function RootLayout({
               <AppRouterCacheProvider options={{ enableCssLayer: true }}>
                 <ThemeMuiProvider>
                   <NextIntlClientProvider locale={locale ?? realLocale}>
-                    <MSWProvider>
-                      <ModalProvider>{children}</ModalProvider>
-                      {/* <ToastContainer /> */}
-                    </MSWProvider>
+                    {/* <MSWProvider> */}
+                    <ModalProvider>{children}</ModalProvider>
+                    {/* <ToastContainer /> */}
+                    {/* </MSWProvider> */}
                   </NextIntlClientProvider>
                 </ThemeMuiProvider>
               </AppRouterCacheProvider>

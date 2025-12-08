@@ -342,7 +342,7 @@ export default function CreateGroupsForm({
       {/* Seção 2: Enviar Convites */}
       <Card>
         <CardHeader
-          title="Enviar Convites de Grupos"
+          title="Criar Grupos Separadamente"
           subheader={`${selectedFamilies.size} família(s) selecionada(s)`}
         />
         <CardContent>

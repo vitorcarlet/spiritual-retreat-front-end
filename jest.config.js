@@ -19,6 +19,7 @@ const customJestConfig = {
     // Handle module aliases (this will be automatically configured for you soon)
     "^@/(.*)$": "<rootDir>/$1",
     "^@/src/(.*)$": "<rootDir>/src/$1",
+    "^jose$": "<rootDir>/__mocks__/jose.ts",
 
     // Handle CSS imports (with CSS modules)
     "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy",
@@ -55,7 +56,7 @@ const customJestConfig = {
   },
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/"],
   transformIgnorePatterns: [
-    "/node_modules/",
+    "/node_modules/(?!(jose)/)",
     "^.+\\.module\\.(css|sass|scss)$",
   ],
   globals: {

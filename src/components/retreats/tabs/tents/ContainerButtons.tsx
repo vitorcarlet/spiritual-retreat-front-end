@@ -12,6 +12,7 @@ interface ContainerButtonsProps {
   onView: (tentId: UniqueIdentifier) => void;
   onDelete: (tentId: UniqueIdentifier) => void;
   canEdit: boolean;
+  disableActions?: boolean;
 }
 
 export default function ContainerButtons({
@@ -20,6 +21,7 @@ export default function ContainerButtons({
   onView,
   onDelete,
   canEdit,
+  disableActions = false,
 }: ContainerButtonsProps) {
   const t = useTranslations("tent-details");
   return (
@@ -40,6 +42,7 @@ export default function ContainerButtons({
             variant="outlined"
             startIcon={<Edit />}
             onClick={() => onEdit(tentId)}
+            disabled={disableActions}
             sx={{ minWidth: "auto" }}
           >
             {t("edit")}
@@ -50,6 +53,7 @@ export default function ContainerButtons({
             color="error"
             startIcon={<Delete />}
             onClick={() => onDelete(tentId)}
+            disabled={disableActions}
             sx={{ minWidth: "auto" }}
           >
             {t("delete")}

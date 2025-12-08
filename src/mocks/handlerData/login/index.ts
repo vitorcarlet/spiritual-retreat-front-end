@@ -4,9 +4,9 @@ export const createUserMock = (roleType: UserRoles): UserObject => {
   const baseUser = {
     id: 1,
     email: "admin@email.com",
-    name: "Vitor Admin",
+    name: "Vitor MOCK",
     first_name: "Vitor",
-    last_name: "Admin",
+    last_name: "MOCK",
     birth: "1990-01-01",
     cpf: "123.456.789-00",
     city: "Videira",

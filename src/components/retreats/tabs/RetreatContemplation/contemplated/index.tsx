@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { Avatar, Box, Button, Chip, Stack } from "@mui/material";
+import React, { useMemo, useState } from "react";
+import { Avatar, Box, Button, Chip, Stack, useMediaQuery } from "@mui/material";
 import { DataTable, DataTableColumn } from "@/src/components/table/DataTable";
 import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
+import { useTheme } from "@mui/material/styles";
 //import ContemplatedummaryModal from "../ContemplatedummaryModal";
 import { getFilters } from "./getFilters";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
@@ -30,6 +31,8 @@ import {
   getInitials,
   DEFAULT_FILTERS,
 } from "../shared";
+import { useContemplationPermissions } from "../hooks/useContemplationPermissions";
+import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 
 const getContemplated = async (
   filters: TableDefaultFilters<ContemplatedTableFiltersWithDates>,
@@ -94,8 +97,11 @@ const getContemplated = async (
   }
 };
 
-// Definir as colunas da tabela
-const columns: DataTableColumn<ContemplatedParticipant>[] = [
+// Definir as colunas da tabela com suporte a tamanhos dinâmicos
+const buildColumns = (
+  avatarSize: number,
+  photoMinWidth: number
+): DataTableColumn<ContemplatedParticipant>[] => [
   {
     field: "id",
     headerName: "ID",
@@ -106,18 +112,23 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
     field: "photo",
     headerName: "Foto",
     flex: 1,
-    minWidth: 250,
+    minWidth: photoMinWidth,
     renderCell: (params) => (
       <Stack
         direction="row"
         spacing={1}
         alignItems="center"
+        justifyContent="flex-start"
         sx={{ minWidth: 0 }}
       >
         <Avatar
           src={params.row.photoUrl}
           alt={params.row.name}
-          sx={{ width: 200, height: 200 }}
+          sx={{
+            width: avatarSize,
+            height: avatarSize,
+            flexShrink: 0,
+          }}
         >
           {!params.row.photoUrl && getInitials(params.row.name)}
         </Avatar>
@@ -176,56 +187,6 @@ const columns: DataTableColumn<ContemplatedParticipant>[] = [
       );
     },
   },
-  // {
-  //   field: "paymentStatus",
-  //   headerName: "Pagamento",
-  //   width: 150,
-  //   renderCell: (params) => {
-  //     const val = params.value as ContemplatedParticipant["paymentStatus"];
-  //     const map: Record<
-  //       ContemplatedParticipant["paymentStatus"],
-  //       { label: string; color: "success" | "warning" | "error" }
-  //     > = {
-  //       paid: { label: "Pago", color: "success" },
-  //       pending: { label: "Pendente", color: "warning" },
-  //       overdue: { label: "Atrasado", color: "error" },
-  //     };
-  //     const cfg = map[val] || map.pending;
-  //     return (
-  //       <Chip
-  //         label={cfg.label}
-  //         color={cfg.color}
-  //         size="small"
-  //         variant="outlined"
-  //       />
-  //     );
-  //   },
-  // },
-  // {
-  //   field: "participation",
-  //   headerName: "Participação",
-  //   width: 150,
-  //   type: "boolean",
-  //   renderCell: (params) => (
-  //     <Chip
-  //       label={params.value ? "Presente" : "Ausente"}
-  //       color={params.value ? "primary" : "default"}
-  //       size="small"
-  //       variant="outlined"
-  //     />
-  //   ),
-  // },
-  // {
-  //   field: "registrationDate",
-  //   headerName: "Data de Inscrição",
-  //   width: 200,
-  //   valueFormatter: (v: { value?: unknown }) => {
-  //     if (typeof v?.value === "string") {
-  //       return formatDateToBR(v.value);
-  //     }
-  //     return "";
-  //   },
-  // },
 ];
 
 export default function ContemplatedTable({ id }: { id: string }) {
@@ -245,7 +206,21 @@ export default function ContemplatedTable({ id }: { id: string }) {
     queryFn: () => getContemplated(filters, id),
     // staleTime: 5 * 60 * 1000, // 5 minutes,
   });
+  const { menuMode } = useMenuMode();
+  const menuModeBoolean = menuMode === "edit" ? true : false;
   const session = useSession();
+  const { canEditRetreat } = useContemplationPermissions();
+  const theme = useTheme();
+  const isSmDown = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMdDown = useMediaQuery(theme.breakpoints.down("md"));
+  const avatarSize = isSmDown ? 56 : isMdDown ? 96 : 160;
+  const photoMinWidth = isSmDown ? 110 : isMdDown ? 180 : 250;
+  const dynamicRowHeight = Math.max(avatarSize + 24, 96);
+
+  const columns = useMemo(
+    () => buildColumns(avatarSize, photoMinWidth),
+    [avatarSize, photoMinWidth]
+  );
 
   // ✅ CORREÇÃO: Usar o tipo correto
   const [selectedRows, setSelectedRows] = useState<
@@ -253,17 +228,6 @@ export default function ContemplatedTable({ id }: { id: string }) {
   >(undefined);
   const [loading, setLoading] = useState(false);
   const filtersConfig = getFilters();
-
-  // ✅ Helper para obter IDs selecionados
-  // const getSelectedIds = (): GridRowId[] => {
-  //   if (Array.isArray(selectedRows)) {
-  //     return selectedRows;
-  //   }
-  //   if (typeof selectedRows === "object" && "ids" in selectedRows) {
-  //     return Array.from(selectedRows.ids) || [];
-  //   }
-  //   return [];
-  // };
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -273,12 +237,6 @@ export default function ContemplatedTable({ id }: { id: string }) {
       setLoading(false);
     }
   };
-
-  // const handleFiltersChange = (
-  //   newFilters: TableDefaultFilters<RetreatsCardTableFilters>
-  // ) => {
-  //   updateFilters({ ...filters, ...newFilters });
-  // };
 
   const handleApplyFilters = (
     newFilters: Partial<TableDefaultFilters<Record<string, unknown>>>
@@ -507,6 +465,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
             variant="outlined"
             color="primary"
             onClick={() => handleOpenMessagesComponent("all")}
+            disabled={!canEditRetreat || !menuModeBoolean}
             fullWidth
             sx={{ height: 40 }}
           >
@@ -526,7 +485,7 @@ export default function ContemplatedTable({ id }: { id: string }) {
           subtitle="Lista completa de usuários do sistema"
           autoWidth={true}
           autoHeight={true}
-          rowHeight={200}
+          rowHeight={dynamicRowHeight}
           // Paginação
           width={1200}
           height={600}
@@ -555,23 +514,27 @@ export default function ContemplatedTable({ id }: { id: string }) {
             {
               icon: "lucide:eye",
               label: "Ver Mais",
-              onClick: (participant) =>
+              onClick: (participant: ContemplatedParticipant) =>
                 handleOpenParticipantForm(String(participant.id), id),
-              color: "primary",
+              color: "primary" as const,
             },
-            {
-              icon: "lucide:send",
-              label: "Enviar Mensagem",
-              onClick: (participant) =>
-                handleOpenMessagesComponent([participant.id]),
-              color: "primary",
-            },
-            {
-              icon: "lucide:x-circle",
-              label: "Remover Contemplação",
-              onClick: handleRemoveContemplation,
-              color: "error",
-            },
+            ...(canEditRetreat && menuModeBoolean
+              ? [
+                  {
+                    icon: "lucide:send",
+                    label: "Enviar Mensagem",
+                    onClick: (participant: ContemplatedParticipant) =>
+                      handleOpenMessagesComponent([participant.id]),
+                    color: "primary" as const,
+                  },
+                  {
+                    icon: "lucide:x-circle",
+                    label: "Remover Contemplação",
+                    onClick: handleRemoveContemplation,
+                    color: "error" as const,
+                  },
+                ]
+              : []),
           ]}
           // Eventos
           // onRowDoubleClick={(params) => {

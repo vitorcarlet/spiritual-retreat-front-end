@@ -91,53 +91,53 @@ export const handlers = [
     return HttpResponse.json({ access_token: "1234" }, { status: 200 });
   }),
 
-  http.post(`${API_BASE_URL}/login`, async ({ request }) => {
-    const { email, password } = (await request.json()) as LoginRequest;
+  // http.post(`${API_BASE_URL}/login`, async ({ request }) => {
+  //   const { email, password } = (await request.json()) as LoginRequest;
 
-    if (!email || !password) {
-      return HttpResponse.json(
-        { error: "Missing email or password" },
-        { status: 400 }
-      );
-    }
+  //   if (!email || !password) {
+  //     return HttpResponse.json(
+  //       { error: "Missing email or password" },
+  //       { status: 400 }
+  //     );
+  //   }
 
-    // ✅ Diferentes usuários com diferentes roles
-    let user: UserObject;
+  //   // ✅ Diferentes usuários com diferentes roles
+  //   let user: UserObject;
 
-    if (email === "admin@email.com" && password === "123") {
-      user = createUserMock("admin");
-    } else if (email === "manager@email.com" && password === "123") {
-      user = createUserMock("manager");
-    } else if (email === "consultant@email.com" && password === "123") {
-      user = createUserMock("consultant");
-    } else if (email === "participant@email.com" && password === "123") {
-      user = createUserMock("participant");
-    } else if (email === "participant2@email.com" && password === "123") {
-      user = createUserMock("participant");
-    } else {
-      return HttpResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
-      );
-    }
+  //   if (email === "admin@email.com" && password === "123") {
+  //     user = createUserMock("admin");
+  //   } else if (email === "manager@email.com" && password === "123") {
+  //     user = createUserMock("manager");
+  //   } else if (email === "consultant@email.com" && password === "123") {
+  //     user = createUserMock("consultant");
+  //   } else if (email === "participant@email.com" && password === "123") {
+  //     user = createUserMock("participant");
+  //   } else if (email === "participant2@email.com" && password === "123") {
+  //     user = createUserMock("participant");
+  //   } else {
+  //     return HttpResponse.json(
+  //       { error: "Invalid credentials" },
+  //       { status: 401 }
+  //     );
+  //   }
 
-    const mock_data: BackendJWT = {
-      access_token: create_access_token(user),
-      refresh_token: create_refresh_token(user),
-    };
+  //   const mock_data: BackendJWT = {
+  //     access_token: create_access_token(user),
+  //     refresh_token: create_refresh_token(user),
+  //   };
 
-    return HttpResponse.json(
-      {
-        message: "Login successful",
-        success: true,
-        access_token: mock_data.access_token,
-        refresh_token: mock_data.refresh_token,
-        isNonCodeConfirmed: user.role === "participant" ? true : false,
-        user: user.role === "participant" ? { id: user.id } : user,
-      },
-      { status: 200 }
-    );
-  }),
+  //   return HttpResponse.json(
+  //     {
+  //       message: "Login successful",
+  //       success: true,
+  //       access_token: mock_data.access_token,
+  //       refresh_token: mock_data.refresh_token,
+  //       isNonCodeConfirmed: user.role === "participant" ? true : false,
+  //       user: user.role === "participant" ? { id: user.id } : user,
+  //     },
+  //     { status: 200 }
+  //   );
+  // }),
 
   http.post(`${API_BASE_URL}/verify-code`, async ({ request }) => {
     const { email, code } = (await request.json()) as {

@@ -715,13 +715,17 @@ const RetreatEditPage = ({
                     setImagesToDelete([]);
                     setNewImages([]);
                   }}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isReadOnly}
                 >
                   Cancelar
                 </Button>
               </>
             )}
-            <Button type="submit" variant="contained" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isSubmitting || isReadOnly}
+            >
               {isSubmitting
                 ? "Salvando..."
                 : isCreating

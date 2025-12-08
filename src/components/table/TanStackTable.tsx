@@ -579,7 +579,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
   enableColumnResizing = true,
   onRowClick,
   onRowDoubleClick,
-  maxHeight = 600,
+  //maxHeight = 600,
   stickyHeader = true,
 }: TanStackTableProps<T>) {
   const [globalFilter, setGlobalFilter] = useState("");
@@ -713,7 +713,15 @@ export function TanStackTable<T extends Record<string, unknown>>({
   const selectedCount = Object.keys(rowSelection).length;
 
   return (
-    <Paper sx={{ width: "100%", height: "100%", overflow: "hidden" }}>
+    <Paper
+      sx={{
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Header */}
       {(title || subtitle) && (
         <Box sx={{ p: 2, pb: 1 }}>
@@ -734,6 +742,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
           gap: 2,
           flexWrap: "wrap",
           alignItems: "center",
+          flexShrink: 0,
         }}
       >
         {/* Global Filter */}
@@ -793,7 +802,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
       </Box>
 
       {/* Table */}
-      <TableContainer sx={{ maxHeight }}>
+      <TableContainer sx={{ flex: 1, overflow: "auto" }}>
         <Table stickyHeader={stickyHeader} sx={{ tableLayout: "fixed" }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -941,7 +950,18 @@ export function TanStackTable<T extends Record<string, unknown>>({
 
       {/* Pagination */}
       {enablePagination && (
-        <Box sx={{ display: "flex", alignItems: "center", px: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            px: 2,
+            py: 1,
+            flexShrink: 0,
+            borderTop: "1px solid",
+            borderColor: "divider",
+            bg: "background.paper",
+          }}
+        >
           <Stack direction="row" spacing={1} sx={{ flexGrow: 1 }}>
             <Typography variant="body2" color="text.secondary">
               Total: {totalRows} registros

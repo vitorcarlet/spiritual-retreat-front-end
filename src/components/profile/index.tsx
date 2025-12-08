@@ -20,10 +20,7 @@ import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldM
 import { UserObject, UserRoles } from "next-auth";
 import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+import apiClient from "@/src/lib/axiosClientInstance";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import LocationField from "../fields/LocalizationFields/LocationField";
 import { useModal } from "@/src/hooks/useModal";
@@ -100,15 +97,12 @@ const UserEditPage = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await handleApiResponse<UserObject>(
-        await sendRequestServerVanilla.put(`/api/user/${user.id}`, formData)
+      const response = await apiClient.put<UserObject>(
+        `/api/user/${user.id}`,
+        formData
       );
 
-      if (res.error) {
-        throw new Error(res.error || "Falha ao atualizar usuário");
-      }
-
-      const updatedUser = res.data ?? null;
+      const updatedUser = response.data ?? null;
       if (updatedUser) {
         setFormData(mapUserToFormData(updatedUser));
         if (update) {
@@ -126,7 +120,7 @@ const UserEditPage = () => {
           : "Ocorreu um erro. Tente novamente.";
 
       enqueueSnackbar(message, {
-        variant: "errorMUI",
+        variant: "error",
       });
       console.error("User submit error:", error);
     } finally {

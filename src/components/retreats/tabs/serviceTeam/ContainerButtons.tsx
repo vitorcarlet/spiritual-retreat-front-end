@@ -14,6 +14,7 @@ interface ContainerButtonsProps {
   familyId: UniqueIdentifier;
   canEdit: boolean;
   reorderFlag: boolean;
+  disableActions?: boolean;
   validationError?: ValidationError;
 }
 
@@ -24,6 +25,7 @@ export default function ContainerButtons({
   familyId,
   canEdit,
   reorderFlag,
+  disableActions = false,
   validationError,
 }: ContainerButtonsProps) {
   return (
@@ -50,7 +52,7 @@ export default function ContainerButtons({
               size="small"
               variant="contained"
               onClick={() => onEdit(familyId)}
-              disabled={reorderFlag}
+              disabled={reorderFlag || disableActions}
               fullWidth
               startIcon={<Edit />}
             >
@@ -62,6 +64,7 @@ export default function ContainerButtons({
               color="error"
               startIcon={<Delete />}
               onClick={() => onDelete(familyId)}
+              disabled={disableActions}
               sx={{ minWidth: "auto" }}
             >
               Deletar

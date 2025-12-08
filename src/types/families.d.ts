@@ -8,6 +8,7 @@ interface RetreatFamily {
   remaining: number;
   color?: string;
   alerts: string[];
+  locked?: boolean;
   isLocked: boolean;
   groupStatus: string;
   groupLink: string | null;

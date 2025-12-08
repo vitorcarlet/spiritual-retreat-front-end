@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 
 import { Container } from "@mui/material";
 
 import { useModal } from "@/src/hooks/useModal";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
+import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 import apiClient from "@/src/lib/axiosClientInstance";
 
 import ServiceTeamDetails from "./ServiceTeamDetails";
@@ -57,10 +58,20 @@ export default function RetreatServiceTeam({
   } = useServiceSpacesQuery(retreatId, filters);
 
   const [isReordering, setIsReordering] = useState(false);
+  const { menuMode } = useMenuMode();
+  const isEditMode = menuMode === "edit";
+  const canEditServiceSpaceInMode = canEditServiceSpace && isEditMode;
+
+  useEffect(() => {
+    if (!isEditMode && isReordering) {
+      setIsReordering(false);
+    }
+  }, [isEditMode, isReordering]);
   // const filtersConfig = useMemo(() => getFilters(), []);
 
   // ===== Modal Handlers =====
   const handleOpenCreateTeam = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("createSpace.title", {
         defaultMessage: "Create service space",
@@ -78,9 +89,10 @@ export default function RetreatServiceTeam({
         );
       },
     });
-  }, [modal, t, retreatId, invalidateServiceSpacesQuery]);
+  }, [isEditMode, modal, t, retreatId, invalidateServiceSpacesQuery]);
 
   const handleOpenConfigure = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("service-space-configurations"),
       size: "md",
@@ -96,9 +108,10 @@ export default function RetreatServiceTeam({
         );
       },
     });
-  }, [modal, t, retreatId, invalidateServiceSpacesQuery]);
+  }, [isEditMode, modal, t, retreatId, invalidateServiceSpacesQuery]);
 
   const handleOpenLock = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("lock.title", {
         defaultMessage: "Lock service teams",
@@ -118,7 +131,14 @@ export default function RetreatServiceTeam({
         );
       },
     });
-  }, [modal, t, retreatId, serviceSpacesArray, invalidateServiceSpacesQuery]);
+  }, [
+    isEditMode,
+    modal,
+    t,
+    retreatId,
+    serviceSpacesArray,
+    invalidateServiceSpacesQuery,
+  ]);
 
   const handleOpenServiceSpaceDetails = useCallback(
     (spaceId: UniqueIdentifier, startInEdit = false) => {
@@ -181,6 +201,7 @@ export default function RetreatServiceTeam({
   );
 
   const handleOpenAddMember = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("sections.add-members", {
         defaultMessage: "Adicionar membros à equipe de serviço",
@@ -199,7 +220,14 @@ export default function RetreatServiceTeam({
         );
       },
     });
-  }, [modal, t, retreatId, serviceSpacesArray, invalidateServiceSpacesQuery]);
+  }, [
+    isEditMode,
+    modal,
+    t,
+    retreatId,
+    serviceSpacesArray,
+    invalidateServiceSpacesQuery,
+  ]);
 
   const handleEdit = useCallback(
     (spaceId: UniqueIdentifier) => {
@@ -217,6 +245,7 @@ export default function RetreatServiceTeam({
 
   const handleDelete = useCallback(
     (spaceId: UniqueIdentifier) => {
+      if (!canEditServiceSpaceInMode) return;
       const space = serviceSpacesArray.find(
         (item) => item.spaceId === String(spaceId)
       );
@@ -261,11 +290,20 @@ export default function RetreatServiceTeam({
         },
       });
     },
-    [modal, t, retreatId, queryClient, filters, serviceSpacesArray]
+    [
+      canEditServiceSpaceInMode,
+      modal,
+      t,
+      retreatId,
+      queryClient,
+      filters,
+      serviceSpacesArray,
+    ]
   );
 
   const handleSaveReorder = useCallback(
     async (items: Items) => {
+      if (!canEditServiceSpaceInMode) return;
       const serviceSpacesById = new Map(
         serviceSpacesArray.map((space) => [String(space.spaceId), space])
       );
@@ -313,6 +351,7 @@ export default function RetreatServiceTeam({
       }
     },
     [
+      canEditServiceSpaceInMode,
       serviceSpacesArray,
       retreatId,
       serviceSpaceVersion,
@@ -348,6 +387,7 @@ export default function RetreatServiceTeam({
       <ServiceTeamActionBar
         hasCreatePermission={hasCreatePermission}
         isReordering={isReordering}
+        isEditMode={isEditMode}
         filters={filters}
         activeFiltersCount={activeFiltersCount}
         //filtersConfig={filtersConfig}
@@ -366,8 +406,8 @@ export default function RetreatServiceTeam({
         serviceSpacesArray={serviceSpacesArray}
         total={serviceSpacesArray.length}
         filters={filters}
-        isReordering={isReordering}
         canEditServiceSpace={canEditServiceSpace}
+        isEditMode={isEditMode}
         retreatId={retreatId}
         onSaveReorder={handleSaveReorder}
         onSetReordering={setIsReordering}

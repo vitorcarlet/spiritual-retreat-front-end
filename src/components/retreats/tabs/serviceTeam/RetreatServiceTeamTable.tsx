@@ -168,8 +168,11 @@ export default function RetreatServiceTeamTable({
   reorderFlag,
   onSaveReorder,
   canEditServiceTeam,
+  isEditMode,
 }: ServiceSpaceTableProps) {
   const t = useTranslations("service-team");
+
+  const canEditServiceTeamInMode = canEditServiceTeam && isEditMode;
 
   const [items, setItems] = useState<Items>({});
   const [membersById, setMembersById] = useState<MembersById>({});
@@ -224,16 +227,24 @@ export default function RetreatServiceTeamTable({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
 
+  useEffect(() => {
+    if (!canEditServiceTeamInMode) {
+      setServiceTeamReorderFlag(false);
+      setHasUnsavedChanges(false);
+      setActiveId(null);
+    }
+  }, [canEditServiceTeamInMode, setServiceTeamReorderFlag]);
+
   // Snapshot do estado "persistido" (inicial ou último sucesso)
   const [savedSnapshot, setSavedSnapshot] = useState<{
     items: Items;
     memberToContainer: MemberToContainer;
   } | null>(null);
 
-  const validation = useServiceTeamValidation(InitialItems, membersById);
+  const validation = useServiceTeamValidation(InitialItems);
 
   const handleSaveReorder = useCallback(async () => {
-    if (!onSaveReorder) return;
+    if (!onSaveReorder || !canEditServiceTeamInMode) return;
 
     try {
       await onSaveReorder(items);
@@ -256,6 +267,7 @@ export default function RetreatServiceTeamTable({
       }
     }
   }, [
+    canEditServiceTeamInMode,
     items,
     onSaveReorder,
     memberToContainer,
@@ -392,7 +404,7 @@ export default function RetreatServiceTeamTable({
               scrollable={scrollable}
               style={containerStyle}
               unstyled={minimal}
-              onRemove={() => handleRemove(containerId)}
+              //onRemove={() => handleRemove(containerId)}
             >
               <SortableContext items={memberIds} strategy={strategy}>
                 {memberIds.length > 0 ? (
@@ -432,6 +444,7 @@ export default function RetreatServiceTeamTable({
                 onDelete={onDelete || handleDeleteDefault}
                 familyId={containerId}
                 canEdit={canEditServiceTeam}
+                disableActions={!isEditMode}
                 validationError={validationError}
               />
             </DroppableContainer>
@@ -443,6 +456,7 @@ export default function RetreatServiceTeamTable({
       items,
       stiliesById,
       validation.errors,
+      isEditMode,
       minimal,
       t,
       scrollable,
@@ -533,12 +547,18 @@ export default function RetreatServiceTeamTable({
           },
         }}
         onDragStart={({ active }) => {
+          if (!canEditServiceTeamInMode) {
+            return;
+          }
           setActiveId(active.id);
           setClonedItems(items);
           // Set reorder flag to true when drag starts
           setServiceTeamReorderFlag?.(true);
         }}
-        onDragOver={({ active, over }) =>
+        onDragOver={({ active, over }) => {
+          if (!canEditServiceTeamInMode) {
+            return;
+          }
           onDragOver({
             active,
             over,
@@ -547,9 +567,12 @@ export default function RetreatServiceTeamTable({
             recentlyMovedToNewContainer,
             memberToContainer,
             setMemberToContainer,
-          })
-        }
+          });
+        }}
         onDragEnd={({ active, over }) => {
+          if (!canEditServiceTeamInMode) {
+            return;
+          }
           onDragEnd({
             active,
             over,
@@ -567,6 +590,9 @@ export default function RetreatServiceTeamTable({
         }}
         cancelDrop={cancelDrop}
         onDragCancel={() => {
+          if (!canEditServiceTeamInMode) {
+            return;
+          }
           onDragCancel();
           // Reset reorder flag when drag is cancelled
           setServiceTeamReorderFlag?.(false);
@@ -619,9 +645,10 @@ export default function RetreatServiceTeamTable({
       </DndContext>
 
       {/* Floating Save Button */}
-      <Fade in={hasUnsavedChanges}>
+      <Fade in={hasUnsavedChanges && canEditServiceTeamInMode}>
         <Fab
           color="primary"
+          disabled={!canEditServiceTeamInMode}
           onClick={handleSaveReorder}
           sx={{
             position: "absolute",
@@ -704,16 +731,17 @@ export default function RetreatServiceTeamTable({
           canEdit={canEditServiceTeam}
           reorderFlag={reorderFlag || false}
           onDelete={onDelete || handleDeleteDefault}
+          disableActions={!isEditMode}
         />
       </Container>
     );
   }
 
-  function handleRemove(containerID: UniqueIdentifier) {
-    setContainers((containers) =>
-      containers.filter((id) => id !== containerID)
-    );
-  }
+  // function handleRemove(containerID: UniqueIdentifier) {
+  //   setContainers((containers) =>
+  //     containers.filter((id) => id !== containerID)
+  //   );
+  // }
 
   function getNextContainerId() {
     const containerIds = Object.keys(items);

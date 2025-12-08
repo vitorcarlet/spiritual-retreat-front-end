@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useEffect } from "react";
 import { Container } from "@mui/material";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
 import { useTranslations } from "next-intl";
 import { UniqueIdentifier } from "@dnd-kit/core";
 import { useModal } from "@/src/hooks/useModal";
+import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 
 import { useFamiliesQuery } from "./hooks/useFamiliesQuery";
 import { useFamiliesPermissions } from "./hooks/useFamiliesPermissions";
@@ -39,6 +41,7 @@ export default function RetreatFamilies({
 }: RetreatFamiliesProps) {
   const t = useTranslations();
   const modal = useModal();
+  const { menuMode } = useMenuMode();
 
   const { filters, updateFilters } = useUrlFilters<
     TableDefaultFilters<RetreatsCardTableFilters>
@@ -63,9 +66,18 @@ export default function RetreatFamilies({
   } = useFamiliesQuery(retreatId, filters);
 
   const [isReordering, setIsReordering] = useState(false);
+  const isEditMode = menuMode === "edit";
+  const canEditFamilyInMode = canEditFamily && isEditMode;
+
+  useEffect(() => {
+    if (!isEditMode && isReordering) {
+      setIsReordering(false);
+    }
+  }, [isEditMode, isReordering]);
 
   // ===== Modal Handlers =====
   const handleOpenCreateFamily = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("create-new-family"),
       size: "md",
@@ -81,9 +93,10 @@ export default function RetreatFamilies({
         );
       },
     });
-  }, [modal, t, retreatId, invalidateFamiliesQuery]);
+  }, [isEditMode, modal, t, retreatId, invalidateFamiliesQuery]);
 
   const handleOpenSendMessage = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("send-message-to-family"),
       size: "md",
@@ -99,9 +112,10 @@ export default function RetreatFamilies({
         );
       },
     });
-  }, [modal, t, retreatId, familiesDataArray]);
+  }, [isEditMode, modal, t, retreatId, familiesDataArray]);
 
   const handleOpenAddParticipant = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("add-participant-in-family"),
       size: "md",
@@ -117,9 +131,10 @@ export default function RetreatFamilies({
         );
       },
     });
-  }, [modal, t, retreatId, familiesDataArray]);
+  }, [isEditMode, modal, t, retreatId, familiesDataArray]);
 
   const handleOpenConfigure = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("family-configuration"),
       size: "md",
@@ -135,9 +150,10 @@ export default function RetreatFamilies({
         );
       },
     });
-  }, [modal, t, retreatId, invalidateFamiliesQuery]);
+  }, [isEditMode, modal, t, retreatId, invalidateFamiliesQuery]);
 
   const handleOpenDraw = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("family-draw"),
       size: "md",
@@ -153,9 +169,10 @@ export default function RetreatFamilies({
         );
       },
     });
-  }, [modal, t, retreatId, invalidateFamiliesQuery]);
+  }, [isEditMode, modal, t, retreatId, invalidateFamiliesQuery]);
 
   const handleOpenLock = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("lock-families"),
       size: "lg",
@@ -173,9 +190,17 @@ export default function RetreatFamilies({
         );
       },
     });
-  }, [modal, t, retreatId, familiesDataArray, invalidateFamiliesQuery]);
+  }, [
+    isEditMode,
+    modal,
+    t,
+    retreatId,
+    familiesDataArray,
+    invalidateFamiliesQuery,
+  ]);
 
   const handleOpenReset = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("reset-families"),
       size: "md",
@@ -195,6 +220,7 @@ export default function RetreatFamilies({
       },
     });
   }, [
+    isEditMode,
     modal,
     t,
     retreatId,
@@ -212,8 +238,8 @@ export default function RetreatFamilies({
             <FamilyDetails
               familyId={familyId}
               retreatId={retreatId}
-              canEdit={canEditFamily}
-              startInEdit={startInEdit && canEditFamily}
+              canEdit={canEditFamilyInMode}
+              startInEdit={startInEdit && canEditFamilyInMode}
               onClose={modal.close}
               onUpdated={(updatedFamily) => {
                 queryClient.setQueryData<any>(
@@ -241,11 +267,12 @@ export default function RetreatFamilies({
         },
       });
     },
-    [modal, retreatId, canEditFamily, queryClient, filters]
+    [modal, retreatId, canEditFamilyInMode, queryClient, filters]
   );
 
   const handleDelete = useCallback(
     (familyId: UniqueIdentifier) => {
+      if (!canEditFamilyInMode) return;
       const family = familiesDataArray.find(
         (item) => String(item.familyId) === String(familyId)
       );
@@ -269,14 +296,22 @@ export default function RetreatFamilies({
         },
       });
     },
-    [modal, t, retreatId, familiesDataArray, invalidateFamiliesQuery]
+    [
+      canEditFamilyInMode,
+      familiesDataArray,
+      invalidateFamiliesQuery,
+      modal,
+      retreatId,
+      t,
+    ]
   );
 
   const handleEdit = useCallback(
     (familyId: UniqueIdentifier) => {
+      if (!canEditFamilyInMode) return;
       handleOpenFamilyDetails(familyId, true);
     },
-    [handleOpenFamilyDetails]
+    [canEditFamilyInMode, handleOpenFamilyDetails]
   );
 
   const handleView = useCallback(
@@ -288,6 +323,7 @@ export default function RetreatFamilies({
 
   const handleSaveReorder = useCallback(
     async (items: Items) => {
+      if (!canEditFamilyInMode) return;
       try {
         const families = Object.entries(items)
           .map(([familyId, memberIds]) => {
@@ -361,7 +397,13 @@ export default function RetreatFamilies({
         throw error;
       }
     },
-    [retreatId, familiesVersion, familiesDataArray, invalidateFamiliesQuery]
+    [
+      canEditFamilyInMode,
+      familiesDataArray,
+      familiesVersion,
+      invalidateFamiliesQuery,
+      retreatId,
+    ]
   );
 
   const handleFiltersChange = useCallback(
@@ -385,6 +427,7 @@ export default function RetreatFamilies({
       <FamiliesActionBar
         hasCreatePermission={hasCreatePermission}
         isReordering={isReordering}
+        isEditMode={isEditMode}
         onCreateFamily={handleOpenCreateFamily}
         onSendMessage={handleOpenSendMessage}
         onAddParticipant={handleOpenAddParticipant}
@@ -401,8 +444,8 @@ export default function RetreatFamilies({
         familiesDataArray={familiesDataArray}
         total={familiesDataArray.length}
         filters={filters}
-        isReordering={isReordering}
         canEditFamily={canEditFamily}
+        isEditMode={isEditMode}
         retreatId={retreatId}
         onSaveReorder={handleSaveReorder}
         onSetReordering={setIsReordering}

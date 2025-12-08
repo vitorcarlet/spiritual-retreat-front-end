@@ -120,6 +120,76 @@ const applySpecialFieldNaming = (
   }));
 };
 
+const getFieldResetValue = (field: BackendField): unknown => {
+  if (!field || field.type === "section") {
+    return "";
+  }
+
+  if (Object.prototype.hasOwnProperty.call(baseDefaultValues, field.name)) {
+    return baseDefaultValues[field.name];
+  }
+
+  if (field.defaultValue !== undefined) {
+    return field.defaultValue;
+  }
+
+  if (
+    field.type === "checkbox" ||
+    field.type === "switch" ||
+    field.type === "switchExpansible"
+  ) {
+    return false;
+  }
+
+  if (field.type === "multiselect" || field.type === "chips") {
+    return [];
+  }
+
+  if (field.type === "photo") {
+    const photoIsMultiple = Boolean(
+      (field as BackendField & { isMultiple?: boolean }).isMultiple ??
+        field.multiple
+    );
+    return photoIsMultiple ? [] : null;
+  }
+
+  if (field.type === "location") {
+    return { stateShort: "", city: "" };
+  }
+
+  return "";
+};
+
+const areValuesEqual = (a: unknown, b: unknown): boolean => {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) {
+      return false;
+    }
+    return a.every((value, index) => areValuesEqual(value, b[index]));
+  }
+
+  if (
+    typeof a === "object" &&
+    a !== null &&
+    typeof b === "object" &&
+    b !== null
+  ) {
+    const aKeys = Object.keys(a as Record<string, unknown>);
+    const bKeys = Object.keys(b as Record<string, unknown>);
+    if (aKeys.length !== bKeys.length) {
+      return false;
+    }
+    return aKeys.every((key) =>
+      areValuesEqual(
+        (a as Record<string, unknown>)[key],
+        (b as Record<string, unknown>)[key]
+      )
+    );
+  }
+
+  return a === b;
+};
+
 const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
   const form = use(getFormPromise(id, type));
   const [submittedData, setSubmittedData] = React.useState<Record<
@@ -261,7 +331,12 @@ const PublicRetreatForm: React.FC<PublicRetreatFormProps> = ({ id, type }) => {
         // Se o switch foi desativado (false), resetar campos internos
         if (!switchValue) {
           field.fields.forEach((childField) => {
-            setValue(childField.name, "");
+            const resetValue = getFieldResetValue(childField);
+            const currentValue = values[childField.name];
+
+            if (!areValuesEqual(currentValue, resetValue)) {
+              setValue(childField.name, resetValue);
+            }
           });
         }
       }

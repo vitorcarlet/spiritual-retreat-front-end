@@ -12,7 +12,7 @@ export const useFamiliesPermissions = () => {
       setHasCreatePermission(
         getPermission({
           permissions: session.data.user.permissions,
-          permission: "users.create",
+          permission: "retreats.create",
           role: session.data.user.role,
         })
       );

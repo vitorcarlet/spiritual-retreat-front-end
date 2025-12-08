@@ -69,6 +69,7 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
       { field: "name", type: "string", minWidth: 180, flex: 1 },
       { field: "sections", type: "string", minWidth: 220, flex: 1 },
       { field: "dateCreation", type: "date", width: 160 },
+      { field: "registrationDate", type: "date", width: 160 },
       { field: "retreatName", type: "string", minWidth: 160, flex: 1 },
     ];
     return buildTanStackReportColumns({ descriptors: fallback });

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, Tabs, Tab, Grid } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Iconify from "../Iconify";
 import SelectEditMode from "../navigation/SelectEditMode";
 import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
@@ -21,12 +22,13 @@ export default function RetreatPage({
 }: RetreatPageProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   const { menuMode, toggleMenuMode, isAllowedToEdit } = useMenuMode();
 
   const retreatId = pathname.split("/")[2];
 
-  const tabs = useMemo(
+  const allTabs = useMemo(
     () => [
       {
         label: "Geral",
@@ -45,6 +47,7 @@ export default function RetreatPage({
         icon: "lucide:file-text",
         path: `/retreats/${retreatId}/forms`,
         value: 2,
+        requireAdmin: true,
       },
       {
         label: "Famílias",
@@ -68,18 +71,37 @@ export default function RetreatPage({
     [retreatId]
   );
 
+  // Filtrar tabs baseado no role do usuário
+  const tabs = useMemo(() => {
+    const userRole = session?.user?.role;
+    return allTabs.filter((tab) => !tab.requireAdmin || userRole === "admin");
+  }, [allTabs, session?.user?.role]);
+
+  // Encontrar a tab atual baseado no pathname
   const getCurrentTabValue = useCallback(() => {
-    // Em modo de criação, mantém sempre na primeira aba
     if (isCreating) return 0;
-    const currentTab = tabs.find((tab) => pathname === tab.path);
+
+    // Ordenar por comprimento de path em ordem decrescente (mais específico primeiro)
+    const sortedTabs = [...tabs].sort((a, b) => b.path.length - a.path.length);
+
+    const currentTab = sortedTabs.find(
+      (tab) => pathname === tab.path || pathname.startsWith(`${tab.path}/`)
+    );
+
     return currentTab ? currentTab.value : 0;
   }, [isCreating, pathname, tabs]);
 
-  const [value, setValue] = useState(getCurrentTabValue());
+  // Calcular o valor atual da tab baseado no pathname
+  const currentTabValue = useMemo(
+    () => getCurrentTabValue(),
+    [getCurrentTabValue]
+  );
+
+  const [value, setValue] = useState(currentTabValue);
 
   useEffect(() => {
-    setValue(getCurrentTabValue());
-  }, [pathname, isCreating, getCurrentTabValue]);
+    setValue(currentTabValue);
+  }, [currentTabValue]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     // Bloqueia navegação para outras abas enquanto estiver criando
@@ -126,6 +148,7 @@ export default function RetreatPage({
               {tabs.map((tab) => (
                 <Tab
                   key={tab.value}
+                  value={tab.value}
                   icon={<Iconify icon={tab.icon} />}
                   iconPosition="start"
                   label={tab.label}

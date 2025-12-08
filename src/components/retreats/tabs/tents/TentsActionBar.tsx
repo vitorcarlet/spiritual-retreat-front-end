@@ -7,6 +7,7 @@ import type { RetreatsCardTableFilters } from "@/src/components/retreats/types";
 interface TentsActionBarProps {
   hasCreatePermission: boolean;
   isReordering: boolean;
+  isEditMode: boolean;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
   activeFiltersCount: number;
   //filtersConfig: any;
@@ -24,6 +25,7 @@ interface TentsActionBarProps {
 export default function TentsActionBar({
   hasCreatePermission,
   isReordering,
+  isEditMode,
   onCreateTent,
   onCreateTentBulk,
   onAddParticipant,
@@ -39,32 +41,36 @@ export default function TentsActionBar({
           <Button
             variant="contained"
             onClick={onCreateTent}
-            disabled={isReordering}
+            disabled={isReordering || !isEditMode}
           >
             {t("create-new-tent")}
           </Button>
           <Button
             variant="contained"
             onClick={onCreateTentBulk}
-            disabled={isReordering}
+            disabled={isReordering || !isEditMode}
           >
             {t("create-new-tent-bulk")}
           </Button>
           <Button
             variant="contained"
             onClick={onAddParticipant}
-            disabled={isReordering}
+            disabled={isReordering || !isEditMode}
           >
             {t("add-member-to-team")}
           </Button>
           {/* <Button
             variant="contained"
             onClick={onConfigure}
-            disabled={isReordering}
+            disabled={isReordering || !isEditMode}
           >
             {t("tent-configurations")}
           </Button> */}
-          <Button variant="contained" onClick={onLock} disabled={isReordering}>
+          <Button
+            variant="contained"
+            onClick={onLock}
+            disabled={isReordering || !isEditMode}
+          >
             {t("lock-tents")}
           </Button>
         </>

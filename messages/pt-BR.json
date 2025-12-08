@@ -23,7 +23,11 @@
     "Service-team": "Equipe de Serviço",
     "Perfil": "Perfil",
     "Gestão de OutBox": "Gestão de OutBox",
-    "New": "Novo Relatório"
+    "New": "Novo Relatório",
+    "No-contemplated": "Não Contemplados",
+    "Contemplated": "Contemplados",
+    "Service-unassigned": "Sem Equipe de Serviço",
+    "Service-confirmed": "Equipe de Serviço Confirmada"
   },
   "error": "Algo deu errado",
   "HomePage": {
@@ -706,7 +710,8 @@
       "status": "Status",
       "attempts": "Tentativas",
       "createdAt": "Criada em",
-      "processedAt": "Processada em"
+      "processedAt": "Processada em",
+      "actions": "Ações"
     },
     "table": {
       "title": "Mensagens na fila",

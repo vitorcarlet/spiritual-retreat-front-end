@@ -2,10 +2,11 @@ import type { UserObject, BackendAccessJWT } from "next-auth";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken"; // Use import ao invés de require
 import { AxiosResponse } from "axios";
+import { SignJWT } from "jose";
+import { jwtDecode } from "jwt-decode";
 
 // Dummy secret salt for signing tokens
-const SECRET_SIGNING_SALT = "super-secret-salt";
-
+const SECRET_SIGNING_SALT = new TextEncoder().encode("super-secret-salt");
 /**
  * Log in a user by sending a POST request to the backend using the supplied credentials.
  */
@@ -70,10 +71,22 @@ export async function refresh(
         },
       });
     }
-    const decoded = jwt.verify(token, SECRET_SIGNING_SALT) as UserObject;
+    const decoded = jwtDecode(token) as UserObject & { exp: number };
+
+    // Verificar se o token expirou
+    const now = Math.floor(Date.now() / 1000);
+    if (decoded.exp && decoded.exp < now) {
+      return Promise.reject({
+        response: {
+          status: 401,
+          statusText: "Unauthorized",
+          data: { error: "Refresh token expired" },
+        },
+      });
+    }
 
     // Criar novo access token com os dados do usuário
-    const newAccessToken = create_access_token(decoded);
+    const newAccessToken = await create_access_token(decoded);
 
     const mockResponse: BackendAccessJWT = {
       access_token: newAccessToken,
@@ -99,9 +112,10 @@ export async function refresh(
     });
   }
 }
-
 // Função para criar access token
-export const create_access_token = (user: UserObject): string => {
+export const create_access_token = async (
+  user: UserObject
+): Promise<string> => {
   const sanitizedUser: Record<string, unknown> = {
     ...(user as unknown as Record<string, unknown>),
   };
@@ -111,35 +125,28 @@ export const create_access_token = (user: UserObject): string => {
   delete sanitizedUser.aud;
   delete sanitizedUser.iss;
 
-  return jwt.sign(
-    {
-      ...sanitizedUser,
-      jti: uuidv4(),
-      type: "access",
-    },
-    SECRET_SIGNING_SALT,
-    {
-      algorithm: "HS256", // HS256 é mais comum que HS384
-      expiresIn: "15m", // 15 minutos é mais realista
-    }
-  );
+  return new SignJWT({
+    ...sanitizedUser,
+    jti: uuidv4(),
+    type: "access",
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("15m")
+    .sign(SECRET_SIGNING_SALT);
 };
 
-// Função para criar refresh token
-export const create_refresh_token = (user: UserObject): string => {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      jti: uuidv4(),
-      type: "refresh",
-    },
-    SECRET_SIGNING_SALT,
-    {
-      algorithm: "HS256",
-      expiresIn: "7d", // 7 dias é mais realista para refresh tokens
-    }
-  );
+export const create_refresh_token = async (
+  user: UserObject
+): Promise<string> => {
+  return new SignJWT({
+    id: user.id,
+    email: user.email,
+    jti: uuidv4(),
+    type: "refresh",
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("7d")
+    .sign(SECRET_SIGNING_SALT);
 };
 
 // Função utilitária para decodificar tokens (aqui você pode usar jwt-decode)

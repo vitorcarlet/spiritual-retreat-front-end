@@ -10,6 +10,7 @@ import { SortingStrategy } from "@dnd-kit/sortable";
 export interface ServiceSpaceTableProps {
   retreatId: string;
   canEditServiceTeam: boolean;
+  isEditMode: boolean;
   adjustScale?: boolean;
   items: ServiceSpace[];
   cancelDrop?: CancelDrop;

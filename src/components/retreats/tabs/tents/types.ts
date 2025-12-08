@@ -45,6 +45,7 @@ export interface RetreatTentsTableProps {
   onSaveReorder?: (items: Items) => Promise<void>;
   retreatId: string;
   canEditTent: boolean;
+  isEditMode: boolean;
 }
 
 export type Items = Record<string, UniqueIdentifier[]>;

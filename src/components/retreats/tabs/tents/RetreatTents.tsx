@@ -8,6 +8,7 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
+import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
 import {
   Box,
   Stack,
@@ -85,13 +86,21 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
   const [tentsReorderFlag, setTentsReorderFlag] = useState<boolean>(false);
   const [tentsVersion, setTentsVersion] = useState<number>(0);
   const modal = useModal();
+  const { menuMode } = useMenuMode();
+  const isEditMode = menuMode === "edit";
+
+  useEffect(() => {
+    if (!isEditMode && tentsReorderFlag) {
+      setTentsReorderFlag(false);
+    }
+  }, [isEditMode, tentsReorderFlag]);
 
   useEffect(() => {
     if (session.data && session.data.user) {
       setHasCreatePermission(
         getPermission({
           permissions: session.data.user.permissions,
-          permission: "users.create",
+          permission: "retreats.create",
           role: session.data.user.role,
         })
       );
@@ -143,7 +152,10 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
     });
   }, [session.data]);
 
+  const canEditTentInMode = canEdit && isEditMode;
+
   const handleOpenLock = useCallback(() => {
+    if (!isEditMode) return;
     modal.open({
       title: t("lock.title", {
         defaultMessage: "Lock service tents",
@@ -162,7 +174,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
         );
       },
     });
-  }, [modal, t, retreatId, invalidateTentsQuery]);
+  }, [isEditMode, modal, t, retreatId, invalidateTentsQuery]);
 
   const openTentDetails = useCallback(
     (tentId: UniqueIdentifier, startInEdit = false) => {
@@ -249,6 +261,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
 
   const handleDelete = useCallback(
     (tentId: UniqueIdentifier) => {
+      if (!canEditTentInMode) return;
       const tent = tentsDataArray.find(
         (item) => String(item.tentId) === String(tentId)
       );
@@ -272,31 +285,38 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
         },
       });
     },
-    [tentsDataArray, modal, t, retreatId, invalidateTentsQuery]
+    [
+      tentsDataArray,
+      canEditTentInMode,
+      modal,
+      t,
+      retreatId,
+      invalidateTentsQuery,
+    ]
   );
 
-  const handleAddParticipantInTent = useCallback(
-    () =>
-      modal.open({
-        title: t("addParticipantToTent"),
-        size: "md",
-        customRender() {
-          return (
-            <AddParticipantToTentForm
-              retreatId={retreatId}
-              tentsDataArray={tentsDataArray}
-              onSuccess={() => {
-                modal.close?.();
-                invalidateTentsQuery();
-              }}
-            />
-          );
-        },
-      }),
-    [tentsDataArray, modal, t, retreatId, invalidateTentsQuery]
-  );
+  const handleAddParticipantInTent = useCallback(() => {
+    if (!isEditMode) return;
+    modal.open({
+      title: t("addParticipantToTent"),
+      size: "md",
+      customRender() {
+        return (
+          <AddParticipantToTentForm
+            retreatId={retreatId}
+            tentsDataArray={tentsDataArray}
+            onSuccess={() => {
+              modal.close?.();
+              invalidateTentsQuery();
+            }}
+          />
+        );
+      },
+    });
+  }, [isEditMode, tentsDataArray, modal, t, retreatId, invalidateTentsQuery]);
 
   const createIndividualTent = () => {
+    if (!isEditMode) return;
     modal.open({
       title: t("createIndividual"),
       size: "md",
@@ -315,6 +335,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
   };
 
   const createTentBulk = () => {
+    if (!isEditMode) return;
     modal.open({
       title: t("createBulk"),
       size: "md",
@@ -334,6 +355,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
 
   const handleSaveReorder = useCallback(
     async (items: Items) => {
+      if (!canEditTentInMode) return;
       try {
         // Transform items to the format expected by the API
         const tents = Object.entries(items).map(([tentId, participantIds]) => ({
@@ -367,7 +389,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
         throw error;
       }
     },
-    [retreatId, tentsVersion, queryClient]
+    [canEditTentInMode, retreatId, tentsVersion, queryClient]
   );
 
   const handleFiltersChange = (
@@ -397,6 +419,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
         <TentsActionBar
           hasCreatePermission={hasCreatePermission}
           isReordering={tentsReorderFlag}
+          isEditMode={isEditMode}
           filters={filters}
           activeFiltersCount={activeFiltersCount}
           onCreateTent={createIndividualTent}
@@ -434,6 +457,7 @@ export default function RetreatTents({ id: retreatId }: RetreatsProps) {
             onFiltersChange={handleFiltersChange}
             retreatId={retreatId}
             canEditTent={canEdit}
+            isEditMode={isEditMode}
           />
         )}
       </Box>

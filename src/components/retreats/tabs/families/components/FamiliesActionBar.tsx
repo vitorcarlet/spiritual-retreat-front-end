@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 interface FamiliesActionBarProps {
   hasCreatePermission: boolean;
   isReordering: boolean;
+  isEditMode: boolean;
   onCreateFamily: () => void;
   onSendMessage: () => void;
   onAddParticipant: () => void;
@@ -18,6 +19,7 @@ interface FamiliesActionBarProps {
 export default function FamiliesActionBar({
   hasCreatePermission,
   isReordering,
+  isEditMode,
   onCreateFamily,
   onSendMessage,
   onAddParticipant,
@@ -41,38 +43,50 @@ export default function FamiliesActionBar({
       <Button
         variant="contained"
         onClick={onCreateFamily}
-        disabled={isReordering}
+        disabled={isReordering || !isEditMode}
       >
         {t("create-new-family")}
       </Button>
       <Button
         variant="contained"
         onClick={onSendMessage}
-        disabled={isReordering}
+        disabled={isReordering || !isEditMode}
       >
         {t("send-messages")}
       </Button>
       <Button
         variant="contained"
         onClick={onAddParticipant}
-        disabled={isReordering}
+        disabled={isReordering || !isEditMode}
       >
         {t("add-participant-in-family")}
       </Button>
-      <Button variant="contained" onClick={onConfigure} disabled={isReordering}>
+      <Button
+        variant="contained"
+        onClick={onConfigure}
+        disabled={isReordering || !isEditMode}
+      >
         {t("family-config")}
       </Button>
-      <Button variant="contained" onClick={onDraw} disabled={isReordering}>
+      <Button
+        variant="contained"
+        onClick={onDraw}
+        disabled={isReordering || !isEditMode}
+      >
         {t("draw-the-families")}
       </Button>
-      <Button variant="contained" onClick={onLock} disabled={isReordering}>
+      <Button
+        variant="contained"
+        onClick={onLock}
+        disabled={isReordering || !isEditMode}
+      >
         {t("lock-families")}
       </Button>
       <Button
         variant="contained"
         color="error"
         onClick={onReset}
-        disabled={isReordering}
+        disabled={isReordering || !isEditMode}
       >
         {t("reset-families")}
       </Button>

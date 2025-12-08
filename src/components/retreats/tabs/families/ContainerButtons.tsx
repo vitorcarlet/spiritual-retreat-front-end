@@ -12,6 +12,7 @@ interface ContainerButtonsProps {
   onView: (familyId: UniqueIdentifier) => void;
   onDelete?: (familyId: UniqueIdentifier) => void;
   canEdit: boolean;
+  disableActions?: boolean;
 }
 
 export default function ContainerButtons({
@@ -20,6 +21,7 @@ export default function ContainerButtons({
   onView,
   onDelete,
   canEdit,
+  disableActions = false,
 }: ContainerButtonsProps) {
   const t = useTranslations("family-details");
   return (
@@ -41,6 +43,7 @@ export default function ContainerButtons({
             startIcon={<Edit />}
             onClick={() => onEdit(familyId)}
             sx={{ minWidth: "auto" }}
+            disabled={disableActions}
           >
             {t("edit")}
           </Button>
@@ -52,6 +55,7 @@ export default function ContainerButtons({
               startIcon={<Delete />}
               onClick={() => onDelete(familyId)}
               sx={{ minWidth: "auto" }}
+              disabled={disableActions}
             >
               {t("delete")}
             </Button>

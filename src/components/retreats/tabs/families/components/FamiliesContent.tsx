@@ -13,8 +13,8 @@ interface FamiliesContentProps {
   familiesDataArray: RetreatFamily[];
   total: number;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
-  isReordering: boolean;
   canEditFamily: boolean;
+  isEditMode: boolean;
   retreatId: string;
   onSaveReorder: (items: Items) => Promise<void>;
   onSetReordering: (value: boolean) => void;
@@ -34,6 +34,7 @@ export default function FamiliesContent({
   total,
   filters,
   canEditFamily,
+  isEditMode,
   retreatId,
   onSaveReorder,
   onSetReordering,
@@ -73,6 +74,7 @@ export default function FamiliesContent({
         onFiltersChange={onFiltersChange}
         retreatId={retreatId}
         canEditFamily={canEditFamily}
+        isEditMode={isEditMode}
       />
     </Box>
   );

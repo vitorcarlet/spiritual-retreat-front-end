@@ -53,6 +53,7 @@ declare module "next-auth" {
     | "bookings"
     | "profile"
     | "dashboard"
+    | "outbox"
     | "reports";
 
   export type ActionType = "create" | "read" | "update" | "delete";

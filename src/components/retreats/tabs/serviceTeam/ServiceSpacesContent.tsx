@@ -14,8 +14,8 @@ interface ServiceSpaceContentProps {
   serviceSpacesArray: ServiceSpace[];
   total: number;
   filters: TableDefaultFilters<RetreatsCardTableFilters>;
-  isReordering: boolean;
   canEditServiceSpace: boolean;
+  isEditMode: boolean;
   retreatId: string;
   onSaveReorder: (items: Items) => Promise<void>;
   onSetReordering: (value: boolean) => void;
@@ -34,8 +34,8 @@ export default function ServiceSpaceContent({
   serviceSpacesArray,
   total,
   filters,
-  isReordering,
   canEditServiceSpace,
+  isEditMode,
   retreatId,
   onSaveReorder,
   onSetReordering,
@@ -69,6 +69,7 @@ export default function ServiceSpaceContent({
           items={serviceSpacesArray}
           retreatId={retreatId}
           canEditServiceTeam={canEditServiceSpace}
+          isEditMode={isEditMode}
           setServiceTeamReorderFlag={onSetReordering}
           total={total}
           filters={filters}
@@ -79,7 +80,6 @@ export default function ServiceSpaceContent({
           canEdit={canEditServiceSpace}
           onSaveReorder={canEditServiceSpace ? onSaveReorder : undefined}
           setReorderFlag={canEditServiceSpace ? onSetReordering : undefined}
-          reorderFlag={isReordering}
         />
       )}
 

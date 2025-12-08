@@ -28,7 +28,7 @@ const initialTheme = {
           darker: "#735C00",
           contrastText: GREY[800],
         },
-        background: { paper: GREY[0], default: "#EBEBEB", active: "#DFE1EA" },
+        background: { paper: GREY[0], default: "#e2e2e2ff", active: "#DFE1EA" },
         action: { active: GREY[600], ...COMMON.action },
       },
     },
