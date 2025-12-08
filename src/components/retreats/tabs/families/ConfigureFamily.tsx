@@ -17,10 +17,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState, useEffect } from "react";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 interface ConfigureFamilyProps {
   retreatId: string;
@@ -83,16 +80,12 @@ export default function ConfigureFamily({
     const fetchCurrentConfig = async () => {
       setLoading(true);
       try {
-        const response = await handleApiResponse<{
+        const response = await apiClient.get<{
           config: FamilyConfiguration;
-        }>(
-          await sendRequestServerVanilla.get(
-            `/retreats/${retreatId}/families/config`
-          )
-        );
+        }>(`/retreats/${retreatId}/families/config`);
 
-        if (response.success && response.data) {
-          const config = response.data.config;
+        const config = response.data?.config;
+        if (config) {
           setCurrentConfig(config);
           reset({
             defaultFamilySize: config.defaultFamilySize,
@@ -116,18 +109,9 @@ export default function ConfigureFamily({
 
   const onSubmit = async (data: ConfigureFamilyData) => {
     try {
-      const response = await handleApiResponse(
-        await sendRequestServerVanilla.put(
-          `/retreats/${retreatId}/families/config`,
-          data
-        )
-      );
+      await apiClient.put(`/retreats/${retreatId}/families/config`, data);
 
-      if (response.success) {
-        onSuccess();
-      } else {
-        console.error("Erro ao salvar configuração:", response.error);
-      }
+      onSuccess();
     } catch (error) {
       console.error("Erro ao salvar configuração:", error);
     }
