@@ -20,6 +20,7 @@ import {
   Tab,
   Grid,
   Chip,
+  Tooltip,
 } from "@mui/material";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +39,7 @@ import {
   ParticipantPhotoField,
   ParticipantFormTabView,
 } from "./participant-form";
+import { useContemplationPermissions } from "../hooks/useContemplationPermissions";
 
 export type { ParticipantFormValues };
 
@@ -48,6 +50,7 @@ interface ParticipantFormProps {
   submitLabel?: string;
   disabled?: boolean;
   retreatId: string;
+  menuMode?: "view" | "edit" | null;
 }
 
 const ParticipantForm: React.FC<ParticipantFormProps> = ({
@@ -57,12 +60,15 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
   submitLabel = "Salvar",
   disabled = true,
   retreatId,
+  menuMode = "view",
 }) => {
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [isLoadingParticipant, setIsLoadingParticipant] = useState(false);
   const hasParticipant = Boolean(participant?.id);
   const [tab, setTab] = useState<"details" | "form">("details");
   const [isEditing, setIsEditing] = useState(() => !disabled);
+  const { canEditRetreat } = useContemplationPermissions();
+  const menuModeBoolean = menuMode === "edit" ? true : false;
 
   const {
     control,
@@ -200,13 +206,28 @@ const ParticipantForm: React.FC<ParticipantFormProps> = ({
             )}
           </Box>
         </Stack>
-        <Button
-          variant={isEditing ? "outlined" : "contained"}
-          onClick={handleToggleEdit}
-          disabled={loading || isSubmitting}
+        <Tooltip
+          title={
+            !canEditRetreat
+              ? "Você não tem permissão para editar este participante"
+              : !menuModeBoolean
+                ? "Mude para modo de edição no retiro para editar"
+                : ""
+          }
+          disableHoverListener={canEditRetreat && menuModeBoolean}
         >
-          {isEditing ? "Cancelar edição" : "Ativar edição"}
-        </Button>
+          <span>
+            <Button
+              variant={isEditing ? "outlined" : "contained"}
+              onClick={handleToggleEdit}
+              disabled={
+                loading || isSubmitting || !canEditRetreat || !menuModeBoolean
+              }
+            >
+              {isEditing ? "Cancelar edição" : "Ativar edição"}
+            </Button>
+          </span>
+        </Tooltip>
       </Stack>
 
       <Tabs
