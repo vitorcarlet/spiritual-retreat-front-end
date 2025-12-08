@@ -43,7 +43,7 @@ export const getPermissionByPathname = (pathname: string): string => {
   }
 
   // /retreats/:id → ["retreats", ":id"]
-  if (parts.length === 2 && parts[0] === "retreats" && parts[1]) {
+  if (parts.length >= 2 && parts[0] === "retreats") {
     return "retreats.update";
   }
 
