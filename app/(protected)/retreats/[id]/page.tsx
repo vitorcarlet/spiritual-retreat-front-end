@@ -5,10 +5,10 @@ import { Retreat } from "@/src/types/retreats";
 export default async function RetreatPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  // ✅ Carrega dados no servidor
-  const retreatData = await fetchRetreatDataServer(params.id);
+  const { id } = await params;
+  const retreatData = await fetchRetreatDataServer(id);
 
   return (
     <RetreatEditPage
