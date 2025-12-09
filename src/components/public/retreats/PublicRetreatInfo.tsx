@@ -1,10 +1,10 @@
 import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { Status, StatusChip } from "../../chip/StatusChip";
 import { ImageCarrousel } from "./image-carrousel";
-import { redirect } from "next/navigation";
 import { Retreat } from "@/src/types/retreats";
+import { PublicRetreatRegistrationActions } from "./PublicRetreatRegistrationActions";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
@@ -112,40 +112,7 @@ export default async function PublicRetreatInfo({
               zIndex: 1000,
             }}
           >
-            <form
-              action={async (formData: FormData) => {
-                "use server";
-                const actionType = formData.get("action");
-                if (actionType === "participate") {
-                  redirect(
-                    `/public/retreats/${retreatId}/register/participate`
-                  );
-                } else if (actionType === "serve") {
-                  redirect(`/public/retreats/${retreatId}/register/serve`);
-                }
-              }}
-            >
-              <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                <Button
-                  type="submit"
-                  name="action"
-                  value="participate"
-                  variant="contained"
-                  color="primary"
-                >
-                  Preencher Inscrição Participar.
-                </Button>
-                <Button
-                  type="submit"
-                  name="action"
-                  value="serve"
-                  variant="contained"
-                  color="primary"
-                >
-                  Preencher Inscrição Servir.
-                </Button>
-              </Box>
-            </form>
+            <PublicRetreatRegistrationActions retreatId={retreatId} />
           </Grid>
         </Grid>
       </Box>
