@@ -1739,8 +1739,16 @@ export const sections3 = [
         grid: 4,
         options: [
           { id: "alcohol-none", value: "None", label: "Não uso" },
-          { id: "alcohol-occasional", value: "Occasional", label: "Ocasional" },
-          { id: "alcohol-frequent", value: "Frequent", label: "Frequente" },
+          {
+            id: "alcohol-occasional",
+            value: "AlcoholDependent;",
+            label: "Dependente",
+          },
+          {
+            id: "alcohol-frequent",
+            value: "Weekends",
+            label: "Fins de semana",
+          },
           { id: "alcohol-daily", value: "Daily", label: "Diário" },
         ],
       },

@@ -50,7 +50,7 @@ interface ParticipantReligionHistory {
 }
 
 interface ParticipantHealth {
-  alcoholUse: "None" | "Social" | "Regular" | "Heavy" | string;
+  alcoholUse: "None" | "Daily" | "Weekends" | "AlcoholDependent;";
   smoker: boolean;
   usesDrugs: boolean;
   drugUseFrequency: string | null;
