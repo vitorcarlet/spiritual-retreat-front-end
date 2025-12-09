@@ -9,6 +9,7 @@ import {
   sectionsServe,
 } from "@/src/mocks/handlerData/formData";
 import { Retreat } from "@/src/types/retreats";
+import { validateCPF } from "@/src/utils/validateCPF";
 
 const MASK_REGEX: Record<string, RegExp> = {
   cpf: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
@@ -502,6 +503,16 @@ const buildFieldSchema = (
         message: `Deve ter entre ${min ?? 0} e ${max ?? "∞"} caracteres`,
       }
     );
+  }
+
+  if (
+    // field.specialType === "cpf" ||
+    maskType === "cpf" ||
+    field.maskType === "cpf"
+  ) {
+    baseSchema = baseSchema.refine(validateCPF, {
+      message: "CPF inválido",
+    });
   }
 
   if (maskType && !isNumericField) {
