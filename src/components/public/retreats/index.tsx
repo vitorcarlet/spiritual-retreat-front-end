@@ -2,7 +2,6 @@
 import { Container, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Box, Stack } from "@mui/material";
-import FilterButton from "@/src/components/filters/FilterButton";
 
 import { useTranslations } from "next-intl";
 import { useUrlFilters } from "@/src/hooks/useUrlFilters";
@@ -11,7 +10,6 @@ import {
   RetreatsCardTableDateFilters,
   RetreatsCardTableFilters,
 } from "./types";
-import { useFilters } from "./useFilters";
 import PublicRetreatsCardTable from "./table";
 import apiClient from "@/src/lib/axiosClientInstance";
 import axios from "axios";
@@ -41,16 +39,16 @@ export default function PublicRetreatsPage() {
   const t = useTranslations();
   const router = useRouter();
 
-  const { filters, updateFilters, activeFiltersCount, resetFilters } =
-    useUrlFilters<TableDefaultFilters<RetreatsCardTableFilters>>({
-      defaultFilters: {
-        page: 1,
-        pageLimit: 4,
-      },
-      excludeFromCount: ["page", "pageLimit"], // Don't count pagination in active filters
-    });
+  const { filters, updateFilters } = useUrlFilters<
+    TableDefaultFilters<RetreatsCardTableFilters>
+  >({
+    defaultFilters: {
+      page: 1,
+      pageLimit: 4,
+    },
+    excludeFromCount: ["page", "pageLimit"], // Don't count pagination in active filters
+  });
 
-  const { filters: filtersConfig } = useFilters();
   //const { status: sessionStatus } = useSession();
   const {
     data: retreatsData,
@@ -73,12 +71,6 @@ export default function PublicRetreatsPage() {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const handleApplyFilters = (
-    newFilters: Partial<TableDefaultFilters<RetreatsCardTableFilters>>
-  ) => {
-    updateFilters({ ...filters, ...newFilters });
-  };
-
   const retreatsDataArray: RetreatSimple[] = Array.isArray(retreatsData?.items)
     ? retreatsData?.items
     : ([retreatsData?.items] as unknown as RetreatSimple[]);
@@ -94,7 +86,7 @@ export default function PublicRetreatsPage() {
     >
       <Stack direction="row" spacing={2} alignItems="center" mb={3}>
         <Typography variant="h5">{t("retreats")}</Typography>
-        <FilterButton<
+        {/* <FilterButton<
           TableDefaultFilters<RetreatsCardTableFilters>,
           RetreatsCardTableDateFilters
         >
@@ -103,7 +95,7 @@ export default function PublicRetreatsPage() {
           onApplyFilters={handleApplyFilters}
           onReset={resetFilters}
           activeFiltersCount={activeFiltersCount}
-        />
+         /> */}
       </Stack>
 
       <Box
