@@ -150,17 +150,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       // The current access token has expired, but the refresh token is still valid
-      // if (token.data.validity?.refresh_until && now < refreshUntil) {
-      //   // eslint-disable-next-line no-console
-      //   console.log("🔄 Refreshing access token...");
-      //   const refreshedToken = await refreshaccessToken(token);
-      //   if (refreshedToken.error) {
-      //     console.warn("❌ Refresh failed - forcing logout");
-      //     return { ...token, error: "RefreshAccessTokenError" };
-      //   }
+      if (token.data.validity?.refresh_until && now < refreshUntil) {
+        // eslint-disable-next-line no-console
+        console.log("🔄 Refreshing access token...");
+        const refreshedToken = await refreshaccessToken(token);
+        if (refreshedToken.error) {
+          console.warn("❌ Refresh failed - forcing logout");
+          return { ...token, error: "RefreshAccessTokenError" };
+        }
 
-      //   return refreshedToken;
-      // }
+        return refreshedToken;
+      }
       // The current access token and refresh token have both expired
       // This should not really happen unless you get really unlucky with
       // the timing of the token expiration because the middleware should
@@ -268,15 +268,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               refreshToken: data.refreshToken,
             };
             const access: DecodedJWT = jwtDecode(tokens.accessToken!);
-            const refresh: DecodedJWT = jwtDecode(tokens.refreshToken);
-            
+
+            // Refresh token is opaque (not a JWT), so we estimate its validity
+            const REFRESH_TOKEN_LIFETIME = 30 * 24 * 60 * 60; // 30 days in seconds
+            const nowInSeconds = Math.floor(Date.now() / 1000);
+
             const validity: AuthValidity = {
               valid_until: access.exp,
-              refresh_until: refresh.exp,
+              refresh_until: nowInSeconds + REFRESH_TOKEN_LIFETIME,
             };
 
             return {
-              id: refresh.jti,
+              id: access.sub || access.jti || "unknown-id",
               tokens,
               user: data.user,
               validity,
@@ -303,27 +306,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw new UserNotActivatedError();
           }
 
-          if (!data.accessToken) return null;
+          if (!data.accessToken || !data.refreshToken) return null;
 
           const tokens: BackendJWT = {
             accessToken: data.accessToken,
             refreshToken: data.refreshToken,
           };
           const access: DecodedJWT = jwtDecode(tokens.accessToken!);
-          const refresh: DecodedJWT = jwtDecode(tokens.refreshToken);
-console.log(access.exp,refresh.exp,'EXP EXP')
+
+          // Refresh token is opaque (not a JWT), so we estimate its validity
+          const REFRESH_TOKEN_LIFETIME = 30 * 24 * 60 * 60; // 30 days in seconds
+          const nowInSeconds = Math.floor(Date.now() / 1000);
+
           const validity: AuthValidity = {
             valid_until: access.exp,
-            refresh_until: refresh.exp,
+            refresh_until: nowInSeconds + REFRESH_TOKEN_LIFETIME,
           };
 
           return {
-            id: refresh.jti,
+            id: access.sub || access.jti || data.user?.id || "unknown-id",
             tokens,
             user: data.user,
             validity,
           } as User;
         } catch (err) {
+          console.error("❌ Authorize execution failed:", err);
           // Se já é CredentialsSignin (ou subclasse) re-lança para NextAuth tratar e preservar cause
           if (err instanceof CredentialsSignin) throw err;
 
