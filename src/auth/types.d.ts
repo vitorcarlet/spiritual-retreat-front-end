@@ -9,8 +9,11 @@ type DefaultResponse = {
 };
 
 export interface LoginResponse extends DefaultResponse {
-  access_token: string;
-  refresh_token: string;
+  success:boolean;
+  message:string
+  accessToken: string;
+  refreshToken: string;
+  emailConfirmed:boolean
   user: UserObject;
   isNonCodeConfirmed?: boolean;
 }

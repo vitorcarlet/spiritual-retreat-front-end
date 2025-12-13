@@ -14,8 +14,8 @@ export const createAuthenticatedApi = async () => {
   try {
     const session = await auth();
 
-    if (session?.tokens.access_token) {
-      apiServer.defaults.headers.Authorization = `Bearer ${session.tokens.access_token}`;
+    if (session?.tokens.accessToken) {
+      apiServer.defaults.headers.Authorization = `Bearer ${session.tokens.accessToken}`;
     }
 
     return apiServer;

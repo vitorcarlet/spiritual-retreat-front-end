@@ -47,9 +47,9 @@ const LoginPage = ({
       }
 
       const data = await response.json();
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("refreshToken", data.refresh_token);
-      onLoginSuccess?.(data.access_token);
+      localStorage.setItem("token", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      onLoginSuccess?.(data.accessToken);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao fazer login");
     } finally {
@@ -136,8 +136,8 @@ describe("Authentication Flow - Testes de Integração", () => {
           ) {
             return HttpResponse.json(
               {
-                access_token: "fake-jwt-access-token",
-                refresh_token: "fake-jwt-refresh-token",
+                accessToken: "fake-jwt-access-token",
+                refreshToken: "fake-jwt-refresh-token",
                 user: { id: "1", email: "user@test.com" },
               },
               { status: 200 }
@@ -182,8 +182,8 @@ describe("Authentication Flow - Testes de Integração", () => {
           // Simula delay de rede
           await new Promise((resolve) => setTimeout(resolve, 100));
           return HttpResponse.json({
-            access_token: "token",
-            refresh_token: "refresh-token",
+            accessToken: "token",
+            refreshToken: "refresh-token",
           });
         })
       );
@@ -309,16 +309,16 @@ describe("Authentication Flow - Testes de Integração", () => {
   });
 
   describe("Refresh Token", () => {
-    it("deve fazer refresh do token quando o access_token expirar", async () => {
+    it("deve fazer refresh do token quando o accessToken expirar", async () => {
       server.use(
         http.post(`${API_BASE_URL}/refresh`, async ({ request }) => {
-          const body = (await request.json()) as { refresh_token: string };
+          const body = (await request.json()) as { refreshToken: string };
 
-          if (body.refresh_token === "valid-refresh-token") {
+          if (body.refreshToken === "valid-refresh-token") {
             return HttpResponse.json(
               {
-                access_token: "new-access-token",
-                refresh_token: "new-refresh-token",
+                accessToken: "new-access-token",
+                refreshToken: "new-refresh-token",
               },
               { status: 200 }
             );
@@ -336,15 +336,15 @@ describe("Authentication Flow - Testes de Integração", () => {
       const response = await fetch(`${API_BASE_URL}/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: "valid-refresh-token" }),
+        body: JSON.stringify({ refreshToken: "valid-refresh-token" }),
       });
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      expect(data.access_token).toBe("new-access-token");
+      expect(data.accessToken).toBe("new-access-token");
     });
 
-    it("deve fazer logout quando refresh_token está inválido", async () => {
+    it("deve fazer logout quando refreshToken está inválido", async () => {
       server.use(
         http.post(`${API_BASE_URL}/refresh`, () => {
           return HttpResponse.json(
@@ -359,7 +359,7 @@ describe("Authentication Flow - Testes de Integração", () => {
       const response = await fetch(`${API_BASE_URL}/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: "invalid-refresh-token" }),
+        body: JSON.stringify({ refreshToken: "invalid-refresh-token" }),
       });
 
       expect(response.ok).toBe(false);
@@ -382,8 +382,8 @@ describe("Authentication Flow - Testes de Integração", () => {
           ) {
             return HttpResponse.json(
               {
-                access_token: "fake-access-token",
-                refresh_token: "fake-refresh-token",
+                accessToken: "fake-access-token",
+                refreshToken: "fake-refresh-token",
                 user: { id: "1", email: "user@test.com" },
               },
               { status: 200 }
@@ -443,8 +443,8 @@ describe("Authentication Flow - Testes de Integração", () => {
             body.password === "password123"
           ) {
             return HttpResponse.json({
-              access_token: "token",
-              refresh_token: "refresh-token",
+              accessToken: "token",
+              refreshToken: "refresh-token",
             });
           }
 

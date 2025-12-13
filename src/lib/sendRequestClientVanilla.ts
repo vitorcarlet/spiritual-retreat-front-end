@@ -73,8 +73,8 @@ async function resolveAccessToken(
   const session = await getSession();
 
   const token =
-    (session as { tokens?: { access_token?: string } } | null | undefined)
-      ?.tokens?.access_token ||
+    (session as { tokens?: { accessToken?: string } } | null | undefined)
+      ?.tokens?.accessToken ||
     (session as { accessToken?: string } | null | undefined)?.accessToken;
 
   if (!token) {

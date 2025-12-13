@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { BackendJWT, UserObject } from "next-auth";
-import { create_access_token, create_refresh_token } from "./actions";
+import { create_accessToken, create_refreshToken } from "./actions";
 import { RegisterSchema } from "../schemas";
 import { createUserMock } from "./handlerData/login";
 import getUserById from "./handlerData/getUserById";
@@ -88,7 +88,7 @@ export const handlers = [
   }),
 
   http.get(`${API_BASE_URL}/refresh`, () => {
-    return HttpResponse.json({ access_token: "1234" }, { status: 200 });
+    return HttpResponse.json({ accessToken: "1234" }, { status: 200 });
   }),
 
   // http.post(`${API_BASE_URL}/login`, async ({ request }) => {
@@ -122,16 +122,16 @@ export const handlers = [
   //   }
 
   //   const mock_data: BackendJWT = {
-  //     access_token: create_access_token(user),
-  //     refresh_token: create_refresh_token(user),
+  //     accessToken: create_accessToken(user),
+  //     refreshToken: create_refreshToken(user),
   //   };
 
   //   return HttpResponse.json(
   //     {
   //       message: "Login successful",
   //       success: true,
-  //       access_token: mock_data.access_token,
-  //       refresh_token: mock_data.refresh_token,
+  //       accessToken: mock_data.accessToken,
+  //       refreshToken: mock_data.refreshToken,
   //       isNonCodeConfirmed: user.role === "participant" ? true : false,
   //       user: user.role === "participant" ? { id: user.id } : user,
   //     },
@@ -160,8 +160,8 @@ export const handlers = [
         return HttpResponse.json(
           {
             message: "Login successful",
-            access_token: create_access_token(user),
-            refresh_token: create_refresh_token(user),
+            accessToken: create_accessToken(user),
+            refreshToken: create_refreshToken(user),
             user,
           },
           { status: 200 }

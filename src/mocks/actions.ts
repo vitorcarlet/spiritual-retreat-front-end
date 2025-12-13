@@ -39,8 +39,8 @@ const SECRET_SIGNING_SALT = new TextEncoder().encode("super-secret-salt");
 
 //   // Dummy data to simulate a successful login
 //   const mock_data: BackendJWT = {
-//     access_token: create_access_token(userData),
-//     refresh_token: create_refresh_token(userData),
+//     accessToken: create_accessToken(userData),
+//     refreshToken: create_refreshToken(userData),
 //   };
 
 //   return new Response(JSON.stringify(mock_data), {
@@ -86,10 +86,10 @@ export async function refresh(
     }
 
     // Criar novo access token com os dados do usuário
-    const newAccessToken = await create_access_token(decoded);
+    const newAccessToken = await create_accessToken(decoded);
 
     const mockResponse: BackendAccessJWT = {
-      access_token: newAccessToken,
+      accessToken: newAccessToken,
     };
 
     // Simular resposta do axios
@@ -113,7 +113,7 @@ export async function refresh(
   }
 }
 // Função para criar access token
-export const create_access_token = async (
+export const create_accessToken = async (
   user: UserObject
 ): Promise<string> => {
   const sanitizedUser: Record<string, unknown> = {
@@ -135,7 +135,7 @@ export const create_access_token = async (
     .sign(SECRET_SIGNING_SALT);
 };
 
-export const create_refresh_token = async (
+export const create_refreshToken = async (
   user: UserObject
 ): Promise<string> => {
   return new SignJWT({

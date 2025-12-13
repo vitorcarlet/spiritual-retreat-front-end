@@ -78,7 +78,7 @@ export async function requestServerFn<T = unknown>(
       }
       finalHeaders.set(
         "Authorization",
-        `Bearer ${session.tokens.access_token}`
+        `Bearer ${session.tokens.accessToken}`
       );
     }
 

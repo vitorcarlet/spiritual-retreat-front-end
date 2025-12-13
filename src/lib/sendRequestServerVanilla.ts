@@ -88,7 +88,7 @@ export async function sendRequestServerVanillaFn(
     // Adicionar token do usuário autenticado
     defaultHeaders.append(
       "Authorization",
-      `Bearer ${session.tokens.access_token}`
+      `Bearer ${session.tokens.accessToken}`
     );
   }
 

@@ -9,19 +9,19 @@ import "next-auth";
 
 declare module "next-auth" {
   export interface BackendAccessJWT {
-    access_token?: string;
+    accessToken?: string;
     expires_in?: number;
     id_token?: string;
     "not-before-policy"?: number;
     refresh_expires_in?: number;
-    refresh_token?: string;
+    refreshToken?: string;
     scope?: string;
     session_state?: string;
     token_type?: string;
   }
 
   export type BackendJWT = BackendAccessJWT & {
-    refresh_token: string;
+    refreshToken: string;
   };
 
   /**
@@ -89,7 +89,7 @@ declare module "next-auth" {
    * when the current access token expires
    */
   export interface RefreshToken extends BackendAccessJWT {
-    refresh_token: string;
+    refreshToken: string;
   }
 
   /**
@@ -126,7 +126,7 @@ declare module "next-auth" {
   }
   /**
    * The shape of the account object returned in the OAuth providers' `account` callback,
-   * Usually contains information about the provider being used, like OAuth tokens (`access_token`, etc).
+   * Usually contains information about the provider being used, like OAuth tokens (`accessToken`, etc).
    */
   // interface Account {}
 
@@ -150,12 +150,12 @@ declare module "next-auth/jwt" {
    */
 
   export interface BackendAccessJWT {
-    access_token?: string;
+    accessToken?: string;
     expires_in?: number;
     id_token?: string;
     "not-before-policy"?: number;
     refresh_expires_in?: number;
-    refresh_token?: string;
+    refreshToken?: string;
     scope?: string;
     session_state?: string;
     token_type?: string;
@@ -166,7 +166,7 @@ declare module "next-auth/jwt" {
    * when the current access token expires
    */
   export interface BackendJWT extends BackendAccessJWT {
-    refresh_token: string;
+    refreshToken: string;
   }
 
   export interface UserObject {

@@ -17,7 +17,7 @@ import { UnstorageAdapter } from "@auth/unstorage-adapter";
 import { authRoutes } from "./routes";
 import { isPublicPath } from "./routes";
 import { refresh } from "./src/mocks/actions";
-import { jwtDecode } from "jwt-decode";
+import {jwtDecode} from "jwt-decode";
 import { JWT } from "next-auth/jwt";
 import { LoginResponse } from "./src/auth/types";
 import GitHub from "next-auth/providers/github";
@@ -150,17 +150,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       // The current access token has expired, but the refresh token is still valid
-      if (token.data.validity?.refresh_until && now < refreshUntil) {
-        // eslint-disable-next-line no-console
-        console.log("🔄 Refreshing access token...");
-        const refreshedToken = await refreshAccessToken(token);
-        if (refreshedToken.error) {
-          console.warn("❌ Refresh failed - forcing logout");
-          return { ...token, error: "RefreshAccessTokenError" };
-        }
+      // if (token.data.validity?.refresh_until && now < refreshUntil) {
+      //   // eslint-disable-next-line no-console
+      //   console.log("🔄 Refreshing access token...");
+      //   const refreshedToken = await refreshaccessToken(token);
+      //   if (refreshedToken.error) {
+      //     console.warn("❌ Refresh failed - forcing logout");
+      //     return { ...token, error: "RefreshAccessTokenError" };
+      //   }
 
-        return refreshedToken;
-      }
+      //   return refreshedToken;
+      // }
       // The current access token and refresh token have both expired
       // This should not really happen unless you get really unlucky with
       // the timing of the token expiration because the middleware should
@@ -258,18 +258,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               })
             );
 
-            if (!data?.access_token || error) {
+            if (!data?.accessToken || error) {
               // Código inválido -> credenciais inválidas
               return null;
             }
 
             const tokens: BackendJWT = {
-              access_token: data.access_token,
-              refresh_token: data.refresh_token,
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
             };
-            const access: DecodedJWT = jwtDecode(tokens.access_token!);
-            const refresh: DecodedJWT = jwtDecode(tokens.refresh_token);
-
+            const access: DecodedJWT = jwtDecode(tokens.accessToken!);
+            const refresh: DecodedJWT = jwtDecode(tokens.refreshToken);
+            
             const validity: AuthValidity = {
               valid_until: access.exp,
               refresh_until: refresh.exp,
@@ -303,15 +303,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw new UserNotActivatedError();
           }
 
-          if (!data.access_token) return null;
+          if (!data.accessToken) return null;
 
           const tokens: BackendJWT = {
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
           };
-          const access: DecodedJWT = jwtDecode(tokens.access_token!);
-          const refresh: DecodedJWT = jwtDecode(tokens.refresh_token);
-
+          const access: DecodedJWT = jwtDecode(tokens.accessToken!);
+          const refresh: DecodedJWT = jwtDecode(tokens.refreshToken);
+console.log(access.exp,refresh.exp,'EXP EXP')
           const validity: AuthValidity = {
             valid_until: access.exp,
             refresh_until: refresh.exp,
@@ -335,20 +335,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
 });
 
-async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
+async function refreshaccessToken(nextAuthJWT: JWT): Promise<JWT> {
   try {
     // Get a new access token from backend using the refresh token
     //console.log(nextAuthJWT,'NEXTAUTHJWTWWW')
-    const res = await refresh(nextAuthJWT.data.tokens.refresh_token);
+    const res = await refresh(nextAuthJWT.data.tokens.refreshToken);
     const accessToken: BackendAccessJWT = res?.data;
 
-    if (!res || accessToken.access_token === undefined)
+    if (!res || accessToken.accessToken === undefined)
       return { ...nextAuthJWT, error: "RefreshAccessTokenError" };
-    const { exp }: DecodedJWT = jwtDecode(accessToken.access_token);
+    const { exp }: DecodedJWT = jwtDecode(accessToken.accessToken);
 
     // Update the token and validity in the next-auth object
     // nextAuthJWT.data.validity.valid_until = exp;
-    // nextAuthJWT.data.tokens.access = accessToken.access_token;
+    // nextAuthJWT.data.tokens.access = accessToken.accessToken;
     // Ensure the returned jwt has a new object reference ID
     // (jwt will not be updated otherwise)
     return {
@@ -361,7 +361,7 @@ async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
         },
         tokens: {
           ...nextAuthJWT.data.tokens,
-          access_token: accessToken.access_token,
+          accessToken: accessToken.accessToken,
         },
       },
     };

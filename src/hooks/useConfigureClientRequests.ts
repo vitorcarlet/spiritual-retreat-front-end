@@ -15,7 +15,7 @@ export function useConfigureClientRequests() {
 
     setClientAccessTokenResolver(async () => {
       const token =
-        session?.tokens?.access_token ||
+        session?.tokens?.accessToken ||
         (session as { accessToken?: string })?.accessToken;
 
       if (!token) {

@@ -47,8 +47,8 @@ export default function SendMessageToFamilyForm({
   const accessToken = useMemo(() => {
     if (!sessionData) return undefined;
     const tokenFromTokens = (
-      sessionData as { tokens?: { access_token?: string } }
-    ).tokens?.access_token;
+      sessionData as { tokens?: { accessToken?: string } }
+    ).tokens?.accessToken;
     if (tokenFromTokens) return tokenFromTokens;
     return (sessionData as { accessToken?: string })?.accessToken;
   }, [sessionData]);

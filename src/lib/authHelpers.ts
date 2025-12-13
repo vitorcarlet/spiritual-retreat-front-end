@@ -12,14 +12,14 @@ export async function authenticateUser(email: string, password: string) {
     });
 
     const tokens = {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
     };
 
-    if (!data || data.access_token === undefined) throw tokens;
+    if (!data || data.accessToken === undefined) throw tokens;
 
-    const access = jwtDecode(tokens.access_token!);
-    const refresh = jwtDecode(tokens.refresh_token);
+    const access = jwtDecode(tokens.accessToken!);
+    const refresh = jwtDecode(tokens.refreshToken);
 
     const validity = {
       valid_until: access.exp,

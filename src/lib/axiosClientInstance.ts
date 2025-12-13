@@ -15,7 +15,7 @@ apiClient.interceptors.request.use(
   async (config) => {
     const session = await getSession(); // precisa ser await
     const token =
-      session?.tokens?.access_token ||
+      session?.tokens?.accessToken ||
       (session as { accessToken?: string })?.accessToken;
 
     if (token) {
