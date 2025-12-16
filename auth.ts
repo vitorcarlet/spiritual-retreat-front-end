@@ -5,29 +5,30 @@ import NextAuth, {
   CredentialsSignin,
   DecodedJWT,
   User,
-} from "next-auth";
-import "next-auth/jwt";
+} from 'next-auth';
+import 'next-auth/jwt';
+import { JWT } from 'next-auth/jwt';
+import Credentials from 'next-auth/providers/credentials';
+import GitHub from 'next-auth/providers/github';
+import Google from 'next-auth/providers/google';
 
+import { UnstorageAdapter } from '@auth/unstorage-adapter';
+import { jwtDecode } from 'jwt-decode';
 // import Atlassian from "next-auth/providers/atlassian"
 
-import { createStorage } from "unstorage";
-import memoryDriver from "unstorage/drivers/memory";
-import vercelKVDriver from "unstorage/drivers/vercel-kv";
-import { UnstorageAdapter } from "@auth/unstorage-adapter";
-import { authRoutes } from "./routes";
-import { isPublicPath } from "./routes";
-import { refresh } from "./src/mocks/actions";
-import {jwtDecode} from "jwt-decode";
-import { JWT } from "next-auth/jwt";
-import { LoginResponse } from "./src/auth/types";
-import GitHub from "next-auth/providers/github";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
+import { createStorage } from 'unstorage';
+import memoryDriver from 'unstorage/drivers/memory';
+import vercelKVDriver from 'unstorage/drivers/vercel-kv';
+
+import { authRoutes } from './routes';
+import { isPublicPath } from './routes';
+import { LoginResponse } from './src/auth/types';
+import apiServer from './src/lib/axiosServerInstance';
 import {
   handleApiResponse,
   sendRequestServerVanilla,
-} from "./src/lib/sendRequestServerVanilla";
-import apiServer from "./src/lib/axiosServerInstance";
+} from './src/lib/sendRequestServerVanilla';
+import { refresh } from './src/mocks/actions';
 
 const storage = createStorage({
   driver: process.env.VERCEL
@@ -41,7 +42,7 @@ const storage = createStorage({
 
 class UserNotActivatedError extends CredentialsSignin {
   constructor() {
-    super("CONFIRMATION_CODE_REQUIRED");
+    super('CONFIRMATION_CODE_REQUIRED');
   }
 }
 
@@ -69,15 +70,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   //     }
   //   }
   // },
-  theme: { logo: "https://authjs.dev/img/logo-sm.png" },
+  theme: { logo: 'https://authjs.dev/img/logo-sm.png' },
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
     maxAge: 15 * 60, // 4 minutes
     updateAge: 30 * 60, // 30 minutes
   },
   pages: {
-    signIn: "/login",
-    error: "/", // Error code passed in query string as ?error=
+    signIn: '/login',
+    error: '/', // Error code passed in query string as ?error=
   },
   adapter: UnstorageAdapter(storage),
 
@@ -85,7 +86,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       // Allow OAuth without email verification
-      if (account?.provider !== "credentials") return true;
+      if (account?.provider !== 'credentials') return true;
 
       //const existingUser = await getUserById(user.id);
       //todo email verification and twofactor
@@ -107,20 +108,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
 
         // eslint-disable-next-line no-console
-        console.log("✅ Initial signin - User data:", {
+        console.log('✅ Initial signin - User data:', {
           userId: enrichedUser.user?.id ?? enrichedUser.id,
           hasTokens: !!enrichedUser.tokens,
           validUntil: enrichedUser.validity?.valid_until
             ? new Date(enrichedUser.validity.valid_until * 1000).toISOString()
-            : "N/A",
+            : 'N/A',
         });
         return { ...token, data: enrichedUser };
       }
 
       // ✅ Validação: se não tem data, significa que o token é inválido
       if (!token.data) {
-        console.warn("❌ Token without data - invalid token");
-        return { ...token, error: "NoTokenData" } as JWT;
+        console.warn('❌ Token without data - invalid token');
+        return { ...token, error: 'NoTokenData' } as JWT;
       }
 
       const now = Date.now();
@@ -132,12 +133,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         : 0;
 
       // eslint-disable-next-line no-console
-      console.log("🔍 Token check:", {
+      console.log('🔍 Token check:', {
         now: new Date(now).toISOString(),
-        validUntil: validUntil ? new Date(validUntil).toISOString() : "N/A",
+        validUntil: validUntil ? new Date(validUntil).toISOString() : 'N/A',
         refreshUntil: refreshUntil
           ? new Date(refreshUntil).toISOString()
-          : "N/A",
+          : 'N/A',
         isValid: now < validUntil,
         canRefresh: now < refreshUntil,
       });
@@ -145,18 +146,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // The current access token is still valid
       if (token.data.validity?.valid_until && now < validUntil) {
         // eslint-disable-next-line no-console
-        console.log("✅ Access token is still valid");
+        console.log('✅ Access token is still valid');
         return token;
       }
 
       // The current access token has expired, but the refresh token is still valid
       if (token.data.validity?.refresh_until && now < refreshUntil) {
         // eslint-disable-next-line no-console
-        console.log("🔄 Refreshing access token...");
+        console.log('🔄 Refreshing access token...');
         const refreshedToken = await refreshaccessToken(token);
         if (refreshedToken.error) {
-          console.warn("❌ Refresh failed - forcing logout");
-          return { ...token, error: "RefreshAccessTokenError" };
+          console.warn('❌ Refresh failed - forcing logout');
+          return { ...token, error: 'RefreshAccessTokenError' };
         }
 
         return refreshedToken;
@@ -165,8 +166,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // This should not really happen unless you get really unlucky with
       // the timing of the token expiration because the middleware should
       // have caught this case before the callback is called
-      console.warn("Both tokens have expired");
-      return { ...token, error: "RefreshTokenExpired" } as JWT;
+      console.warn('Both tokens have expired');
+      return { ...token, error: 'RefreshTokenExpired' } as JWT;
     },
     async session({ session, token }) {
       const buildInvalidSession = (errorCode: string) => {
@@ -176,12 +177,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           validity: null,
           tokens: undefined,
           error: errorCode,
-          expires: "1970-01-01T00:00:00.000Z",
+          expires: '1970-01-01T00:00:00.000Z',
         };
       };
 
       if (token.error) {
-        console.warn("❌ Token error detected:", token.error);
+        console.warn('❌ Token error detected:', token.error);
         return buildInvalidSession(token.error as string);
       }
 
@@ -189,8 +190,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.data?.user && Object.keys(token.data.user).length > 0;
 
       if (!hasUserData) {
-        console.warn("❌ Invalid user data in token");
-        return buildInvalidSession("InvalidUserData");
+        console.warn('❌ Invalid user data in token');
+        return buildInvalidSession('InvalidUserData');
       }
 
       return {
@@ -203,10 +204,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     authorized: ({ auth, request }) => {
       if (
-        auth?.error === "RefreshAccessTokenError" ||
-        auth?.error === "RefreshTokenExpired"
+        auth?.error === 'RefreshAccessTokenError' ||
+        auth?.error === 'RefreshTokenExpired'
       ) {
-        console.warn("❌ Unauthorized due to token error:", auth.error);
+        console.warn('❌ Unauthorized due to token error:', auth.error);
         return false;
       }
       const { pathname } = request.nextUrl;
@@ -234,25 +235,58 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     GitHub,
     Google,
     Credentials({
-      name: "Login",
+      id: 'confirmCode',
+      name: 'Confirm Code',
+      //   credentials: {
+      //    result: {} as LoginResponse
+
+      // },
+      authorize: async (credentials: Partial<Record<'result', unknown>>) => {
+        const result = credentials.result as LoginResponse | undefined;
+        if (!result || !result.accessToken) return null;
+
+        const tokens: BackendJWT = {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+        };
+
+        const access: DecodedJWT = jwtDecode(tokens.accessToken!);
+        const REFRESH_TOKEN_LIFETIME = 30 * 24 * 60 * 60;
+        const nowInSeconds = Math.floor(Date.now() / 1000);
+        const validity: AuthValidity = {
+          valid_until: access.exp,
+          refresh_until: nowInSeconds + REFRESH_TOKEN_LIFETIME,
+        };
+
+        return {
+          id: access.sub || access.jti || result.user?.id || 'unknown-id',
+          tokens,
+          user: result.user,
+          validity,
+        } as User;
+      },
+    }),
+    Credentials({
+      id: 'credentials',
+      name: 'Login',
       credentials: {
         email: {
-          label: "Email",
-          type: "email",
-          placeholder: "john@mail.com",
+          label: 'Email',
+          type: 'email',
+          placeholder: 'john@mail.com',
         },
-        password: { label: "Password", type: "password" },
-        code: { label: "Code", type: "text", placeholder: "123456" }, // se usar fluxo de código
+        password: { label: 'Password', type: 'password' },
+        code: { label: 'Code', type: 'text', placeholder: '123456' }, // se usar fluxo de código
       },
       authorize: async (
-        credentials: Partial<Record<"email" | "password" | "code", unknown>>
+        credentials: Partial<Record<'email' | 'password' | 'code', unknown>>
       ) => {
         // Não envolva tudo em try/catch que retorna null; só capture para re-lançar
         try {
           // Fluxo de verificação de código direto
           if (!!credentials.code) {
             const { data, error } = await handleApiResponse<LoginResponse>(
-              await sendRequestServerVanilla.post("/verify-code", {
+              await sendRequestServerVanilla.post('/verify-code', {
                 email: credentials.email,
                 code: credentials.code,
               })
@@ -279,7 +313,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             };
 
             return {
-              id: access.sub || access.jti || "unknown-id",
+              id: access.sub || access.jti || 'unknown-id',
               tokens,
               user: data.user,
               validity,
@@ -287,15 +321,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           // Login normal
-          const response = await apiServer.post<LoginResponse>("/login", {
+          const response = await apiServer.post<LoginResponse>('/login', {
             email: credentials.email,
             password: credentials.password,
           });
           // eslint-disable-next-line no-console
           console.log(
-            "RESPONSE LOGIN <-----------------",
+            'RESPONSE LOGIN <-----------------',
             response.data,
-            "<------------------RESPONSE LOGIN"
+            '<------------------RESPONSE LOGIN'
           );
           const data = response.data;
 
@@ -324,18 +358,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           };
 
           return {
-            id: access.sub || access.jti || data.user?.id || "unknown-id",
+            id: access.sub || access.jti || data.user?.id || 'unknown-id',
             tokens,
             user: data.user,
             validity,
           } as User;
         } catch (err) {
-          console.error("❌ Authorize execution failed:", err);
+          console.error('❌ Authorize execution failed:', err);
           // Se já é CredentialsSignin (ou subclasse) re-lança para NextAuth tratar e preservar cause
           if (err instanceof CredentialsSignin) throw err;
 
           // Qualquer outro erro inesperado -> encapsular em CredentialsSignin com identificador
-          throw new CredentialsSignin("INTERNAL_AUTH_ERROR");
+          throw new CredentialsSignin('INTERNAL_AUTH_ERROR');
         }
       },
     }),
@@ -346,11 +380,11 @@ async function refreshaccessToken(nextAuthJWT: JWT): Promise<JWT> {
   try {
     // Get a new access token from backend using the refresh token
     //console.log(nextAuthJWT,'NEXTAUTHJWTWWW')
-    const res = await refresh(nextAuthJWT.data.tokens.refreshToken);
+    const res = await refresh(nextAuthJWT.data.tokens);
     const accessToken: BackendAccessJWT = res?.data;
 
     if (!res || accessToken.accessToken === undefined)
-      return { ...nextAuthJWT, error: "RefreshAccessTokenError" };
+      return { ...nextAuthJWT, error: 'RefreshAccessTokenError' };
     const { exp }: DecodedJWT = jwtDecode(accessToken.accessToken);
 
     // Update the token and validity in the next-auth object
@@ -373,10 +407,10 @@ async function refreshaccessToken(nextAuthJWT: JWT): Promise<JWT> {
       },
     };
   } catch (error) {
-    console.error("Failed to refresh access token:", error);
+    console.error('Failed to refresh access token:', error);
     return {
       ...nextAuthJWT,
-      error: "RefreshAccessTokenError",
+      error: 'RefreshAccessTokenError',
     };
   }
 }
