@@ -23,9 +23,18 @@ interface Retreat {
   location?: string;
   isActive?: boolean;
   images?: string[];
-  status: "open" | "closed" | "running" | "ended" | "upcoming";
+  status: 'open' | 'closed' | 'running' | 'ended' | 'upcoming';
   instructor?: string;
   image?: string;
+}
+
+interface RetreatLite {
+  id: string;
+  name: string;
+  edition: string;
+  startDate: string;
+  //2026-03-08
+  endDate: string;
 }
 
 interface RetreatPost {
@@ -65,7 +74,7 @@ interface RetreatPost {
   location?: string;
   isActive?: boolean;
   images?: string[];
-  status: "open" | "closed" | "running" | "ended" | "upcoming";
+  status: 'open' | 'closed' | 'running' | 'ended' | 'upcoming';
   instructor?: string;
   image?: string;
 }
@@ -81,7 +90,7 @@ export interface Participant {
   cpf: string;
   city: string;
   state: string;
-  gender?: "male" | "female" | "other" | "na";
+  gender?: 'male' | 'female' | 'other' | 'na';
   registrationDate: string;
-  status: "registered" | "confirmed" | "cancelled" | "attended"; // Status do participante
+  status: 'registered' | 'confirmed' | 'cancelled' | 'attended'; // Status do participante
 }
