@@ -21,7 +21,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useModal } from "@/src/hooks/useModal";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { sendRequestClientVanilla } from "@/src/lib/sendRequestClientVanilla";
 import {
   useNotifications,
   NotificationItem,
@@ -30,6 +29,7 @@ import NotificationsConfig, {
   loadNotificationSettings,
   saveNotificationSettings,
 } from "./NotificationsConfig";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 type TabKey = "all" | "unread";
 
@@ -104,7 +104,7 @@ const NotificationsMenu = () => {
     markAsRead(n.id);
     // opcional: avisa backend
     try {
-      await sendRequestClientVanilla.post(`/notifications/${n.id}/read`);
+      await apiClient.post(`/notifications/${n.id}/read`);
     } catch {
       // ignore
     }

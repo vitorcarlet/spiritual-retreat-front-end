@@ -8,11 +8,9 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import {
-  handleApiResponse,
-  sendRequestClientVanilla,
-} from "@/src/lib/sendRequestClientVanilla";
+
 import { useSession } from "next-auth/react";
+import apiClient from "@/src/lib/axiosClientInstance";
 
 export type NotificationItem = {
   id: number | string;
@@ -73,13 +71,8 @@ export function NotificationsProvider({
     if (!accessToken) return;
     setLoading(true);
     try {
-      const resp = await handleApiResponse<NotificationItem[]>(
-        await sendRequestClientVanilla.get("/notifications", {
-          getAccessToken: async () => accessToken,
-        })
-      );
-      if (!resp.success) throw new Error(resp.error || "Falha ao buscar");
-      setItems(resp.data || []);
+      const response = await apiClient.get<NotificationItem[]>("/notifications");
+      setItems(response.data || []);
     } catch (e) {
       console.error(e);
       setItems([]);
@@ -93,17 +86,7 @@ export function NotificationsProvider({
     try {
       const ids = items.filter((n) => !n.read).map((n) => n.id);
       if (ids.length) {
-        await handleApiResponse(
-          await sendRequestClientVanilla.post(
-            "/notifications/mark-all-read",
-            {
-              ids,
-            },
-            {
-              getAccessToken: async () => accessToken,
-            }
-          )
-        );
+        await apiClient.post("/notifications/mark-all-read", { ids });
       }
       setItems((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (error) {
