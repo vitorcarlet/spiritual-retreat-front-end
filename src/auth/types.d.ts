@@ -1,5 +1,6 @@
-import { LoginResponse } from "@/generated-types/Api";
-import type { UserObject } from "next-auth";
+import type { UserObject } from 'next-auth';
+
+import { LoginResponse } from '@/generated-types/Api';
 
 type DefaultResponse = {
   message?: string;
@@ -9,11 +10,9 @@ type DefaultResponse = {
 };
 
 export interface LoginResponse extends DefaultResponse {
-  success:boolean;
-  message:string
   accessToken: string;
   refreshToken: string;
-  emailConfirmed:boolean
+  emailConfirmed: boolean;
   user: UserObject;
   isNonCodeConfirmed?: boolean;
 }

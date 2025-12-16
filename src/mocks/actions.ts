@@ -1,12 +1,11 @@
-import type { UserObject, BackendAccessJWT } from "next-auth";
-import { v4 as uuidv4 } from "uuid";
-import jwt from "jsonwebtoken"; // Use import ao invés de require
-import { AxiosResponse } from "axios";
-import { SignJWT } from "jose";
-import { jwtDecode } from "jwt-decode";
+import type { BackendAccessJWT, UserObject } from 'next-auth';
 
-// Dummy secret salt for signing tokens
-const SECRET_SIGNING_SALT = new TextEncoder().encode("super-secret-salt");
+import { AxiosResponse } from 'axios';
+import jwt from 'jsonwebtoken';
+import { jwtDecode } from 'jwt-decode';
+
+import apiServer from '../lib/axiosServerInstance';
+
 /**
  * Log in a user by sending a POST request to the backend using the supplied credentials.
  */
@@ -55,23 +54,26 @@ const SECRET_SIGNING_SALT = new TextEncoder().encode("super-secret-salt");
 /**
  * Refresh the access token by sending the refresh token.
  */
-export async function refresh(
-  token: string
-): Promise<AxiosResponse<BackendAccessJWT, any>> {
-  console.warn("Refreshing token");
+export async function refresh(tokens: {
+  accessToken: string;
+  refreshToken: string;
+}): Promise<AxiosResponse<BackendAccessJWT, any>> {
+  console.warn('Refreshing token');
 
   // Verify that the token is valid and not expired
   try {
-    if (!token) {
+    if (!tokens) {
       return Promise.reject({
         response: {
           status: 401,
-          statusText: "Unauthorized",
-          data: { error: "Refresh token expired" },
+          statusText: 'Unauthorized',
+          data: { error: 'Refresh token expired' },
         },
       });
     }
-    const decoded = jwtDecode(token) as UserObject & { exp: number };
+    const decoded = jwtDecode(tokens.accessToken) as UserObject & {
+      exp: number;
+    };
 
     // Verificar se o token expirou
     const now = Math.floor(Date.now() / 1000);
@@ -79,82 +81,37 @@ export async function refresh(
       return Promise.reject({
         response: {
           status: 401,
-          statusText: "Unauthorized",
-          data: { error: "Refresh token expired" },
+          statusText: 'Unauthorized',
+          data: { error: 'Refresh token expired' },
         },
       });
     }
 
     // Criar novo access token com os dados do usuário
-    const newAccessToken = await create_accessToken(decoded);
+    const newAccessToken = await apiServer.post<{
+      accessToken: string;
+      refreshToken: string;
+    }>(tokens.refreshToken);
 
-    const mockResponse: BackendAccessJWT = {
-      accessToken: newAccessToken,
-    };
-
-    // Simular resposta do axios
-    return {
-      data: mockResponse,
-      status: 200,
-      statusText: "OK",
-      headers: {},
-      config: {} as any,
-      request: {},
-    } as AxiosResponse<BackendAccessJWT>;
+    return newAccessToken;
   } catch (err) {
     console.error(`Refresh token expired:`, err);
     return Promise.reject({
       response: {
         status: 401,
-        statusText: "Unauthorized",
-        data: { error: "Refresh token expired" },
+        statusText: 'Unauthorized',
+        data: { error: 'Refresh token expired' },
       },
     });
   }
 }
-// Função para criar access token
-export const create_accessToken = async (
-  user: UserObject
-): Promise<string> => {
-  const sanitizedUser: Record<string, unknown> = {
-    ...(user as unknown as Record<string, unknown>),
-  };
-  delete sanitizedUser.exp;
-  delete sanitizedUser.iat;
-  delete sanitizedUser.nbf;
-  delete sanitizedUser.aud;
-  delete sanitizedUser.iss;
-
-  return new SignJWT({
-    ...sanitizedUser,
-    jti: uuidv4(),
-    type: "access",
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("15m")
-    .sign(SECRET_SIGNING_SALT);
-};
-
-export const create_refreshToken = async (
-  user: UserObject
-): Promise<string> => {
-  return new SignJWT({
-    id: user.id,
-    email: user.email,
-    jti: uuidv4(),
-    type: "refresh",
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("7d")
-    .sign(SECRET_SIGNING_SALT);
-};
 
 // Função utilitária para decodificar tokens (aqui você pode usar jwt-decode)
 export const decodeToken = (token: string) => {
   try {
     return jwt.decode(token);
   } catch (error) {
-    console.error("Error decoding token:", error);
+    console.error('Error decoding token:', error);
     return null;
   }
 };

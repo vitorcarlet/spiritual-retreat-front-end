@@ -1,12 +1,15 @@
-"use server";
+'use server';
 
-import { ROUTES } from "@/routes";
-import { RegisterSchema } from "@/src/schemas";
+import { redirect } from 'next/navigation';
+
+import { ROUTES } from '@/routes';
+import { RegisterSchema } from '@/src/schemas';
+
+import { LoginResponse } from '../auth/types';
 import {
-  sendRequestServerVanilla,
   handleApiResponse,
-} from "../lib/sendRequestServerVanilla";
-import { redirect } from "next/navigation";
+  sendRequestServerVanilla,
+} from '../lib/sendRequestServerVanilla';
 
 export const registerForm = async (values: RegisterSchema) => {
   try {
@@ -20,7 +23,7 @@ export const registerForm = async (values: RegisterSchema) => {
     });
 
     // ✅ Lidar com resposta de forma consistente
-    const result = await handleApiResponse(response);
+    const result = await handleApiResponse<LoginResponse>(response);
 
     if (!result.success) {
       return { error: result.error };
@@ -29,12 +32,12 @@ export const registerForm = async (values: RegisterSchema) => {
     // ✅ Redirecionar usando rotas centralizadas
     redirect(ROUTES.PROTECTED.DASHBOARD);
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error('Registration error:', error);
     return {
       error:
         error instanceof Error
           ? error.message
-          : "Something went wrong during registration.",
+          : 'Something went wrong during registration.',
     };
   }
 };

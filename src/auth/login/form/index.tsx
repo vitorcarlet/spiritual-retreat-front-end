@@ -1,34 +1,39 @@
-"use client";
-import React, { startTransition, useState } from "react";
-import {
-  Avatar,
-  Button,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  Link,
-  Grid,
-  Box,
-  Typography,
-  Paper,
-} from "@mui/material";
-import { Icon } from "@iconify/react";
-import { useForm } from "react-hook-form";
+'use client';
+import React, { startTransition, useState } from 'react';
+import { useForm } from 'react-hook-form';
+
 // import { ErrorMessage } from "@hookform/error-message";
-import { useSession } from "next-auth/react";
+import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Icon } from '@iconify/react';
 // import { useSession } from "next-auth/react";
 // -- ADICIONADO: Imports do Zod e seu Resolver
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { login } from "@/src/actions/login";
-import { useSearchParams } from "next/navigation";
-import { FormError } from "../../FormError";
-import { FormSuccess } from "../../FormSuccess";
+import { z } from 'zod';
+
+import {
+  Avatar,
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Grid,
+  Link,
+  Paper,
+  TextField,
+  Typography,
+} from '@mui/material';
+
+import { login } from '@/src/actions/login';
+
+import { FormError } from '../../FormError';
+import { FormSuccess } from '../../FormSuccess';
 
 // -- ADICIONADO: Definição do schema de validação Zod
 const loginSchema = z.object({
-  email: z.string().email("Informe um email válido"),
-  password: z.string().min(3, "A senha deve ter no mínimo 3 caracteres"),
+  email: z.string().email('Informe um email válido'),
+  password: z.string().min(3, 'A senha deve ter no mínimo 3 caracteres'),
 });
 type LoginSchema = z.infer<typeof loginSchema>; // Tipo derivado do schema
 
@@ -42,12 +47,12 @@ export default function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = searchParams.get('callbackUrl');
 
   //const { status } = useSession();
   const session = useSession();
-  const [error, setError] = useState<string | undefined>("");
-  const [success, setSuccess] = useState<string | undefined>("");
+  const [error, setError] = useState<string | undefined>('');
+  const [success, setSuccess] = useState<string | undefined>('');
   const [loading, setLoading] = useState(false);
   const onSubmit = async (data: { email: string; password: string }) => {
     setLoading(true);
@@ -61,11 +66,11 @@ export default function LoginForm() {
           }
           if (data?.success) {
             setSuccess(data.success);
-            setError("");
+            setError('');
           }
           setLoading(false);
         })
-        .catch(() => setError("Something went wrong"));
+        .catch(() => setError('Something went wrong'));
     });
   };
 
@@ -73,7 +78,7 @@ export default function LoginForm() {
     <Paper
       elevation={0}
       sx={{
-        width: "100%",
+        width: '100%',
         padding: 4,
         borderRadius: 2,
         boxShadow: (theme) => `0px 4px 12px ${theme.palette.primary.main}80`,
@@ -81,12 +86,12 @@ export default function LoginForm() {
     >
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
+        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
           <Icon icon="material-symbols:lock-outline" />
         </Avatar>
         <Typography component="h1" variant="h5">
@@ -102,7 +107,7 @@ export default function LoginForm() {
             label="Endereço de Email"
             autoComplete="email"
             autoFocus
-            {...register("email", { required: true })}
+            {...register('email', { required: true })}
             //onChange={(e) => setEmail(e.target.value)}
           />
           {errors.email && (
@@ -116,7 +121,7 @@ export default function LoginForm() {
             type="password"
             id="password"
             autoComplete="current-password"
-            {...register("password", { required: true })}
+            {...register('password', { required: true })}
           />
           {errors.password && (
             <Typography color="error">{errors.password.message}</Typography>
@@ -149,15 +154,11 @@ export default function LoginForm() {
                 Esqueceu a senha?
               </Link>
             </Grid>
-            <Grid size={{ xs: 12 }}>
-              <Link href="/register" variant="body2">
-                {"Não tem conta? Cadastre-se"}
-              </Link>
-            </Grid>
+            <Grid size={{ xs: 12 }}></Grid>
             {errors.root && (
               <Typography color="error" sx={{ mt: 2 }}>
                 {errors.root?.message ||
-                  "Ocorreu um erro ao tentar fazer login. Verifique suas credenciais e tente novamente."}
+                  'Ocorreu um erro ao tentar fazer login. Verifique suas credenciais e tente novamente.'}
               </Typography>
             )}
             <FormError message={error} />

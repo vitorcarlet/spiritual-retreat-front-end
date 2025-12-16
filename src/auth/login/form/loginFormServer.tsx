@@ -1,20 +1,23 @@
 // src/auth/login/form/index.tsx
-"use client";
+'use client';
 
-import React, { useActionState } from "react";
+import React, { useActionState } from 'react';
+
 import {
   Avatar,
-  TextField,
-  FormControlLabel,
-  Checkbox,
-  Link,
   Box,
-  Typography,
+  Checkbox,
+  FormControlLabel,
+  Link,
   Paper,
-} from "@mui/material";
-import { loginServerAction } from "@/src/actions/login-server";
-import { SubmitButton } from "./SubmitButton";
-import { FormError } from "../../FormError";
+  TextField,
+  Typography,
+} from '@mui/material';
+
+import { loginServerAction } from '@/src/actions/login-server';
+
+import { FormError } from '../../FormError';
+import { SubmitButton } from './SubmitButton';
 
 type LoginState = {
   message?: string;
@@ -22,7 +25,7 @@ type LoginState = {
 };
 
 const initialState: LoginState = {
-  message: "",
+  message: '',
   errors: {},
 };
 
@@ -31,10 +34,10 @@ async function loginActionWrapper(prevState: LoginState, formData: FormData) {
   // Reutiliza a action existente (mantendo compatibilidade)
   const result = await loginServerAction(formData);
   // Se loginServerAction fez redirect, execução não continua.
-  if (result && "errors" in result) {
+  if (result && 'errors' in result) {
     return result as LoginState;
   }
-  return { message: "", errors: {} }; // sucesso (redirect já ocorreu)
+  return { message: '', errors: {} }; // sucesso (redirect já ocorreu)
 }
 
 export default function LoginFormServer() {
@@ -44,7 +47,7 @@ export default function LoginFormServer() {
     <Paper
       elevation={0}
       sx={{
-        width: "100%",
+        width: '100%',
         p: 4,
         borderRadius: 2,
         boxShadow: (theme) => `0px 4px 12px ${theme.palette.primary.main}80`,
@@ -52,12 +55,12 @@ export default function LoginFormServer() {
     >
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: "primary.main" }} />
+        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }} />
         <Typography component="h1" variant="h5">
           Entrar
         </Typography>
@@ -96,12 +99,9 @@ export default function LoginFormServer() {
 
           <SubmitButton />
 
-          <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Link href="/forgotpassword" variant="body2">
               Esqueceu a senha?
-            </Link>
-            <Link href="/register" variant="body2">
-              Não tem conta? Cadastre-se
             </Link>
           </Box>
 
