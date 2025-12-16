@@ -1,4 +1,4 @@
-import { AsyncOption } from "../select-auto-complete/AsynchronousAutoComplete";
+import { RetreatLite } from '@/src/types/retreats';
 
 export interface RetreatMetrics {
   payments: {
@@ -26,15 +26,9 @@ export interface RetreatMetrics {
     items: Array<{
       id: string;
       description: string;
-      type: "payment" | "accommodation" | "family" | "team";
+      type: 'payment' | 'accommodation' | 'family' | 'team';
     }>;
   };
 }
 
 export type RetreatOption = { options: RetreatLite[]; total: number };
-export type RetreatLite = AsyncOption & {
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-  location: string;
-};

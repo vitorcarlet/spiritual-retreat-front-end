@@ -1,12 +1,15 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Box, Tabs, Tab, Grid } from "@mui/material";
-import { useRouter, usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
-import Iconify from "../Iconify";
-import SelectEditMode from "../navigation/SelectEditMode";
-import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { usePathname, useRouter } from 'next/navigation';
+
+import { Box, Grid, Tab, Tabs } from '@mui/material';
+
+import { useMenuMode } from '@/src/contexts/users-context/MenuModeContext';
+
+import Iconify from '../Iconify';
+import SelectEditMode from '../navigation/SelectEditMode';
 
 interface RetreatPageProps {
   children: React.ReactNode;
@@ -22,48 +25,48 @@ export default function RetreatPage({
 }: RetreatPageProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
 
   const { menuMode, toggleMenuMode, isAllowedToEdit } = useMenuMode();
 
-  const retreatId = pathname.split("/")[2];
+  const retreatId = pathname.split('/')[2];
 
   const allTabs = useMemo(
     () => [
       {
-        label: "Geral",
-        icon: "lucide:home",
+        label: 'Geral',
+        icon: 'lucide:home',
         path: `/retreats/${retreatId}`,
         value: 0,
       },
       {
-        label: "Contemplações",
-        icon: "lucide:star",
+        label: 'Contemplações',
+        icon: 'lucide:star',
         path: `/retreats/${retreatId}/contemplations`,
         value: 1,
       },
+      // {
+      //   label: "Formulários",
+      //   icon: "lucide:file-text",
+      //   path: `/retreats/${retreatId}/forms`,
+      //   value: 2,
+      //   requireAdmin: true,
+      // },
       {
-        label: "Formulários",
-        icon: "lucide:file-text",
-        path: `/retreats/${retreatId}/forms`,
-        value: 2,
-        requireAdmin: true,
-      },
-      {
-        label: "Famílias",
-        icon: "icon-park-solid:family",
+        label: 'Famílias',
+        icon: 'icon-park-solid:family',
         path: `/retreats/${retreatId}/families`,
         value: 3,
       },
       {
-        label: "Equipe de serviço",
-        icon: "fluent:people-team-toolbox-20-filled",
+        label: 'Equipe de serviço',
+        icon: 'fluent:people-team-toolbox-20-filled',
         path: `/retreats/${retreatId}/service-team`,
         value: 4,
       },
       {
-        label: "Barracas",
-        icon: "lucide:tent",
+        label: 'Barracas',
+        icon: 'lucide:tent',
         path: `/retreats/${retreatId}/tents`,
         value: 5,
       },
@@ -73,9 +76,10 @@ export default function RetreatPage({
 
   // Filtrar tabs baseado no role do usuário
   const tabs = useMemo(() => {
-    const userRole = session?.user?.role;
-    return allTabs.filter((tab) => !tab.requireAdmin || userRole === "admin");
-  }, [allTabs, session?.user?.role]);
+    // const userRole = session?.user?.role;
+    // return allTabs.filter((tab) => !tab.requireAdmin || userRole === "admin");
+    return allTabs;
+  }, [allTabs]);
 
   // Encontrar a tab atual baseado no pathname
   const getCurrentTabValue = useCallback(() => {
@@ -118,18 +122,18 @@ export default function RetreatPage({
   function a11yProps(index: number) {
     return {
       id: `retreat-tab-${index}`,
-      "aria-controls": `retreat-tabpanel-${index}`,
+      'aria-controls': `retreat-tabpanel-${index}`,
     };
   }
 
   return (
-    <Box sx={{ width: "100%", height: "100%", maxHeight: "100%" }}>
+    <Box sx={{ width: '100%', height: '100%', maxHeight: '100%' }}>
       {/* Container das abas */}
       {/* Tabs Header */}
       <Grid container spacing={0} minHeight={72}>
         <Grid
           size={{ xs: 12, md: 8, lg: 6 }}
-          sx={{ p: 2, pr: 0, pb: 0, pt: 0, height: "100%" }}
+          sx={{ p: 2, pr: 0, pb: 0, pt: 0, height: '100%' }}
         >
           <Box>
             <Tabs
@@ -139,10 +143,10 @@ export default function RetreatPage({
               variant="scrollable"
               scrollButtons="auto"
               sx={{
-                "& .MuiTabs-indicator": {
+                '& .MuiTabs-indicator': {
                   backgroundColor: (theme) => theme.vars?.palette.primary.main,
                 },
-                height: "100%",
+                height: '100%',
               }}
             >
               {tabs.map((tab) => (
@@ -156,8 +160,8 @@ export default function RetreatPage({
                   // Desabilita abas para dados não criados
                   disabled={isCreating && tab.value !== 0}
                   sx={{
-                    textTransform: "none",
-                    fontSize: "0.95rem",
+                    textTransform: 'none',
+                    fontSize: '0.95rem',
                     fontWeight: 500,
                   }}
                 />
@@ -172,20 +176,20 @@ export default function RetreatPage({
             pl: 0,
             pb: 0,
             pt: 0,
-            height: "100%",
+            height: '100%',
           }}
         >
           <Box
-            width={"100%"}
+            width={'100%'}
             height={73}
             sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
             }}
           >
             <SelectEditMode
-              sx={{ height: "90%", minWidth: 120 }}
+              sx={{ height: '90%', minWidth: 120 }}
               menuMode={menuMode}
               setMenuMode={toggleMenuMode}
               isAllowedToEdit={isAllowedToEdit}
@@ -197,7 +201,7 @@ export default function RetreatPage({
       {/* Content Area - Renderiza os children baseado na rota */}
       <Box
         flexGrow={1}
-        sx={{ p: 2, pt: 0, minHeight: "95vh", height: "calc(100% - 72px)" }}
+        sx={{ p: 2, pt: 0, minHeight: '95vh', height: 'calc(100% - 72px)' }}
       >
         {children}
       </Box>
