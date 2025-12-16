@@ -1,33 +1,44 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Grid, Box, Paper, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { PieChart } from "@mui/x-charts/PieChart";
-import Iconify from "../Iconify";
-import { AsynchronousAutoComplete } from "@/src/components/select-auto-complete/AsynchronousAutoComplete";
-import { RetreatLite, RetreatMetrics, RetreatOption } from "./types";
-import { MetricCard } from "./MetricCard";
-import { CriticalIssuesCard } from "./CriticalIssuesCard";
-import apiClient from "@/src/lib/axiosClientInstance";
-import { enqueueSnackbar } from "notistack";
-import axios from "axios";
+import React, { useCallback, useEffect, useState } from 'react';
+
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { enqueueSnackbar } from 'notistack';
+
+import { Box, Grid, Paper, Typography } from '@mui/material';
+import { PieChart } from '@mui/x-charts/PieChart';
+
+import { AsynchronousAutoComplete } from '@/src/components/select-auto-complete/AsynchronousAutoComplete';
+import apiClient from '@/src/lib/axiosClientInstance';
+import { RetreatLite } from '@/src/types/retreats';
+
+import Iconify from '../Iconify';
+import { CriticalIssuesCard } from './CriticalIssuesCard';
+import FamilySlideCardShow from './FamilySlideCardShow';
+import { MetricCard } from './MetricCard';
+import { RetreatMetrics } from './types';
+
+type RetreatResponse = {
+  items: RetreatLite[];
+  totalCount: number;
+  skip: number;
+  take: number;
+};
 
 const fetchRetreats = async (): Promise<RetreatLite[]> => {
   try {
-    const response = await apiClient.get<RetreatOption>(
-      "/unhandled/retreats?selectAutocomplete=true"
-    );
-    return response.data?.options ?? [];
+    const response = await apiClient.get<RetreatResponse>('/retreats');
+    return response.data?.items ?? [];
   } catch (error) {
-    console.error("Erro ao carregar retiros:", error);
+    console.error('Erro ao carregar retiros:', error);
     const message = axios.isAxiosError(error)
       ? ((error.response?.data as { error?: string })?.error ?? error.message)
-      : "Erro ao carregar retiros.";
+      : 'Erro ao carregar retiros.';
     enqueueSnackbar(message, {
-      variant: "error",
+      variant: 'error',
       autoHideDuration: 4000,
     });
     return [];
@@ -37,7 +48,7 @@ const fetchRetreats = async (): Promise<RetreatLite[]> => {
 const fetchRetreatMetrics = async (
   retreatId: number
 ): Promise<RetreatMetrics> => {
-  if (!retreatId) return Promise.reject("ID do retiro não fornecido");
+  if (!retreatId) return Promise.reject('ID do retiro não fornecido');
   try {
     const response = await apiClient.get<RetreatMetrics>(
       `/retreats/${retreatId}/metrics`
@@ -45,12 +56,12 @@ const fetchRetreatMetrics = async (
 
     return response.data as RetreatMetrics;
   } catch (error) {
-    console.error("Erro ao requisitar as métricas:", error);
+    console.error('Erro ao requisitar as métricas:', error);
     const message = axios.isAxiosError(error)
       ? ((error.response?.data as { error?: string })?.error ?? error.message)
-      : "Erro ao requisitar as métricas.";
+      : 'Erro ao requisitar as métricas.';
     enqueueSnackbar(message, {
-      variant: "error",
+      variant: 'error',
       autoHideDuration: 4000,
     });
     return {} as RetreatMetrics;
@@ -64,7 +75,7 @@ const DashboardPage = () => {
 
   // Query original ainda usada para auto-selecionar o retiro ativo ao montar
   const { data: retreats, isLoading: isLoadingRetreats } = useQuery({
-    queryKey: ["retreats"],
+    queryKey: ['retreats'],
     queryFn: fetchRetreats,
     staleTime: 5 * 60 * 1000,
   });
@@ -73,18 +84,18 @@ const DashboardPage = () => {
   const fetchRetreatOptions = useCallback(
     async (q: string): Promise<RetreatLite[]> => {
       try {
-        const response = await apiClient.get<RetreatOption>(
-          `/unhandled/retreats?selectAutocomplete=true${q ? `&search=${encodeURIComponent(q)}` : ""}`
+        const response = await apiClient.get<RetreatResponse>(
+          `/retreats?${q ? `&search=${encodeURIComponent(q)}` : ''}`
         );
-        return response.data?.options ?? [];
+        return response.data?.items ?? [];
       } catch (error) {
-        console.error("Erro ao buscar retiros:", error);
+        console.error('Erro ao buscar retiros:', error);
         const message = axios.isAxiosError(error)
           ? ((error.response?.data as { error?: string })?.error ??
             error.message)
-          : "Erro ao buscar retiros.";
+          : 'Erro ao buscar retiros.';
         enqueueSnackbar(message, {
-          variant: "error",
+          variant: 'error',
           autoHideDuration: 4000,
         });
         return [];
@@ -94,27 +105,28 @@ const DashboardPage = () => {
   );
 
   const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
-    queryKey: ["retreatMetrics", selectedRetreat?.value],
+    queryKey: ['retreatMetrics', selectedRetreat?.id],
     queryFn: () =>
       selectedRetreat
-        ? fetchRetreatMetrics(Number(selectedRetreat.value))
-        : Promise.reject("Nenhum retiro selecionado"),
-    enabled: !!selectedRetreat?.value,
+        ? fetchRetreatMetrics(Number(selectedRetreat.id))
+        : Promise.reject('Nenhum retiro selecionado'),
+    enabled: !!selectedRetreat?.id,
     staleTime: 60 * 1000,
   });
 
   // Seleciona automaticamente o retiro ativo quando os dados são carregados
   useEffect(() => {
     if (retreats && retreats.length > 0 && !selectedRetreat) {
-      const activeRetreat = retreats.find((r) => r.isActive);
+      const activeRetreat = retreats[0];
       if (activeRetreat) {
         setSelectedRetreat({
-          label: activeRetreat.label,
-          value: activeRetreat.value,
+          name: activeRetreat.name,
+          id: activeRetreat.id,
           startDate: activeRetreat.startDate,
-          isActive: activeRetreat.isActive,
+          edition: activeRetreat.edition,
+          //isActive: activeRetreat.isActive,
           endDate: activeRetreat.endDate,
-          location: activeRetreat.location,
+          //location: activeRetreat.location,
         });
       } else {
         const sorted = [...retreats].sort(
@@ -123,12 +135,13 @@ const DashboardPage = () => {
         );
         if (sorted[0])
           setSelectedRetreat({
-            label: sorted[0].label,
-            value: sorted[0].value,
-            isActive: sorted[0].isActive,
+            name: sorted[0].name,
+            id: sorted[0].id,
+            //isActive: sorted[0].isActive,
             startDate: sorted[0].startDate,
+            edition: sorted[0].edition,
             endDate: sorted[0].endDate,
-            location: sorted[0].location,
+            // location: sorted[0].location,
           });
       }
     }
@@ -144,7 +157,7 @@ const DashboardPage = () => {
           "dd 'de' MMMM 'de' yyyy",
           { locale: ptBR }
         )}`
-      : "";
+      : '';
 
   return (
     <Box sx={{ p: 3 }}>
@@ -164,13 +177,13 @@ const DashboardPage = () => {
                 {selectedRetreat && (
                   <Box>
                     <Typography variant="subtitle1" fontWeight="bold">
-                      {selectedRetreat.label}
+                      {selectedRetreat.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {formattedDate}
-                      {selectedRetreat.location
+                      {/* {selectedRetreat.location
                         ? ` • ${selectedRetreat.location}`
-                        : ""}
+                        : ""} */}
                     </Typography>
                   </Box>
                 )}
@@ -186,14 +199,14 @@ const DashboardPage = () => {
                   onChange={(val) => {
                     setSelectedRetreat((val as RetreatLite) || null);
                   }}
-                  getOptionLabel={(o) => o.label}
-                  isOptionEqualToValue={(a, b) => a.value === b.value}
+                  getOptionLabel={(o) => o.name}
+                  isOptionEqualToValue={(a, b) => a.id === b.id}
                   showRefresh
                   textFieldProps={{
                     InputProps: {
                       startAdornment: (
                         <Box
-                          sx={{ display: "flex", alignItems: "center", mr: 1 }}
+                          sx={{ display: 'flex', alignItems: 'center', mr: 1 }}
                         >
                           <Iconify
                             icon="solar:calendar-mark-bold-duotone"
@@ -281,14 +294,16 @@ const DashboardPage = () => {
             suffix="msgs"
           />
         </Grid>
-
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FamilySlideCardShow retreatId={selectedRetreat?.id} />
+        </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <PieChart
             series={[
               {
                 data: [
-                  { id: 0, value: 30, label: "Homens" },
-                  { id: 1, value: 70, label: "Mulheres" },
+                  { id: 0, value: 30, label: 'Homens' },
+                  { id: 1, value: 70, label: 'Mulheres' },
                 ],
               },
             ]}
