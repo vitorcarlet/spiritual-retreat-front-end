@@ -65,7 +65,7 @@ export default function FamilySlideCardShow({
 
   if (isLoading) {
     return (
-      <Card sx={{ height: 260 }}>
+      <Card elevation={0} variant="outlined" sx={{ height: 260 }}>
         <CardContent>
           <Skeleton variant="text" width={140} height={28} />
           <Skeleton
@@ -81,6 +81,8 @@ export default function FamilySlideCardShow({
   if (isError || families.length === 0) {
     return (
       <Card
+        elevation={0}
+        variant="outlined"
         sx={{
           height: 260,
           display: 'flex',
@@ -96,7 +98,11 @@ export default function FamilySlideCardShow({
   }
 
   return (
-    <Card sx={{ height: 260, display: 'flex', flexDirection: 'column' }}>
+    <Card
+      elevation={0}
+      variant="outlined"
+      sx={{ height: 260, display: 'flex', flexDirection: 'column' }}
+    >
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
           Famílias ({data?.total ?? 0})

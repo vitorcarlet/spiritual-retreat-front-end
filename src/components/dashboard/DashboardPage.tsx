@@ -9,17 +9,19 @@ import { ptBR } from 'date-fns/locale';
 import { enqueueSnackbar } from 'notistack';
 
 import { Box, Grid, Paper, Typography } from '@mui/material';
-import { PieChart } from '@mui/x-charts/PieChart';
 
 import { AsynchronousAutoComplete } from '@/src/components/select-auto-complete/AsynchronousAutoComplete';
 import apiClient from '@/src/lib/axiosClientInstance';
 import { RetreatLite } from '@/src/types/retreats';
 
 import Iconify from '../Iconify';
-import { CriticalIssuesCard } from './CriticalIssuesCard';
 import FamilySlideCardShow from './FamilySlideCardShow';
+import GenderPieChartCard from './GenderPieChartCard';
 import { MetricCard } from './MetricCard';
-import { RetreatMetrics } from './types';
+import PaymentsTimelineCard from './PaymentsTimelineCard';
+import ServiceTeamSlideCardShow from './ServiceTeamSlideCardShow';
+import TopCitiesCard from './TopCitiesCard';
+import { DashboardOverviewResponse } from './types';
 
 type RetreatResponse = {
   items: RetreatLite[];
@@ -45,28 +47,45 @@ const fetchRetreats = async (): Promise<RetreatLite[]> => {
   }
 };
 
-const fetchRetreatMetrics = async (
-  retreatId: number
-): Promise<RetreatMetrics> => {
-  if (!retreatId) return Promise.reject('ID do retiro não fornecido');
-  try {
-    const response = await apiClient.get<RetreatMetrics>(
-      `/retreats/${retreatId}/metrics`
-    );
-
-    return response.data as RetreatMetrics;
-  } catch (error) {
-    console.error('Erro ao requisitar as métricas:', error);
-    const message = axios.isAxiosError(error)
-      ? ((error.response?.data as { error?: string })?.error ?? error.message)
-      : 'Erro ao requisitar as métricas.';
-    enqueueSnackbar(message, {
-      variant: 'error',
-      autoHideDuration: 4000,
-    });
-    return {} as RetreatMetrics;
-  }
+// ---------- Fetch ----------
+const fetchDashboardOverview = async (
+  retreatId: string | undefined
+): Promise<DashboardOverviewResponse> => {
+  const response = await apiClient.get<DashboardOverviewResponse>(
+    `/dashboards/overview?retreatId=${retreatId}`
+  );
+  return response.data;
 };
+
+//  const { data, isLoading, isError } = useQuery({
+//     queryKey: ['dashboard-overview', retreatId],
+//     queryFn: () => fetchDashboardOverview(retreatId),
+//     enabled: !!retreatId,
+//     staleTime: 5 * 60 * 1000,
+//   });
+
+// const fetchRetreatMetrics = async (
+//   retreatId: number
+// ): Promise<RetreatMetrics> => {
+//   if (!retreatId) return Promise.reject('ID do retiro não fornecido');
+//   try {
+//     const response = await apiClient.get<RetreatMetrics>(
+//       `/dashboards/${retreatId}/metrics`
+//     );
+
+//     return response.data as RetreatMetrics;
+//   } catch (error) {
+//     console.error('Erro ao requisitar as métricas:', error);
+//     const message = axios.isAxiosError(error)
+//       ? ((error.response?.data as { error?: string })?.error ?? error.message)
+//       : 'Erro ao requisitar as métricas.';
+//     enqueueSnackbar(message, {
+//       variant: 'error',
+//       autoHideDuration: 4000,
+//     });
+//     return {} as RetreatMetrics;
+//   }
+// };
 
 const DashboardPage = () => {
   const [selectedRetreat, setSelectedRetreat] = useState<RetreatLite | null>(
@@ -104,15 +123,25 @@ const DashboardPage = () => {
     []
   );
 
-  const { data: metrics, isLoading: isLoadingMetrics } = useQuery({
-    queryKey: ['retreatMetrics', selectedRetreat?.id],
+  const {
+    data: metrics,
+    isLoading: isLoadingMetrics,
+    isError: isErrorMetrics,
+  } = useQuery({
+    queryKey: ['dashboard-overview', selectedRetreat?.id],
     queryFn: () =>
       selectedRetreat
-        ? fetchRetreatMetrics(Number(selectedRetreat.id))
+        ? fetchDashboardOverview(selectedRetreat.id)
         : Promise.reject('Nenhum retiro selecionado'),
     enabled: !!selectedRetreat?.id,
     staleTime: 60 * 1000,
   });
+
+  const serviceSpaces = metrics?.service?.spaces ?? [];
+  const totalServiceTeams = serviceSpaces.length;
+  const completeServiceTeams = serviceSpaces.filter(
+    (s) => s.capacity > 0 && s.assigned >= s.capacity
+  ).length;
 
   // Seleciona automaticamente o retiro ativo quando os dados são carregados
   useEffect(() => {
@@ -232,8 +261,8 @@ const DashboardPage = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Pagamentos Confirmados"
-            value={metrics?.payments.confirmed || 0}
-            total={metrics?.payments.total || 0}
+            value={metrics?.kpis.totalPaid || 0}
+            total={metrics?.kpis.totalConfirmed || 0}
             icon="solar:card-bold-duotone"
             color="success"
             isLoading={isLoadingMetrics}
@@ -243,8 +272,8 @@ const DashboardPage = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Famílias Formadas"
-            value={metrics?.families.formed || 0}
-            total={metrics?.families.total || 0}
+            value={metrics?.families.count || 0}
+            total={metrics?.families.count || 0}
             icon="solar:users-group-rounded-bold-duotone"
             color="info"
             isLoading={isLoadingMetrics}
@@ -254,8 +283,8 @@ const DashboardPage = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Barracas Ocupadas"
-            value={metrics?.accommodations.occupied || 0}
-            total={metrics?.accommodations.total || 0}
+            value={metrics?.tents.occupied || 0}
+            total={metrics?.tents.total || 0}
             icon="solar:home-bold-duotone"
             color="warning"
             isLoading={isLoadingMetrics}
@@ -265,8 +294,8 @@ const DashboardPage = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Equipes Completas"
-            value={metrics?.teams.complete || 0}
-            total={metrics?.teams.total || 0}
+            value={completeServiceTeams}
+            total={totalServiceTeams}
             icon="solar:users-group-bold-duotone"
             color="secondary"
             isLoading={isLoadingMetrics}
@@ -277,7 +306,7 @@ const DashboardPage = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Pagamentos Pendentes"
-            value={metrics?.payments.pending || 0}
+            value={metrics?.kpis.totalPending || 0}
             icon="solar:wallet-money-bold-duotone"
             color="error"
             isLoading={isLoadingMetrics}
@@ -286,36 +315,76 @@ const DashboardPage = () => {
 
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Mensagens Enviadas"
-            value={metrics?.messages.sent || 0}
-            icon="solar:chat-round-dots-bold-duotone"
+            title="Ocupação do Retiro"
+            value={metrics?.kpis.totalConfirmed || 0}
+            total={metrics?.kpis.capacity || 0}
+            icon="solar:users-group-two-rounded-bold-duotone"
             color="primary"
             isLoading={isLoadingMetrics}
-            suffix="msgs"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <FamilySlideCardShow retreatId={selectedRetreat?.id} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <PieChart
-            series={[
-              {
-                data: [
-                  { id: 0, value: 30, label: 'Homens' },
-                  { id: 1, value: 70, label: 'Mulheres' },
-                ],
-              },
-            ]}
-            width={200}
-            height={200}
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 12, md: 6 }}>
-          <CriticalIssuesCard
-            issues={metrics?.criticalIssues}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title="Inscrições Submetidas"
+            value={metrics?.service.kpis.submitted || 0}
+            icon="solar:document-add-bold-duotone"
+            color="info"
             isLoading={isLoadingMetrics}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title="Equipe Confirmada"
+            value={metrics?.service.kpis.confirmed || 0}
+            total={metrics?.service.kpis.assigned || 0}
+            icon="solar:check-circle-bold-duotone"
+            color="success"
+            isLoading={isLoadingMetrics}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title="Equipe Pagou"
+            value={metrics?.service.kpis.paid || 0}
+            total={metrics?.service.kpis.assigned || 0}
+            icon="solar:wallet-check-bold-duotone"
+            color="success"
+            isLoading={isLoadingMetrics}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <FamilySlideCardShow retreatId={selectedRetreat?.id} />
+        </Grid>
+        {/* Payments Timeline */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <PaymentsTimelineCard
+            timeSeries={metrics?.payments.timeSeries}
+            isLoading={isLoadingMetrics}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <GenderPieChartCard retreatId={selectedRetreat?.id} />
+        </Grid>
+
+        {/* Top Cities */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TopCitiesCard
+            cities={metrics?.citiesTop}
+            isLoading={isLoadingMetrics}
+          />
+        </Grid>
+
+        {/* Equipes de Serviço */}
+        <Grid size={{ xs: 12 }}>
+          <ServiceTeamSlideCardShow
+            isLoading={isLoadingMetrics}
+            isError={isErrorMetrics}
+            kpis={metrics?.service.kpis}
+            spaces={metrics?.service.spaces}
           />
         </Grid>
       </Grid>
