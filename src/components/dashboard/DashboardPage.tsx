@@ -15,10 +15,10 @@ import apiClient from '@/src/lib/axiosClientInstance';
 import { RetreatLite } from '@/src/types/retreats';
 
 import Iconify from '../Iconify';
+import ComplexPaymentsTimelineCard from './ComplexPaymentsTimelineCard';
 import FamilySlideCardShow from './FamilySlideCardShow';
 import GenderPieChartCard from './GenderPieChartCard';
 import { MetricCard } from './MetricCard';
-import PaymentsTimelineCard from './PaymentsTimelineCard';
 import ServiceTeamSlideCardShow from './ServiceTeamSlideCardShow';
 import TopCitiesCard from './TopCitiesCard';
 import { DashboardOverviewResponse } from './types';
@@ -361,9 +361,10 @@ const DashboardPage = () => {
         </Grid>
         {/* Payments Timeline */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <PaymentsTimelineCard
-            timeSeries={metrics?.payments.timeSeries}
-            isLoading={isLoadingMetrics}
+          <ComplexPaymentsTimelineCard
+            retreatId={selectedRetreat?.id}
+            startDate={selectedRetreat?.startDate}
+            endDate={selectedRetreat?.endDate}
           />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
