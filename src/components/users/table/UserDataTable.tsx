@@ -1,43 +1,50 @@
-"use client";
+'use client';
 
-import React, { Suspense, useEffect, useState } from "react";
-import { Box, Button, Chip } from "@mui/material";
-import { DataTable, DataTableColumn } from "../../table/DataTable";
-import { GridRowId, GridRowSelectionModel } from "@mui/x-data-grid";
-import { useRouter } from "next/navigation";
-import { useModal } from "@/src/hooks/useModal";
-import UserSummaryModal from "../userSummaryModal";
-import apiClient from "@/src/lib/axiosClientInstance";
-import { useUsersFilters } from "./useFilters";
-import { useUrlFilters } from "@/src/hooks/useUrlFilters";
-import { useQuery } from "@tanstack/react-query";
-import FilterButton from "../../filters/FilterButton";
-import dayjs from "dayjs";
-import SearchField from "../../filters/SearchField";
-import DeleteConfirmation from "../../confirmations/DeleteConfirmation";
-import getPermission from "@/src/utils/getPermission";
-import { useSession } from "next-auth/react";
-import { User } from "../types";
-import { RetreatsCardTableFilters } from "../../retreats/types";
-import Loading from "../../loading";
+import React, { Suspense, useEffect, useState } from 'react';
+
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
+import { useQuery } from '@tanstack/react-query';
+
+import { Box, Button, Chip } from '@mui/material';
+import { GridRowId, GridRowSelectionModel } from '@mui/x-data-grid';
+
+import { useModal } from '@/src/hooks/useModal';
+import { useUrlFilters } from '@/src/hooks/useUrlFilters';
+import apiClient from '@/src/lib/axiosClientInstance';
+import getPermission from '@/src/utils/getPermission';
+
+import DeleteConfirmation from '../../confirmations/DeleteConfirmation';
+import FilterButton from '../../filters/FilterButton';
+import SearchField from '../../filters/SearchField';
+import Loading from '../../loading';
+import { RetreatsCardTableFilters } from '../../retreats/types';
+import { DataTable, DataTableColumn } from '../../table/DataTable';
+import { pageToSkipTake } from '../../table/shared';
+import { User } from '../types';
+import UserSummaryModal from '../userSummaryModal';
+import { useUsersFilters } from './useFilters';
 
 type UserRequest = {
-  rows: User[];
+  users: User[];
   total: number;
-  page: number;
-  pageLimit: number;
 };
 
 // Dados de exemplo
 const getUsers = async (
   filters: TableDefaultFilters<UsersTableFiltersWithDates>
 ) => {
-  const response = await apiClient.get<UserRequest>("/users", {
-    params: filters,
+  const { page, pageLimit, ...restFilters } = filters;
+  const response = await apiClient.get<UserRequest>('/users', {
+    params: {
+      ...pageToSkipTake(Number(page), Number(pageLimit)),
+      ...restFilters,
+    },
   });
 
   if (!response) {
-    throw new Error("Failed to fetch users");
+    throw new Error('Failed to fetch users');
   }
   return response.data as UserRequest;
 };
@@ -45,63 +52,55 @@ const getUsers = async (
 // Definir as colunas da tabela
 const columns: DataTableColumn<User>[] = [
   {
-    field: "id",
-    headerName: "ID",
+    field: 'id',
+    headerName: 'ID',
     width: 70,
-    type: "number",
+    type: 'number',
   },
   {
-    field: "name",
-    headerName: "Nome",
+    field: 'name',
+    headerName: 'Nome',
     width: 200,
     flex: 1,
   },
   {
-    field: "email",
-    headerName: "Email",
+    field: 'email',
+    headerName: 'Email',
     width: 250,
     flex: 1,
   },
   {
-    field: "role",
-    headerName: "Função",
+    field: 'role',
+    headerName: 'Função',
     width: 120,
-    type: "singleSelect",
-    valueOptions: ["Admin", "Manager", "User"],
+    type: 'singleSelect',
+    valueOptions: ['Admin', 'Manager', 'User'],
   },
   {
-    field: "status",
-    headerName: "Status",
+    field: 'enabled',
+    headerName: 'Status',
     width: 120,
     renderCell: (params) => (
       <Chip
-        label={params.value === "active" ? "Ativo" : "Inativo"}
-        color={params.value === "active" ? "success" : "error"}
+        label={params.value === true ? 'Ativo' : 'Inativo'}
+        color={params.value === true ? 'success' : 'error'}
         size="small"
         variant="outlined"
       />
     ),
   },
   {
-    field: "age",
-    headerName: "Idade",
-    width: 100,
-    type: "number",
-  },
-  {
-    field: "createdAt",
-    headerName: "Criado em",
-    width: 150,
-    type: "date",
-    valueGetter: (params: string | Date) => {
-      const v = params;
-      if (v == null) return null;
-
-      return new Date(v as string | number);
-    },
-    // Opcional: apenas para exibir formatado
-    valueFormatter: (params: string | Date) =>
-      params ? dayjs(params as Date).format("DD/MM/YYYY") : "",
+    field: 'emailConfirmed',
+    headerName: 'Email Confirmad',
+    width: 120,
+    renderCell: (params) => (
+      <Chip
+        label={params.value === true ? 'Sim' : 'Não'}
+        color={params.value === true ? 'success' : 'error'}
+        size="small"
+        variant="outlined"
+      />
+    ),
   },
 ];
 
@@ -113,13 +112,14 @@ export default function UserDataTable() {
         page: 1,
         pageLimit: 10,
       },
-      excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
+      excludeFromCount: ['page', 'pageLimit', 'search'], // Don't count pagination in active filters,
     });
   const { data: usersData, isLoading } = useQuery({
-    queryKey: ["users", filters],
+    queryKey: ['users', filters],
     queryFn: () => getUsers(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes,
   });
+
   const session = useSession();
   const [hasCreatePermission, setHasCreatePermission] = useState(false);
 
@@ -128,7 +128,7 @@ export default function UserDataTable() {
       setHasCreatePermission(
         getPermission({
           permissions: session.data.user.permissions,
-          permission: "users.create",
+          permission: 'users.create',
           role: session.data.user.role,
         })
       );
@@ -149,7 +149,7 @@ export default function UserDataTable() {
     if (Array.isArray(selectedRows)) {
       return selectedRows;
     }
-    if (typeof selectedRows === "object" && "ids" in selectedRows) {
+    if (typeof selectedRows === 'object' && 'ids' in selectedRows) {
       return Array.from(selectedRows.ids) || [];
     }
     return [];
@@ -161,8 +161,8 @@ export default function UserDataTable() {
 
   const handleDelete = (user: User) => {
     modal.open({
-      title: "Confirm deletion",
-      size: "sm",
+      title: 'Confirm deletion',
+      size: 'sm',
       customRender: () => (
         <DeleteConfirmation
           title="Delete user"
@@ -172,19 +172,19 @@ export default function UserDataTable() {
           onConfirm={async () => {
             try {
               await apiClient.delete(`/users/${user.id}`);
-              if (typeof window !== "undefined") {
-                const { enqueueSnackbar } = await import("notistack");
-                enqueueSnackbar("User deleted successfully", {
-                  variant: "success",
+              if (typeof window !== 'undefined') {
+                const { enqueueSnackbar } = await import('notistack');
+                enqueueSnackbar('User deleted successfully', {
+                  variant: 'success',
                 });
               }
             } catch (err: unknown) {
-              if (typeof window !== "undefined") {
-                const { enqueueSnackbar } = await import("notistack");
+              if (typeof window !== 'undefined') {
+                const { enqueueSnackbar } = await import('notistack');
                 const errorMessage =
-                  err instanceof Error ? err.message : "Failed to delete user";
+                  err instanceof Error ? err.message : 'Failed to delete user';
                 enqueueSnackbar(errorMessage, {
-                  variant: "error",
+                  variant: 'error',
                 });
               }
             }
@@ -195,13 +195,13 @@ export default function UserDataTable() {
   };
 
   const handleCreateNewUser = () => {
-    router.push("/users/create");
+    router.push('/users/create');
   };
 
   const handleView = (user: User) => {
     modal.open({
       title: `Detalhes do Usuário: ${user.name}`,
-      size: "xl",
+      size: 'xl',
       customRender: () => (
         <Suspense fallback={<div>Carregando detalhes do usuário...</div>}>
           <UserSummaryModal userId={user.id.toString()} />
@@ -233,11 +233,11 @@ export default function UserDataTable() {
     updateFilters({ ...filters, ...newFilters });
   };
 
-  const usersDataArray: User[] | undefined = Array.isArray(usersData?.rows)
-    ? usersData?.rows
-    : ([usersData?.rows] as unknown as User[]);
+  const usersDataArray: User[] | undefined = Array.isArray(usersData?.users)
+    ? usersData?.users
+    : ([usersData?.users] as unknown as User[]);
 
-  if (isLoading || session.status === "loading" || !session.data?.user) {
+  if (isLoading || session.status === 'loading' || !session.data?.user) {
     return <Loading text="Carregando usuários..." />;
   }
 
@@ -245,19 +245,19 @@ export default function UserDataTable() {
     <Box
       sx={{
         p: 2,
-        height: "100%",
-        minWidth: "100%",
-        display: "flex",
-        flexDirection: "column",
-        maxWidth: "100%",
-        overflowY: "hidden",
-        boxSizing: "border-box",
+        height: '100%',
+        minWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: '100%',
+        overflowY: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       <Box
         sx={{
-          display: "flex",
-          flexWrap: "wrap",
+          display: 'flex',
+          flexWrap: 'wrap',
           gap: { xs: 1, sm: 2 },
           mb: 2,
         }}
@@ -266,9 +266,9 @@ export default function UserDataTable() {
           <Box
             sx={{
               flex: {
-                xs: "1 1 100%",
-                sm: "1 1 calc(50% - 4px)",
-                md: "initial",
+                xs: '1 1 100%',
+                sm: '1 1 calc(50% - 4px)',
+                md: 'initial',
               },
               minWidth: { xs: 0, md: 200 },
             }}
@@ -279,14 +279,14 @@ export default function UserDataTable() {
               fullWidth
               sx={{ height: 40, maxWidth: { md: 200 } }}
             >
-              {"Criar Novo Usuário"}
+              {'Criar Novo Usuário'}
             </Button>
           </Box>
         )}
 
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: 'initial' },
             minWidth: 0,
           }}
         >
@@ -297,13 +297,13 @@ export default function UserDataTable() {
             fullWidth
             sx={{ height: 40, maxWidth: { md: 150 } }}
           >
-            {loading ? "Carregando..." : "Atualizar Dados"}
+            {loading ? 'Carregando...' : 'Atualizar Dados'}
           </Button>
         </Box>
 
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: '1 1 auto' },
             minWidth: { xs: 0, md: 150 },
             maxWidth: { md: 150 },
           }}
@@ -323,13 +323,13 @@ export default function UserDataTable() {
 
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: 'initial' },
             minWidth: 0,
           }}
         >
           <SearchField
             fullWidth
-            value={filters.search || ""}
+            value={filters.search || ''}
             onChange={(e) => {
               updateFilters({ ...filters, search: e });
             }}
@@ -341,9 +341,9 @@ export default function UserDataTable() {
           <Box
             sx={{
               flex: {
-                xs: "1 1 100%",
-                sm: "1 1 calc(50% - 4px)",
-                md: "initial",
+                xs: '1 1 100%',
+                sm: '1 1 calc(50% - 4px)',
+                md: 'initial',
               },
               minWidth: 0,
             }}
@@ -361,9 +361,9 @@ export default function UserDataTable() {
         )}
       </Box>
 
-      <Box sx={{ flexGrow: 1, maxHeight: "90%" }}>
+      <Box sx={{ flexGrow: 1, maxHeight: '90%' }}>
         <DataTable<User, UsersTableFiltersWithDates>
-          rows={usersDataArray}
+          rows={usersDataArray ?? []}
           rowCount={usersData?.total || 0}
           columns={columns}
           loading={isLoading || !session.data?.user || loading}
@@ -398,23 +398,23 @@ export default function UserDataTable() {
           // Ações personalizadas
           actions={[
             {
-              icon: "lucide:eye",
-              label: "Visualizar",
+              icon: 'lucide:eye',
+              label: 'Visualizar',
               onClick: handleView,
-              color: "info",
+              color: 'info',
             },
             {
-              icon: "lucide:edit",
-              label: "Editar",
+              icon: 'lucide:edit',
+              label: 'Editar',
               onClick: handleEdit,
-              color: "primary",
+              color: 'primary',
             },
             {
-              icon: "lucide:trash-2",
-              label: "Deletar",
+              icon: 'lucide:trash-2',
+              label: 'Deletar',
               onClick: handleDelete,
-              color: "error",
-              disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
+              color: 'error',
+              disabled: (user) => user.role === 'Admin', // Admins não podem ser deletados
             },
           ]}
           // Eventos

@@ -1,6 +1,7 @@
-"use client";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+'use client';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 interface UseUrlFiltersOptions<T> {
   defaultFilters: T;
@@ -36,14 +37,14 @@ export function useUrlFilters<T extends Partial<Record<keyof T, unknown>>>({
 
     sp.forEach((value, key) => {
       // Aceita qualquer chave (mesmo não estando no default)
-      if (value.includes(",")) {
-        tmp[key] = value.split(",");
-      } else if (value.includes("&")) {
+      if (value.includes(',')) {
+        tmp[key] = value.split(',');
+      } else if (value.includes('&')) {
         // Suporta ranges no formato YYYY-MM-DD&YYYY-MM-DD
         tmp[key] = value; // ou value.split("&") se preferir array
       } else {
         const numValue = Number(value);
-        tmp[key] = !isNaN(numValue) && value.trim() !== "" ? numValue : value;
+        tmp[key] = !isNaN(numValue) && value.trim() !== '' ? numValue : value;
       }
     });
 
@@ -55,10 +56,10 @@ export function useUrlFilters<T extends Partial<Record<keyof T, unknown>>>({
     const params = new URLSearchParams();
 
     Object.entries(fs).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
+      if (value !== undefined && value !== null && value !== '') {
         if (Array.isArray(value)) {
           if (value.length > 0) {
-            params.set(key, value.join(","));
+            params.set(key, value.join(','));
           }
         } else {
           params.set(key, String(value));
@@ -78,7 +79,7 @@ export function useUrlFilters<T extends Partial<Record<keyof T, unknown>>>({
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
     if (excludeFromCount.includes(key as keyof T)) return false;
     if (Array.isArray(value)) return value.length > 0;
-    return value !== null && value !== undefined && value !== "";
+    return value !== null && value !== undefined && value !== '';
   }).length;
 
   // Update URL when filters change (no-op if params didn't change)
