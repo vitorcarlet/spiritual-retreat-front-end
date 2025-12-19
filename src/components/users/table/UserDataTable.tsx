@@ -16,15 +16,12 @@ import apiClient from '@/src/lib/axiosClientInstance';
 import getPermission from '@/src/utils/getPermission';
 
 import DeleteConfirmation from '../../confirmations/DeleteConfirmation';
-import FilterButton from '../../filters/FilterButton';
 import SearchField from '../../filters/SearchField';
 import Loading from '../../loading';
-import { RetreatsCardTableFilters } from '../../retreats/types';
 import { DataTable, DataTableColumn } from '../../table/DataTable';
 import { pageToSkipTake } from '../../table/shared';
 import { User } from '../types';
 import UserSummaryModal from '../userSummaryModal';
-import { useUsersFilters } from './useFilters';
 
 type UserRequest = {
   users: User[];
@@ -106,14 +103,15 @@ const columns: DataTableColumn<User>[] = [
 
 export default function UserDataTable() {
   // const t = useTranslations();
-  const { filters, updateFilters, activeFiltersCount, resetFilters } =
-    useUrlFilters<TableDefaultFilters<UsersTableFiltersWithDates>>({
-      defaultFilters: {
-        page: 1,
-        pageLimit: 10,
-      },
-      excludeFromCount: ['page', 'pageLimit', 'search'], // Don't count pagination in active filters,
-    });
+  const { filters, updateFilters } = useUrlFilters<
+    TableDefaultFilters<UsersTableFiltersWithDates>
+  >({
+    defaultFilters: {
+      page: 1,
+      pageLimit: 10,
+    },
+    excludeFromCount: ['page', 'pageLimit', 'search'], // Don't count pagination in active filters,
+  });
   const { data: usersData, isLoading } = useQuery({
     queryKey: ['users', filters],
     queryFn: () => getUsers(filters),
@@ -142,7 +140,6 @@ export default function UserDataTable() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const modal = useModal();
-  const { filters: filtersConfig } = useUsersFilters();
 
   // ✅ Helper para obter IDs selecionados
   const getSelectedIds = (): GridRowId[] => {
@@ -221,18 +218,6 @@ export default function UserDataTable() {
     }, 2000);
   };
 
-  // const handleFiltersChange = (
-  //   newFilters: TableDefaultFilters<RetreatsCardTableFilters>
-  // ) => {
-  //   updateFilters({ ...filters, ...newFilters });
-  // };
-
-  const handleApplyFilters = (
-    newFilters: Partial<TableDefaultFilters<RetreatsCardTableFilters>>
-  ) => {
-    updateFilters({ ...filters, ...newFilters });
-  };
-
   const usersDataArray: User[] | undefined = Array.isArray(usersData?.users)
     ? usersData?.users
     : ([usersData?.users] as unknown as User[]);
@@ -299,26 +284,6 @@ export default function UserDataTable() {
           >
             {loading ? 'Carregando...' : 'Atualizar Dados'}
           </Button>
-        </Box>
-
-        <Box
-          sx={{
-            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: '1 1 auto' },
-            minWidth: { xs: 0, md: 150 },
-            maxWidth: { md: 150 },
-          }}
-        >
-          <FilterButton<
-            TableDefaultFilters<UsersTableFilters>,
-            UsersTableDateFilters
-          >
-            filters={filtersConfig}
-            defaultValues={filters}
-            onApplyFilters={handleApplyFilters}
-            onReset={resetFilters}
-            activeFiltersCount={activeFiltersCount}
-            fullWidth
-          />
         </Box>
 
         <Box

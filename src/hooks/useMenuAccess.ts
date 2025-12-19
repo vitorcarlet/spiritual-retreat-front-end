@@ -1,14 +1,16 @@
-"use client";
+'use client';
 
-import { signIn, useSession } from "next-auth/react";
-import { UserObject, UserRoles } from "next-auth";
+import { useEffect, useMemo } from 'react';
+
+import { UserObject, UserRoles } from 'next-auth';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
 import {
-  menuConfig,
   MenuItem,
   MenuPermission,
-} from "../components/navigation/SideMenu/shared";
-import { useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+  menuConfig,
+} from '../components/navigation/SideMenu/shared';
 
 export function useMenuAccess() {
   const { data: session, status } = useSession();
@@ -18,11 +20,11 @@ export function useMenuAccess() {
     return session?.user as UserObject | null;
   }, [session]);
 
-  const isLoading = status === "loading";
-  console.log("useMenuAccess - status:", status, "user:", user);
+  const isLoading = status === 'loading';
+  // console.log("useMenuAccess - status:", status, "user:", user);
   // Melhor tratamento do erro de autenticação
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (status === 'unauthenticated') {
       // Aguardar um pouco antes de redirecionar para evitar loops
       const timer = setTimeout(() => {
         signIn(undefined, {
@@ -34,9 +36,9 @@ export function useMenuAccess() {
             router.push(window.location.pathname);
           })
           .catch((error) => {
-            console.error("Erro ao fazer login:", error);
+            console.error('Erro ao fazer login:', error);
             // Fallback: redirecionar manualmente para login
-            router.push("/login");
+            router.push('/login');
           });
       }, 1000);
 
@@ -62,13 +64,13 @@ export function useMenuAccess() {
 
       return false;
     } catch (error) {
-      console.error("Erro ao verificar acesso:", error);
+      console.error('Erro ao verificar acesso:', error);
       return false;
     }
   };
 
   const hasAnyPermission = (
-    permissions: MenuPermission["permissions"]
+    permissions: MenuPermission['permissions']
   ): boolean => {
     if (!permissions || !user?.permissions) return false;
 
@@ -84,7 +86,7 @@ export function useMenuAccess() {
         });
       });
     } catch (error) {
-      console.error("Erro ao verificar permissões:", error);
+      console.error('Erro ao verificar permissões:', error);
       return false;
     }
   };
@@ -95,7 +97,7 @@ export function useMenuAccess() {
     try {
       return roles.some((role) => user.role === role);
     } catch (error) {
-      console.error("Erro ao verificar roles:", error);
+      console.error('Erro ao verificar roles:', error);
       return false;
     }
   };
@@ -104,7 +106,7 @@ export function useMenuAccess() {
     try {
       return menuConfig.filter((menu) => hasAccess(menu.access));
     } catch (error) {
-      console.error("Erro ao obter menus acessíveis:", error);
+      console.error('Erro ao obter menus acessíveis:', error);
       return [];
     }
   };
@@ -114,13 +116,13 @@ export function useMenuAccess() {
       const menu = menuConfig.find((m) => m.id === menuId);
       return menu ? hasAccess(menu.access) : false;
     } catch (error) {
-      console.error("Erro ao verificar acesso ao menu:", error);
+      console.error('Erro ao verificar acesso ao menu:', error);
       return false;
     }
   };
 
   const debugUserAccess = () => {
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === 'development') {
       // console.log("🔍 User Access Debug:", {
       //   status,
       //   user: user ? { id: user.id, role: user.role } : null,
@@ -130,7 +132,7 @@ export function useMenuAccess() {
   };
 
   useEffect(() => {
-    if (status !== "loading") {
+    if (status !== 'loading') {
       debugUserAccess();
     }
   }, [user, status]);

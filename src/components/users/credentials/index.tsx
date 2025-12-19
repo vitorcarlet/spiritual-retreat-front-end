@@ -1,28 +1,30 @@
-"use client";
-import { useState, Fragment, useEffect } from "react";
+'use client';
+import { Fragment, useEffect, useState } from 'react';
+
+import { useSession } from 'next-auth/react';
+
+import { useQuery } from '@tanstack/react-query';
+
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import {
+  Alert,
   Box,
   Button,
-  Typography,
-  Stack,
-  Alert,
   Chip,
+  Stack,
+  Typography,
   alpha,
-} from "@mui/material";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import { useModal } from "@/src/hooks/useModal";
-import { useUserContent } from "../context";
-import NewLoginForm from "./newLoginForm";
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import { useQuery } from "@tanstack/react-query";
-import Loading from "../../loading";
-import { useSession } from "next-auth/react";
-import getPermission from "@/src/utils/getPermission";
+} from '@mui/material';
+
+import { useModal } from '@/src/hooks/useModal';
+// import NewLoginForm from "./newLoginForm";
+import apiClient from '@/src/lib/axiosClientInstance';
+import getPermission from '@/src/utils/getPermission';
+
+import Loading from '../../loading';
+import { useUserContent } from '../context';
 
 function SettingRow({
   icon,
@@ -44,40 +46,40 @@ function SettingRow({
       // TouchRippleProps={{ center: false }}
       sx={(theme) => ({
         // Layout
-        width: "100%",
-        textAlign: "left",
+        width: '100%',
+        textAlign: 'left',
         borderRadius: 2,
         p: 2,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         gap: 2,
 
         // Border & bg
-        border: "1px solid",
-        borderColor: "divider",
-        bgcolor: "background.paper",
+        border: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
 
         // Transitions
         transition: theme.transitions.create(
-          ["border-color", "box-shadow", "background-color", "transform"],
+          ['border-color', 'box-shadow', 'background-color', 'transform'],
           { duration: theme.transitions.duration.shorter }
         ),
 
         // Hover + Focus ring
-        "&:hover": {
-          borderColor: "primary.main",
+        '&:hover': {
+          borderColor: 'primary.main',
           backgroundColor: alpha(theme.palette.primary.main, 0.04),
         },
-        "&:focus-visible": {
-          borderColor: "primary.main",
+        '&:focus-visible': {
+          borderColor: 'primary.main',
           boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.25)}`,
         },
 
         // Press feedback
-        "&:active": {
-          transform: "translateY(1px)",
-          borderColor: "primary.main",
+        '&:active': {
+          transform: 'translateY(1px)',
+          borderColor: 'primary.main',
           boxShadow: `0 0 0 3px ${alpha(
             theme.palette.primary.main,
             0.18
@@ -85,9 +87,9 @@ function SettingRow({
         },
 
         // Ripple color tweak (subtle primary-tinted ripple)
-        "& .MuiTouchRipple-child": {
+        '& .MuiTouchRipple-child': {
           backgroundColor:
-            theme.palette.mode === "dark"
+            theme.palette.mode === 'dark'
               ? alpha(theme.palette.primary.light, 0.35)
               : alpha(theme.palette.primary.main, 0.25),
         },
@@ -115,7 +117,7 @@ function SettingRow({
       {endAdornment ? (
         <Box
           onClick={(e) => e.stopPropagation()}
-          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
         >
           {endAdornment}
         </Box>
@@ -125,13 +127,15 @@ function SettingRow({
 }
 
 const getUserCredentials = async (id: string) => {
-  const response = await handleApiResponse<UserCredentialsInfo>(
-    await sendRequestServerVanilla.get(`/user/${id}/credentials`)
-  );
-  if (!response || response.error) {
-    throw new Error("Failed to fetch user credentials");
+  try {
+    const { data } = await apiClient.get<UserCredentialsInfo>(
+      `/users/${id}/credentials`
+    );
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch user credentials', error);
+    throw new Error('Failed to fetch user credentials');
   }
-  return response.data as UserCredentialsInfo;
 };
 
 const UserCredentialsPage = () => {
@@ -143,14 +147,14 @@ const UserCredentialsPage = () => {
   const session = useSession();
   const canEditLogin = getPermission({
     permissions: session?.data?.user.permissions,
-    permission: "users.edit",
+    permission: 'users.edit',
     role: session?.data?.user.role,
   });
   const { user } = useUserContent();
   const id = user?.id as string;
 
   const { data: credentialsData, isLoading } = useQuery({
-    queryKey: ["credentials"],
+    queryKey: ['credentials'],
     queryFn: () => getUserCredentials(id),
     staleTime: 5 * 60 * 1000, // 5 minutes,
   });
@@ -166,32 +170,27 @@ const UserCredentialsPage = () => {
     }
   }, [credentialsData]);
 
-  const setUserForModal = (data: UserCredentialsInfo) => {
-    setUserCredentials((prev) => ({
-      ...prev!,
-      ...data,
-    }));
-  };
+  // const setUserForModal = (data: UserCredentialsInfo) => {
+  //   setUserCredentials((prev) => ({
+  //     ...prev!,
+  //     ...data,
+  //   }));
+  // };
 
   // Modals
   const handleEditLogin = () => {
     if (!canEditLogin) return;
     modal.open({
-      key: "edit-login",
-      title: "Alterar Login",
-      customRender: () => (
-        <NewLoginForm
-          userLogin={userCredentials?.login ?? ""}
-          setUserForModal={setUserForModal}
-        />
-      ),
+      key: 'edit-login',
+      title: 'Alterar Login',
+      customRender: () => <div>AAA</div>,
     });
   };
 
   const handleEditEmail = () => {
     modal.open({
-      key: "edit-email",
-      title: "Alterar Email",
+      key: 'edit-email',
+      title: 'Alterar Email',
       customRender: () => (
         <Box p={2}>
           <Typography>Digite o novo e-mail:</Typography>
@@ -200,7 +199,7 @@ const UserCredentialsPage = () => {
             variant="contained"
             onClick={() => {
               // TODO: chamada API para atualizar email
-              setCurrentEmail("novo.email@exemplo.com");
+              setCurrentEmail('novo.email@exemplo.com');
               setIsVerified(false);
               modal.close();
             }}
@@ -214,8 +213,8 @@ const UserCredentialsPage = () => {
 
   const handleRecoverPassword = () => {
     modal.open({
-      key: "recover-password",
-      title: "Recuperar Senha",
+      key: 'recover-password',
+      title: 'Recuperar Senha',
       customRender: () => (
         <Box p={2}>
           <Typography mb={2}>
@@ -236,8 +235,8 @@ const UserCredentialsPage = () => {
 
   const handleEditPassword = () => {
     modal.open({
-      key: "edit-password",
-      title: "Alterar Senha",
+      key: 'edit-password',
+      title: 'Alterar Senha',
       customRender: () => (
         <Box p={2}>
           <Typography>Digite a nova senha:</Typography>
@@ -257,7 +256,7 @@ const UserCredentialsPage = () => {
   };
 
   if (isLoading) {
-    return <Loading text={"Carregando credenciais do usuário..."} />;
+    return <Loading text={'Carregando credenciais do usuário...'} />;
   }
 
   return (
@@ -270,7 +269,7 @@ const UserCredentialsPage = () => {
         <SettingRow
           icon={<PersonOutlineIcon fontSize="medium" />}
           title="Login"
-          subtitle={userCredentials?.login || "—"}
+          subtitle={userCredentials?.login || '—'}
           onClick={canEditLogin ? handleEditLogin : undefined}
           endAdornment={
             !canEditLogin ? (
@@ -284,7 +283,7 @@ const UserCredentialsPage = () => {
           title="Email"
           subtitle={
             <Fragment>
-              {currentEmail || "—"}
+              {currentEmail || '—'}
               {isVerified === false && (
                 <Typography component="span" color="warning.main" ml={1}>
                   • não verificado
@@ -308,7 +307,7 @@ const UserCredentialsPage = () => {
           subtitle="************"
           onClick={handleRecoverPassword}
           endAdornment={
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <Button variant="outlined" onClick={handleRecoverPassword}>
                 Recuperar
               </Button>

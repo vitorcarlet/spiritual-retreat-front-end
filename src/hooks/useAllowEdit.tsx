@@ -1,8 +1,10 @@
-"use client";
+'use client';
 
-import getPermission from "@/src/utils/getPermission";
-import { useSession } from "next-auth/react";
-import { useMemo } from "react";
+import { useMemo } from 'react';
+
+import { useSession } from 'next-auth/react';
+
+import getPermission from '@/src/utils/getPermission';
 
 type AllowEditProps = {
   permission: string;
@@ -22,6 +24,8 @@ const useAllowEdit = ({ permission }: AllowEditProps) => {
       role: userRole,
     });
   }, [userData, permission]);
+
+  console.log(hasPermission, permission, userData, 'PERMISSÃO');
 
   return {
     allowEdit: hasPermission,

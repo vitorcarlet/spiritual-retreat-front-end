@@ -1,37 +1,41 @@
-"use client";
+'use client';
+import { useEffect, useState } from 'react';
+
+import { UserPermissions } from 'next-auth';
+import type { ActionType, ResourceType } from 'next-auth';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import {
+  Alert,
   Box,
   Card,
   CardContent,
+  Chip,
+  Divider,
+  FormControlLabel,
   Grid,
+  Paper,
   Switch,
   Typography,
-  Button,
-  Divider,
-  Chip,
-  FormControlLabel,
-  Alert,
-  Paper,
-} from "@mui/material";
-import { useState, useEffect } from "react";
-import Iconify from "../../Iconify";
-import { UserPermissions } from "next-auth";
+} from '@mui/material';
+
+import { useMenuMode } from '@/src/contexts/users-context/MenuModeContext';
 import {
   PERMISSION_SECTIONS,
   ROLE_PERMISSIONS,
-} from "@/src/utils/getPermission";
-import Header from "./Header";
-import { useUserContent } from "../context";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
-import type { ResourceType, ActionType } from "next-auth";
+} from '@/src/utils/getPermission';
+
+import Iconify from '../../Iconify';
+import { useUserContent } from '../context';
+import Header from './Header';
 
 const UserPermissionsPage = () => {
   const { user, setUser } = useUserContent();
   const { menuMode } = useMenuMode();
-  const isReadOnly = menuMode === "view";
+  const isReadOnly = menuMode === 'view';
   const [permissionsData, setPermissionsData] = useState<UserPermissionsData>({
-    role: "participant",
+    role: 'participant',
     permissions: {} as UserPermissions,
   });
 
@@ -45,14 +49,14 @@ const UserPermissionsPage = () => {
   useEffect(() => {
     if (user) {
       setPermissionsData({
-        role: user.role || "participant",
+        role: user.role || 'participant',
         permissions: user.permissions || {},
       });
     }
   }, [user]);
 
   const handlePermissionToggle = (permissionId: string) => {
-    const [section, action] = permissionId.split(".") as [
+    const [section, action] = permissionId.split('.') as [
       ResourceType,
       ActionType,
     ];
@@ -79,7 +83,7 @@ const UserPermissionsPage = () => {
     if (rolePermissions.includes(permissionId)) {
       return true;
     }
-    const [section, action] = permissionId.split(".") as [
+    const [section, action] = permissionId.split('.') as [
       ResourceType,
       ActionType,
     ];
@@ -95,7 +99,7 @@ const UserPermissionsPage = () => {
   };
 
   const isPermissionFromRole = (permissionId: string): boolean => {
-    const [section, action] = permissionId.split(".") as [
+    const [section, action] = permissionId.split('.') as [
       ResourceType,
       ActionType,
     ];
@@ -105,10 +109,10 @@ const UserPermissionsPage = () => {
   const mutationUpdatePermissions = useMutation({
     mutationFn: async (data: UserPermissionsData) => {
       // Chame sua API para salvar permissões
-      await fetch("/api/permissions", {
-        method: "POST",
+      await fetch('/api/permissions', {
+        method: 'POST',
         body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     },
     onSuccess: () => {
@@ -122,7 +126,7 @@ const UserPermissionsPage = () => {
     },
     onSettled: () => {
       // Invalida a query para garantir que os dados estejam atualizados
-      queryClient.invalidateQueries({ queryKey: ["user", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user', user?.id] });
     },
   });
 
@@ -144,9 +148,9 @@ const UserPermissionsPage = () => {
       onSubmit={handleSubmit}
       id="user-permissions-form"
       sx={{
-        width: "100%",
-        height: "100%",
-        overflowY: "hidden",
+        width: '100%',
+        height: '100%',
+        overflowY: 'hidden',
         pt: 0,
       }}
     >
@@ -156,8 +160,8 @@ const UserPermissionsPage = () => {
           padding: 3,
           paddingTop: 0,
           borderRadius: 1,
-          width: "100%",
-          height: "100%",
+          width: '100%',
+          height: '100%',
         }}
       >
         {/* Header */}
@@ -166,15 +170,15 @@ const UserPermissionsPage = () => {
         <Grid
           container
           spacing={1}
-          sx={{ mt: 1, width: "100%", height: "calc(100% - 72px)" }}
+          sx={{ mt: 1, width: '100%', height: 'calc(100% - 72px)' }}
         >
           {/* ✅ MODIFICADO: Lista de seções (clicáveis) */}
           <Grid
             size={{ xs: 12, lg: 3 }}
             sx={{
-              width: "100%",
-              height: "100%",
-              overflowY: "auto",
+              width: '100%',
+              height: '100%',
+              overflowY: 'auto',
             }}
           >
             <Typography variant="h6" gutterBottom>
@@ -186,30 +190,30 @@ const UserPermissionsPage = () => {
                 sx={{
                   mb: 2,
                   mr: 2,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease-in-out",
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
                   border: selectedSectionId === section.id ? 2 : 1,
                   borderColor:
                     selectedSectionId === section.id
-                      ? "primary.main"
-                      : "divider",
-                  "&:hover": {
+                      ? 'primary.main'
+                      : 'divider',
+                  '&:hover': {
                     boxShadow: 2,
-                    transform: "translateY(-2px)",
+                    transform: 'translateY(-2px)',
                   },
                 }}
                 onClick={() => handleSectionSelect(section.id)}
               >
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Iconify
                       icon={section.icon}
                       size={1.5}
                       sx={{
                         color:
                           selectedSectionId === section.id
-                            ? "primary.main"
-                            : "text.secondary",
+                            ? 'primary.main'
+                            : 'text.secondary',
                       }}
                     />
                     <Typography
@@ -219,8 +223,8 @@ const UserPermissionsPage = () => {
                           selectedSectionId === section.id ? 600 : 400,
                         color:
                           selectedSectionId === section.id
-                            ? "primary.main"
-                            : "text.primary",
+                            ? 'primary.main'
+                            : 'text.primary',
                       }}
                     >
                       {section.label}
@@ -229,7 +233,7 @@ const UserPermissionsPage = () => {
                       <Iconify
                         icon="solar:alt-arrow-right-bold"
                         size={1.2}
-                        sx={{ color: "primary.main", ml: "auto" }}
+                        sx={{ color: 'primary.main', ml: 'auto' }}
                       />
                     )}
                   </Box>
@@ -238,9 +242,9 @@ const UserPermissionsPage = () => {
                   <Box
                     sx={{
                       mt: 1,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                     }}
                   >
                     <Typography variant="caption" color="text.secondary">
@@ -254,7 +258,7 @@ const UserPermissionsPage = () => {
                       } ativas`}
                       size="small"
                       color={
-                        selectedSectionId === section.id ? "primary" : "default"
+                        selectedSectionId === section.id ? 'primary' : 'default'
                       }
                       variant="outlined"
                     />
@@ -268,9 +272,9 @@ const UserPermissionsPage = () => {
           <Grid
             size={{ xs: 12, lg: 9 }}
             sx={{
-              width: "100%",
-              height: "100%",
-              overflowY: "auto",
+              width: '100%',
+              height: '100%',
+              overflowY: 'auto',
             }}
           >
             {selectedSection ? (
@@ -285,8 +289,8 @@ const UserPermissionsPage = () => {
                     <CardContent>
                       <Box
                         sx={{
-                          display: "flex",
-                          alignItems: "center",
+                          display: 'flex',
+                          alignItems: 'center',
                           gap: 2,
                           mb: 2,
                         }}
@@ -294,7 +298,7 @@ const UserPermissionsPage = () => {
                         <Iconify
                           icon={selectedSection.icon}
                           size={2}
-                          sx={{ color: "primary.main" }}
+                          sx={{ color: 'primary.main' }}
                         />
                         <Typography variant="h5" color="primary.main">
                           Permissões de {selectedSection.label}
@@ -303,10 +307,10 @@ const UserPermissionsPage = () => {
 
                       <Alert severity="info" sx={{ mb: 2 }}>
                         {isReadOnly ? (
-                          "Permissões não podem ser editadas no modo de visualização."
+                          'Permissões não podem ser editadas no modo de visualização.'
                         ) : (
                           <>
-                            As permissões marcadas com{" "}
+                            As permissões marcadas com{' '}
                             <Chip
                               label="Cargo"
                               size="small"
@@ -335,17 +339,17 @@ const UserPermissionsPage = () => {
                                 sx={{
                                   p: 2,
                                   border: isEnabled ? 2 : 1,
-                                  backgroundColor: "background.default",
+                                  backgroundColor: 'background.default',
                                   borderColor: isReadOnly
-                                    ? "grey.600"
+                                    ? 'grey.600'
                                     : isEnabled
-                                      ? "primary.main"
-                                      : "divider",
+                                      ? 'primary.main'
+                                      : 'divider',
                                   // bgcolor: isEnabled
                                   //   ? "primary.50"
                                   //   : "background.paper",
-                                  transition: "all 0.2s ease-in-out",
-                                  boxShadow: "none",
+                                  transition: 'all 0.2s ease-in-out',
+                                  boxShadow: 'none',
                                 }}
                               >
                                 <FormControlLabel
@@ -358,10 +362,10 @@ const UserPermissionsPage = () => {
                                       disabled={isFromRole || isReadOnly}
                                       color={
                                         isReadOnly
-                                          ? "primary"
+                                          ? 'primary'
                                           : isFromRole
-                                            ? "default"
-                                            : "primary"
+                                            ? 'default'
+                                            : 'primary'
                                       }
                                     />
                                   }
@@ -369,8 +373,8 @@ const UserPermissionsPage = () => {
                                     <Box sx={{ ml: 1 }}>
                                       <Box
                                         sx={{
-                                          display: "flex",
-                                          alignItems: "center",
+                                          display: 'flex',
+                                          alignItems: 'center',
                                           gap: 1,
                                           mb: 0.5,
                                         }}
@@ -380,8 +384,8 @@ const UserPermissionsPage = () => {
                                           size={1.2}
                                           sx={{
                                             color: isEnabled
-                                              ? "primary.main"
-                                              : "text.disabled",
+                                              ? 'primary.main'
+                                              : 'text.disabled',
                                           }}
                                         />
                                         <Typography
@@ -389,8 +393,8 @@ const UserPermissionsPage = () => {
                                           sx={{
                                             fontWeight: isEnabled ? 600 : 400,
                                             color: isEnabled
-                                              ? "text.primary"
-                                              : "text.secondary",
+                                              ? 'text.primary'
+                                              : 'text.secondary',
                                           }}
                                         >
                                           {permission.label}
@@ -406,15 +410,15 @@ const UserPermissionsPage = () => {
                                       </Box>
                                       <Typography
                                         variant="caption"
-                                        sx={{ color: "text.secondary" }}
+                                        sx={{ color: 'text.secondary' }}
                                       >
                                         {permission.description}
                                       </Typography>
                                     </Box>
                                   }
                                   sx={{
-                                    alignItems: "flex-start",
-                                    "& .MuiFormControlLabel-label": { pt: 0.5 },
+                                    alignItems: 'flex-start',
+                                    '& .MuiFormControlLabel-label': { pt: 0.5 },
                                   }}
                                 />
                               </Card>
@@ -425,7 +429,7 @@ const UserPermissionsPage = () => {
                     </CardContent>
                   </Card>
                 </Box>
-                <Box
+                {/* <Box
                   sx={{
                     display: "flex",
                     gap: 2,
@@ -463,23 +467,23 @@ const UserPermissionsPage = () => {
                       ? "Salvando..."
                       : "Salvar Permissões"}
                   </Button>
-                </Box>
+                </Box> */}
               </>
             ) : (
               <Box
                 sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   height: 400,
-                  textAlign: "center",
+                  textAlign: 'center',
                 }}
               >
                 <Iconify
                   icon="solar:widget-add-bold-duotone"
                   size={4}
-                  sx={{ color: "text.disabled", mb: 2 }}
+                  sx={{ color: 'text.disabled', mb: 2 }}
                 />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   Selecione uma seção

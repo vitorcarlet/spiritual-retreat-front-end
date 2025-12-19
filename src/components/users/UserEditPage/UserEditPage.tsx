@@ -1,45 +1,50 @@
-"use client";
+'use client';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { UserObject, UserRoles } from 'next-auth';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
+import { useSnackbar } from 'notistack';
+
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import {
   Box,
+  Button,
+  ButtonBase,
   FormControl,
   Grid,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
-  TextField,
-  Button,
-  Typography,
   Skeleton,
-  ButtonBase,
-} from "@mui/material";
-import Image from "next/image";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import TextFieldMasked from "../../fields/maskedTextFields/TextFieldMasked";
-import { useUserContent } from "../context";
-import { UserObject, UserRoles } from "next-auth";
-import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
-import { useRouter } from "next/navigation";
-import { useSnackbar } from "notistack";
+  TextField,
+  Typography,
+} from '@mui/material';
+
+import { useMenuMode } from '@/src/contexts/users-context/MenuModeContext';
+import { useModal } from '@/src/hooks/useModal';
 import {
   handleApiResponse,
   sendRequestServerVanilla,
-} from "@/src/lib/sendRequestServerVanilla";
-import { UserObjectWithId } from "./types";
-import LocationField from "../../fields/LocalizationFields/LocationField";
-import { useModal } from "@/src/hooks/useModal";
-import ProfilePictureModal from "../../profile/ProfilePictureModal";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
+} from '@/src/lib/sendRequestServerVanilla';
+
+import TextFieldMasked from '../../fields/maskedTextFields/TextFieldMasked';
+import ProfilePictureModal from '../../profile/ProfilePictureModal';
+import { useUserContent } from '../context';
+import { UserObjectWithId } from './types';
 
 const FALLBACK_PROFILE_IMAGE =
-  "https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU";
+  'https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU';
 
 const UserEditPage = () => {
   const { user, setUser } = useUserContent();
   const { menuMode } = useMenuMode();
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
-  const isReadOnly = menuMode === "view";
+  const isReadOnly = menuMode === 'view';
+  const canEditProfilePicture = !isReadOnly && !!user?.id;
   const isLoading = false;
   // Modo de criação quando não há usuário carregado
   const isCreating = !user;
@@ -47,23 +52,24 @@ const UserEditPage = () => {
   const [formData, setFormData] = useState<
     Omit<
       UserObject,
-      | "id"
-      | "createdAt"
-      | "updatedAt"
-      | "state"
-      | "email"
-      | "permissions"
-      | "first_name"
-      | "last_name"
-      | "profile_picture"
+      | 'id'
+      | 'createdAt'
+      | 'updatedAt'
+      | 'state'
+      | 'email'
+      | 'permissions'
+      | 'first_name'
+      | 'last_name'
+      | 'profile_picture'
+      | 'birth'
+      | 'city'
+      | 'stateShort'
+      | 'cpf'
     >
   >({
-    name: "",
-    cpf: "",
-    birth: "",
-    city: "",
-    stateShort: "",
-    role: "participant",
+    name: '',
+    phone: '',
+    role: 'participant',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(
@@ -96,12 +102,9 @@ const UserEditPage = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || "",
-        cpf: user.cpf || "",
-        birth: user.birth || "",
-        city: user.city || "",
-        stateShort: user.stateShort || "",
-        role: user.role || "",
+        name: user.name || '',
+        role: user.role || '',
+        phone: user.phone || '',
       });
     }
   }, [user]);
@@ -131,30 +134,30 @@ const UserEditPage = () => {
       if (isCreating) {
         // CREATE
         const res = await handleApiResponse<UserObjectWithId>(
-          await sendRequestServerVanilla.post("/users/create", formData)
+          await sendRequestServerVanilla.post('/users/create', formData)
         );
 
         if (res.error || !res.data)
-          throw new Error(res.error || "Falha ao criar usuário");
+          throw new Error(res.error || 'Falha ao criar usuário');
         const data = res.data as unknown as UserObject;
         router.push(`/users/${data.id}`);
       } else {
         // UPDATE
-        if (!user?.id) throw new Error("ID do usuário não encontrado");
+        if (!user?.id) throw new Error('ID do usuário não encontrado');
         const res = await handleApiResponse<UserObjectWithId>(
           await sendRequestServerVanilla.put(`/api/user/${user.id}`, formData)
         );
 
         if (res.error)
-          throw new Error(res.error || "Falha ao atualizar usuário");
+          throw new Error(res.error || 'Falha ao atualizar usuário');
 
         const updatedUser = (res.data as unknown as UserObject) ?? null;
         if (updatedUser) {
           setUser(updatedUser);
         }
 
-        enqueueSnackbar("Usuário atualizado com sucesso!", {
-          variant: "success",
+        enqueueSnackbar('Usuário atualizado com sucesso!', {
+          variant: 'success',
         });
 
         // Replace para manter rota atual e garantir sincronização
@@ -164,39 +167,24 @@ const UserEditPage = () => {
       const message =
         error instanceof Error
           ? error.message
-          : "Ocorreu um erro. Tente novamente.";
+          : 'Ocorreu um erro. Tente novamente.';
 
       enqueueSnackbar(message, {
-        variant: "errorMUI",
+        variant: 'errorMUI',
       });
-      console.error("User submit error:", error);
+      console.error('User submit error:', error);
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleStateChange = (state: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      stateShort: state,
-      city: "", // Limpar cidade quando estado mudar
-    }));
-  };
-
-  const handleCityChange = (city: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      city: city,
-    }));
   };
 
   const handleOpenProfilePictureModal = useCallback(() => {
     if (!user?.id) return;
 
     modal.open({
-      key: "profile-picture",
-      title: "Atualizar foto de perfil",
-      size: "sm",
+      key: 'profile-picture',
+      title: 'Atualizar foto de perfil',
+      size: 'sm',
       customRender: () => (
         <ProfilePictureModal
           userId={user.id}
@@ -211,7 +199,7 @@ const UserEditPage = () => {
 
   if (isLoading) {
     return (
-      <Box sx={{ width: "100%", height: "100%", p: 3 }}>
+      <Box sx={{ width: '100%', height: '100%', p: 3 }}>
         <Skeleton variant="rectangular" height={200} sx={{ mb: 2 }} />
         <Skeleton variant="circular" width={200} height={200} sx={{ mb: 3 }} />
         <Grid container spacing={3}>
@@ -230,110 +218,121 @@ const UserEditPage = () => {
       component="form"
       onSubmit={handleSubmit}
       sx={{
-        width: "100%",
-        height: "100%",
-        overflowY: "auto",
+        width: '100%',
+        height: '100%',
+        overflowY: 'auto',
         pt: 0,
       }}
     >
       {/* Header com imagem de fundo */}
-      <Box sx={{ position: "relative" }}>
+      <Box sx={{ position: 'relative' }}>
         <Box
           sx={{
-            position: "relative",
-            width: "100%",
-            height: "200px",
+            position: 'relative',
+            width: '100%',
+            height: '200px',
           }}
         >
           <Image
             src="/images/background16-9.png"
             alt="Background"
             fill
-            style={{ objectFit: "cover" }}
+            style={{ objectFit: 'cover' }}
             priority
           />
         </Box>
 
         <ButtonBase
           onClick={handleOpenProfilePictureModal}
-          disabled={isSubmitting || !user?.id}
+          disabled={!canEditProfilePicture || isSubmitting}
           sx={{
-            position: "relative",
-            transform: "translate(25%, -50%)",
+            position: 'relative',
+            transform: 'translate(25%, -50%)',
             width: 200,
             height: 200,
-            borderRadius: "50%",
-            border: "4px solid white",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            marginBottom: "-100px",
-            overflow: "hidden",
+            borderRadius: '50%',
+            border: '4px solid white',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            marginBottom: '-100px',
+            overflow: 'hidden',
             p: 0,
-            backgroundColor: "transparent",
-            cursor: "pointer",
-            "&:disabled": {
-              cursor: "not-allowed",
-              opacity: 0.85,
-            },
-            "&:hover .profile-picture-overlay": {
+            backgroundColor: 'transparent',
+            cursor: canEditProfilePicture ? 'pointer' : 'default',
+            '&:disabled': {
+              cursor: 'default',
               opacity: 1,
             },
+            ...(canEditProfilePicture
+              ? {
+                  '&:hover .profile-picture-overlay': {
+                    opacity: 1,
+                  },
+                }
+              : {}),
           }}
-          aria-label="Atualizar foto de perfil"
+          aria-label={
+            canEditProfilePicture
+              ? 'Atualizar foto de perfil'
+              : 'Foto de perfil'
+          }
         >
-          <Box sx={{ position: "absolute", inset: 0 }}>
+          <Box sx={{ position: 'absolute', inset: 0 }}>
             <Image
               src={displayedProfileImage}
               alt={
                 user?.name
                   ? `Foto de ${user.name}`
-                  : "Foto de perfil do usuário"
+                  : 'Foto de perfil do usuário'
               }
               fill
-              style={{ objectFit: "cover" }}
+              style={{ objectFit: 'cover' }}
             />
           </Box>
-          <Box
-            className="profile-picture-overlay"
+          {canEditProfilePicture && (
+            <Box
+              className="profile-picture-overlay"
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.65) 100%)',
+                color: 'common.white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1,
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+                pointerEvents: 'none',
+              }}
+            >
+              <EditRoundedIcon fontSize="small" />
+              <Typography variant="body2" fontWeight={600}>
+                Alterar foto
+              </Typography>
+            </Box>
+          )}
+        </ButtonBase>
+        {canEditProfilePicture && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
             sx={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.65) 100%)",
-              color: "common.white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 1,
-              opacity: 0,
-              transition: "opacity 0.2s ease",
-              pointerEvents: "none",
+              display: 'block',
+              width: 200,
+              textAlign: 'center',
+              transform: 'translate(25%, 25%)',
             }}
           >
-            <EditRoundedIcon fontSize="small" />
-            <Typography variant="body2" fontWeight={600}>
-              Alterar foto
-            </Typography>
-          </Box>
-        </ButtonBase>
-
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            display: "block",
-            width: 200,
-            textAlign: "center",
-            transform: "translate(25%, 25%)",
-          }}
-        >
-          Clique para atualizar sua foto
-        </Typography>
+            Clique para atualizar sua foto
+          </Typography>
+        )}
       </Box>
 
       {/* Formulário */}
       <Box sx={{ padding: 3, paddingTop: 3 }}>
         <Typography variant="h5" component="h1" gutterBottom sx={{ mb: 3 }}>
-          {isCreating ? "Criar Usuário" : `Editar Usuário: ${user?.name ?? ""}`}
+          {isCreating ? 'Criar Usuário' : `Editar Usuário: ${user?.name ?? ''}`}
         </Typography>
 
         <Grid container spacing={3}>
@@ -345,58 +344,27 @@ const UserEditPage = () => {
               variant="outlined"
               placeholder="Digite o nome"
               value={formData.name}
-              onChange={handleInputChange("name")}
+              onChange={handleInputChange('name')}
               required
               disabled={isReadOnly && !isCreating}
             />
           </Grid>
 
-          {/* CPF */}
+          {/* PHONE */}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextFieldMasked
               fullWidth
-              label="CPF"
+              label="Telefone"
               variant="outlined"
-              placeholder="000.000.000-00"
-              maskType="cpf"
-              value={formData.cpf}
+              placeholder="(49 999112345)"
+              maskType="phone"
+              value={formData.phone}
               onChange={(event) => {
                 setFormData((prev) => ({
                   ...prev,
-                  cpf: event.target.value,
+                  phone: event.target.value,
                 }));
               }}
-              disabled={isReadOnly && !isCreating}
-            />
-          </Grid>
-
-          {/* Data de Nascimento */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Data de Nascimento"
-              type="date"
-              variant="outlined"
-              value={formData.birth}
-              onChange={handleInputChange("birth")}
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                },
-              }}
-              disabled={isReadOnly && !isCreating}
-            />
-          </Grid>
-
-          {/* Cidade */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <LocationField
-              selectedState={formData.stateShort}
-              selectedCity={formData.city}
-              onStateChange={handleStateChange}
-              onCityChange={handleCityChange}
-              required
-              size="medium"
               disabled={isReadOnly && !isCreating}
             />
           </Grid>
@@ -429,9 +397,9 @@ const UserEditPage = () => {
             <Grid size={12}>
               <Box
                 sx={{
-                  display: "flex",
+                  display: 'flex',
                   gap: 2,
-                  justifyContent: "flex-end",
+                  justifyContent: 'flex-end',
                   mt: 2,
                 }}
               >
@@ -444,12 +412,9 @@ const UserEditPage = () => {
                       // Reset para dados originais do usuário
                       if (user) {
                         setFormData({
-                          name: user.name || "",
-                          cpf: user.cpf || "",
-                          birth: user.birth || "",
-                          city: user.city || "",
-                          stateShort: user.stateShort || "",
-                          role: user.role || "",
+                          name: user.name || '',
+                          phone: user.phone || '',
+                          role: user.role || '',
                         });
                       }
                     }}
@@ -466,10 +431,10 @@ const UserEditPage = () => {
                   disabled={isSubmitting}
                 >
                   {isSubmitting
-                    ? "Salvando..."
+                    ? 'Salvando...'
                     : isCreating
-                      ? "Salvar Usuário"
-                      : "Salvar Alterações"}
+                      ? 'Salvar Usuário'
+                      : 'Salvar Alterações'}
                 </Button>
               </Box>
             </Grid>
