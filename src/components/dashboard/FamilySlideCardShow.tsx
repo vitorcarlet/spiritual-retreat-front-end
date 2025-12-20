@@ -65,7 +65,11 @@ export default function FamilySlideCardShow({
 
   if (isLoading) {
     return (
-      <Card elevation={0} variant="outlined" sx={{ height: 260 }}>
+      <Card
+        elevation={0}
+        variant="outlined"
+        sx={{ minHeight: 260, height: '100%' }}
+      >
         <CardContent>
           <Skeleton variant="text" width={140} height={28} />
           <Skeleton
@@ -84,7 +88,8 @@ export default function FamilySlideCardShow({
         elevation={0}
         variant="outlined"
         sx={{
-          height: 260,
+          minHeight: 260,
+          height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -101,7 +106,12 @@ export default function FamilySlideCardShow({
     <Card
       elevation={0}
       variant="outlined"
-      sx={{ height: 260, display: 'flex', flexDirection: 'column' }}
+      sx={{
+        minHeight: 260,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
