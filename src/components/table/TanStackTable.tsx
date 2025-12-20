@@ -1,48 +1,51 @@
-"use client";
+'use client';
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useCallback, useMemo, useState } from 'react';
+
+import { rankItem } from '@tanstack/match-sorter-utils';
 import {
-  useReactTable,
+  Column,
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  ColumnDef,
-  flexRender,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  Column,
-} from "@tanstack/react-table";
+  useReactTable,
+} from '@tanstack/react-table';
+
 import {
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  ClickAwayListener,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  Menu,
+  MenuItem,
+  Paper,
+  Popper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
-  Paper,
   TablePagination,
-  TextField,
-  Button,
-  Checkbox,
-  Menu,
-  MenuItem,
-  FormControlLabel,
-  Box,
-  Typography,
-  Stack,
+  TableRow,
   TableSortLabel,
-  Popper,
-  ClickAwayListener,
-  Divider,
-  InputAdornment,
-  Chip,
-  CircularProgress,
-  IconButton,
-} from "@mui/material";
-import Iconify from "../Iconify";
-import { rankItem } from "@tanstack/match-sorter-utils";
+  TextField,
+  Typography,
+} from '@mui/material';
+
+import Iconify from '../Iconify';
 
 // Fuzzy filter function
 const fuzzyFilter = (
@@ -73,6 +76,8 @@ export interface TanStackTableProps<T extends Record<string, unknown>> {
   // Paginação Server-Side
   manualPagination?: boolean;
   pageCount?: number;
+  /** Total de itens (preferido sobre pageCount para cálculo automático de páginas) */
+  totalItems?: number;
   onPaginationModelChange?: (model: { page: number; pageSize: number }) => void;
 
   // Seleção
@@ -103,13 +108,13 @@ export interface TanStackTableProps<T extends Record<string, unknown>> {
 function ColumnFilter<T>({ column }: { column: Column<T, unknown> }) {
   const columnFilterValue = column.getFilterValue();
   const { filterVariant, selectOptions } = (column.columnDef.meta ?? {}) as {
-    filterVariant?: "text" | "number" | "select" | "range";
+    filterVariant?: 'text' | 'number' | 'select' | 'range';
     selectOptions?: { value: string | number; label: string }[];
   };
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [filterValue, setFilterValue] = useState<string>(
-    (columnFilterValue as string) ?? ""
+    (columnFilterValue as string) ?? ''
   );
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -126,7 +131,7 @@ function ColumnFilter<T>({ column }: { column: Column<T, unknown> }) {
   };
 
   const handleClearFilter = () => {
-    setFilterValue("");
+    setFilterValue('');
     column.setFilterValue(undefined);
     handleClose();
   };
@@ -142,11 +147,11 @@ function ColumnFilter<T>({ column }: { column: Column<T, unknown> }) {
         sx={{
           ml: 0.5,
           opacity: hasFilter ? 1 : 0.5,
-          color: hasFilter ? "primary.main" : "inherit",
+          color: hasFilter ? 'primary.main' : 'inherit',
         }}
       >
         <Iconify
-          icon={hasFilter ? "solar:filter-bold" : "solar:filter-outline"}
+          icon={hasFilter ? 'solar:filter-bold' : 'solar:filter-outline'}
           width={16}
         />
       </IconButton>
@@ -157,13 +162,13 @@ function ColumnFilter<T>({ column }: { column: Column<T, unknown> }) {
         placement="top-start"
         modifiers={[
           {
-            name: "offset",
+            name: 'offset',
             options: {
               offset: [0, 8],
             },
           },
           {
-            name: "preventOverflow",
+            name: 'preventOverflow',
             options: {
               padding: 8,
             },
@@ -177,7 +182,7 @@ function ColumnFilter<T>({ column }: { column: Column<T, unknown> }) {
               Filtrar {column.columnDef.header as string}
             </Typography>
 
-            {filterVariant === "select" && selectOptions ? (
+            {filterVariant === 'select' && selectOptions ? (
               <TextField
                 select
                 fullWidth
@@ -195,7 +200,7 @@ function ColumnFilter<T>({ column }: { column: Column<T, unknown> }) {
                   )
                 )}
               </TextField>
-            ) : filterVariant === "number" ? (
+            ) : filterVariant === 'number' ? (
               <TextField
                 fullWidth
                 size="small"
@@ -280,7 +285,7 @@ function ColumnVisibilityMenu<T>({
         </Box>
         <Divider />
         {table.getAllLeafColumns().map((column) => {
-          if (column.id === "select") return null;
+          if (column.id === 'select') return null;
           return (
             <MenuItem key={column.id} sx={{ py: 0.5 }}>
               <FormControlLabel
@@ -291,7 +296,7 @@ function ColumnVisibilityMenu<T>({
                   />
                 }
                 label={
-                  typeof column.columnDef.header === "string"
+                  typeof column.columnDef.header === 'string'
                     ? column.columnDef.header
                     : column.id
                 }
@@ -312,14 +317,14 @@ function exportToCSV<T extends Record<string, unknown>>(
   // Obter apenas colunas visíveis (exceto a coluna de seleção)
   const visibleColumns = table
     .getVisibleLeafColumns()
-    .filter((col) => col.id !== "select");
+    .filter((col) => col.id !== 'select');
 
   // Cabeçalhos das colunas visíveis
   const headers = visibleColumns.map((col) =>
-    typeof col.columnDef.header === "string" ? col.columnDef.header : col.id
+    typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
   );
 
-  const csvRows = [headers.join(",")];
+  const csvRows = [headers.join(',')];
 
   // Obter linhas filtradas e ordenadas (exatamente como aparecem na tabela)
   const sortedAndFilteredRows = table.getSortedRowModel().rows;
@@ -328,34 +333,34 @@ function exportToCSV<T extends Record<string, unknown>>(
   sortedAndFilteredRows.forEach((row) => {
     const values = visibleColumns.map((col) => {
       const cell = row.getAllCells().find((c) => c.column.id === col.id);
-      if (!cell) return "";
+      if (!cell) return '';
 
       // Tentar obter o valor bruto primeiro
       let value: unknown;
 
-      if ("accessorKey" in col.columnDef && col.columnDef.accessorKey) {
+      if ('accessorKey' in col.columnDef && col.columnDef.accessorKey) {
         const accessorKey = col.columnDef.accessorKey as string;
         value = row.original[accessorKey];
-      } else if ("accessorFn" in col.columnDef && col.columnDef.accessorFn) {
+      } else if ('accessorFn' in col.columnDef && col.columnDef.accessorFn) {
         value = col.columnDef.accessorFn(row.original, row.index);
       } else {
         value = cell.getValue();
       }
 
       // Formatar o valor
-      let formattedValue = "";
+      let formattedValue = '';
       if (value !== null && value !== undefined) {
         if (Array.isArray(value)) {
           // Arrays (como sections) - juntar com ponto e vírgula
           formattedValue = value
-            .map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v)))
-            .join("; ");
-        } else if (typeof value === "object") {
+            .map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v)))
+            .join('; ');
+        } else if (typeof value === 'object') {
           // Objetos - converter para JSON
           formattedValue = JSON.stringify(value);
-        } else if (typeof value === "boolean") {
+        } else if (typeof value === 'boolean') {
           // Booleanos - converter para Sim/Não
-          formattedValue = value ? "Sim" : "Não";
+          formattedValue = value ? 'Sim' : 'Não';
         } else {
           formattedValue = String(value);
         }
@@ -365,19 +370,19 @@ function exportToCSV<T extends Record<string, unknown>>(
       return `"${formattedValue.replace(/"/g, '""')}"`;
     });
 
-    csvRows.push(values.join(","));
+    csvRows.push(values.join(','));
   });
 
   // Criar o conteúdo CSV com BOM para garantir encoding UTF-8
-  const BOM = "\uFEFF";
-  const csvContent = BOM + csvRows.join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
+  const BOM = '\uFEFF';
+  const csvContent = BOM + csvRows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
 
-  link.setAttribute("href", url);
-  link.setAttribute("download", filename);
-  link.style.visibility = "hidden";
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -390,13 +395,13 @@ async function exportToPDF<T extends Record<string, unknown>>(
   filename: string,
   documentTitle?: string
 ) {
-  const { jsPDF } = await import("jspdf");
+  const { jsPDF } = await import('jspdf');
 
   // Configuração do documento
   const doc = new jsPDF({
-    orientation: "landscape",
-    unit: "mm",
-    format: "a4",
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4',
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -407,11 +412,11 @@ async function exportToPDF<T extends Record<string, unknown>>(
   // Obter apenas colunas visíveis (exceto a coluna de seleção)
   const visibleColumns = table
     .getVisibleLeafColumns()
-    .filter((col) => col.id !== "select");
+    .filter((col) => col.id !== 'select');
 
   // Cabeçalhos das colunas
   const headers = visibleColumns.map((col) =>
-    typeof col.columnDef.header === "string" ? col.columnDef.header : col.id
+    typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
   );
 
   // Obter linhas filtradas e ordenadas
@@ -421,14 +426,14 @@ async function exportToPDF<T extends Record<string, unknown>>(
   const rows = sortedAndFilteredRows.map((row) => {
     return visibleColumns.map((col) => {
       const cell = row.getAllCells().find((c) => c.column.id === col.id);
-      if (!cell) return "";
+      if (!cell) return '';
 
       let value: unknown;
 
-      if ("accessorKey" in col.columnDef && col.columnDef.accessorKey) {
+      if ('accessorKey' in col.columnDef && col.columnDef.accessorKey) {
         const accessorKey = col.columnDef.accessorKey as string;
         value = row.original[accessorKey];
-      } else if ("accessorFn" in col.columnDef && col.columnDef.accessorFn) {
+      } else if ('accessorFn' in col.columnDef && col.columnDef.accessorFn) {
         value = col.columnDef.accessorFn(row.original, row.index);
       } else {
         value = cell.getValue();
@@ -438,17 +443,17 @@ async function exportToPDF<T extends Record<string, unknown>>(
       if (value !== null && value !== undefined) {
         if (Array.isArray(value)) {
           return value
-            .map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v)))
-            .join(", ");
-        } else if (typeof value === "object") {
+            .map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v)))
+            .join(', ');
+        } else if (typeof value === 'object') {
           return JSON.stringify(value);
-        } else if (typeof value === "boolean") {
-          return value ? "Sim" : "Não";
+        } else if (typeof value === 'boolean') {
+          return value ? 'Sim' : 'Não';
         } else {
           return String(value);
         }
       }
-      return "";
+      return '';
     });
   });
 
@@ -457,7 +462,7 @@ async function exportToPDF<T extends Record<string, unknown>>(
   // Título do documento
   if (documentTitle) {
     doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
+    doc.setFont('helvetica', 'bold');
     doc.text(documentTitle, margin, currentY + 6);
     currentY += 12;
   }
@@ -485,7 +490,7 @@ async function exportToPDF<T extends Record<string, unknown>>(
     }
 
     doc.setFontSize(fontSize);
-    doc.setFont("helvetica", isHeader ? "bold" : "normal");
+    doc.setFont('helvetica', isHeader ? 'bold' : 'normal');
 
     // Desenhar células
     rowData.forEach((cellText, colIndex) => {
@@ -496,12 +501,12 @@ async function exportToPDF<T extends Record<string, unknown>>(
       // Fundo do cabeçalho
       if (isHeader) {
         doc.setFillColor(240, 240, 240);
-        doc.rect(x, y, columnWidths[colIndex], cellHeight, "F");
+        doc.rect(x, y, columnWidths[colIndex], cellHeight, 'F');
       }
 
       // Bordas
       doc.setDrawColor(200, 200, 200);
-      doc.rect(x, y, columnWidths[colIndex], cellHeight, "S");
+      doc.rect(x, y, columnWidths[colIndex], cellHeight, 'S');
 
       // Texto (truncado se necessário)
       const maxWidth = columnWidths[colIndex] - 2;
@@ -511,16 +516,16 @@ async function exportToPDF<T extends Record<string, unknown>>(
       const textWidth = doc.getTextWidth(displayText);
       if (textWidth > maxWidth) {
         while (
-          doc.getTextWidth(displayText + "...") > maxWidth &&
+          doc.getTextWidth(displayText + '...') > maxWidth &&
           displayText.length > 0
         ) {
           displayText = displayText.slice(0, -1);
         }
-        displayText += "...";
+        displayText += '...';
       }
 
       doc.text(displayText, x + 1, y + cellHeight / 2 + 1.5, {
-        baseline: "middle",
+        baseline: 'middle',
       });
     });
 
@@ -540,13 +545,13 @@ async function exportToPDF<T extends Record<string, unknown>>(
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(128, 128, 128);
     doc.text(
-      `Gerado em ${new Date().toLocaleString("pt-BR")} - Página ${i} de ${totalPages}`,
+      `Gerado em ${new Date().toLocaleString('pt-BR')} - Página ${i} de ${totalPages}`,
       pageWidth / 2,
       pageHeight - 5,
-      { align: "center" }
+      { align: 'center' }
     );
   }
 
@@ -565,6 +570,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
   pageSizeOptions = [10, 50, 100],
   manualPagination = false,
   pageCount,
+  totalItems,
   onPaginationModelChange,
   enableRowSelection = false,
   onRowSelectionChange,
@@ -582,7 +588,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
   //maxHeight = 600,
   stickyHeader = true,
 }: TanStackTableProps<T>) {
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState('');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -594,13 +600,21 @@ export function TanStackTable<T extends Record<string, unknown>>({
   const [showAllRows, setShowAllRows] = useState(false);
   const [columnSizing, setColumnSizing] = useState({});
 
+  // Calcula o número de páginas baseado em totalItems ou pageCount
+  const calculatedPageCount = useMemo(() => {
+    if (totalItems !== undefined && totalItems > 0) {
+      return Math.ceil(totalItems / pagination.pageSize);
+    }
+    return pageCount;
+  }, [totalItems, pageCount, pagination.pageSize]);
+
   // Build columns with selection if enabled
   const columns = useMemo<ColumnDef<T>[]>(() => {
     const cols: ColumnDef<T>[] = [...columnsProp];
 
     if (enableRowSelection) {
       cols.unshift({
-        id: "select",
+        id: 'select',
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllRowsSelected()}
@@ -640,7 +654,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
     },
     enableRowSelection,
     enableColumnResizing,
-    columnResizeMode: "onChange",
+    columnResizeMode: 'onChange',
     onColumnSizingChange: setColumnSizing,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
@@ -656,7 +670,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
     getRowId: getRowId,
     // Server-side pagination
     manualPagination,
-    pageCount: manualPagination ? (pageCount ?? -1) : undefined,
+    pageCount: manualPagination ? (calculatedPageCount ?? -1) : undefined,
   });
 
   // Handle row selection change
@@ -682,7 +696,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
   const handleExportCSV = useCallback(() => {
     const timestamp = new Date().toISOString().slice(0, 10);
     const filename = title
-      ? `${title.toLowerCase().replace(/\s+/g, "-")}-${timestamp}.csv`
+      ? `${title.toLowerCase().replace(/\s+/g, '-')}-${timestamp}.csv`
       : `export-${timestamp}.csv`;
     exportToCSV(table, filename);
   }, [table, title]);
@@ -690,7 +704,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
   const handleExportPDF = useCallback(async () => {
     const timestamp = new Date().toISOString().slice(0, 10);
     const filename = title
-      ? `${title.toLowerCase().replace(/\s+/g, "-")}-${timestamp}.pdf`
+      ? `${title.toLowerCase().replace(/\s+/g, '-')}-${timestamp}.pdf`
       : `export-${timestamp}.pdf`;
     await exportToPDF(table, filename, title);
   }, [table, title]);
@@ -705,21 +719,39 @@ export function TanStackTable<T extends Record<string, unknown>>({
     }
   };
 
-  const totalRows = manualPagination
-    ? pageCount
-      ? pageCount * pagination.pageSize
-      : data.length
-    : table.getFilteredRowModel().rows.length;
+  // Calcula o total de linhas para exibição
+  const totalRows = useMemo(() => {
+    if (manualPagination) {
+      // Prioriza totalItems se disponível
+      if (totalItems !== undefined) {
+        return totalItems;
+      }
+      // Fallback para pageCount * pageSize
+      if (calculatedPageCount) {
+        return calculatedPageCount * pagination.pageSize;
+      }
+      return data.length;
+    }
+    return table.getFilteredRowModel().rows.length;
+  }, [
+    manualPagination,
+    totalItems,
+    calculatedPageCount,
+    pagination.pageSize,
+    data.length,
+    table,
+  ]);
+
   const selectedCount = Object.keys(rowSelection).length;
 
   return (
     <Paper
       sx={{
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Header */}
@@ -738,10 +770,10 @@ export function TanStackTable<T extends Record<string, unknown>>({
       <Box
         sx={{
           p: 2,
-          display: "flex",
+          display: 'flex',
           gap: 2,
-          flexWrap: "wrap",
-          alignItems: "center",
+          flexWrap: 'wrap',
+          alignItems: 'center',
           flexShrink: 0,
         }}
       >
@@ -750,7 +782,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
           <TextField
             size="small"
             placeholder="Buscar em todas as colunas..."
-            value={globalFilter ?? ""}
+            value={globalFilter ?? ''}
             onChange={(e) => setGlobalFilter(e.target.value)}
             sx={{ minWidth: 300 }}
             InputProps={{
@@ -768,7 +800,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
         {/* Selected Count */}
         {enableRowSelection && selectedCount > 0 && (
           <Chip
-            label={`${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}`}
+            label={`${selectedCount} selecionado${selectedCount > 1 ? 's' : ''}`}
             color="primary"
             variant="outlined"
           />
@@ -802,8 +834,8 @@ export function TanStackTable<T extends Record<string, unknown>>({
       </Box>
 
       {/* Table */}
-      <TableContainer sx={{ flex: 1, overflow: "auto" }}>
-        <Table stickyHeader={stickyHeader} sx={{ tableLayout: "fixed" }}>
+      <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
+        <Table stickyHeader={stickyHeader} sx={{ tableLayout: 'fixed' }}>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -812,12 +844,12 @@ export function TanStackTable<T extends Record<string, unknown>>({
                     key={header.id}
                     sx={{
                       fontWeight: 600,
-                      backgroundColor: "background.neutral",
+                      backgroundColor: 'background.neutral',
                       width: header.getSize(),
-                      position: "relative",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
+                      position: 'relative',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }}
                   >
                     <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -827,16 +859,16 @@ export function TanStackTable<T extends Record<string, unknown>>({
                             <TableSortLabel
                               active={header.column.getIsSorted() !== false}
                               direction={
-                                header.column.getIsSorted() === "asc"
-                                  ? "asc"
-                                  : "desc"
+                                header.column.getIsSorted() === 'asc'
+                                  ? 'asc'
+                                  : 'desc'
                               }
                               onClick={header.column.getToggleSortingHandler()}
                               sx={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                width: "100%",
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                width: '100%',
                               }}
                             >
                               {flexRender(
@@ -847,10 +879,10 @@ export function TanStackTable<T extends Record<string, unknown>>({
                           ) : (
                             <Box
                               sx={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                width: "100%",
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                width: '100%',
                               }}
                             >
                               {flexRender(
@@ -874,21 +906,21 @@ export function TanStackTable<T extends Record<string, unknown>>({
                         onMouseDown={header.getResizeHandler()}
                         onTouchStart={header.getResizeHandler()}
                         sx={{
-                          position: "absolute",
+                          position: 'absolute',
                           right: 0,
                           top: 0,
-                          height: "100%",
-                          width: "5px",
-                          cursor: "col-resize",
-                          userSelect: "none",
-                          touchAction: "none",
+                          height: '100%',
+                          width: '5px',
+                          cursor: 'col-resize',
+                          userSelect: 'none',
+                          touchAction: 'none',
                           backgroundColor: header.column.getIsResizing()
-                            ? "primary.main"
-                            : "transparent",
-                          "&:hover": {
-                            backgroundColor: "primary.light",
+                            ? 'primary.main'
+                            : 'transparent',
+                          '&:hover': {
+                            backgroundColor: 'primary.light',
                           },
-                          transition: "background-color 0.2s",
+                          transition: 'background-color 0.2s',
                         }}
                       />
                     )}
@@ -902,7 +934,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  sx={{ textAlign: "center", py: 10 }}
+                  sx={{ textAlign: 'center', py: 10 }}
                 >
                   <CircularProgress />
                 </TableCell>
@@ -911,7 +943,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  sx={{ textAlign: "center", py: 10 }}
+                  sx={{ textAlign: 'center', py: 10 }}
                 >
                   <Typography variant="body2" color="text.secondary">
                     Nenhum resultado encontrado
@@ -927,10 +959,10 @@ export function TanStackTable<T extends Record<string, unknown>>({
                   onDoubleClick={() => onRowDoubleClick?.(row.original)}
                   sx={{
                     cursor:
-                      onRowClick || onRowDoubleClick ? "pointer" : "default",
+                      onRowClick || onRowDoubleClick ? 'pointer' : 'default',
                     backgroundColor: row.getIsSelected()
-                      ? "action.selected"
-                      : "inherit",
+                      ? 'action.selected'
+                      : 'inherit',
                   }}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -952,14 +984,14 @@ export function TanStackTable<T extends Record<string, unknown>>({
       {enablePagination && (
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
+            display: 'flex',
+            alignItems: 'center',
             px: 2,
             py: 1,
             flexShrink: 0,
-            borderTop: "1px solid",
-            borderColor: "divider",
-            bg: "background.paper",
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            bg: 'background.paper',
           }}
         >
           <Stack direction="row" spacing={1} sx={{ flexGrow: 1 }}>
@@ -982,7 +1014,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
             }}
             rowsPerPageOptions={[
               ...pageSizeOptions,
-              { label: "Tudo", value: -1 },
+              { label: 'Tudo', value: -1 },
             ]}
             labelRowsPerPage="Linhas por página:"
             labelDisplayedRows={({ from, to, count }) =>
