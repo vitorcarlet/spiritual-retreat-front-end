@@ -1,8 +1,10 @@
-"use client";
-import dynamic from "next/dynamic";
-const RetreatOutBox = dynamic(() => import("@/src/components/OutBox"), {
-  loading: () => <p>Loading...</p>,
+import dynamic from 'next/dynamic';
+
+import LoadingScreenCircular from '@/src/components/loading-screen/client/LoadingScreenCircular';
+
+const RetreatOutBox = dynamic(() => import('@/src/components/OutBox'), {
+  loading: () => <LoadingScreenCircular />,
 });
-export default function Page() {
+export default async function Page() {
   return <RetreatOutBox />;
 }

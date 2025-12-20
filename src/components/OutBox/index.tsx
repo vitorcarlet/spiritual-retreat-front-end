@@ -1,6 +1,14 @@
-"use client";
+'use client';
 
-import { useMemo, useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from 'react';
+
+import { useTranslations } from 'next-intl';
+
+import { useQuery } from '@tanstack/react-query';
+import { ColumnDef } from '@tanstack/react-table';
+import axios from 'axios';
+import { useSnackbar } from 'notistack';
+
 import {
   Box,
   Button,
@@ -9,21 +17,18 @@ import {
   Stack,
   TextField,
   Tooltip,
-} from "@mui/material";
-import type { ButtonProps } from "@mui/material/Button";
-import { ColumnDef } from "@tanstack/react-table";
-import { useQuery } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
-import { useSnackbar } from "notistack";
-import axios from "axios";
-import apiClient from "@/src/lib/axiosClientInstance";
-import { useModal } from "@/src/hooks/useModal";
-import { TanStackTable } from "@/src/components/table/TanStackTable";
-import OutboxSummaryCards from "./OutboxSummaryCards";
-import OutboxDetailView from "./OutboxDetail";
-import { OutboxListResponse, OutboxMessage, OutboxSummary } from "./types";
-import { getApiUrl } from "@/src/lib/apiConfig";
-import Iconify from "../Iconify";
+} from '@mui/material';
+import type { ButtonProps } from '@mui/material/Button';
+
+import { TanStackTable } from '@/src/components/table/TanStackTable';
+import { useModal } from '@/src/hooks/useModal';
+import { getApiUrl } from '@/src/lib/apiConfig';
+import apiClient from '@/src/lib/axiosClientInstance';
+
+import Iconify from '../Iconify';
+import OutboxDetailView from './OutboxDetail';
+import OutboxSummaryCards from './OutboxSummaryCards';
+import { OutboxListResponse, OutboxMessage, OutboxSummary } from './types';
 
 type TableFilters = {
   page: number;
@@ -38,52 +43,52 @@ type TableFilters = {
 const defaultFilters: TableFilters = {
   page: 1,
   pageLimit: 10,
-  processed: "",
-  status: "",
-  type: "",
-  startDate: "",
-  endDate: "",
+  processed: '',
+  status: '',
+  type: '',
+  startDate: '',
+  endDate: '',
 };
 
 const statusOptions = [
-  { value: "", label: "Todos" },
-  { value: "pending", label: "Pendente" },
-  { value: "processing", label: "Processando" },
-  { value: "processed", label: "Processada" },
-  { value: "failed", label: "Falhou" },
+  { value: '', label: 'Todos' },
+  { value: 'pending', label: 'Pendente' },
+  { value: 'processing', label: 'Processando' },
+  { value: 'processed', label: 'Processada' },
+  { value: 'failed', label: 'Falhou' },
 ];
 
 const processedOptions = [
-  { value: "", label: "Todos" },
-  { value: "true", label: "Processado" },
-  { value: "false", label: "Não processado" },
+  { value: '', label: 'Todos' },
+  { value: 'true', label: 'Processado' },
+  { value: 'false', label: 'Não processado' },
 ];
 
 const formatDateTime = (value?: string | null) => {
   if (!value) {
-    return "-";
+    return '-';
   }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "-";
+    return '-';
   }
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
   }).format(date);
 };
 
-const statusColorMap: Record<OutboxMessage["status"], ButtonProps["color"]> = {
-  pending: "warning",
-  processing: "info",
-  processed: "success",
-  failed: "error",
-  queued: "info",
-  unknown: "inherit",
+const statusColorMap: Record<OutboxMessage['status'], ButtonProps['color']> = {
+  pending: 'warning',
+  processing: 'info',
+  processed: 'success',
+  failed: 'error',
+  queued: 'info',
+  unknown: 'inherit',
 };
 
 export default function RetreatOutboxTab() {
-  const t = useTranslations("retreat-outbox");
+  const t = useTranslations('retreat-outbox');
   const translate = useCallback(
     (key: string, defaultMessage: string) => t(key, { defaultMessage }),
     [t]
@@ -97,11 +102,11 @@ export default function RetreatOutboxTab() {
     isLoading: isSummaryLoading,
     refetch: refetchSummary,
   } = useQuery({
-    queryKey: ["admin-outbox-summary"],
+    queryKey: ['admin-outbox-summary'],
     queryFn: async () => {
       const response = await apiClient.get<OutboxSummary>(
-        "/admin/outbox/summary",
-        { baseURL: getApiUrl("admin") }
+        '/admin/outbox/summary',
+        { baseURL: getApiUrl('admin') }
       );
       return response.data;
     },
@@ -112,7 +117,7 @@ export default function RetreatOutboxTab() {
     isLoading: isTableLoading,
     refetch: refetchTable,
   } = useQuery({
-    queryKey: ["admin-outbox", filters],
+    queryKey: ['admin-outbox', filters],
     queryFn: async () => {
       try {
         const params: Record<string, string | number | boolean> = {
@@ -121,7 +126,7 @@ export default function RetreatOutboxTab() {
         };
 
         if (filters.processed) {
-          params.processed = filters.processed === "true";
+          params.processed = filters.processed === 'true';
         }
 
         if (filters.status) {
@@ -142,7 +147,7 @@ export default function RetreatOutboxTab() {
 
         const response = await apiClient.get<
           OutboxListResponse | OutboxMessage[]
-        >("/admin/outbox", { params, baseURL: getApiUrl("admin") });
+        >('/admin/outbox', { params, baseURL: getApiUrl('admin') });
         const data = response.data;
 
         if (Array.isArray(data)) {
@@ -168,9 +173,9 @@ export default function RetreatOutboxTab() {
         const message = axios.isAxiosError(error)
           ? ((error.response?.data as { error?: string })?.error ??
             error.message)
-          : translate("fetch-error", "Não foi possível carregar o outbox.");
+          : translate('fetch-error', 'Não foi possível carregar o outbox.');
         enqueueSnackbar(message, {
-          variant: "error",
+          variant: 'error',
           autoHideDuration: 4000,
         });
         throw error;
@@ -185,13 +190,13 @@ export default function RetreatOutboxTab() {
       const derivedStatus = item.status
         ? item.status
         : ((item.processedAt
-            ? "processed"
+            ? 'processed'
             : item.attempts > 0
-              ? "processing"
-              : "pending") as OutboxMessage["status"]);
+              ? 'processing'
+              : 'pending') as OutboxMessage['status']);
 
       const processedValue =
-        typeof item.processed === "boolean"
+        typeof item.processed === 'boolean'
           ? item.processed
           : Boolean(item.processedAt);
 
@@ -208,7 +213,7 @@ export default function RetreatOutboxTab() {
       setFilters((prev) => ({
         ...prev,
         [key]: value,
-        page: key === "page" ? Number(value) : 1,
+        page: key === 'page' ? Number(value) : 1,
       }));
     },
     []
@@ -217,11 +222,11 @@ export default function RetreatOutboxTab() {
   const openDetail = useCallback(
     (record: OutboxMessage) => {
       modal.open({
-        title: t("detail-modal-title", {
+        title: t('detail-modal-title', {
           id: record.id,
           defaultMessage: `Mensagem ${record.id}`,
         }),
-        size: "lg",
+        size: 'lg',
         customRender: () => (
           <OutboxDetailView
             outboxId={record.id}
@@ -239,29 +244,29 @@ export default function RetreatOutboxTab() {
   const columns = useMemo<ColumnDef<OutboxMessage>[]>(
     () => [
       {
-        accessorKey: "id",
-        header: translate("columns.id", "ID"),
+        accessorKey: 'id',
+        header: translate('columns.id', 'ID'),
         size: 180,
       },
       {
-        accessorKey: "type",
-        header: translate("columns.type", "Tipo"),
+        accessorKey: 'type',
+        header: translate('columns.type', 'Tipo'),
         size: 160,
       },
       {
-        accessorKey: "status",
-        header: translate("columns.status", "Status"),
+        accessorKey: 'status',
+        header: translate('columns.status', 'Status'),
         size: 130,
         cell: ({ getValue }) => {
-          const status = (getValue() as OutboxMessage["status"]) ?? "unknown";
-          const buttonColor: ButtonProps["color"] =
-            statusColorMap[status] ?? "inherit";
+          const status = (getValue() as OutboxMessage['status']) ?? 'unknown';
+          const buttonColor: ButtonProps['color'] =
+            statusColorMap[status] ?? 'inherit';
           return (
             <Button
               variant="outlined"
               color={buttonColor}
               size="small"
-              sx={{ pointerEvents: "none" }}
+              sx={{ pointerEvents: 'none' }}
             >
               {status}
             </Button>
@@ -269,30 +274,30 @@ export default function RetreatOutboxTab() {
         },
       },
       {
-        accessorKey: "attempts",
-        header: translate("columns.attempts", "Tentativas"),
+        accessorKey: 'attempts',
+        header: translate('columns.attempts', 'Tentativas'),
         size: 120,
         cell: ({ getValue }) => String(getValue() ?? 0),
       },
       {
-        accessorKey: "createdAt",
-        header: translate("columns.createdAt", "Criada em"),
+        accessorKey: 'createdAt',
+        header: translate('columns.createdAt', 'Criada em'),
         size: 180,
         cell: ({ getValue }) => formatDateTime(getValue() as string),
       },
       {
-        accessorKey: "processedAt",
-        header: translate("columns.processedAt", "Processada em"),
+        accessorKey: 'processedAt',
+        header: translate('columns.processedAt', 'Processada em'),
         size: 180,
         cell: ({ getValue }) => formatDateTime(getValue() as string),
       },
       {
-        id: "actions",
-        header: translate("columns.actions", "Ações"),
+        id: 'actions',
+        header: translate('columns.actions', 'Ações'),
         size: 100,
         enableSorting: false,
         cell: ({ row }) => (
-          <Tooltip title={translate("table.actions.view", "Ver detalhes")}>
+          <Tooltip title={translate('table.actions.view', 'Ver detalhes')}>
             <IconButton
               size="small"
               color="primary"
@@ -315,25 +320,25 @@ export default function RetreatOutboxTab() {
     <Box
       sx={{
         p: 2,
-        height: "100%",
+        height: '100%',
         minHeight: 1000,
-        display: "flex",
-        flexDirection: "column",
+        display: 'flex',
+        flexDirection: 'column',
         gap: 3,
       }}
     >
       <OutboxSummaryCards summary={summary} isLoading={isSummaryLoading} />
 
       <Stack
-        direction={{ xs: "column", md: "row" }}
+        direction={{ xs: 'column', md: 'row' }}
         spacing={2}
-        alignItems={{ xs: "stretch", md: "center" }}
+        alignItems={{ xs: 'stretch', md: 'center' }}
       >
         <TextField
           select
-          label={translate("filters.status", "Status")}
+          label={translate('filters.status', 'Status')}
           value={filters.status}
-          onChange={(event) => handleFilterChange("status", event.target.value)}
+          onChange={(event) => handleFilterChange('status', event.target.value)}
           sx={{ minWidth: 180 }}
         >
           {statusOptions.map((option) => (
@@ -345,10 +350,10 @@ export default function RetreatOutboxTab() {
 
         <TextField
           select
-          label={translate("filters.processed", "Processado")}
+          label={translate('filters.processed', 'Processado')}
           value={filters.processed}
           onChange={(event) =>
-            handleFilterChange("processed", event.target.value)
+            handleFilterChange('processed', event.target.value)
           }
           sx={{ minWidth: 180 }}
         >
@@ -360,42 +365,42 @@ export default function RetreatOutboxTab() {
         </TextField>
 
         <TextField
-          label={translate("filters.type", "Tipo")}
+          label={translate('filters.type', 'Tipo')}
           value={filters.type}
-          onChange={(event) => handleFilterChange("type", event.target.value)}
+          onChange={(event) => handleFilterChange('type', event.target.value)}
           sx={{ minWidth: 200 }}
-          placeholder={translate("filters.type-placeholder", "Ex: email, sms")}
+          placeholder={translate('filters.type-placeholder', 'Ex: email, sms')}
         />
 
         <TextField
-          label={translate("filters.startDate", "Data inicial")}
+          label={translate('filters.startDate', 'Data inicial')}
           type="date"
           value={filters.startDate}
           onChange={(event) =>
-            handleFilterChange("startDate", event.target.value)
+            handleFilterChange('startDate', event.target.value)
           }
           InputLabelProps={{ shrink: true }}
         />
 
         <TextField
-          label={translate("filters.endDate", "Data final")}
+          label={translate('filters.endDate', 'Data final')}
           type="date"
           value={filters.endDate}
           onChange={(event) =>
-            handleFilterChange("endDate", event.target.value)
+            handleFilterChange('endDate', event.target.value)
           }
           InputLabelProps={{ shrink: true }}
         />
 
         <Button variant="text" color="inherit" onClick={handleResetFilters}>
-          {translate("filters.reset", "Limpar filtros")}
+          {translate('filters.reset', 'Limpar filtros')}
         </Button>
       </Stack>
 
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
+          display: 'flex',
+          flexDirection: 'column',
           flex: 1,
           minHeight: 1000,
         }}
@@ -406,10 +411,10 @@ export default function RetreatOutboxTab() {
             columns as ColumnDef<OutboxMessage & Record<string, unknown>>[]
           }
           loading={isTableLoading}
-          title={translate("table.title", "Mensagens na fila")}
+          title={translate('table.title', 'Mensagens na fila')}
           subtitle={translate(
-            "table.subtitle",
-            "Acompanhe o processamento de notificações."
+            'table.subtitle',
+            'Acompanhe o processamento de notificações.'
           )}
           enablePagination
           manualPagination
@@ -417,11 +422,20 @@ export default function RetreatOutboxTab() {
           pageSize={filters.pageLimit}
           pageSizeOptions={[10, 25, 50, 100, 999]}
           onPaginationModelChange={(model) => {
-            setFilters((prev) => ({
-              ...prev,
-              page: model.page + 1,
-              pageLimit: model.pageSize,
-            }));
+            setFilters((prev) => {
+              const nextPage = model.page + 1;
+              const nextPageLimit = model.pageSize;
+
+              if (prev.page === nextPage && prev.pageLimit === nextPageLimit) {
+                return prev;
+              }
+
+              return {
+                ...prev,
+                page: nextPage,
+                pageLimit: nextPageLimit,
+              };
+            });
           }}
           enableRowSelection={false}
           enableGlobalFilter={false}

@@ -1,7 +1,9 @@
-import apiClient from "@/src/lib/axiosClientInstance";
-import apiServer from "@/src/lib/axiosServerInstance";
-import { Retreat } from "@/src/types/retreats";
-import axios from "axios";
+import { Session } from 'next-auth';
+
+import axios from 'axios';
+
+import apiClient from '@/src/lib/axiosClientInstance';
+import { Retreat } from '@/src/types/retreats';
 
 type RetreatPayload = {
   id?: string;
@@ -34,19 +36,43 @@ export const fetchRetreatData = async (
     const result = await apiClient.get(`/Retreats/${retreatId}`);
     return result.data;
   } catch (error) {
-    console.error("Erro ao buscar dados do retiro:", error);
+    console.error('Erro ao buscar dados do retiro:', error);
     throw error;
   }
 };
 
 export const fetchRetreatDataServer = async (
-  retreatId: string
+  retreatId: string,
+  session: Session | null
 ): Promise<Retreat | null> => {
   try {
-    const result = await apiServer.get(`/Retreats/${retreatId}`);
-    return result.data;
+    console.log(session, 'responseServer');
+    const baseURL =
+      process.env.API_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      'http://localhost:5001/api';
+
+    const response = await fetch(`${baseURL}/Retreats/${retreatId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.tokens?.accessToken
+          ? { Authorization: `Bearer ${session.tokens.accessToken}` }
+          : {}),
+      },
+    });
+
+    if (!response.ok) {
+      console.log(response, 'responseServer');
+      throw new Error(
+        `Failed to fetch retreat data (status ${response.status})`
+      );
+    }
+
+    const data = (await response.json()) as Retreat;
+    return data;
   } catch (error) {
-    console.error("Erro ao buscar dados do retiro:", error);
+    console.error('Erro ao buscar dados do retiro:', error);
     throw error;
   }
 };
@@ -66,19 +92,19 @@ const buildRetreatPayload = (data: RetreatPayload) => {
     registrationStart: data.registrationStart,
     registrationEnd: data.registrationEnd,
     feeFazer: {
-      amount: typeof data.feeFazer === "number" ? data.feeFazer : 0,
-      currency: "BRL",
+      amount: typeof data.feeFazer === 'number' ? data.feeFazer : 0,
+      currency: 'BRL',
     },
     feeServir: {
-      amount: typeof data.feeServir === "number" ? data.feeServir : 0,
-      currency: "BRL",
+      amount: typeof data.feeServir === 'number' ? data.feeServir : 0,
+      currency: 'BRL',
     },
     westRegionPct: {
-      value: typeof data.westRegionPct === "number" ? data.westRegionPct : 85.0,
+      value: typeof data.westRegionPct === 'number' ? data.westRegionPct : 85.0,
     },
     otherRegionPct: {
       value:
-        typeof data.otherRegionPct === "number" ? data.otherRegionPct : 15.0,
+        typeof data.otherRegionPct === 'number' ? data.otherRegionPct : 15.0,
     },
   };
 };
@@ -93,27 +119,27 @@ export const createRetreat = async (
     if (files && files.length > 0) {
       const body = new FormData();
       body.append(
-        "payload",
-        new Blob([JSON.stringify(builtPayload)], { type: "application/json" })
+        'payload',
+        new Blob([JSON.stringify(builtPayload)], { type: 'application/json' })
       );
-      files.forEach((file) => body.append("images", file));
+      files.forEach((file) => body.append('images', file));
 
       const response = await apiClient.post<{ retreatId: string }>(
-        "/Retreats",
+        '/Retreats',
         body
       );
       return response.data;
     }
 
     const response = await apiClient.post<{ retreatId: string }>(
-      "/Retreats",
+      '/Retreats',
       builtPayload
     );
     return response.data;
   } catch (error) {
     const message = axios.isAxiosError(error)
       ? ((error.response?.data as { error?: string })?.error ?? error.message)
-      : "Erro ao criar retiro. Tente novamente.";
+      : 'Erro ao criar retiro. Tente novamente.';
     throw new Error(message);
   }
 };
@@ -129,10 +155,10 @@ export const updateRetreat = async (
     if (files && files.length > 0) {
       const body = new FormData();
       body.append(
-        "payload",
-        new Blob([JSON.stringify(builtPayload)], { type: "application/json" })
+        'payload',
+        new Blob([JSON.stringify(builtPayload)], { type: 'application/json' })
       );
-      files.forEach((file) => body.append("images", file));
+      files.forEach((file) => body.append('images', file));
 
       const response = await apiClient.put<Retreat>(
         `/Retreats/${retreatId}`,
@@ -149,7 +175,7 @@ export const updateRetreat = async (
   } catch (error) {
     const message = axios.isAxiosError(error)
       ? ((error.response?.data as { error?: string })?.error ?? error.message)
-      : "Erro ao atualizar retiro. Tente novamente.";
+      : 'Erro ao atualizar retiro. Tente novamente.';
     throw new Error(message);
   }
 };
@@ -160,7 +186,7 @@ export const deleteRetreat = async (retreatId: string): Promise<void> => {
   } catch (error) {
     const message = axios.isAxiosError(error)
       ? ((error.response?.data as { error?: string })?.error ?? error.message)
-      : "Erro ao excluir retiro. Tente novamente.";
+      : 'Erro ao excluir retiro. Tente novamente.';
     throw new Error(message);
   }
 };

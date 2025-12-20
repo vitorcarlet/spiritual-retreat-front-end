@@ -1,13 +1,15 @@
-import ProtectedLayoutContent from "@/src/components/navigation/protected/ProtectedLayoutContext";
-import { DrawerProvider } from "@/src/contexts/DrawerContext";
-import { NotificationsProvider } from "@/src/contexts/NotificationsContext";
-import SnackbarClientProvider from "@/src/providers/SnackbarProvider";
-import NotificationListener from "@/src/components/notifications/NotificationListener";
-import TokenErrorMonitor from "@/src/components/auth/TokenErrorMonitor";
-import SessionWatcher from "@/src/providers/SessionWatcher";
+import { Metadata } from 'next';
 
-export const metadata = {
-  title: "Protected Routes",
+import TokenErrorMonitor from '@/src/components/auth/TokenErrorMonitor';
+import ProtectedLayoutContent from '@/src/components/navigation/protected/ProtectedLayoutContext';
+// import NotificationListener from '@/src/components/notifications/NotificationListener';
+import { DrawerProvider } from '@/src/contexts/DrawerContext';
+// import { NotificationsProvider } from '@/src/contexts/NotificationsContext';
+import SessionWatcher from '@/src/providers/SessionWatcher';
+import SnackbarClientProvider from '@/src/providers/SnackbarProvider';
+
+export const metadata: Metadata = {
+  title: 'Protected Routes',
 };
 
 export default function ProtectedLayout({
@@ -16,16 +18,16 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    // <SessionProvider>
+    //<SessionProvider>
     <SessionWatcher>
       <TokenErrorMonitor />
       <DrawerProvider>
-        <NotificationsProvider>
-          <SnackbarClientProvider>
-            <NotificationListener />
-            <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
-          </SnackbarClientProvider>
-        </NotificationsProvider>
+        {/* <NotificationsProvider> */}
+        <SnackbarClientProvider>
+          {/* <NotificationListener /> */}
+          <ProtectedLayoutContent>{children}</ProtectedLayoutContent>
+        </SnackbarClientProvider>
+        {/* </NotificationsProvider> */}
       </DrawerProvider>
     </SessionWatcher>
     // </SessionProvider>

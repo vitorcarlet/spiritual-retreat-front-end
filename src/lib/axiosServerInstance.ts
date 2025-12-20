@@ -1,28 +1,34 @@
-import { auth } from "@/auth";
-import axios from "axios";
+import axios from 'axios';
 
+const baseURL =
+  process.env.API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:5001/api';
+
+// ✅ Instância server "pura" (sem auth()). Use para rotas públicas como /login, /refresh etc.
 const apiServer = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
+  baseURL,
   timeout: 10000,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
 });
 
-// Função para criar instância com token
-export const createAuthenticatedApi = async () => {
-  try {
-    const session = await auth();
+// ✅ Quando precisar Authorization no server, crie uma instância por request
+export function ApiServerWithToken(accessToken?: string) {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
 
-    if (session?.tokens.accessToken) {
-      apiServer.defaults.headers.Authorization = `Bearer ${session.tokens.accessToken}`;
-    }
-
-    return apiServer;
-  } catch (error) {
-    console.error("Failed to create authenticated API:", error);
-    return apiServer; // Retorna sem token se falhar
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
   }
-};
+
+  return axios.create({
+    baseURL,
+    timeout: apiServer.defaults.timeout,
+    headers,
+  });
+}
 
 export default apiServer;

@@ -1,55 +1,13 @@
-import type { BackendAccessJWT, UserObject } from 'next-auth';
+import type { BackendAccessJWT } from 'next-auth';
 
-import { AxiosResponse } from 'axios';
 import jwt from 'jsonwebtoken';
-import { jwtDecode } from 'jwt-decode';
 
-import apiServer from '../lib/axiosServerInstance';
+const API_BASE_URL =
+  process.env.API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:5001/api';
 
-/**
- * Log in a user by sending a POST request to the backend using the supplied credentials.
- */
-// export async function login(
-//   email: string,
-//   password: string
-// ): Promise<Response> {
-//   console.debug("Logging in");
-
-//   if (!email) {
-//     throw new Error("Email is required");
-//   }
-//   if (!password) {
-//     throw new Error("Password is required");
-//   }
-
-//   // Simular dados do usuário após validação
-//   const userData: UserObject = {
-//     id: "1",
-//     email: email,
-//     name: "Test User",
-//     roles: ["user"],
-//     first_name: "Test",
-//     last_name: "User",
-//     permissions: {
-//       read: ["profile", "settings"],
-//       write: ["profile"],
-//     },
-//   };
-
-//   // Dummy data to simulate a successful login
-//   const mock_data: BackendJWT = {
-//     accessToken: create_accessToken(userData),
-//     refreshToken: create_refreshToken(userData),
-//   };
-
-//   return new Response(JSON.stringify(mock_data), {
-//     status: 200,
-//     statusText: "OK",
-//     headers: {
-//       "Content-Type": "application/json",
-//     },
-//   });
-// }
+const REFRESH_ENDPOINT = `${API_BASE_URL.replace(/\/$/, '')}/refresh`;
 
 /**
  * Refresh the access token by sending the refresh token.
@@ -57,52 +15,67 @@ import apiServer from '../lib/axiosServerInstance';
 export async function refresh(tokens: {
   accessToken: string;
   refreshToken: string;
-}): Promise<AxiosResponse<BackendAccessJWT, any>> {
-  console.warn('Refreshing token');
+}): Promise<BackendAccessJWT> {
+  console.warn('Refreshing token', {
+    hasAccessToken: Boolean(tokens.accessToken),
+    hasRefreshToken: Boolean(tokens.refreshToken),
+  });
 
-  // Verify that the token is valid and not expired
   try {
-    if (!tokens) {
-      return Promise.reject({
+    if (!tokens.refreshToken) {
+      throw Object.assign(new Error('Missing refresh token'), {
         response: {
-          status: 401,
-          statusText: 'Unauthorized',
-          data: { error: 'Refresh token expired' },
-        },
-      });
-    }
-    const decoded = jwtDecode(tokens.accessToken) as UserObject & {
-      exp: number;
-    };
-
-    // Verificar se o token expirou
-    const now = Math.floor(Date.now() / 1000);
-    if (decoded.exp && decoded.exp < now) {
-      return Promise.reject({
-        response: {
-          status: 401,
-          statusText: 'Unauthorized',
-          data: { error: 'Refresh token expired' },
+          status: 400,
+          statusText: 'BadRequest',
+          data: { error: 'Refresh token not provided' },
         },
       });
     }
 
-    // Criar novo access token com os dados do usuário
-    const newAccessToken = await apiServer.post<{
-      accessToken: string;
-      refreshToken: string;
-    }>(tokens.refreshToken);
-
-    return newAccessToken;
-  } catch (err) {
-    console.error(`Refresh token expired:`, err);
-    return Promise.reject({
-      response: {
-        status: 401,
-        statusText: 'Unauthorized',
-        data: { error: 'Refresh token expired' },
+    const response = await fetch(REFRESH_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(tokens),
+      cache: 'no-store',
     });
+
+    const rawPayload = await response
+      .json()
+      .catch(() => ({ error: 'Unable to parse refresh response' }));
+
+    if (!response.ok) {
+      throw Object.assign(
+        new Error(
+          rawPayload?.error ||
+            rawPayload?.message ||
+            `Refresh request failed with status ${response.status}`
+        ),
+        {
+          response: {
+            status: response.status,
+            statusText: response.statusText,
+            data: rawPayload,
+          },
+        }
+      );
+    }
+
+    const data = rawPayload as BackendAccessJWT;
+
+    if (!data?.accessToken) {
+      throw new Error('Refresh response is missing accessToken');
+    }
+
+    return {
+      ...data,
+      refreshToken: data.refreshToken ?? tokens.refreshToken,
+    };
+  } catch (err) {
+    console.error(`Refresh token request failed:`, err);
+    throw err;
   }
 }
 

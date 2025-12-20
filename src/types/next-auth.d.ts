@@ -1,18 +1,17 @@
 // import type { User, UserObject } from "next-auth";
-
-import "next-auth";
+import 'next-auth';
 
 /**
  * The returned data from the authorize method
  * This is data we extract from our own backend JWT tokens.
  */
 
-declare module "next-auth" {
+declare module 'next-auth' {
   export interface BackendAccessJWT {
     accessToken?: string;
     expires_in?: number;
     id_token?: string;
-    "not-before-policy"?: number;
+    'not-before-policy'?: number;
     refresh_expires_in?: number;
     refreshToken?: string;
     scope?: string;
@@ -41,22 +40,24 @@ declare module "next-auth" {
     state: string;
     stateShort: string;
     role: UserRoles;
+    phone: string;
     permissions: UserPermissions;
+    enabled?: boolean;
   }
 
-  type UserRoles = "admin" | "manager" | "consultant" | "participant";
+  type UserRoles = 'admin' | 'manager' | 'consultant' | 'participant';
 
   export type ResourceType =
-    | "users"
-    | "retreats"
-    | "settings"
-    | "bookings"
-    | "profile"
-    | "dashboard"
-    | "outbox"
-    | "reports";
+    | 'users'
+    | 'retreats'
+    | 'settings'
+    | 'bookings'
+    | 'profile'
+    | 'dashboard'
+    | 'outbox'
+    | 'reports';
 
-  export type ActionType = "create" | "read" | "update" | "delete";
+  export type ActionType = 'create' | 'read' | 'update' | 'delete';
 
   type UserPermissions = Record<ResourceType, Record<ActionType, boolean>>;
 
@@ -71,7 +72,7 @@ declare module "next-auth" {
     azp: string;
     sid: string;
     acr: string;
-    "allowed-origins": string[];
+    'allowed-origins': string[];
     roles: string[];
     permissions: UserPermissions;
     scope: string;
@@ -98,7 +99,7 @@ declare module "next-auth" {
    * `iat` is the time the token was issued, `exp` is the time the token expires, `jti` is the token id.
    */
   export interface DecodedJWT extends UserObject {
-    token_type: "refresh" | "access";
+    token_type: 'refresh' | 'access';
     exp: number;
     iat: number;
     jti: string;
@@ -136,7 +137,7 @@ declare module "next-auth" {
   export interface Session {
     user: UserObject;
     validity: AuthValidity;
-    error: "RefreshTokenExpired" | "RefreshAccessTokenError";
+    error: 'RefreshTokenExpired' | 'RefreshAccessTokenError';
     tokens: BackendJWT;
   }
 }
@@ -144,7 +145,7 @@ declare module "next-auth" {
 // The `JWT` interface can be found in the `next-auth/jwt` submodule
 //import { JWT } from "next-auth/jwt";
 
-declare module "next-auth/jwt" {
+declare module 'next-auth/jwt' {
   /**
    * The contents of our refresh call to the backend is a new access token
    */
@@ -153,7 +154,7 @@ declare module "next-auth/jwt" {
     accessToken?: string;
     expires_in?: number;
     id_token?: string;
-    "not-before-policy"?: number;
+    'not-before-policy'?: number;
     refresh_expires_in?: number;
     refreshToken?: string;
     scope?: string;
@@ -194,12 +195,12 @@ declare module "next-auth/jwt" {
   /** Returned by the `jwt` callback and `auth`, when using JWT sessions */
 }
 
-declare module "next-auth/jwt" {
+declare module 'next-auth/jwt' {
   /**
    * Returned by the `jwt` callback and `getToken`, when using JWT sessions
    */
   export interface JWT {
     data: User | null;
-    error: "RefreshTokenExpired" | "RefreshAccessTokenError" | "NoTokenData";
+    error: 'RefreshTokenExpired' | 'RefreshAccessTokenError' | 'NoTokenData';
   }
 }

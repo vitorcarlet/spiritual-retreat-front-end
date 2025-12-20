@@ -1,15 +1,19 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, use, useCallback, useMemo } from "react";
-import { Box, Tabs, Tab, useTheme } from "@mui/material";
-import { useRouter, usePathname } from "next/navigation";
-import Iconify from "../Iconify";
-import { useBreadCrumbs } from "@/src/contexts/BreadCrumbsContext";
-import SelectEditMode from "../navigation/SelectEditMode";
-import { UserContentProvider } from "./context";
-import { UserObject } from "next-auth";
-import { fetchUserData } from "./shared";
-import { useMenuMode } from "@/src/contexts/users-context/MenuModeContext";
+import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
+
+import { UserObject } from 'next-auth';
+import { usePathname, useRouter } from 'next/navigation';
+
+import { Box, Tab, Tabs, useTheme } from '@mui/material';
+
+import { useBreadCrumbs } from '@/src/contexts/BreadCrumbsContext';
+import { useMenuMode } from '@/src/contexts/users-context/MenuModeContext';
+
+import Iconify from '../Iconify';
+import SelectEditMode from '../navigation/SelectEditMode';
+import { UserContentProvider } from './context';
+import { fetchUserData } from './shared';
 
 interface UserPageProps {
   children: React.ReactNode;
@@ -26,7 +30,7 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
 
   const { menuMode, toggleMenuMode, isAllowedToEdit } = useMenuMode();
 
-  const userId = pathname.split("/")[2];
+  const userId = pathname.split('/')[2];
   const getUserData = (userId: string) => {
     if (!userCache.has(userId)) {
       userCache.set(userId, fetchUserData(userId));
@@ -48,22 +52,22 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
   const tabs = useMemo(
     () => [
       {
-        label: "Informações",
-        icon: "lucide:user",
+        label: 'Informações',
+        icon: 'lucide:user',
         path: `/users/${userId}`,
         value: 0,
       },
+      // {
+      //   label: "Permissões",
+      //   icon: "lucide:shield-check",
+      //   path: `/users/${userId}/permissions`,
+      //   value: 1,
+      // },
       {
-        label: "Permissões",
-        icon: "lucide:shield-check",
-        path: `/users/${userId}/permissions`,
-        value: 1,
-      },
-      {
-        label: "Segurança",
-        icon: "lucide:lock",
+        label: 'Segurança',
+        icon: 'lucide:lock',
         path: `/users/${userId}/credentials`,
-        value: 2,
+        value: 1,
       },
     ],
     [userId]
@@ -97,28 +101,28 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
   function a11yProps(index: number) {
     return {
       id: `user-tab-${index}`,
-      "aria-controls": `user-tabpanel-${index}`,
+      'aria-controls': `user-tabpanel-${index}`,
     };
   }
 
   return (
-    <Box sx={{ width: "100%", height: "100%", maxHeight: "100%" }}>
+    <Box sx={{ width: '100%', height: '100%', maxHeight: '100%' }}>
       {/* Container das abas */}
       {/* Tabs Header */}
       <Box
         sx={{
-          display: "flex",
-          flexWrap: "wrap",
+          display: 'flex',
+          flexWrap: 'wrap',
           gap: { xs: 1, sm: 2 },
           p: 2,
-          height: "auto",
+          height: 'auto',
           minHeight: 72,
-          alignItems: "center",
+          alignItems: 'center',
         }}
       >
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: '1 1 auto' },
             minWidth: 0,
           }}
         >
@@ -129,7 +133,7 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              "& .MuiTabs-indicator": {
+              '& .MuiTabs-indicator': {
                 backgroundColor: theme.palette.primary.main,
               },
             }}
@@ -144,8 +148,8 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
                 // Desabilita abas 1 e 2 quando está criando
                 disabled={isCreating && tab.value !== 0}
                 sx={{
-                  textTransform: "none",
-                  fontSize: "0.95rem",
+                  textTransform: 'none',
+                  fontSize: '0.95rem',
                   fontWeight: 500,
                 }}
               />
@@ -155,11 +159,11 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
 
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: '1 1 auto' },
             minWidth: 0,
-            display: "flex",
-            justifyContent: { xs: "flex-start", md: "flex-end" },
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+            alignItems: 'center',
           }}
         >
           <SelectEditMode
@@ -174,7 +178,7 @@ export default function UserPage({ children, isCreating }: UserPageProps) {
       {/* Content Area - Renderiza os children baseado na rota */}
       <Box
         flexGrow={1}
-        sx={{ p: 2, pt: 1, height: "calc(100% - 72px)", overflow: "auto" }}
+        sx={{ p: 2, pt: 1, height: 'calc(100% - 72px)', overflow: 'auto' }}
       >
         <UserContentProvider user={user as unknown as UserObject | null}>
           {children}

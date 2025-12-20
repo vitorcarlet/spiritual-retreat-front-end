@@ -5,6 +5,7 @@ import { UserObject, UserRoles } from 'next-auth';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
+import { isAxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -25,20 +26,19 @@ import {
 
 import { useMenuMode } from '@/src/contexts/users-context/MenuModeContext';
 import { useModal } from '@/src/hooks/useModal';
-import {
-  handleApiResponse,
-  sendRequestServerVanilla,
-} from '@/src/lib/sendRequestServerVanilla';
+import apiClient from '@/src/lib/axiosClientInstance';
 
 import TextFieldMasked from '../../fields/maskedTextFields/TextFieldMasked';
 import ProfilePictureModal from '../../profile/ProfilePictureModal';
 import { useUserContent } from '../context';
 import { UserObjectWithId } from './types';
 
+type UserFormData = Pick<UserObject, 'name' | 'phone' | 'role' | 'email'>;
+
 const FALLBACK_PROFILE_IMAGE =
   'https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU';
 
-const UserEditPage = () => {
+const UserEditPage = ({ isCreating }: { isCreating?: boolean }) => {
   const { user, setUser } = useUserContent();
   const { menuMode } = useMenuMode();
   const router = useRouter();
@@ -46,30 +46,13 @@ const UserEditPage = () => {
   const isReadOnly = menuMode === 'view';
   const canEditProfilePicture = !isReadOnly && !!user?.id;
   const isLoading = false;
-  // Modo de criação quando não há usuário carregado
-  const isCreating = !user;
+
   // Estado do formulário
-  const [formData, setFormData] = useState<
-    Omit<
-      UserObject,
-      | 'id'
-      | 'createdAt'
-      | 'updatedAt'
-      | 'state'
-      | 'email'
-      | 'permissions'
-      | 'first_name'
-      | 'last_name'
-      | 'profile_picture'
-      | 'birth'
-      | 'city'
-      | 'stateShort'
-      | 'cpf'
-    >
-  >({
+  const [formData, setFormData] = useState<UserFormData>({
     name: '',
     phone: '',
     role: 'participant',
+    email: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(
@@ -103,15 +86,16 @@ const UserEditPage = () => {
     if (user) {
       setFormData({
         name: user.name || '',
-        role: user.role || '',
+        role: (user.role as UserRoles) || 'participant',
         phone: user.phone || '',
+        email: user.email || '',
       });
     }
   }, [user]);
 
   const handleInputChange =
-    (field: keyof UserObject) =>
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    (field: keyof UserFormData) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setFormData((prev) => ({
         ...prev,
         [field]: event.target.value,
@@ -133,25 +117,34 @@ const UserEditPage = () => {
     try {
       if (isCreating) {
         // CREATE
-        const res = await handleApiResponse<UserObjectWithId>(
-          await sendRequestServerVanilla.post('/users/create', formData)
+        const normalizedEmail = formData.email.trim();
+        if (!normalizedEmail) {
+          throw new Error('Informe o e-mail do usuário.');
+        }
+        const creationPayload = {
+          ...formData,
+          email: normalizedEmail,
+        };
+        const { data: responseData } = await apiClient.post<UserObjectWithId>(
+          '/users',
+          creationPayload
         );
 
-        if (res.error || !res.data)
-          throw new Error(res.error || 'Falha ao criar usuário');
-        const data = res.data as unknown as UserObject;
+        if (!responseData) throw new Error('Falha ao criar usuário');
+        const data = responseData as unknown as UserObject;
         router.push(`/users/${data.id}`);
       } else {
         // UPDATE
         if (!user?.id) throw new Error('ID do usuário não encontrado');
-        const res = await handleApiResponse<UserObjectWithId>(
-          await sendRequestServerVanilla.put(`/api/user/${user.id}`, formData)
+        const { email: _email, ...updatePayload } = formData;
+        const { data: responseData } = await apiClient.put<UserObjectWithId>(
+          `/api/user/${user.id}`,
+          updatePayload
         );
 
-        if (res.error)
-          throw new Error(res.error || 'Falha ao atualizar usuário');
+        if (!responseData) throw new Error('Falha ao atualizar usuário');
 
-        const updatedUser = (res.data as unknown as UserObject) ?? null;
+        const updatedUser = (responseData as unknown as UserObject) ?? null;
         if (updatedUser) {
           setUser(updatedUser);
         }
@@ -164,8 +157,10 @@ const UserEditPage = () => {
         //router.replace(`/users/${updatedUser?.id ?? user.id}`);
       }
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
+      const message = isAxiosError(error)
+        ? (error.response?.data as { message?: string })?.message ||
+          'Ocorreu um erro. Tente novamente.'
+        : error instanceof Error
           ? error.message
           : 'Ocorreu um erro. Tente novamente.';
 
@@ -337,7 +332,7 @@ const UserEditPage = () => {
 
         <Grid container spacing={3}>
           {/* Nome */}
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: isCreating ? 6 : 12 }}>
             <TextField
               fullWidth
               label="Nome"
@@ -349,6 +344,23 @@ const UserEditPage = () => {
               disabled={isReadOnly && !isCreating}
             />
           </Grid>
+
+          {isCreating && (
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="Email"
+                variant="outlined"
+                placeholder="usuario@exemplo.com"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange('email')}
+                required
+                disabled={isSubmitting}
+                autoComplete="email"
+              />
+            </Grid>
+          )}
 
           {/* PHONE */}
           <Grid size={{ xs: 12, md: 6 }}>
@@ -414,7 +426,8 @@ const UserEditPage = () => {
                         setFormData({
                           name: user.name || '',
                           phone: user.phone || '',
-                          role: user.role || '',
+                          role: (user.role as UserRoles) || 'participant',
+                          email: user.email || '',
                         });
                       }
                     }}

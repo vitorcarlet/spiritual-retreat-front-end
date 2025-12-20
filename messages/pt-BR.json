@@ -45,7 +45,9 @@
     "no_notifications": "Sem notificações"
   },
   "userPage": {
-    "info": "userpage.info"
+    "info": "Informações",
+    "permissions": "Permissões",
+    "security": "Segurança"
   },
   "periodStart": "Data de Início",
   "periodEnd": "Data de Fim",

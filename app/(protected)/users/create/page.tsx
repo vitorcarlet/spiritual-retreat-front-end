@@ -1,5 +1,5 @@
-import UserEditPage from "@/src/components/users/UserEditPage/UserEditPage";
+import UserEditPage from '@/src/components/users/UserEditPage/UserEditPage';
 
 export default function Page() {
-  return <UserEditPage />;
+  return <UserEditPage isCreating={true} />;
 }

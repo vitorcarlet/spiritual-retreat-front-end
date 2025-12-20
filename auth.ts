@@ -1,6 +1,5 @@
 import NextAuth, {
   AuthValidity,
-  BackendAccessJWT,
   BackendJWT,
   CredentialsSignin,
   DecodedJWT,
@@ -48,28 +47,28 @@ class UserNotActivatedError extends CredentialsSignin {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: !!process.env.AUTH_DEBUG,
-  // logger: {
-  //   error(code, metadata) {
-  //     // Envia o erro para o Sentry com mais contexto
-  //     Sentry.captureException(metadata.error, {
-  //       extra: {
-  //         code: code,
-  //         ...metadata
-  //       }
-  //     });
-  //     // Você pode também logar no console se quiser
-  //     console.error(code, metadata);
-  //   },
-  //   warn(code, message) {
-  //     console.warn(code, message)
-  //   },
-  //   debug(code, message) {
-  //     // Evite enviar logs de debug para produção
-  //     if (process.env.NODE_ENV !== "production") {
-  //       console.debug(code, message)
-  //     }
-  //   }
-  // },
+  logger: {
+    error(error) {
+      // Envia o erro para o Sentry com mais contexto
+      // Sentry.captureException(metadata.error, {
+      //   extra: {
+      //     code: code,
+      //     ...metadata
+      //   }
+      // });
+      // Você pode também logar no console se quiser
+      console.error(error.message);
+    },
+    warn(code) {
+      console.warn(code);
+    },
+    debug(code, message) {
+      // Evite enviar logs de debug para produção
+      if (process.env.NODE_ENV !== 'production') {
+        console.error(code, message);
+      }
+    },
+  },
   theme: { logo: 'https://authjs.dev/img/logo-sm.png' },
   session: {
     strategy: 'jwt',
@@ -115,6 +114,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             ? new Date(enrichedUser.validity.valid_until * 1000).toISOString()
             : 'N/A',
         });
+
         return { ...token, data: enrichedUser };
       }
 
@@ -134,6 +134,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // eslint-disable-next-line no-console
       console.log('🔍 Token check:', {
+        token: token.data,
         now: new Date(now).toISOString(),
         validUntil: validUntil ? new Date(validUntil).toISOString() : 'N/A',
         refreshUntil: refreshUntil
@@ -154,7 +155,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.data.validity?.refresh_until && now < refreshUntil) {
         // eslint-disable-next-line no-console
         console.log('🔄 Refreshing access token...');
-        const refreshedToken = await refreshaccessToken(token);
+        const refreshedToken = await refreshAccessToken(token);
         if (refreshedToken.error) {
           console.warn('❌ Refresh failed - forcing logout');
           return { ...token, error: 'RefreshAccessTokenError' };
@@ -376,16 +377,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
 });
 
-async function refreshaccessToken(nextAuthJWT: JWT): Promise<JWT> {
+async function refreshAccessToken(nextAuthJWT: JWT): Promise<JWT> {
   try {
     // Get a new access token from backend using the refresh token
-    //console.log(nextAuthJWT,'NEXTAUTHJWTWWW')
-    const res = await refresh(nextAuthJWT.data.tokens);
-    const accessToken: BackendAccessJWT = res?.data;
+    const refreshedTokens = await refresh(nextAuthJWT.data.tokens);
 
-    if (!res || accessToken.accessToken === undefined)
+    if (!refreshedTokens?.accessToken)
       return { ...nextAuthJWT, error: 'RefreshAccessTokenError' };
-    const { exp }: DecodedJWT = jwtDecode(accessToken.accessToken);
+    const { exp }: DecodedJWT = jwtDecode(refreshedTokens.accessToken);
 
     // Update the token and validity in the next-auth object
     // nextAuthJWT.data.validity.valid_until = exp;
@@ -402,7 +401,10 @@ async function refreshaccessToken(nextAuthJWT: JWT): Promise<JWT> {
         },
         tokens: {
           ...nextAuthJWT.data.tokens,
-          accessToken: accessToken.accessToken,
+          accessToken: refreshedTokens.accessToken,
+          refreshToken:
+            refreshedTokens.refreshToken ??
+            nextAuthJWT.data.tokens.refreshToken,
         },
       },
     };
