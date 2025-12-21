@@ -1,7 +1,9 @@
-"use client";
-import React from "react";
-import { Autocomplete, TextField, Box } from "@mui/material";
-import Iconify from "@/src/components/Iconify";
+'use client';
+import React from 'react';
+
+import { Autocomplete, Box, TextField } from '@mui/material';
+
+import Iconify from '@/src/components/Iconify';
 
 interface IconOption {
   name: string;
@@ -9,11 +11,11 @@ interface IconOption {
 }
 
 const iconOptions: IconOption[] = [
-  { name: "mdi:tshirt-crew", label: "T-Shirt" },
-  { name: "mdi:home", label: "Home" },
-  { name: "mdi:account", label: "Account" },
-  { name: "mdi:calendar", label: "Calendar" },
-  { name: "mdi:email", label: "Email" },
+  { name: 'mdi:tshirt-crew', label: 'T-Shirt' },
+  { name: 'mdi:home', label: 'Home' },
+  { name: 'mdi:account', label: 'Account' },
+  { name: 'mdi:calendar', label: 'Calendar' },
+  { name: 'mdi:email', label: 'Email' },
   // Add more icons as needed...
 ];
 
@@ -34,17 +36,22 @@ export default function IconSearchField({
       }}
       options={iconOptions}
       getOptionLabel={(option) => option.label}
-      renderOption={(props, option) => (
-        <Box
-          padding={2}
-          component="li"
-          {...props}
-          sx={{ display: "flex", alignItems: "center" }}
-        >
-          <Iconify icon={option.name} width={20} height={20} sx={{ mr: 1 }} />
-          {option.label}
-        </Box>
-      )}
+      renderOption={(props, option) => {
+        const { key, ...optionProps } = props;
+
+        return (
+          <Box
+            key={key}
+            padding={2}
+            component="li"
+            {...optionProps}
+            sx={{ display: 'flex', alignItems: 'center' }}
+          >
+            <Iconify icon={option.name} width={20} height={20} sx={{ mr: 1 }} />
+            {option.label}
+          </Box>
+        );
+      }}
       renderInput={(params) => <TextField {...params} variant="outlined" />}
       fullWidth
       clearOnEscape
