@@ -1,48 +1,58 @@
-"use client";
+'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Box, Button, Chip, Typography } from "@mui/material";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useModal } from "@/src/hooks/useModal";
-import requestServer from "@/src/lib/requestServer";
-import { useEffect, useState } from "react";
-import DataTable, { DataTableColumn } from "../table/DataTable";
-import SearchField from "../filters/SearchField";
-import FilterButton from "../filters/FilterButton";
-import DeleteReport from "./DeleteReport";
-import { Report } from "@/src/types/reports";
+import { useEffect, useState } from 'react';
+
+import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns/format';
+
+import { Box, Button } from '@mui/material';
+import { GridRowSelectionModel } from '@mui/x-data-grid/models';
+
+import { useModal } from '@/src/hooks/useModal';
+import { useUrlFilters } from '@/src/hooks/useUrlFilters';
+import apiClient from '@/src/lib/axiosClientInstance';
+import getPermission from '@/src/utils/getPermission';
+
+import FilterButton from '../filters/FilterButton';
+import SearchField from '../filters/SearchField';
+import DataTable, { DataTableColumn } from '../table/DataTable';
+import DeleteReport from './DeleteReport';
+import { getUrlByReportType } from './report/shared';
+// import { Report } from "@/src/types/reports";
 import {
   ReportsAllFilters,
   ReportsTableDateFilters,
   ReportsTableFilters,
-} from "./types";
-import { useReportsFilters } from "./useFilters";
-import { useUrlFilters } from "@/src/hooks/useUrlFilters";
-import { useTranslations } from "next-intl";
-import { GridRowSelectionModel } from "@mui/x-data-grid/models";
-import { format } from "date-fns/format";
-import { getUrlByReportType } from "./report/shared";
-import apiClient from "@/src/lib/axiosClientInstance";
-import { useSession } from "next-auth/react";
-import getPermission from "@/src/utils/getPermission";
+} from './types';
+import { useReportsFilters } from './useFilters';
+
+type ReportGeneral = {
+  id: string;
+  title: string;
+  dateCreation: string;
+};
 
 type ReportDataRequest = {
-  rows: Report[];
+  data: ReportGeneral[];
   total: number;
   page: number;
   pageLimit: number;
 };
 
-const columns: DataTableColumn<Report>[] = [
+const columns: DataTableColumn<ReportGeneral>[] = [
   {
-    field: "id",
-    headerName: "ID",
+    field: 'id',
+    headerName: 'ID',
     width: 70,
-    type: "string",
+    type: 'string',
   },
   {
-    field: "name",
-    headerName: "Nome",
+    field: 'title',
+    headerName: 'Nome',
     flex: 1,
     minWidth: 180,
     renderCell: (params) => (
@@ -51,9 +61,9 @@ const columns: DataTableColumn<Report>[] = [
         sx={{
           fontSize: 14,
           fontWeight: 500,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
           maxWidth: 160,
         }}
       >
@@ -61,72 +71,77 @@ const columns: DataTableColumn<Report>[] = [
       </Box>
     ),
   },
+  // {
+  //   field: "type",
+  //   headerName: "Tipo",
+  //   flex: 1,
+  //   minWidth: 180,
+  //   renderCell: (params) => (
+  //     <Box
+  //       component="span"
+  //       sx={{
+  //         fontSize: 14,
+  //         fontWeight: 500,
+  //         whiteSpace: "nowrap",
+  //         overflow: "hidden",
+  //         textOverflow: "ellipsis",
+  //         maxWidth: 160,
+  //       }}
+  //     >
+  //       {params.value}
+  //     </Box>
+  //   ),
+  // },
+  // {
+  //   field: "sections",
+  //   headerName: "Seções",
+  //   flex: 1,
+  //   minWidth: 220,
+  //   renderCell: (params) => (
+  //     <Box>
+  //       {Array.isArray(params.value) && params.value.length > 0 ? (
+  //         params.value.map((section: string, index: number) => (
+  //           <Chip key={index} label={section} size="small" color="primary" />
+  //         ))
+  //       ) : (
+  //         <Typography variant="body2" color="text.secondary">
+  //           Nenhuma seção disponível
+  //         </Typography>
+  //       )}
+  //     </Box>
+  //   ),
+  // },
   {
-    field: "type",
-    headerName: "Tipo",
-    flex: 1,
-    minWidth: 180,
-    renderCell: (params) => (
-      <Box
-        component="span"
-        sx={{
-          fontSize: 14,
-          fontWeight: 500,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          maxWidth: 160,
-        }}
-      >
-        {params.value}
-      </Box>
-    ),
-  },
-  {
-    field: "sections",
-    headerName: "Seções",
-    flex: 1,
-    minWidth: 220,
-    renderCell: (params) => (
-      <Box>
-        {Array.isArray(params.value) && params.value.length > 0 ? (
-          params.value.map((section: string, index: number) => (
-            <Chip key={index} label={section} size="small" color="primary" />
-          ))
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            Nenhuma seção disponível
-          </Typography>
-        )}
-      </Box>
-    ),
-  },
-  {
-    field: "dateCreation",
-    headerName: "Data de Criação",
+    field: 'dateCreation',
+    headerName: 'Data de Criação',
     width: 140,
-    valueFormatter: (v) => (v ? format(new Date(v), "dd/MM/yyyy - HH:mm") : ""),
+    valueFormatter: (v) => (v ? format(new Date(v), 'dd/MM/yyyy - HH:mm') : ''),
   },
-  {
-    field: "retreatName",
-    headerName: "Retiro",
-    flex: 1,
-  },
+  // {
+  //   field: "retreatName",
+  //   headerName: "Retiro",
+  //   flex: 1,
+  // },
 ];
 
-const fetchReports = async () => {
-  const response = await requestServer.get<ReportDataRequest>("/reports");
-  if (!response || response.error) {
-    throw new Error("Failed to fetch reports");
+const fetchReports = async (
+  filters: TableDefaultFilters<ReportsAllFilters>
+) => {
+  try {
+    const response = await apiClient.get<ReportDataRequest>('/reports', {
+      params: filters,
+    });
+    return response.data as ReportDataRequest;
+  } catch (e) {
+    console.error(e);
   }
-  return response.data as ReportDataRequest;
 };
 
 const deleteReport = async (id: string | number) => {
   const response = await apiClient.delete(`/reports/${id}`);
 
   if (!response) {
-    throw new Error("Failed to delete report");
+    throw new Error('Failed to delete report');
   }
 
   return response;
@@ -156,7 +171,7 @@ const ReportPage = () => {
         page: 1,
         pageLimit: 10,
       },
-      excludeFromCount: ["page", "pageLimit", "search"], // Don't count pagination in active filters
+      excludeFromCount: ['page', 'pageLimit', 'search'], // Don't count pagination in active filters
     });
   const handleApplyFilters = (
     newFilters: Partial<TableDefaultFilters<ReportsAllFilters>>
@@ -166,8 +181,8 @@ const ReportPage = () => {
 
   // Fetch reports data
   const { data: reportsData, isLoading } = useQuery({
-    queryKey: ["reports"],
-    queryFn: fetchReports,
+    queryKey: ['reports'],
+    queryFn: () => fetchReports(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -179,7 +194,7 @@ const ReportPage = () => {
       setHasDeletePermission(
         getPermission({
           permissions: sessionData.user.permissions,
-          permission: "reports.delete",
+          permission: 'reports.delete',
           role: sessionData.user.role,
         })
       );
@@ -190,7 +205,7 @@ const ReportPage = () => {
   const deleteMutation = useMutation({
     mutationFn: deleteReport,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
   });
 
@@ -209,8 +224,8 @@ const ReportPage = () => {
     onConfirmDelete: (reportId: number | string) => void
   ) => {
     modal.open({
-      title: "Deletar Relatório",
-      size: "sm",
+      title: 'Deletar Relatório',
+      size: 'sm',
       customRender: () => (
         <DeleteReport
           report={report}
@@ -223,39 +238,39 @@ const ReportPage = () => {
   };
 
   const handleCreateReport = () => {
-    router.push("/reports/new");
+    router.push('/reports/new');
   };
 
-  const reportsArray: Report[] = Array.isArray(reportsData?.rows)
-    ? (reportsData!.rows as Report[])
-    : reportsData?.rows
-      ? ([reportsData.rows] as Report[])
+  const reportsArray: ReportGeneral[] = Array.isArray(reportsData?.data)
+    ? (reportsData!.data as ReportGeneral[])
+    : reportsData?.data
+      ? ([reportsData.data] as ReportGeneral[])
       : []; // garante []
 
   return (
     <Box
       sx={{
         p: 2,
-        minHeight: "100%",
-        minWidth: "100%",
-        display: "flex",
-        flexDirection: "column",
-        maxWidth: "100%",
-        overflowY: "hidden",
-        boxSizing: "border-box",
+        minHeight: '100%',
+        minWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: '100%',
+        overflowY: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       <Box
         sx={{
-          display: "flex",
-          flexWrap: "wrap",
+          display: 'flex',
+          flexWrap: 'wrap',
           gap: { xs: 1, sm: 2 },
           mb: 2,
         }}
       >
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: 'initial' },
             minWidth: 0,
           }}
         >
@@ -266,13 +281,13 @@ const ReportPage = () => {
             fullWidth
             sx={{ height: 40, maxWidth: { md: 150 } }}
           >
-            {loading ? "Carregando..." : "Atualizar Dados"}
+            {loading ? 'Carregando...' : 'Atualizar Dados'}
           </Button>
         </Box>
 
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: '1 1 auto' },
             minWidth: { xs: 0, md: 150 },
             maxWidth: { md: 150 },
           }}
@@ -292,7 +307,7 @@ const ReportPage = () => {
 
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: 'initial' },
             minWidth: 0,
           }}
         >
@@ -300,7 +315,7 @@ const ReportPage = () => {
             sx={{ maxWidth: { md: 250 } }}
             fullWidth
             multiline
-            value={filters.search || ""}
+            value={filters.search || ''}
             onChange={(e) => {
               updateFilters({ ...filters, search: e });
             }}
@@ -310,7 +325,7 @@ const ReportPage = () => {
 
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: '1 1 auto' },
             minWidth: 0,
             maxWidth: { md: 150 },
           }}
@@ -322,13 +337,13 @@ const ReportPage = () => {
             fullWidth
             sx={{ height: 40 }}
           >
-            {t("new-report")}
+            {t('new-report')}
           </Button>
         </Box>
       </Box>
 
-      <Box sx={{ flexGrow: 1, maxHeight: "900px" }}>
-        <DataTable<Report, ReportsAllFilters>
+      <Box sx={{ flexGrow: 1, maxHeight: '900px' }}>
+        <DataTable<ReportGeneral, ReportsAllFilters>
           disableVirtualization={true}
           rows={reportsArray}
           rowCount={reportsData?.total || 0}
@@ -363,17 +378,17 @@ const ReportPage = () => {
           // Ações personalizadas
           actions={[
             {
-              icon: "lucide:trash-2",
-              label: "Acessar relatório",
+              icon: 'lucide:trash-2',
+              label: 'Acessar relatório',
               onClick: (report) => handleViewReport(report),
-              color: "primary",
+              color: 'primary',
               //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
             {
-              icon: "lucide:trash-2",
-              label: "Deletar relatório",
+              icon: 'lucide:trash-2',
+              label: 'Deletar relatório',
               onClick: (report) => handleDeleteReport(report, onConfirmDelete),
-              color: "primary",
+              color: 'primary',
               disabled: () => !hasDeletePermission,
               //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
