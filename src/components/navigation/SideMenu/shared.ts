@@ -1,4 +1,4 @@
-import { ActionType, ResourceType, UserObject, UserRoles } from "next-auth";
+import { ActionType, ResourceType, UserObject, UserRoles } from 'next-auth';
 
 export type MenuPermission = {
   // Permissions necessárias (OR logic - qualquer uma serve)
@@ -21,41 +21,41 @@ export type MenuItem = {
 
 export const menuConfig: MenuItem[] = [
   {
-    id: "dashboard",
-    label: "Dashboard",
-    icon: "material-symbols:dashboard",
-    path: "/dashboard",
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: 'material-symbols:dashboard',
+    path: '/dashboard',
     access: {
       permissions: {
-        dashboard: ["read"],
+        dashboard: ['read'],
       },
-      roles: ["admin", "manager", "consultant"],
+      roles: ['admin', 'manager', 'consultant'],
     },
   },
   {
-    id: "reports",
-    label: "Relatórios",
-    icon: "lucide:bar-chart",
-    path: "/reports",
+    id: 'reports',
+    label: 'Relatórios',
+    icon: 'lucide:bar-chart',
+    path: '/reports',
     access: {
       permissions: {
-        reports: ["read"],
+        reports: ['read'],
       },
-      roles: ["admin", "manager", "consultant"],
+      roles: ['admin', 'manager', 'consultant'],
     },
   },
   {
-    id: "user-management",
-    label: "Gestão de Usuários",
-    icon: "solar:user-bold-duotone",
-    path: "/users",
+    id: 'user-management',
+    label: 'Gestão de Usuários',
+    icon: 'solar:user-bold-duotone',
+    path: '/users',
     access: {
       // ✅ Prioridade para permissions específicas
       permissions: {
-        users: ["read"],
+        users: ['read'],
       },
       // ✅ Fallback para roles (caso não tenha permission específica)
-      roles: ["admin"],
+      roles: ['admin'],
     },
   },
   // {
@@ -78,52 +78,53 @@ export const menuConfig: MenuItem[] = [
   //   },
   // },
   {
-    id: "retreat-management",
-    label: "Gestão de Retiros",
-    icon: "material-symbols:temple-buddhist",
-    path: "/retreats",
+    id: 'retreat-management',
+    label: 'Gestão de Retiros',
+    icon: 'material-symbols:temple-buddhist',
+    path: '/retreats',
     access: {
       permissions: {
-        retreats: ["read"],
+        retreats: ['read'],
       },
-      roles: ["admin", "manager"],
+      roles: ['admin', 'manager'],
     },
   },
   {
-    id: "outbox",
-    label: "Gestão de OutBox",
-    icon: "ic:round-payments",
-    path: "/outbox",
+    id: 'outbox',
+    label: 'Gestão de OutBox',
+    icon: 'ic:round-payments',
+    path: '/outbox',
     access: {
       permissions: {
-        outbox: ["read"],
+        outbox: ['read'],
       },
-      roles: ["admin"],
+      roles: ['admin'],
     },
   },
   {
-    id: "profile-management",
-    label: "Gestão de Perfil",
-    icon: "material-symbols:person",
-    path: "/profile",
+    id: 'profile-management',
+    label: 'Gestão de Perfil',
+    icon: 'material-symbols:person',
+    path: '/profile',
     access: {
       // ✅ Todos têm acesso ao próprio perfil
       permissions: {
-        profile: ["read"],
+        profile: ['read'],
       },
       // Sem roles necessárias - qualquer usuário logado
+      roles: ['admin', 'manager', 'consultant'],
     },
   },
   {
-    id: "settings",
-    label: "Configurações",
-    icon: "material-symbols:settings",
-    path: "/settings",
+    id: 'settings',
+    label: 'Configurações',
+    icon: 'material-symbols:settings',
+    path: '/settings',
     access: {
       permissions: {
-        settings: ["read", "update"],
+        settings: ['read', 'update'],
       },
-      roles: ["admin"], // Só admin por padrão
+      roles: ['admin'], // Só admin por padrão
     },
   },
 ];
