@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 
-import Iconify from '../Iconify';
+import Iconify from '../../Iconify';
 
 interface TopCitiesCardProps {
   cities: Array<{ label: string; value: number }> | undefined;

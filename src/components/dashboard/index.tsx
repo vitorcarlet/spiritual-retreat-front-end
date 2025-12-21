@@ -15,12 +15,12 @@ import apiClient from '@/src/lib/axiosClientInstance';
 import { RetreatLite } from '@/src/types/retreats';
 
 import Iconify from '../Iconify';
-import ComplexPaymentsTimelineCard from './ComplexPaymentsTimelineCard';
-import FamilySlideCardShow from './FamilySlideCardShow';
-import GenderPieChartCard from './GenderPieChartCard';
-import { MetricCard } from './MetricCard';
-import ServiceTeamSlideCardShow from './ServiceTeamSlideCardShow';
-import TopCitiesCard from './TopCitiesCard';
+import ComplexPaymentsTimelineCard from './components/ComplexPaymentsTimelineCard';
+import FamilySlideCardShow from './components/FamilySlideCardShow';
+import GenderPieChartCard from './components/GenderPieChartCard';
+import { MetricCard } from './components/MetricCard';
+import ServiceTeamSlideCardShow from './components/ServiceTeamSlideCardShow';
+import TopCitiesCard from './components/TopCitiesCard';
 import { DashboardOverviewResponse } from './types';
 
 type RetreatResponse = {

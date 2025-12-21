@@ -1,28 +1,28 @@
 import {
+  Box,
   Card,
   CardContent,
-  Box,
-  Typography,
   Chip,
   Divider,
-  Skeleton,
   Grid,
-  useTheme,
+  Skeleton,
+  Typography,
   useMediaQuery,
-} from "@mui/material";
-import Iconify from "../Iconify";
-import { RetreatMetrics } from "./types";
+  useTheme,
+} from '@mui/material';
+
+import Iconify from '../../Iconify';
 
 export const CriticalIssuesCard = ({
   issues,
   isLoading,
 }: {
-  issues: RetreatMetrics["criticalIssues"] | undefined;
+  issues: RetreatMetrics['criticalIssues'] | undefined;
   isLoading: boolean;
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   // Tamanhos responsivos para ícones
   const headerIconSize = isMobile ? 4 : 8;
@@ -32,7 +32,7 @@ export const CriticalIssuesCard = ({
     <Card
       elevation={0}
       variant="outlined"
-      sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+      sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
     >
       <CardContent sx={{ pb: 1, px: { xs: 1.5, sm: 2, md: 3 } }}>
         {/* Header */}
@@ -50,7 +50,7 @@ export const CriticalIssuesCard = ({
             />
           </Grid>
           <Grid size="grow">
-            <Typography variant={isMobile ? "subtitle1" : "h6"}>
+            <Typography variant={isMobile ? 'subtitle1' : 'h6'}>
               Pendências Críticas
             </Typography>
             {!isLoading && issues && (
@@ -61,9 +61,9 @@ export const CriticalIssuesCard = ({
                   color="warning"
                   sx={{
                     height: { xs: 20, sm: 24 },
-                    "& .MuiChip-label": {
+                    '& .MuiChip-label': {
                       px: { xs: 1, sm: 1.5 },
-                      fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
                     },
                   }}
                 />
@@ -92,30 +92,30 @@ export const CriticalIssuesCard = ({
                   sx={{
                     p: { xs: 1, sm: 1.5 },
                     borderRadius: 1,
-                    bgcolor: "background.default",
-                    height: "100%",
+                    bgcolor: 'background.default',
+                    height: '100%',
                   }}
                 >
                   <Grid container spacing={1} alignItems="flex-start">
                     <Grid size="auto">
                       <Iconify
                         icon={
-                          issue.type === "payment"
-                            ? "solar:card-bold-duotone"
-                            : issue.type === "team"
-                              ? "solar:home-bold-duotone"
-                              : issue.type === "family"
-                                ? "solar:users-group-rounded-bold-duotone"
-                                : "solar:users-group-bold-duotone"
+                          issue.type === 'payment'
+                            ? 'solar:card-bold-duotone'
+                            : issue.type === 'team'
+                              ? 'solar:home-bold-duotone'
+                              : issue.type === 'family'
+                                ? 'solar:users-group-rounded-bold-duotone'
+                                : 'solar:users-group-bold-duotone'
                         }
                         color={
-                          issue.type === "payment"
-                            ? "error.main"
-                            : issue.type === "team"
-                              ? "warning.main"
-                              : issue.type === "family"
-                                ? "info.main"
-                                : "secondary.main"
+                          issue.type === 'payment'
+                            ? 'error.main'
+                            : issue.type === 'team'
+                              ? 'warning.main'
+                              : issue.type === 'family'
+                                ? 'info.main'
+                                : 'secondary.main'
                         }
                         size={issueIconSize}
                       />
@@ -125,12 +125,12 @@ export const CriticalIssuesCard = ({
                         variant="body2"
                         sx={{
                           fontSize: {
-                            xs: "0.75rem",
-                            sm: "0.8rem",
-                            md: "0.875rem",
+                            xs: '0.75rem',
+                            sm: '0.8rem',
+                            md: '0.875rem',
                           },
                           lineHeight: 1.4,
-                          wordBreak: "break-word",
+                          wordBreak: 'break-word',
                         }}
                       >
                         {issue.description}
@@ -148,7 +148,7 @@ export const CriticalIssuesCard = ({
             textAlign="center"
             sx={{
               py: { xs: 2, sm: 3 },
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
             }}
           >
             Nenhuma pendência crítica encontrada!

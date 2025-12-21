@@ -51,7 +51,7 @@ export default function ConfirmAuth({ token }: { token: string }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const onSubmit = async (data: FormData) => {
     try {
-      const response = await fetch('/api/auth/confirm', {
+      const response = await fetch('/api/auth/confirm-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

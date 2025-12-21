@@ -45,11 +45,11 @@ export interface DashboardOverviewResponse {
       assigned: number;
       paid: number;
     };
-    spaces: ServiceSpace[];
+    spaces: ServiceSpaceDashboard[];
   };
 }
 
-export interface ServiceSpace {
+export interface ServiceSpaceDashboard {
   label: string;
   capacity: number;
   submitted: number;

@@ -1,157 +1,89 @@
-"use client";
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import type { UserObject } from 'next-auth';
+import { useSession } from 'next-auth/react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
+import { useSnackbar } from 'notistack';
+
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import {
   Box,
   Button,
   ButtonBase,
-  FormControl,
   Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   Skeleton,
   TextField,
   Typography,
-} from "@mui/material";
-import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSession } from "next-auth/react";
-import TextFieldMasked from "@/src/components/fields/maskedTextFields/TextFieldMasked";
-import { UserObject, UserRoles } from "next-auth";
-import { useRouter } from "next/navigation";
-import { useSnackbar } from "notistack";
-import apiClient from "@/src/lib/axiosClientInstance";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import LocationField from "../fields/LocalizationFields/LocationField";
-import { useModal } from "@/src/hooks/useModal";
-import ProfilePictureModal from "./ProfilePictureModal";
+} from '@mui/material';
 
-type FormDataShape = Pick<
-  UserObject,
-  "name" | "cpf" | "birth" | "city" | "stateShort" | "role"
->;
+import TextFieldMasked from '@/src/components/fields/maskedTextFields/TextFieldMasked';
+import { useModal } from '@/src/hooks/useModal';
+import apiClient from '@/src/lib/axiosClientInstance';
 
-const mapUserToFormData = (user?: UserObject | null): FormDataShape => ({
-  name: user?.name ?? "",
-  cpf: user?.cpf ?? "",
-  birth: user?.birth ?? "",
-  city: user?.city ?? "",
-  stateShort: user?.stateShort ?? "",
-  role: user?.role ?? "participant",
-});
+import ProfilePictureModal from './ProfilePictureModal';
+
+type FormDataShape = Pick<UserObject, 'name'> & { phone: string };
 
 const FALLBACK_PROFILE_IMAGE =
-  "https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU";
+  'https://fastly.picsum.photos/id/503/200/200.jpg?hmac=genECHjox9165KfYsOiMMCmN-zGqh9u-lnhqcFinsrU';
 
-const UserEditPage = () => {
+const mapUserToFormData = (
+  user: UserObject | null | undefined
+): FormDataShape => {
+  const candidate = user as unknown as
+    | { phone?: string; number?: string }
+    | undefined;
+  return {
+    name: user?.name ?? '',
+    phone: candidate?.phone ?? candidate?.number ?? '',
+  };
+};
+
+const ProfilePage = () => {
   const router = useRouter();
+  const modal = useModal();
   const { enqueueSnackbar } = useSnackbar();
   const { data: session, status, update } = useSession();
   const user = session?.user ?? null;
-  const modal = useModal();
 
+  const initialFormValues = useMemo(() => mapUserToFormData(user), [user]);
+  const [formData, setFormData] = useState<FormDataShape>(initialFormValues);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(
     user?.profile_picture ?? null
-  );
-
-  const [formData, setFormData] = useState<FormDataShape>(() =>
-    mapUserToFormData()
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setFormData(mapUserToFormData(user));
+    if (status === 'unauthenticated') {
+      router.replace('/auth/login');
     }
-  }, [user]);
+  }, [status, router]);
+
+  useEffect(() => {
+    setFormData(initialFormValues);
+  }, [initialFormValues]);
 
   useEffect(() => {
     setProfileImageUrl(user?.profile_picture ?? null);
   }, [user?.profile_picture]);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/auth/login");
-    }
-  }, [status, router]);
-
   const handleInputChange =
     (field: keyof FormDataShape) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: event.target.value,
-      }));
+      setFormData((prev) => ({ ...prev, [field]: event.target.value }));
     };
-
-  const handleRoleChange = (event: SelectChangeEvent) => {
-    setFormData((prev) => ({
-      ...prev,
-      role: event.target.value as UserRoles,
-    }));
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (isSubmitting || !user?.id) return;
-
-    setIsSubmitting(true);
-    try {
-      const response = await apiClient.put<UserObject>(
-        `/api/user/${user.id}`,
-        formData
-      );
-
-      const updatedUser = response.data ?? null;
-      if (updatedUser) {
-        setFormData(mapUserToFormData(updatedUser));
-        if (update) {
-          await update();
-        }
-      }
-
-      enqueueSnackbar("Usuário atualizado com sucesso!", {
-        variant: "success",
-      });
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Ocorreu um erro. Tente novamente.";
-
-      enqueueSnackbar(message, {
-        variant: "error",
-      });
-      console.error("User submit error:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleStateChange = (state: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      stateShort: state,
-      city: "",
-    }));
-  };
-
-  const handleCityChange = (city: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      city,
-    }));
-  };
 
   const handleProfilePictureUpdated = useCallback(
     async (nextUrl: string | null) => {
       setProfileImageUrl(nextUrl);
       try {
-        if (update) {
-          await update();
-        }
+        await update?.();
       } catch (error) {
-        console.error("Erro ao atualizar a sessão após trocar a foto:", error);
+        console.error('Erro ao atualizar a sessão após trocar a foto:', error);
       }
     },
     [update]
@@ -161,9 +93,9 @@ const UserEditPage = () => {
     if (!user) return;
 
     modal.open({
-      key: "profile-picture",
-      title: "Atualizar foto de perfil",
-      size: "sm",
+      key: 'profile-picture',
+      title: 'Atualizar foto de perfil',
+      size: 'sm',
       customRender: () => (
         <ProfilePictureModal
           userId={user.id}
@@ -176,257 +108,150 @@ const UserEditPage = () => {
     });
   }, [modal, profileImageUrl, handleProfilePictureUpdated, user]);
 
-  const emailValue = user?.email ?? "";
-  const phoneValue = useMemo(() => {
-    const asAny = user as unknown as { number?: string; phone?: string };
-    return asAny?.number ?? asAny?.phone ?? "";
-  }, [user]);
-  const displayedProfileImage = profileImageUrl || FALLBACK_PROFILE_IMAGE;
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user?.id || isSubmitting) return;
 
-  if (status === "loading") {
+    setIsSubmitting(true);
+    try {
+      const response = await apiClient.put<UserObject>(
+        `/api/user/${user.id}`,
+        formData
+      );
+
+      const updatedUser = response.data ?? null;
+      if (updatedUser) {
+        setFormData(mapUserToFormData(updatedUser));
+        await update?.();
+      }
+
+      enqueueSnackbar('Dados atualizados com sucesso!', { variant: 'success' });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível atualizar seus dados.';
+      enqueueSnackbar(message, { variant: 'error' });
+      console.error('Erro ao atualizar usuário:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReset = () => {
+    setFormData(initialFormValues);
+  };
+
+  if (status === 'loading') {
     return (
-      <Box sx={{ width: "100%", height: "100%", p: 3 }}>
-        <Skeleton variant="rectangular" height={200} sx={{ mb: 2 }} />
-        <Skeleton variant="circular" width={200} height={200} sx={{ mb: 3 }} />
+      <Box sx={{ px: 3, py: 4 }}>
+        <Skeleton variant="rounded" width={160} height={160} sx={{ mb: 3 }} />
         <Grid container spacing={3}>
-          {[...Array(5)].map((_, index) => (
-            <Grid size={{ xs: 12, md: 6 }} key={index}>
-              <Skeleton variant="rectangular" height={56} />
-            </Grid>
-          ))}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Skeleton variant="text" height={56} />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Skeleton variant="text" height={56} />
+          </Grid>
         </Grid>
       </Box>
     );
   }
 
-  if (status === "unauthenticated" || !user) {
-    return null;
+  if (!user) {
+    return (
+      <Box sx={{ px: 3, py: 4 }}>
+        <Typography variant="h6" color="text.secondary">
+          Não foi possível carregar os dados do usuário.
+        </Typography>
+      </Box>
+    );
   }
 
+  const displayedProfileImage = profileImageUrl || FALLBACK_PROFILE_IMAGE;
+
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        width: "100%",
-        height: "100%",
-        overflowY: "auto",
-        pt: 0,
-      }}
-    >
-      <Box sx={{ position: "relative" }}>
-        <Box
+    <Box component="section" sx={{ px: 3, py: 4 }}>
+      <Typography variant="h5" component="h1" sx={{ mb: 4 }}>
+        Informações pessoais
+      </Typography>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 4 }}>
+        <ButtonBase
+          onClick={handleOpenProfilePictureModal}
           sx={{
-            position: "relative",
-            width: "100%",
-            height: "200px",
+            borderRadius: '50%',
+            overflow: 'hidden',
+            width: 160,
+            height: 160,
+            position: 'relative',
+            '&:hover .profile-edit-overlay': { opacity: 1 },
           }}
         >
           <Image
-            src="/images/background16-9.png"
-            alt="Background"
-            fill
-            style={{ objectFit: "cover" }}
-            priority
+            src={displayedProfileImage}
+            alt={user.name ?? 'Foto de perfil'}
+            width={160}
+            height={160}
+            style={{ objectFit: 'cover' }}
           />
-        </Box>
-
-        <ButtonBase
-          onClick={handleOpenProfilePictureModal}
-          disabled={isSubmitting}
-          sx={{
-            position: "relative",
-            transform: "translate(25%, -50%)",
-            width: 200,
-            height: 200,
-            borderRadius: "50%",
-            border: "4px solid white",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            marginBottom: "-100px",
-            overflow: "hidden",
-            p: 0,
-            backgroundColor: "transparent",
-            cursor: "pointer",
-            "&:disabled": {
-              cursor: "not-allowed",
-              opacity: 0.85,
-            },
-            "&:hover .profile-picture-overlay": {
-              opacity: 1,
-            },
-          }}
-          aria-label="Atualizar foto de perfil"
-        >
-          <Box sx={{ position: "absolute", inset: 0 }}>
-            <Image
-              src={displayedProfileImage}
-              alt={
-                user?.name
-                  ? `Foto de ${user.name}`
-                  : "Foto de perfil do usuário"
-              }
-              fill
-              style={{ objectFit: "cover" }}
-            />
-          </Box>
           <Box
-            className="profile-picture-overlay"
+            className="profile-edit-overlay"
             sx={{
-              position: "absolute",
+              position: 'absolute',
               inset: 0,
-              background:
-                "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.65) 100%)",
-              color: "common.white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 1,
+              bgcolor: 'rgba(0,0,0,0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               opacity: 0,
-              transition: "opacity 0.2s ease",
-              pointerEvents: "none",
+              transition: 'opacity 0.2s',
+              color: 'common.white',
+              pointerEvents: 'none',
             }}
           >
-            <EditRoundedIcon fontSize="small" />
-            <Typography variant="body2" fontWeight={600}>
-              Alterar foto
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <EditRoundedIcon fontSize="small" />
+              <Typography variant="body2">Alterar foto</Typography>
+            </Box>
           </Box>
         </ButtonBase>
-
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            display: "block",
-            width: 200,
-            textAlign: "center",
-            transform: "translate(25%, 25%)",
-          }}
-        >
-          Clique para atualizar sua foto
+        <Typography variant="caption" color="text.secondary">
+          Clique na foto para atualizar.
         </Typography>
       </Box>
 
-      <Box sx={{ padding: 3, paddingTop: 3 }}>
-        <Typography variant="h5" component="h1" gutterBottom sx={{ mb: 3 }}>
-          Informações do seu Usuário
-        </Typography>
-
+      <Box component="form" onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Nome"
-              variant="outlined"
-              placeholder="Digite o nome"
               value={formData.name}
-              onChange={handleInputChange("name")}
-              required
+              onChange={handleInputChange('name')}
               disabled={isSubmitting}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="E-mail"
-              variant="outlined"
-              value={emailValue}
-              disabled
-              InputLabelProps={{ shrink: true }}
+              required
             />
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextFieldMasked
               fullWidth
-              label="CPF"
-              variant="outlined"
-              placeholder="000.000.000-00"
-              maskType="cpf"
-              value={formData.cpf}
-              onChange={(event) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  cpf: event.target.value,
-                }));
-              }}
+              label="Telefone"
+              placeholder="(11) 99999-9999"
+              maskType="phone"
+              value={formData.phone}
+              onChange={handleInputChange('phone')}
               disabled={isSubmitting}
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Número"
-              variant="outlined"
-              value={phoneValue}
-              disabled
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Data de Nascimento"
-              type="date"
-              variant="outlined"
-              value={formData.birth}
-              onChange={handleInputChange("birth")}
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                },
-              }}
-              disabled={isSubmitting}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <LocationField
-              selectedState={formData.stateShort}
-              selectedCity={formData.city}
-              onStateChange={handleStateChange}
-              onCityChange={handleCityChange}
-              required
-              size="medium"
-              disabled={isSubmitting}
-            />
-          </Grid>
-
-          <Grid size={12} sx={{ mb: 5 }}>
-            <FormControl variant="outlined" fullWidth disabled={isSubmitting}>
-              <InputLabel id="select-role-label">Função</InputLabel>
-              <Select
-                labelId="select-role-label"
-                value={formData.role}
-                onChange={handleRoleChange}
-                label="Função"
-                required
-              >
-                <MenuItem value="admin">Administrador</MenuItem>
-                <MenuItem value="manager">Gestor</MenuItem>
-                <MenuItem value="consultant">Consultor</MenuItem>
-                <MenuItem value="participant">Participante</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid size={12}>
-            <Box
-              sx={{
-                display: "flex",
-                gap: 2,
-                justifyContent: "flex-end",
-                mt: 2,
-              }}
-            >
+          <Grid size={{ xs: 12 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
               <Button
                 variant="outlined"
                 color="secondary"
-                size="large"
-                onClick={() => setFormData(mapUserToFormData(user))}
+                onClick={handleReset}
                 disabled={isSubmitting}
               >
                 Cancelar
@@ -435,10 +260,9 @@ const UserEditPage = () => {
                 type="submit"
                 variant="contained"
                 color="primary"
-                size="large"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Salvando..." : "Salvar Alterações"}
+                {isSubmitting ? 'Salvando...' : 'Salvar alterações'}
               </Button>
             </Box>
           </Grid>
@@ -448,4 +272,4 @@ const UserEditPage = () => {
   );
 };
 
-export default UserEditPage;
+export default ProfilePage;

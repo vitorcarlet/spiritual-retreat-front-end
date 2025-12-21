@@ -1,14 +1,15 @@
 import {
+  Box,
   Card,
   CardContent,
-  Box,
-  Typography,
-  Skeleton,
   LinearProgress,
-  useTheme,
+  Skeleton,
+  Typography,
   useMediaQuery,
-} from "@mui/material";
-import Iconify from "../Iconify";
+  useTheme,
+} from '@mui/material';
+
+import Iconify from '../../Iconify';
 
 export const MetricCard = ({
   title,
@@ -17,7 +18,7 @@ export const MetricCard = ({
   icon,
   color,
   isLoading,
-  suffix = "",
+  suffix = '',
 }: {
   title: string;
   value: number;
@@ -28,26 +29,26 @@ export const MetricCard = ({
   suffix?: string;
 }) => {
   const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("xl"));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('xl'));
 
   // Tamanhos responsivos para ícones
   const iconSize = isSmallScreen ? 16 : 20;
   return (
-    <Card elevation={0} variant="outlined" sx={{ height: "100%" }}>
-      <CardContent sx={{ position: "relative" }}>
+    <Card elevation={0} variant="outlined" sx={{ height: '100%' }}>
+      <CardContent sx={{ position: 'relative' }}>
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             top: 16,
             right: 16,
             color: `${color}.main`,
             backgroundColor: `${color}.lighter`,
-            borderRadius: "50%",
+            borderRadius: '50%',
             width: 40,
             height: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Iconify icon={icon} size={iconSize} />
@@ -60,12 +61,12 @@ export const MetricCard = ({
         {isLoading ? (
           <Skeleton variant="text" width="60%" height={40} />
         ) : (
-          <Box sx={{ display: "flex", alignItems: "baseline" }}>
+          <Box sx={{ display: 'flex', alignItems: 'baseline' }}>
             <Typography variant="h4" component="span" fontWeight="bold">
               {value}
               {suffix && (
                 <Typography component="span" variant="subtitle1">
-                  {" "}
+                  {' '}
                   {suffix}
                 </Typography>
               )}
@@ -92,7 +93,7 @@ export const MetricCard = ({
                 height: 6,
                 borderRadius: 1,
                 bgcolor: `${color}.lighter`,
-                "& .MuiLinearProgress-bar": {
+                '& .MuiLinearProgress-bar': {
                   bgcolor: `${color}.main`,
                 },
               }}

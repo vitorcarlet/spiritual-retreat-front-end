@@ -16,7 +16,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 
 import apiClient from '@/src/lib/axiosClientInstance';
 
-import { DashboardOverviewResponse } from './types';
+import { DashboardOverviewResponse } from '../types';
 
 // ---------- Props ----------
 interface GenderPieChartCardProps {

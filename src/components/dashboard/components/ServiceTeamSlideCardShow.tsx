@@ -17,11 +17,11 @@ import {
   useTheme,
 } from '@mui/material';
 
-import { DashboardOverviewResponse, ServiceSpace } from './types';
+import { DashboardOverviewResponse, ServiceSpaceDashboard } from '../types';
 
 // ---------- Props ----------
 interface ServiceTeamSlideCardShowProps {
-  spaces: ServiceSpace[] | undefined;
+  spaces: ServiceSpaceDashboard[] | undefined;
   kpis: DashboardOverviewResponse['service']['kpis'] | undefined;
   isLoading: boolean;
   isError: boolean;
@@ -114,7 +114,7 @@ export default function ServiceTeamSlideCardShow({
           >
             {spaces.map((space, idx) => (
               <SwiperSlide key={space.label + idx}>
-                <ServiceSpaceCard space={space} />
+                <ServiceSpaceDashboardCard space={space} />
               </SwiperSlide>
             ))}
           </Swiper>
@@ -125,7 +125,11 @@ export default function ServiceTeamSlideCardShow({
 }
 
 // ---------- Service Space Card ----------
-function ServiceSpaceCard({ space }: { space: ServiceSpace }) {
+function ServiceSpaceDashboardCard({
+  space,
+}: {
+  space: ServiceSpaceDashboard;
+}) {
   const theme = useTheme();
 
   const getOccupancyColor = (percent: number) => {
