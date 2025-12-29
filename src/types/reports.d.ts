@@ -1,18 +1,18 @@
 export type ReportTypes =
-  | "user"
-  | "participant"
-  | "participants"
-  | "family"
-  | "families"
-  | "fiveMinutesCard"
-  | "exitChecklist"
-  | "service"
-  | "service_order"
-  | "service-orders"
-  | "attendance"
-  | "financial"
-  | "tents"
-  | "ribbons"
+  | 'user'
+  | 'participant'
+  | 'participants'
+  | 'family'
+  | 'families'
+  | 'fiveMinutesCard'
+  | 'exitChecklist'
+  | 'service'
+  | 'service_order'
+  | 'service-orders'
+  | 'attendance'
+  | 'financial'
+  | 'tents'
+  | 'ribbons'
   | (string & {});
 
 export type Period = {
@@ -92,7 +92,7 @@ export interface FamilyReportSummary extends ReportDataSummary {
 }
 
 export interface FamilyReportData extends ReportData {
-  type: "family" | "families";
+  type: 'family' | 'families';
   rows: FamilyReportRow[];
   summary: FamilyReportSummary;
 }
@@ -113,7 +113,7 @@ export interface FiveMinutesCardParticipant {
 }
 
 export interface FiveMinutesCardReportData extends ReportData {
-  type: "fiveMinutesCard";
+  type: 'fiveMinutesCard';
   rows: FiveMinutesCardParticipant[];
   summary?: {
     totalParticipants?: number;
@@ -127,7 +127,7 @@ export interface ExitChecklistRow {
 }
 
 export interface ExitChecklistReportData extends ReportData {
-  type: "exitChecklist";
+  type: 'exitChecklist';
   rows: ExitChecklistRow[];
   summary?: {
     totalParticipants: number;
@@ -138,7 +138,7 @@ export interface TentReportRow {
   id: string;
   tentNumber: string;
   familyName: string;
-  gender: "male" | "female" | "mixed";
+  gender: 'male' | 'female' | 'mixed';
   sponsorName?: string;
   rahamistas: string[];
   familyColor?: string;
@@ -146,7 +146,7 @@ export interface TentReportRow {
 }
 
 export interface TentReportData extends ReportData {
-  type: "tents";
+  type: 'tents';
   rows: TentReportRow[];
   summary?: {
     totalTents: number;
@@ -160,7 +160,7 @@ export interface RibbonReportRow {
 }
 
 export interface RibbonReportData extends ReportData {
-  type: "ribbons";
+  type: 'ribbons';
   rows: RibbonReportRow[];
   summary?: {
     totalParticipants: number;
