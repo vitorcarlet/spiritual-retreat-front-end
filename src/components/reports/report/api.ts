@@ -1,10 +1,11 @@
-import { ReportData } from "@/src/types/reports";
-import { ColumnDescriptor } from "./columnsBuilder";
-import apiClient from "@/src/lib/axiosClientInstance";
-import { columnsMock } from "@/src/mocks/handlerData/reports/columns";
-import { RegistrationApiResponse } from "../../retreats/tabs/RetreatContemplation/types";
-import { ReportsAllFilters } from "../types";
-import { keysToRemoveFromFilters } from "../../table/shared";
+import apiClient from '@/src/lib/axiosClientInstance';
+import { columnsMock } from '@/src/mocks/handlerData/reports/columns';
+import { ReportData } from '@/src/types/reports';
+
+import { RegistrationApiResponse } from '../../retreats/tabs/RetreatContemplation/types';
+import { keysToRemoveFromFilters } from '../../table/shared';
+import { ReportsAllFilters } from '../types';
+import { ColumnDescriptor } from './tanStackColumnsBuilder';
 
 export type ReportDataResponse = {
   report: ReportData;
@@ -37,7 +38,7 @@ export const fetchReport = async (
     `/reports/${reportId}`
   );
   if (!reportResponse?.data) {
-    throw new Error("failed-to-fetch-report");
+    throw new Error('failed-to-fetch-report');
   }
   const page = filters.page && filters.page > 0 ? filters.page : 1;
   const pageLimit =
@@ -65,7 +66,7 @@ export const fetchReport = async (
   );
 
   if (!response?.data) {
-    throw new Error("failed-to-fetch-registrations");
+    throw new Error('failed-to-fetch-registrations');
   }
 
   const items = response.data.items ?? [];
@@ -89,7 +90,7 @@ export const fetchReport = async (
 
 // Helper function para detectar colunas do response
 function detectColumnsFromData(
-  data: RegistrationApiResponse["items"]
+  data: RegistrationApiResponse['items']
 ): string[] {
   if (!Array.isArray(data) || data.length === 0) {
     return [];

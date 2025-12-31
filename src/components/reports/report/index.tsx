@@ -1,35 +1,41 @@
-"use client";
+'use client';
 
-import dynamic from "next/dynamic";
-import LoadingScreenCircular from "@/src/components/loading-screen/client/LoadingScreenCircular";
+import dynamic from 'next/dynamic';
+
+import LoadingScreenCircular from '@/src/components/loading-screen/client/LoadingScreenCircular';
 
 const FamilyReportCards = dynamic<{ reportId: string }>(
-  () => import("./family/FamilyReportCards"),
+  () => import('./family/FamilyReportCards'),
   { loading: () => <LoadingScreenCircular /> }
 );
 
 const FiveMinutesCardList = dynamic<{ reportId: string }>(
-  () => import("./fiveMinutesCard/FiveMinutesCardList"),
+  () => import('./fiveMinutesCard/FiveMinutesCardList'),
   { loading: () => <LoadingScreenCircular /> }
 );
 
 const ExitChecklistReport = dynamic<{ reportId: string }>(
-  () => import("./exitChecklist/ExitChecklistReport"),
+  () => import('./exitChecklist/ExitChecklistReport'),
   { loading: () => <LoadingScreenCircular /> }
 );
 
 const TentReport = dynamic<{ reportId: string }>(
-  () => import("./tents/TentReport"),
+  () => import('./tents/TentReport'),
   { loading: () => <LoadingScreenCircular /> }
 );
 
 const RibbonReport = dynamic<{ reportId: string }>(
-  () => import("./ribbons/RibbonReport"),
+  () => import('./ribbons/RibbonReport'),
+  { loading: () => <LoadingScreenCircular /> }
+);
+
+const ContemplatedReportTable = dynamic<{ reportId: string }>(
+  () => import('./contemplated/ContemplatedReportTable'),
   { loading: () => <LoadingScreenCircular /> }
 );
 
 const GenericReportTable = dynamic<{ reportId: string }>(
-  () => import("./GenericReportTable"),
+  () => import('./GenericReportTable'),
   { loading: () => <LoadingScreenCircular /> }
 );
 
@@ -39,29 +45,31 @@ type ReportRouterProps = {
 };
 
 const normalizeType = (value?: string) =>
-  (value ?? "").toString().trim().toLowerCase();
+  (value ?? '').toString().trim().toLowerCase();
 
 const ReportViewRouter = ({ reportId, reportType }: ReportRouterProps) => {
   const type = normalizeType(reportType);
 
   switch (type) {
-    case "family":
-    case "families":
+    case 'family':
+    case 'families':
       return <FamilyReportCards reportId={reportId} />;
-    case "fiveminutescard":
+    case 'fiveminutescard':
       return <FiveMinutesCardList reportId={reportId} />;
-    case "exitchecklist":
-    case "botafora":
-    case "bota-fora":
+    case 'exitchecklist':
+    case 'botafora':
+    case 'bota-fora':
       return <ExitChecklistReport reportId={reportId} />;
-    case "tents":
+    case 'tents':
       return <TentReport reportId={reportId} />;
-    case "ribbons":
+    case 'ribbons':
       return <RibbonReport reportId={reportId} />;
+    case 'contemplated':
+      return <ContemplatedReportTable reportId={reportId} />;
     // case "generic":
     //   return <GenericReportTable reportId={reportId} />;
     default:
-      return <GenericReportTable reportId={reportId} />;
+      return <ContemplatedReportTable reportId={reportId} />;
   }
 };
 
