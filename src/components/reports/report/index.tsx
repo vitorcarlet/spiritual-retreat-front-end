@@ -29,13 +29,8 @@ const RibbonReport = dynamic<{ reportId: string }>(
   { loading: () => <LoadingScreenCircular /> }
 );
 
-const ContemplatedReportTable = dynamic<{ reportId: string }>(
-  () => import('./contemplated/ContemplatedReportTable'),
-  { loading: () => <LoadingScreenCircular /> }
-);
-
 const GenericReportTable = dynamic<{ reportId: string }>(
-  () => import('./GenericReportTable'),
+  () => import('./generic/GenericReportTable'),
   { loading: () => <LoadingScreenCircular /> }
 );
 
@@ -65,11 +60,11 @@ const ReportViewRouter = ({ reportId, reportType }: ReportRouterProps) => {
     case 'ribbons':
       return <RibbonReport reportId={reportId} />;
     case 'contemplated':
-      return <ContemplatedReportTable reportId={reportId} />;
+      return <GenericReportTable reportId={reportId} />;
     // case "generic":
     //   return <GenericReportTable reportId={reportId} />;
     default:
-      return <ContemplatedReportTable reportId={reportId} />;
+      return <GenericReportTable reportId={reportId} />;
   }
 };
 

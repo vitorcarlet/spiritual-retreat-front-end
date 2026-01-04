@@ -21,7 +21,7 @@ import FilterButton from '../filters/FilterButton';
 import SearchField from '../filters/SearchField';
 import DataTable, { DataTableColumn } from '../table/DataTable';
 import DeleteReport from './DeleteReport';
-import { getUrlByReportType } from './report/shared';
+// import { getUrlByReportType } from './report/shared';
 // import { Report } from "@/src/types/reports";
 import {
   ReportsAllFilters,
@@ -215,8 +215,9 @@ const ReportPage = () => {
 
   // Handlers for the DataGrid actions
   const handleViewReport = (report: any) => {
-    const url = getUrlByReportType(report.type);
-    router.push(`/reports/${report.id}/${url}`);
+    // const url = getUrlByReportType(report.type);
+    // router.push(`/reports/${report.id}/${url}`);
+    router.push(`/reports/${report.id}/generic`);
   };
 
   const handleDeleteReport = (

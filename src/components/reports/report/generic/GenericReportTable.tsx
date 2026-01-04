@@ -1,24 +1,29 @@
-"use client";
+'use client';
 
-import { Box, Button } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { ColumnDef } from "@tanstack/react-table";
-import { getFilters } from "./getFilters";
-import { useUrlFilters } from "@/src/hooks/useUrlFilters";
-import FilterButton from "../../filters/FilterButton";
-import { TanStackTable } from "../../table";
+import { useMemo, useState } from 'react';
+
+import { useRouter } from 'next/navigation';
+
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ColumnDef } from '@tanstack/react-table';
+
+import { Box, Button } from '@mui/material';
+
+import FilterButton from '@/src/components/filters/FilterButton';
+import { TanStackTable } from '@/src/components/table';
+import { useUrlFilters } from '@/src/hooks/useUrlFilters';
+
 import {
   ReportsAllFilters,
-  ReportsTableFilters,
   ReportsTableDateFilters,
-} from "../types";
+  ReportsTableFilters,
+} from '../../types';
+import { getFilters } from '../getFilters';
 import {
+  ColumnDescriptor,
   buildTanStackReportColumns,
-  type ColumnDescriptor,
-} from "./tanStackColumnsBuilder";
-import { fetchReport } from "./api";
+} from '../tanStackColumnsBuilder';
+import { fetchGenericReport } from './shared';
 
 interface ReportRow extends Record<string, unknown> {
   id: string | number;
@@ -33,7 +38,7 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
   const handleRefresh = async () => {
     setLoading(true);
     await queryClient.invalidateQueries({
-      queryKey: ["reports", reportId],
+      queryKey: ['reports', reportId],
     });
     setLoading(false);
   };
@@ -44,7 +49,7 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
         page: 1,
         pageLimit: 10,
       },
-      excludeFromCount: ["page", "pageLimit", "search"],
+      excludeFromCount: ['page', 'pageLimit', 'search'],
     });
 
   const handleApplyFilters = (
@@ -54,31 +59,43 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
   };
 
   const { data: reportData, isLoading } = useQuery({
-    queryKey: ["reports", reportId, filters],
-    queryFn: () => fetchReport(reportId, filters),
+    queryKey: ['reports', reportId, filters],
+    queryFn: () => fetchGenericReport(reportId, filters),
     staleTime: 5 * 60 * 1000,
   });
 
   const dynamicColumns = useMemo(() => {
     const fromApi = reportData?.columns;
-    if (fromApi && fromApi.length) {
-      return buildTanStackReportColumns({ descriptors: fromApi });
+    // if (fromApi && fromApi.length) {
+    //   return buildTanStackReportColumns({ descriptors: fromApi });
+    // }
+    if (fromApi && Array.isArray(fromApi)) {
+      // Transformar { key, label } em ColumnDef válido
+      return fromApi.map((col: { key: string; label: string }) => ({
+        id: col.key,
+        accessorKey: col.key,
+        header: col.label,
+        cell: ({ getValue }: { getValue: () => unknown }) => {
+          const value = getValue();
+          return value !== null && value !== undefined ? String(value) : '';
+        },
+      })) as ColumnDef<ReportRow>[];
     }
     const fallback: ColumnDescriptor[] = [
-      { field: "id", type: "string", width: 80 },
-      { field: "name", type: "string", minWidth: 180, flex: 1 },
-      { field: "sections", type: "string", minWidth: 220, flex: 1 },
-      { field: "dateCreation", type: "date", width: 160 },
-      { field: "registrationDate", type: "date", width: 160 },
-      { field: "retreatName", type: "string", minWidth: 160, flex: 1 },
+      { field: 'id', type: 'string', width: 80 },
+      { field: 'name', type: 'string', minWidth: 180, flex: 1 },
+      { field: 'sections', type: 'string', minWidth: 220, flex: 1 },
+      { field: 'dateCreation', type: 'date', width: 160 },
+      { field: 'registrationDate', type: 'date', width: 160 },
+      { field: 'retreatName', type: 'string', minWidth: 160, flex: 1 },
     ];
     return buildTanStackReportColumns({ descriptors: fallback });
   }, [reportData?.columns]);
 
-  const reportsArray: ReportRow[] = Array.isArray(reportData?.report.rows)
-    ? (reportData!.report.rows as ReportRow[])
-    : reportData?.report.rows
-      ? ([reportData.report.rows] as ReportRow[])
+  const reportsArray: ReportRow[] = Array.isArray(reportData?.data)
+    ? (reportData?.data as ReportRow[])
+    : reportData?.data
+      ? ([reportData?.data] as ReportRow[])
       : [];
 
   const handleViewReport = (report: ReportRow) => {
@@ -89,26 +106,26 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
     <Box
       sx={{
         p: 2,
-        height: "100%",
-        minWidth: "100%",
-        display: "flex",
-        flexDirection: "column",
-        maxWidth: "100%",
-        overflowY: "hidden",
-        boxSizing: "border-box",
+        height: '100%',
+        minWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: '100%',
+        overflowY: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       <Box
         sx={{
-          display: "flex",
-          flexWrap: "wrap",
+          display: 'flex',
+          flexWrap: 'wrap',
           gap: { xs: 1, sm: 2 },
           mb: 2,
         }}
       >
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "initial" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: 'initial' },
             minWidth: 0,
           }}
         >
@@ -119,13 +136,13 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
             fullWidth
             sx={{ height: 40, maxWidth: { md: 150 } }}
           >
-            {loading ? "Carregando..." : "Atualizar Dados"}
+            {loading ? 'Carregando...' : 'Atualizar Dados'}
           </Button>
         </Box>
 
         <Box
           sx={{
-            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 4px)", md: "1 1 auto" },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 4px)', md: '1 1 auto' },
             minWidth: { xs: 0, md: 150 },
             maxWidth: { md: 150 },
           }}
@@ -144,13 +161,11 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
         </Box>
       </Box>
 
-      <Box sx={{ flexGrow: 1, height: "calc(100% - 40px)" }}>
+      <Box sx={{ flexGrow: 1, height: 'calc(100% - 40px)' }}>
         <TanStackTable
           data={reportsArray}
           columns={dynamicColumns as ColumnDef<ReportRow>[]}
           loading={isLoading || loading}
-          //title="Gerenciamento de Relatórios"
-          //subtitle={`${reportData?.total || 0} relatórios encontrados`}
           enablePagination
           manualPagination
           pageSize={filters.pageLimit || 50}

@@ -48,7 +48,8 @@ export function getUrlByReportType(type: any): string {
       return 'financial';
 
     // add other known report types here
-
+    case 'contemplated':
+      return 'contemplated';
     default:
       // fallback route segment when type is unknown
       return 'participant';

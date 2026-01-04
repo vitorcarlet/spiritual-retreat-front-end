@@ -1,4 +1,4 @@
-export interface ContemplatedReport {
+export interface GenericReport {
   report: {
     id: string;
     title: string;
