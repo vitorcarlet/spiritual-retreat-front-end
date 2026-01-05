@@ -8,18 +8,18 @@
 // ============================================================================
 
 export type FieldType =
-  | "selectAutocomplete"
-  | "selectMultiple"
-  | "input"
-  | "select"
-  | "text"
-  | "number"
-  | "checkbox"
-  | "radio"
-  | "date";
+  | 'selectAutocomplete'
+  | 'selectMultiple'
+  | 'input'
+  | 'select'
+  | 'text'
+  | 'number'
+  | 'checkbox'
+  | 'radio'
+  | 'date';
 
 // Variantes de data compatíveis com table.d.ts
-export type DateVariant = "dateRange" | "month" | "year" | "day";
+export type DateVariant = 'dateRange' | 'month' | 'year' | 'day';
 
 // ============================================================================
 // OPÇÕES ESTÁTICAS (para selects sem URL)
@@ -54,7 +54,7 @@ export interface FieldConfig {
   placeholderKey?: string;
   /** Configurações customizadas */
   custom?: {
-    variant?: "custom" | "default";
+    variant?: 'custom' | 'default';
     [key: string]: unknown;
   };
 }
@@ -85,7 +85,8 @@ export interface DateFilterConfig<D = unknown> {
 // CONFIGURAÇÃO COMPLETA DO HOOK
 // ============================================================================
 
-export interface UseFiltersConfig<D = unknown> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface UseFiltersConfig<T = unknown, D = unknown> {
   /** Configuração dos filtros de items */
   filtersConfig: FilterConfig[];
   /** Configuração dos filtros de data */

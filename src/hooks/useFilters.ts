@@ -1,8 +1,10 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useTranslations } from "next-intl";
-import type { UseFiltersConfig, DateVariant } from "./filters/types";
+import { useMemo } from 'react';
+
+import { useTranslations } from 'next-intl';
+
+import type { DateVariant, UseFiltersConfig } from './filters/types';
 
 /**
  * Hook genérico para criar filtros traduzidos a partir de configuração.
@@ -25,7 +27,7 @@ import type { UseFiltersConfig, DateVariant } from "./filters/types";
  * ```
  */
 export function useFilters<T = unknown, D = unknown>(
-  config: UseFiltersConfig<D>
+  config: UseFiltersConfig<T>
 ): {
   filters: Filters<T, D>;
   dateFilters: { title: string; variantDate: DateVariant } | undefined;
@@ -76,11 +78,11 @@ export function useFilters<T = unknown, D = unknown>(
 
     return {
       title: t(config.dateRangeTitleKey),
-      variantDate: config.dateVariant ?? ("dateRange" as const),
+      variantDate: config.dateVariant ?? ('dateRange' as const),
     };
   }, [t, config.dateRangeTitleKey, config.dateVariant]);
 
   return { filters, dateFilters };
 }
 
-export type { UseFiltersConfig } from "./filters/types";
+export type { UseFiltersConfig } from './filters/types';

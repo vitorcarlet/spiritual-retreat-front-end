@@ -1,39 +1,43 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useTranslations } from "next-intl";
-import { ptBR } from "date-fns/locale";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { useTranslations } from 'next-intl';
+
+import { ptBR } from 'date-fns/locale';
+
 import {
+  Autocomplete,
   Box,
   Button,
+  Checkbox,
+  Chip,
   Drawer,
+  FormControlLabel,
   IconButton,
   List,
   ListItemButton,
   ListItemText,
+  Paper,
   Stack,
   TextField,
-  Typography,
-  ToggleButtonGroup,
   ToggleButton,
-  Autocomplete,
-  Chip,
-  FormControlLabel,
-  Checkbox,
-  Paper,
-} from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import Iconify from "../Iconify";
+  ToggleButtonGroup,
+  Typography,
+} from '@mui/material';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
+import Iconify from '../Iconify';
 
 type StringKey<T> = Extract<keyof T, string>;
 
 interface DynamicFiltersProps<T, F> {
   filters: Filters<T, F>;
   defaultValues?: Partial<TableDefaultFilters<F>>;
-  onApplyFilters: (filters: Partial<T>) => void;
+  onApplyFilters: (filters: Partial<Filters<T, F>>) => void;
   onReset?: () => void;
   open: boolean;
   onClose: () => void;
@@ -48,8 +52,8 @@ export default function DynamicFilters<T, F>({
   onClose,
 }: DynamicFiltersProps<T, F>) {
   const t = useTranslations();
-  const [activeTab, setActiveTab] = useState<"date" | "filters">(
-    filters.date && filters.date.length > 0 ? "date" : "filters"
+  const [activeTab, setActiveTab] = useState<'date' | 'filters'>(
+    filters.date && filters.date.length > 0 ? 'date' : 'filters'
   );
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Partial<F>>(defaultValues);
@@ -65,12 +69,12 @@ export default function DynamicFilters<T, F>({
     filters.items?.forEach((cat: FilterItem) => {
       (cat.fields ?? []).forEach((field: FilterField) => {
         if (
-          field?.typeField === "selectAutocomplete" ||
-          field?.typeField === "selectMultiple"
+          field?.typeField === 'selectAutocomplete' ||
+          field?.typeField === 'selectMultiple'
         ) {
           map.set(field.name, {
-            multiple: field.isMultiple || field?.typeField === "selectMultiple",
-            primaryKey: field.primaryKey || "value",
+            multiple: field.isMultiple || field?.typeField === 'selectMultiple',
+            primaryKey: field.primaryKey || 'value',
           });
         }
       });
@@ -80,24 +84,24 @@ export default function DynamicFilters<T, F>({
 
   // Helpers for Autocomplete options/values
   const getPrimaryKey = (name: string) =>
-    selectFieldConfig.get(name)?.primaryKey || "value";
+    selectFieldConfig.get(name)?.primaryKey || 'value';
   const getOptionLabelSafe = (option: any, name?: string) => {
-    if (option == null) return "";
-    if (typeof option === "string" || typeof option === "number")
+    if (option == null) return '';
+    if (typeof option === 'string' || typeof option === 'number')
       return String(option);
     if (option.label != null) return String(option.label);
-    const pk = name ? getPrimaryKey(name) : "value";
+    const pk = name ? getPrimaryKey(name) : 'value';
     if (option[pk] != null) return String(option[pk]);
-    return "";
+    return '';
   };
   const isOptionEqualToValueSafe = (option: any, value: any, name: string) => {
     const pk = getPrimaryKey(name);
     const optVal =
-      typeof option === "object" && option
+      typeof option === 'object' && option
         ? (option[pk] ?? option.value ?? option.id)
         : option;
     const valVal =
-      typeof value === "object" && value
+      typeof value === 'object' && value
         ? (value[pk] ?? value.value ?? value.id)
         : value;
     return String(optVal) === String(valVal);
@@ -105,7 +109,7 @@ export default function DynamicFilters<T, F>({
   const normalizeToOption = (v: any, options: any[], name: string) => {
     const pk = getPrimaryKey(name);
     if (v == null) return null;
-    if (typeof v === "object") return v; // assume already option
+    if (typeof v === 'object') return v; // assume already option
     const found = options.find(
       (o: any) => String(o?.[pk] ?? o?.value ?? o?.id) === String(v)
     );
@@ -119,7 +123,7 @@ export default function DynamicFilters<T, F>({
   const serializeFromOption = (v: any, name: string) => {
     const pk = getPrimaryKey(name);
     if (v == null) return v;
-    return typeof v === "object" ? (v?.[pk] ?? v?.value ?? v?.id ?? null) : v;
+    return typeof v === 'object' ? (v?.[pk] ?? v?.value ?? v?.id ?? null) : v;
   };
 
   // Normalize incoming defaults from URL into local state shape (e.g., map `period` => `periodStart`/`periodEnd`)
@@ -131,7 +135,7 @@ export default function DynamicFilters<T, F>({
       if (
         filters.variantDate &&
         filters.date &&
-        filters.variantDate === "dateRange"
+        filters.variantDate === 'dateRange'
       ) {
         for (const d of filters.date) {
           const key = String(d.filter);
@@ -141,12 +145,12 @@ export default function DynamicFilters<T, F>({
 
           // Parse date range string like "2025-08-01&2025-08-08"
           if (
-            typeof dateRangeValue === "string" &&
-            dateRangeValue.includes("&") &&
+            typeof dateRangeValue === 'string' &&
+            dateRangeValue.includes('&') &&
             next[startKey] == null &&
             next[endKey] == null
           ) {
-            const [start, end] = dateRangeValue.split("&");
+            const [start, end] = dateRangeValue.split('&');
             next[startKey] = start || null;
             next[endKey] = end || null;
           }
@@ -196,12 +200,12 @@ export default function DynamicFilters<T, F>({
 
   const handleTabChange = (
     _: React.MouseEvent<HTMLElement>,
-    newValue: "date" | "filters" | null
+    newValue: 'date' | 'filters' | null
   ) => {
     if (newValue !== null) {
       setActiveTab(newValue);
       // Reset selected category when switching to filters tab
-      if (newValue === "filters" && filters.items && filters.items.length > 0) {
+      if (newValue === 'filters' && filters.items && filters.items.length > 0) {
         setSelectedCategory(filters.items[0].title);
       }
     }
@@ -253,8 +257,8 @@ export default function DynamicFilters<T, F>({
         // Create a clean date range string for URL: "2025-08-01&2025-08-08"
         [filter]:
           startFormatted || endFormatted
-            ? (`${startFormatted || ""}&${
-                endFormatted || ""
+            ? (`${startFormatted || ''}&${
+                endFormatted || ''
               }` as unknown as F[typeof filter])
             : (undefined as unknown as F[typeof filter]),
       } as typeof prev;
@@ -293,19 +297,19 @@ export default function DynamicFilters<T, F>({
         const startKey = `${key}Start`;
         const endKey = `${key}End`;
 
-        if (filters.variantDate === "dateRange") {
+        if (filters.variantDate === 'dateRange') {
           const start = (filterValues as any)[startKey];
           const end = (filterValues as any)[endKey];
 
           if (start || end) {
             // Format as "2025-08-01&2025-08-08" for URL
-            cleaned[key] = `${start || ""}&${end || ""}`;
+            cleaned[key] = `${start || ''}&${end || ''}`;
           }
           delete cleaned[startKey];
           delete cleaned[endKey];
         } else {
           const single = (filterValues as any)[key];
-          if (single != null && single !== "") {
+          if (single != null && single !== '') {
             // Ensure single dates are also formatted as YYYY-MM-DD
             if (single instanceof Date) {
               cleaned[key] = single.toISOString().slice(0, 10);
@@ -334,7 +338,7 @@ export default function DynamicFilters<T, F>({
   // Render fields based on their type
   const renderField = (field: FilterField) => {
     switch (field.typeField) {
-      case "text":
+      case 'text':
         return (
           <TextField
             key={field.name}
@@ -342,13 +346,13 @@ export default function DynamicFilters<T, F>({
             size="small"
             label={field.label}
             placeholder={field.placeholder}
-            value={(filterValues as any)[field.name] || ""}
+            value={(filterValues as any)[field.name] || ''}
             onChange={(e) => handleFilterChange(field.name, e.target.value)}
             margin="normal"
           />
         );
 
-      case "number":
+      case 'number':
         return (
           <TextField
             key={field.name}
@@ -357,18 +361,18 @@ export default function DynamicFilters<T, F>({
             type="number"
             label={field.label}
             placeholder={field.placeholder}
-            value={(filterValues as any)[field.name] || ""}
+            value={(filterValues as any)[field.name] || ''}
             onChange={(e) =>
               handleFilterChange(
                 field.name,
-                e.target.value ? Number(e.target.value) : ""
+                e.target.value ? Number(e.target.value) : ''
               )
             }
             margin="normal"
           />
         );
 
-      case "input":
+      case 'input':
         return (
           <TextField
             key={field.name}
@@ -376,19 +380,19 @@ export default function DynamicFilters<T, F>({
             size="small"
             label={field.label}
             placeholder={field.placeholder}
-            value={(filterValues as any)[field.name] || ""}
+            value={(filterValues as any)[field.name] || ''}
             onChange={(e) => handleFilterChange(field.name, e.target.value)}
             margin="normal"
           />
         );
 
-      case "selectMultiple":
-      case "selectAutocomplete": {
+      case 'selectMultiple':
+      case 'selectAutocomplete': {
         const name = field.name as string;
         const options = field.options || [];
         const raw = (filterValues as any)[name];
         const isMultiple =
-          field?.typeField === "selectMultiple" || (field as any).isMultiple;
+          field?.typeField === 'selectMultiple' || (field as any).isMultiple;
 
         if (isMultiple) {
           const value = (
@@ -476,7 +480,7 @@ export default function DynamicFilters<T, F>({
         }
       }
 
-      case "checkbox":
+      case 'checkbox':
         return (
           <FormControlLabel
             key={field.name}
@@ -531,11 +535,11 @@ export default function DynamicFilters<T, F>({
                   {dateFilter.title}
                 </Typography>
 
-                {filters.variantDate === "dateRange" ? (
+                {filters.variantDate === 'dateRange' ? (
                   // Date range filter with start and end date
                   <Stack direction="row" spacing={2}>
                     <DatePicker
-                      label={t("startDate")}
+                      label={t('startDate')}
                       value={startStr ? new Date(startStr) : null}
                       onChange={(date) => {
                         const endDate = endStr ? new Date(endStr) : null;
@@ -546,11 +550,11 @@ export default function DynamicFilters<T, F>({
                         );
                       }}
                       slotProps={{
-                        textField: { fullWidth: true, size: "small" },
+                        textField: { fullWidth: true, size: 'small' },
                       }}
                     />
                     <DatePicker
-                      label={t("endDate")}
+                      label={t('endDate')}
                       value={endStr ? new Date(endStr) : null}
                       onChange={(date) => {
                         const startDate = startStr ? new Date(startStr) : null;
@@ -561,7 +565,7 @@ export default function DynamicFilters<T, F>({
                         );
                       }}
                       slotProps={{
-                        textField: { fullWidth: true, size: "small" },
+                        textField: { fullWidth: true, size: 'small' },
                       }}
                     />
                   </Stack>
@@ -583,7 +587,7 @@ export default function DynamicFilters<T, F>({
                       )
                     }
                     slotProps={{
-                      textField: { fullWidth: true, size: "small" },
+                      textField: { fullWidth: true, size: 'small' },
                     }}
                   />
                 )}
@@ -606,14 +610,14 @@ export default function DynamicFilters<T, F>({
     );
 
     return (
-      <Stack direction="row" sx={{ height: "100%" }}>
+      <Stack direction="row" sx={{ height: '100%' }}>
         <List
           sx={{
             width: 200,
             borderRight: 1,
-            borderColor: "divider",
-            height: "100%",
-            overflowY: "auto",
+            borderColor: 'divider',
+            height: '100%',
+            overflowY: 'auto',
           }}
         >
           {filters.items.map((item) => (
@@ -626,7 +630,7 @@ export default function DynamicFilters<T, F>({
                 primary={item.title}
                 primaryTypographyProps={{
                   color:
-                    selectedCategory === item.title ? "primary" : "textPrimary",
+                    selectedCategory === item.title ? 'primary' : 'textPrimary',
                 }}
               />
               <Iconify icon="solar:arrow-right-linear" />
@@ -634,7 +638,7 @@ export default function DynamicFilters<T, F>({
           ))}
         </List>
 
-        <Box sx={{ p: 2, flexGrow: 1, overflowY: "auto" }}>
+        <Box sx={{ p: 2, flexGrow: 1, overflowY: 'auto' }}>
           {activeCategory ? (
             <Stack spacing={2}>
               <Typography variant="subtitle1">
@@ -658,22 +662,22 @@ export default function DynamicFilters<T, F>({
       open={open}
       onClose={onClose}
       PaperProps={{
-        sx: { width: { xs: "100%", sm: 500 }, maxWidth: "100%" },
+        sx: { width: { xs: '100%', sm: 500 }, maxWidth: '100%' },
       }}
     >
-      <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* Header */}
         <Box
           sx={{
             p: 2,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             borderBottom: 1,
-            borderColor: "divider",
+            borderColor: 'divider',
           }}
         >
-          <Typography variant="h6">{t("filters")}</Typography>
+          <Typography variant="h6">{t('filters')}</Typography>
           <IconButton onClick={onClose}>
             <Iconify icon="solar:close-circle-bold" />
           </IconButton>
@@ -681,7 +685,7 @@ export default function DynamicFilters<T, F>({
 
         {/* Toggle between Date and Filters */}
         {filters.date && filters.date.length > 0 && (
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
             <ToggleButtonGroup
               value={activeTab}
               exclusive
@@ -692,29 +696,29 @@ export default function DynamicFilters<T, F>({
             >
               <ToggleButton value="date" aria-label="date filters">
                 <Iconify icon="solar:calendar-mark-bold" sx={{ mr: 1 }} />
-                {t("date")}
+                {t('date')}
               </ToggleButton>
               <ToggleButton value="filters" aria-label="other filters">
                 <Iconify icon="solar:filter-bold" sx={{ mr: 1 }} />
-                {t("filters")}
+                {t('filters')}
               </ToggleButton>
             </ToggleButtonGroup>
           </Box>
         )}
 
         {/* Content - Either Date filters or Other filters */}
-        <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
-          {activeTab === "date" ? renderDateFilters() : renderOtherFilters()}
+        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+          {activeTab === 'date' ? renderDateFilters() : renderOtherFilters()}
         </Box>
 
         {/* Actions */}
         <Box
           sx={{
             p: 2,
-            display: "flex",
-            justifyContent: "space-between",
+            display: 'flex',
+            justifyContent: 'space-between',
             borderTop: 1,
-            borderColor: "divider",
+            borderColor: 'divider',
           }}
         >
           <Button
@@ -722,18 +726,18 @@ export default function DynamicFilters<T, F>({
             startIcon={<Iconify icon="solar:restart-bold" />}
             onClick={handleReset}
           >
-            {t("cleanUp")}
+            {t('cleanUp')}
           </Button>
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" onClick={onClose}>
-              {t("toClose")}
+              {t('toClose')}
             </Button>
             <Button
               variant="contained"
               startIcon={<Iconify icon="solar:check-circle-bold" />}
               onClick={handleApply}
             >
-              {t("apply")}
+              {t('apply')}
             </Button>
           </Stack>
         </Box>

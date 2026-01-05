@@ -1,15 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button, Badge } from "@mui/material";
-import { useTranslations } from "next-intl";
-import Iconify from "../Iconify";
-import DynamicFilters from ".";
+import { useState } from 'react';
 
-interface FilterButtonProps<T, F> {
+import { useTranslations } from 'next-intl';
+
+import { Badge, Button } from '@mui/material';
+
+import DynamicFilters from '.';
+import Iconify from '../Iconify';
+
+// 1. Add default type " = T" here
+interface FilterButtonProps<T, F = T> {
   filters: Filters<T, F>;
   defaultValues?: Partial<TableDefaultFilters<F>>;
-  onApplyFilters: (filters: Partial<allFilters<T, F>>) => void;
+  onApplyFilters: (filters: Partial<Filters<T, F>>) => void;
   onReset?: () => void;
   activeFiltersCount?: number;
   fullWidth?: boolean;
@@ -17,7 +21,8 @@ interface FilterButtonProps<T, F> {
 
 export type allFilters<T, F> = T extends F ? T : never;
 
-export default function FilterButton<T, F>({
+// 2. Add default type " = T" here as well
+export default function FilterButton<T, F = T>({
   filters,
   defaultValues,
   onApplyFilters,
@@ -41,7 +46,7 @@ export default function FilterButton<T, F>({
       <Badge
         badgeContent={activeFiltersCount}
         color="primary"
-        sx={{ width: fullWidth ? "100%" : "auto" }}
+        sx={{ width: fullWidth ? '100%' : 'auto' }}
       >
         <Button
           variant="outlined"
@@ -51,7 +56,7 @@ export default function FilterButton<T, F>({
           fullWidth={fullWidth}
           sx={{ height: 40 }}
         >
-          {t("filters")}
+          {t('filters')}
         </Button>
       </Badge>
 
