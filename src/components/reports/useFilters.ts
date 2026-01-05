@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useFilters as useGenericFilters } from "@/src/hooks/useFilters";
+import { useFilters as useGenericFilters } from '@/src/hooks/useFilters';
+
 import {
-  reportsFiltersFullConfig,
   type ReportsFilters,
-  type ReportsDateFilters,
-} from "./filters.config";
+  reportsFiltersFullConfig,
+} from './filters.config';
 
 /**
  * Hook específico para filtros de relatórios.
@@ -17,7 +17,5 @@ import {
  * ```
  */
 export const useReportsFilters = () => {
-  return useGenericFilters<ReportsFilters, ReportsDateFilters>(
-    reportsFiltersFullConfig
-  );
+  return useGenericFilters<ReportsFilters>(reportsFiltersFullConfig);
 };

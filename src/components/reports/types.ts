@@ -1,16 +1,14 @@
-import { Report } from "@/src/types/reports";
+import { Report } from '@/src/types/reports';
 
 export type ReportsTableFilters = {
   name?: string;
-  state?: string;
-  city?: string;
-  status?: string;
+  retreatName?: string;
 };
 
-export type ReportsTableDateFilters = {
-  periodStart?: string;
-  periodEnd?: string;
-};
+// export type ReportsTableDateFilters = {
+//   periodStart?: string;
+//   periodEnd?: string;
+// };
 
 export interface ReportRequest {
   rows: Report[];
@@ -21,4 +19,4 @@ export interface ReportRequest {
   hasPervPage: boolean;
 }
 
-export type ReportsAllFilters = ReportsTableFilters & ReportsTableDateFilters;
+export type ReportsAllFilters = ReportsTableFilters;

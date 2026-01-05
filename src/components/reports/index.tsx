@@ -21,19 +21,16 @@ import FilterButton from '../filters/FilterButton';
 import SearchField from '../filters/SearchField';
 import DataTable, { DataTableColumn } from '../table/DataTable';
 import DeleteReport from './DeleteReport';
-// import { getUrlByReportType } from './report/shared';
-// import { Report } from "@/src/types/reports";
-import {
-  ReportsAllFilters,
-  ReportsTableDateFilters,
-  ReportsTableFilters,
-} from './types';
+import EditReport from './EditReport';
+import { ReportsAllFilters, ReportsTableFilters } from './types';
 import { useReportsFilters } from './useFilters';
 
 type ReportGeneral = {
   id: string;
   title: string;
   dateCreation: string;
+  templateKey?: string;
+  defaultParamsJson?: string;
 };
 
 type ReportDataRequest = {
@@ -71,57 +68,12 @@ const columns: DataTableColumn<ReportGeneral>[] = [
       </Box>
     ),
   },
-  // {
-  //   field: "type",
-  //   headerName: "Tipo",
-  //   flex: 1,
-  //   minWidth: 180,
-  //   renderCell: (params) => (
-  //     <Box
-  //       component="span"
-  //       sx={{
-  //         fontSize: 14,
-  //         fontWeight: 500,
-  //         whiteSpace: "nowrap",
-  //         overflow: "hidden",
-  //         textOverflow: "ellipsis",
-  //         maxWidth: 160,
-  //       }}
-  //     >
-  //       {params.value}
-  //     </Box>
-  //   ),
-  // },
-  // {
-  //   field: "sections",
-  //   headerName: "Seções",
-  //   flex: 1,
-  //   minWidth: 220,
-  //   renderCell: (params) => (
-  //     <Box>
-  //       {Array.isArray(params.value) && params.value.length > 0 ? (
-  //         params.value.map((section: string, index: number) => (
-  //           <Chip key={index} label={section} size="small" color="primary" />
-  //         ))
-  //       ) : (
-  //         <Typography variant="body2" color="text.secondary">
-  //           Nenhuma seção disponível
-  //         </Typography>
-  //       )}
-  //     </Box>
-  //   ),
-  // },
   {
     field: 'dateCreation',
     headerName: 'Data de Criação',
     width: 140,
     valueFormatter: (v) => (v ? format(new Date(v), 'dd/MM/yyyy - HH:mm') : ''),
   },
-  // {
-  //   field: "retreatName",
-  //   headerName: "Retiro",
-  //   flex: 1,
-  // },
 ];
 
 const fetchReports = async (
@@ -238,6 +190,22 @@ const ReportPage = () => {
     });
   };
 
+  const handleEditReport = (report: ReportGeneral) => {
+    modal.open({
+      title: 'Editar Relatório',
+      size: 'sm',
+      customRender: () => (
+        <EditReport
+          report={report}
+          onClose={() => modal.close()}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+          }}
+        />
+      ),
+    });
+  };
+
   const handleCreateReport = () => {
     router.push('/reports/new');
   };
@@ -246,7 +214,7 @@ const ReportPage = () => {
     ? (reportsData!.data as ReportGeneral[])
     : reportsData?.data
       ? ([reportsData.data] as ReportGeneral[])
-      : []; // garante []
+      : [];
 
   return (
     <Box
@@ -293,10 +261,7 @@ const ReportPage = () => {
             maxWidth: { md: 150 },
           }}
         >
-          <FilterButton<
-            TableDefaultFilters<ReportsTableFilters>,
-            ReportsTableDateFilters
-          >
+          <FilterButton<TableDefaultFilters<ReportsTableFilters>>
             filters={filtersConfig}
             defaultValues={filters}
             onApplyFilters={handleApplyFilters}
@@ -379,28 +344,25 @@ const ReportPage = () => {
           // Ações personalizadas
           actions={[
             {
-              icon: 'lucide:trash-2',
+              icon: 'lucide:eye',
               label: 'Acessar relatório',
               onClick: (report) => handleViewReport(report),
+              color: 'info',
+            },
+            {
+              icon: 'lucide:pencil',
+              label: 'Editar relatório',
+              onClick: (report) => handleEditReport(report),
               color: 'primary',
-              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
             {
               icon: 'lucide:trash-2',
               label: 'Deletar relatório',
               onClick: (report) => handleDeleteReport(report, onConfirmDelete),
-              color: 'primary',
+              color: 'error',
               disabled: () => !hasDeletePermission,
-              //disabled: (user) => user.role === "Admin", // Admins não podem ser deletados
             },
           ]}
-          // Eventos
-          // onRowClick={(params) => {
-          //   console.log("Linha clicada:", params.row);
-          // }}
-          // onRowDoubleClick={(params) => {
-          //   handleView(params.row);
-          // }}
         />
       </Box>
     </Box>

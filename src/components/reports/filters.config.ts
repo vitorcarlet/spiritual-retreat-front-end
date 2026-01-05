@@ -1,9 +1,6 @@
-import type {
-  FilterConfig,
-  DateFilterConfig,
-  UseFiltersConfig,
-} from "@/src/hooks/filters/types";
-import type { ReportsTableFilters, ReportsTableDateFilters } from "./types";
+import type { FilterConfig, UseFiltersConfig } from '@/src/hooks/filters/types';
+
+import type { ReportsTableFilters } from './types';
 
 /**
  * Configuração dos filtros de items para a tabela de relatórios.
@@ -11,29 +8,16 @@ import type { ReportsTableFilters, ReportsTableDateFilters } from "./types";
  */
 export const reportsFiltersConfig: FilterConfig[] = [
   {
-    titleKey: "status",
+    titleKey: 'retreat',
     fields: [
       {
-        typeField: "selectAutocomplete",
-        name: "status",
-        primaryKey: "value",
+        typeField: 'selectAutocomplete',
+        name: 'retreatId',
+        primaryKey: 'value',
         onlyFirstLoad: true,
-        url: "models/filter/status/serviceOrders?type=F",
+        url: '/Retreats',
         isMultiple: true,
-        custom: { variant: "custom" },
-      },
-    ],
-  },
-  {
-    titleKey: "city",
-    fields: [
-      {
-        typeField: "selectAutocomplete",
-        name: "city",
-        url: "clients/filter/city",
-        onlyFirstLoad: true,
-        isMultiple: true,
-        custom: { variant: "custom" },
+        custom: { variant: 'custom' },
       },
     ],
   },
@@ -42,23 +26,21 @@ export const reportsFiltersConfig: FilterConfig[] = [
 /**
  * Configuração dos filtros de data para a tabela de relatórios.
  */
-export const reportsDateFiltersConfig: DateFilterConfig<ReportsTableDateFilters>[] =
-  [
-    { titleKey: "periodStart", filterKey: "periodStart" },
-    { titleKey: "periodEnd", filterKey: "periodEnd" },
-  ];
+// export const reportsDateFiltersConfig: DateFilterConfig<ReportsFilters>[] =
+//   [
+//     { titleKey: "periodStart", filterKey: "periodStart" },
+//     { titleKey: "periodEnd", filterKey: "periodEnd" },
+//   ];
 
 /**
  * Configuração completa pronta para usar no useFilters genérico.
  */
-export const reportsFiltersFullConfig: UseFiltersConfig<ReportsTableDateFilters> =
-  {
-    filtersConfig: reportsFiltersConfig,
-    dateFiltersConfig: reportsDateFiltersConfig,
-    dateRangeTitleKey: "period",
-    dateVariant: "dateRange",
-  };
+export const reportsFiltersFullConfig: UseFiltersConfig<ReportsFilters> = {
+  filtersConfig: reportsFiltersConfig,
+  // dateFiltersConfig: reportsDateFiltersConfig,
+  dateRangeTitleKey: 'period',
+  dateVariant: 'dateRange',
+};
 
 // Tipos para exportação (usados no hook específico)
 export type ReportsFilters = ReportsTableFilters;
-export type ReportsDateFilters = ReportsTableDateFilters;
