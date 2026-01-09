@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+
+import { useTranslations } from 'next-intl';
 
 import { rankItem } from '@tanstack/match-sorter-utils';
 import {
@@ -46,6 +48,11 @@ import {
 } from '@mui/material';
 
 import Iconify from '../Iconify';
+import {
+  type ExportConfig,
+  type ExportHandler,
+  // defaultExportHandlers,
+} from './exportHandlers';
 
 // Fuzzy filter function
 const fuzzyFilter = (
@@ -59,7 +66,10 @@ const fuzzyFilter = (
   return itemRank.passed;
 };
 
-export interface TanStackTableProps<T extends Record<string, unknown>> {
+export interface TanStackTableProps<
+  T extends Record<string, unknown>,
+  E extends string = any,
+> {
   // Dados
   data: T[];
   columns: ColumnDef<T>[];
@@ -91,10 +101,9 @@ export interface TanStackTableProps<T extends Record<string, unknown>> {
   enableColumnFilters?: boolean;
   enableSorting?: boolean;
   enableColumnVisibility?: boolean;
-  enableExport?: boolean;
-  enableExportPdf?: boolean;
   enableColumnResizing?: boolean;
-
+  // Export customizado
+  exportConfig?: ExportConfig<T, E>;
   // Ações
   onRowClick?: (row: T) => void;
   onRowDoubleClick?: (row: T) => void;
@@ -309,258 +318,11 @@ function ColumnVisibilityMenu<T>({
   );
 }
 
-// Export CSV Function - WYSIWYG (What You See Is What You Get)
-function exportToCSV<T extends Record<string, unknown>>(
-  table: ReturnType<typeof useReactTable<T>>,
-  filename: string
-) {
-  // Obter apenas colunas visíveis (exceto a coluna de seleção)
-  const visibleColumns = table
-    .getVisibleLeafColumns()
-    .filter((col) => col.id !== 'select');
-
-  // Cabeçalhos das colunas visíveis
-  const headers = visibleColumns.map((col) =>
-    typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
-  );
-
-  const csvRows = [headers.join(',')];
-
-  // Obter linhas filtradas e ordenadas (exatamente como aparecem na tabela)
-  const sortedAndFilteredRows = table.getSortedRowModel().rows;
-
-  // Processar cada linha
-  sortedAndFilteredRows.forEach((row) => {
-    const values = visibleColumns.map((col) => {
-      const cell = row.getAllCells().find((c) => c.column.id === col.id);
-      if (!cell) return '';
-
-      // Tentar obter o valor bruto primeiro
-      let value: unknown;
-
-      if ('accessorKey' in col.columnDef && col.columnDef.accessorKey) {
-        const accessorKey = col.columnDef.accessorKey as string;
-        value = row.original[accessorKey];
-      } else if ('accessorFn' in col.columnDef && col.columnDef.accessorFn) {
-        value = col.columnDef.accessorFn(row.original, row.index);
-      } else {
-        value = cell.getValue();
-      }
-
-      // Formatar o valor
-      let formattedValue = '';
-      if (value !== null && value !== undefined) {
-        if (Array.isArray(value)) {
-          // Arrays (como sections) - juntar com ponto e vírgula
-          formattedValue = value
-            .map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v)))
-            .join('; ');
-        } else if (typeof value === 'object') {
-          // Objetos - converter para JSON
-          formattedValue = JSON.stringify(value);
-        } else if (typeof value === 'boolean') {
-          // Booleanos - converter para Sim/Não
-          formattedValue = value ? 'Sim' : 'Não';
-        } else {
-          formattedValue = String(value);
-        }
-      }
-
-      // Escapar aspas duplas e envolver em aspas
-      return `"${formattedValue.replace(/"/g, '""')}"`;
-    });
-
-    csvRows.push(values.join(','));
-  });
-
-  // Criar o conteúdo CSV com BOM para garantir encoding UTF-8
-  const BOM = '\uFEFF';
-  const csvContent = BOM + csvRows.join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-// Export PDF Function - WYSIWYG (What You See Is What You Get)
-async function exportToPDF<T extends Record<string, unknown>>(
-  table: ReturnType<typeof useReactTable<T>>,
-  filename: string,
-  documentTitle?: string
-) {
-  const { jsPDF } = await import('jspdf');
-
-  // Configuração do documento
-  const doc = new jsPDF({
-    orientation: 'landscape',
-    unit: 'mm',
-    format: 'a4',
-  });
-
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 10;
-  const contentWidth = pageWidth - margin * 2;
-
-  // Obter apenas colunas visíveis (exceto a coluna de seleção)
-  const visibleColumns = table
-    .getVisibleLeafColumns()
-    .filter((col) => col.id !== 'select');
-
-  // Cabeçalhos das colunas
-  const headers = visibleColumns.map((col) =>
-    typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
-  );
-
-  // Obter linhas filtradas e ordenadas
-  const sortedAndFilteredRows = table.getSortedRowModel().rows;
-
-  // Processar dados das linhas
-  const rows = sortedAndFilteredRows.map((row) => {
-    return visibleColumns.map((col) => {
-      const cell = row.getAllCells().find((c) => c.column.id === col.id);
-      if (!cell) return '';
-
-      let value: unknown;
-
-      if ('accessorKey' in col.columnDef && col.columnDef.accessorKey) {
-        const accessorKey = col.columnDef.accessorKey as string;
-        value = row.original[accessorKey];
-      } else if ('accessorFn' in col.columnDef && col.columnDef.accessorFn) {
-        value = col.columnDef.accessorFn(row.original, row.index);
-      } else {
-        value = cell.getValue();
-      }
-
-      // Formatar o valor
-      if (value !== null && value !== undefined) {
-        if (Array.isArray(value)) {
-          return value
-            .map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v)))
-            .join(', ');
-        } else if (typeof value === 'object') {
-          return JSON.stringify(value);
-        } else if (typeof value === 'boolean') {
-          return value ? 'Sim' : 'Não';
-        } else {
-          return String(value);
-        }
-      }
-      return '';
-    });
-  });
-
-  let currentY = margin;
-
-  // Título do documento
-  if (documentTitle) {
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(documentTitle, margin, currentY + 6);
-    currentY += 12;
-  }
-
-  // Configurações da tabela
-  const fontSize = 9;
-  const headerHeight = 8;
-  const rowHeight = 6;
-  const columnWidths = headers.map(() => contentWidth / headers.length);
-
-  // Função para desenhar linha da tabela
-  const drawTableRow = (
-    rowData: string[],
-    y: number,
-    isHeader = false
-  ): number => {
-    // Verificar se precisa adicionar nova página
-    if (y + (isHeader ? headerHeight : rowHeight) > pageHeight - margin) {
-      doc.addPage();
-      y = margin;
-      // Redesenhar cabeçalho na nova página
-      if (!isHeader) {
-        y = drawTableRow(headers, y, true);
-      }
-    }
-
-    doc.setFontSize(fontSize);
-    doc.setFont('helvetica', isHeader ? 'bold' : 'normal');
-
-    // Desenhar células
-    rowData.forEach((cellText, colIndex) => {
-      const x =
-        margin + columnWidths.slice(0, colIndex).reduce((a, b) => a + b, 0);
-      const cellHeight = isHeader ? headerHeight : rowHeight;
-
-      // Fundo do cabeçalho
-      if (isHeader) {
-        doc.setFillColor(240, 240, 240);
-        doc.rect(x, y, columnWidths[colIndex], cellHeight, 'F');
-      }
-
-      // Bordas
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(x, y, columnWidths[colIndex], cellHeight, 'S');
-
-      // Texto (truncado se necessário)
-      const maxWidth = columnWidths[colIndex] - 2;
-      let displayText = cellText;
-
-      // Truncar texto longo
-      const textWidth = doc.getTextWidth(displayText);
-      if (textWidth > maxWidth) {
-        while (
-          doc.getTextWidth(displayText + '...') > maxWidth &&
-          displayText.length > 0
-        ) {
-          displayText = displayText.slice(0, -1);
-        }
-        displayText += '...';
-      }
-
-      doc.text(displayText, x + 1, y + cellHeight / 2 + 1.5, {
-        baseline: 'middle',
-      });
-    });
-
-    return y + (isHeader ? headerHeight : rowHeight);
-  };
-
-  // Desenhar cabeçalho
-  currentY = drawTableRow(headers, currentY, true);
-
-  // Desenhar linhas de dados
-  rows.forEach((row) => {
-    currentY = drawTableRow(row, currentY, false);
-  });
-
-  // Rodapé com data de geração
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(128, 128, 128);
-    doc.text(
-      `Gerado em ${new Date().toLocaleString('pt-BR')} - Página ${i} de ${totalPages}`,
-      pageWidth / 2,
-      pageHeight - 5,
-      { align: 'center' }
-    );
-  }
-
-  // Salvar PDF
-  doc.save(filename);
-}
-
 // Main Component
-export function TanStackTable<T extends Record<string, unknown>>({
+export function TanStackTable<
+  T extends Record<string, unknown>,
+  E extends string = string,
+>({
   data,
   columns: columnsProp,
   loading = false,
@@ -580,14 +342,13 @@ export function TanStackTable<T extends Record<string, unknown>>({
   enableColumnFilters = true,
   enableSorting = true,
   enableColumnVisibility = true,
-  enableExport = true,
-  enableExportPdf = true,
   enableColumnResizing = true,
+  exportConfig,
   onRowClick,
   onRowDoubleClick,
   //maxHeight = 600,
   stickyHeader = true,
-}: TanStackTableProps<T>) {
+}: TanStackTableProps<T, E>) {
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -599,7 +360,7 @@ export function TanStackTable<T extends Record<string, unknown>>({
   });
   const [showAllRows, setShowAllRows] = useState(false);
   const [columnSizing, setColumnSizing] = useState({});
-
+  const t = useTranslations();
   // Calcula o número de páginas baseado em totalItems ou pageCount
   const calculatedPageCount = useMemo(() => {
     if (totalItems !== undefined && totalItems > 0) {
@@ -693,21 +454,8 @@ export function TanStackTable<T extends Record<string, unknown>>({
     }
   }, [pagination, manualPagination, onPaginationModelChange, showAllRows]);
 
-  const handleExportCSV = useCallback(() => {
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = title
-      ? `${title.toLowerCase().replace(/\s+/g, '-')}-${timestamp}.csv`
-      : `export-${timestamp}.csv`;
-    exportToCSV(table, filename);
-  }, [table, title]);
-
-  const handleExportPDF = useCallback(async () => {
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = title
-      ? `${title.toLowerCase().replace(/\s+/g, '-')}-${timestamp}.pdf`
-      : `export-${timestamp}.pdf`;
-    await exportToPDF(table, filename, title);
-  }, [table, title]);
+  // Resolve export handlers (custom or default)
+  // const extensions = exportConfig?.extensions ?? ['csv', 'pdf'];
 
   const handlePageSizeChange = (size: number) => {
     if (size === -1) {
@@ -743,6 +491,49 @@ export function TanStackTable<T extends Record<string, unknown>>({
   ]);
 
   const selectedCount = Object.keys(rowSelection).length;
+
+  // Export buttons (modular): build buttons based on exportConfig.extensions and handlers
+  const exportButtons = useMemo(() => {
+    const handlers = exportConfig?.handlers as Record<string, ExportHandler<T>>;
+    const extensions = (exportConfig?.extensions ??
+      (Object.keys(handlers) as string[])) as string[];
+    if (!handlers) return null;
+    return extensions.map((ext) => {
+      const handler = handlers[ext];
+      if (!handler) return null;
+
+      const isPdf = ext === 'pdf';
+      const icon =
+        ext === 'csv' ? 'solar:download-bold' : 'solar:file-text-bold';
+      const label = isPdf
+        ? t('family-report-export-pdf')
+        : t('family-report-export');
+
+      return (
+        <Button
+          key={ext}
+          variant="outlined"
+          color={isPdf ? 'error' : 'primary'}
+          startIcon={<Iconify icon={icon} />}
+          onClick={() => {
+            try {
+              const res = handler(title ?? 'export');
+              if (
+                res &&
+                typeof (res as Promise<unknown>).catch === 'function'
+              ) {
+                (res as Promise<unknown>).catch(console.error);
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+        >
+          {label}
+        </Button>
+      );
+    });
+  }, [exportConfig, title, t]);
 
   return (
     <Paper
@@ -809,28 +600,8 @@ export function TanStackTable<T extends Record<string, unknown>>({
         {/* Column Visibility */}
         {enableColumnVisibility && <ColumnVisibilityMenu table={table} />}
 
-        {/* Export CSV */}
-        {enableExport && (
-          <Button
-            variant="outlined"
-            startIcon={<Iconify icon="solar:download-bold" />}
-            onClick={handleExportCSV}
-          >
-            Exportar CSV
-          </Button>
-        )}
-
-        {/* Export PDF */}
-        {enableExportPdf && (
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Iconify icon="solar:file-text-bold" />}
-            onClick={handleExportPDF}
-          >
-            Exportar PDF
-          </Button>
-        )}
+        {/* Export buttons rendered from exportConfig.handlers */}
+        {exportButtons}
       </Box>
 
       {/* Table */}

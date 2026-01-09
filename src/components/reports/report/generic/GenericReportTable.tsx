@@ -11,13 +11,11 @@ import { Box, Button } from '@mui/material';
 
 import FilterButton from '@/src/components/filters/FilterButton';
 import { TanStackTable } from '@/src/components/table';
+import type { ExportHandler } from '@/src/components/table/exportHandlers';
 import { useUrlFilters } from '@/src/hooks/useUrlFilters';
+import apiClient from '@/src/lib/axiosClientInstance';
 
-import {
-  ReportsAllFilters,
-  ReportsTableDateFilters,
-  ReportsTableFilters,
-} from '../../types';
+import { ReportsAllFilters } from '../../types';
 import { getFilters } from '../getFilters';
 import {
   ColumnDescriptor,
@@ -27,6 +25,70 @@ import { fetchGenericReport } from './shared';
 
 interface ReportRow extends Record<string, unknown> {
   id: string | number;
+}
+
+/**
+ * Factory para criar handlers de export com reportId
+ */
+function createExportHandlers(reportId: string) {
+  const customCSVExport: ExportHandler<ReportRow> = async (
+    filename?: string
+  ) => {
+    const finalFilename = filename ?? 'report.csv';
+
+    try {
+      const response = await apiClient.get(`/reports/${reportId}/export`, {
+        params: { format: 'csv', fileName: finalFilename },
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], {
+        type: 'text/csv;charset=utf-8;',
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', finalFilename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      throw error;
+    }
+  };
+
+  const customPDFExport: ExportHandler<ReportRow> = async (
+    filename?: string
+  ) => {
+    const finalFilename = filename ?? 'report.pdf';
+
+    try {
+      const response = await apiClient.get(`/reports/${reportId}/export`, {
+        params: { format: 'pdf', fileName: finalFilename },
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', finalFilename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      throw error;
+    }
+  };
+
+  return {
+    csv: (id: string, filename?: string) => customCSVExport(reportId, filename),
+    pdf: (id: string, filename?: string) => customPDFExport(reportId, filename),
+  };
 }
 
 const GenericReportTable = ({ reportId }: { reportId: string }) => {
@@ -102,6 +164,17 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
     router.push(`/reports/${report.id}`);
   };
 
+  // Cria os handlers de export com o reportId capturado
+  const exportHandlers = useMemo(
+    () => createExportHandlers(reportId),
+    [reportId]
+  );
+
+  const exportConfig = {
+    extensions: ['csv', 'pdf'] as ('csv' | 'pdf')[],
+    handlers: exportHandlers,
+  };
+
   return (
     <Box
       sx={{
@@ -147,10 +220,7 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
             maxWidth: { md: 150 },
           }}
         >
-          <FilterButton<
-            TableDefaultFilters<ReportsTableFilters>,
-            ReportsTableDateFilters
-          >
+          <FilterButton<TableDefaultFilters<ReportsAllFilters>>
             filters={filtersConfig}
             defaultValues={filters}
             onApplyFilters={handleApplyFilters}
@@ -162,7 +232,7 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
       </Box>
 
       <Box sx={{ flexGrow: 1, height: 'calc(100% - 40px)' }}>
-        <TanStackTable
+        <TanStackTable<ReportRow, 'csv' | 'pdf'>
           data={reportsArray}
           columns={dynamicColumns as ColumnDef<ReportRow>[]}
           loading={isLoading || loading}
@@ -180,8 +250,8 @@ const GenericReportTable = ({ reportId }: { reportId: string }) => {
           enableColumnFilters
           enableSorting
           enableColumnVisibility
-          enableExport
           onRowDoubleClick={handleViewReport}
+          exportConfig={exportConfig}
           maxHeight="calc(100% - 124px)"
           stickyHeader
           onPaginationModelChange={(newModel) => {
